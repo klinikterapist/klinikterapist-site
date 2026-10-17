@@ -25,8 +25,17 @@ describe.each(pages)('a11y/perf basics %s', (path) => {
       expect(img.getAttribute('height'), img.outerHTML).toBeTruthy();
       expect(img.getAttribute('alt'), img.outerHTML).not.toBeNull();
     });
-    // Portrait (above the fold on home/about/contact) must never be lazy.
-    root.querySelectorAll('.portrait img, img.portrait').forEach((img) => expect(img.getAttribute('loading')).not.toBe('lazy'));
+    // Above the fold by design: the portrait on home/about/contact and the post cover must exist and be eager.
+    const portraitPages = ['/', '/en/', '/hakkimda/', '/en/about/', '/iletisim/', '/en/contact/'];
+    if (portraitPages.includes(path)) {
+      const portrait = root.querySelector('main .portrait img');
+      expect(portrait, 'portrait <img> must render (fixture profile has a photo)').toBeTruthy();
+      expect(portrait!.getAttribute('loading')).not.toBe('lazy');
+    }
+    if (/^\/(en\/)?blog\/[^/]+\/$/.test(path) && root.querySelector('article')) {
+      const first = root.querySelector('main img');
+      if (first && first.classList.contains('cover')) expect(first.getAttribute('loading')).toBe('eager');
+    }
     // Only the first image(s) of the page may be eager (LCP candidates); everything else is lazy.
     const eager = imgs.filter((img) => img.getAttribute('loading') === 'eager');
     expect(eager.length).toBeLessThanOrEqual(2);
@@ -35,13 +44,16 @@ describe.each(pages)('a11y/perf basics %s', (path) => {
 
   it('loads nothing from another host', () => {
     const urls = [
-      ...root.querySelectorAll('link[href]').filter((e) => !/alternate|canonical|me|author/.test(e.getAttribute('rel') ?? '')).map((e) => e.getAttribute('href')!),
+      ...root.querySelectorAll('link[href]').filter((e) => {
+        const rel = (e.getAttribute('rel') ?? '').split(/\s+/);
+        return !(rel.includes('stylesheet') || rel.includes('preload') || rel.includes('icon') ? false : rel.some((t) => ['canonical', 'alternate', 'me', 'author'].includes(t)));
+      }).map((e) => e.getAttribute('href')!),
       ...root.querySelectorAll('script[src]').map((e) => e.getAttribute('src')!),
       ...root.querySelectorAll('img[src]').map((e) => e.getAttribute('src')!),
     ];
     for (const u of urls) {
       expect(u, 'external resource').not.toMatch(/^(https?:)?\/\//);
-      expect(u).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
+      expect(u, 'Google Fonts').not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
     }
   });
 });
