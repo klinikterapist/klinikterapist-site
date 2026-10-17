@@ -30,6 +30,7 @@
   --p-err: #b0412e;
   --p-placeholder: #9aa39c;
   --p-on-media: #c9d3cb;
+  --p-on-status: #fff;
 }
 
 html[data-theme='dark'] {
@@ -62,6 +63,7 @@ html[data-theme='dark'] {
   --p-err: #d4604d;
   --p-placeholder: #7d837f;
   --p-on-media: #050806;
+  --p-on-status: #050806;
 }
 
 *,
@@ -329,7 +331,7 @@ textarea.k-input {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
-  color: #fff;
+  color: var(--p-on-status);
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -1088,9 +1090,8 @@ textarea.k-input {
 
 .serp-card {
   padding: var(--space-3);
-  border: 1px solid var(--p-border);
+  border: 1px solid #ddd6c8;
   border-radius: var(--radius-sm);
-  border-color: #ddd6c8;
   background: #fff;
   font-family: Arial, sans-serif;
 }
