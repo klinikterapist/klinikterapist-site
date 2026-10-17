@@ -115,7 +115,7 @@ export function runSeoChecks(input: { lang: Lang; fields: LangFields; hasCover: 
   add(
     'kw-density',
     kw ? dLevel : 'red',
-    `Odak kelime yoğunluğu (%${density.toFixed(1)})`,
+    `Odak kelime yoğunluğu (%${density.toFixed(1).replace(".", ",")})`,
     !kw ? noKw : dLevel === 'green' ? 'Yoğunluk makul.' : density < 0.5 ? 'Odak kelimeyi metinde biraz daha sık kullanın.' : 'Odak kelimeyi daha az tekrarlayın; doğal yazın.',
   );
 
