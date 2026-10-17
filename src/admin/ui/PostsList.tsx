@@ -2,11 +2,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure } from '../api/types';
 import type { Category } from '../../lib/schemas';
-import { newDraft } from '../lib/draft';
+import { startNewPost } from '../lib/new-post';
 import { STATUS_LABEL, loadSiteState, mergeList, type PostRow } from '../lib/posts-repo';
 import { go, usePanel } from './context';
 import { Banner, Button, Field, Select, Spinner } from './kit';
-import { writeBackup } from './editor/useAutosave';
 
 const fold = (s: string) => s.toLocaleLowerCase('tr-TR').replace(/i̇/g, 'i');
 
@@ -40,9 +39,7 @@ export function PostsList() {
   }, [rows, query, category]);
 
   const create = () => {
-    const d = newDraft(new Date());
-    writeBackup(d, window.localStorage);
-    go(`#/yazi/${d.key}`);
+    go(startNewPost(window.localStorage, new Date()));
   };
 
   const label = (id: string) => categories.find((c) => c.id === id)?.label.tr ?? '—';

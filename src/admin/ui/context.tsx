@@ -13,7 +13,12 @@ export function usePanel(): PanelContext {
   return ctx;
 }
 
-export type Route = { name: 'posts' } | { name: 'post'; key: string } | { name: 'settings'; screen: string };
+export type Route =
+  | { name: 'home' }
+  | { name: 'posts'; tab: 'live' | 'drafts' }
+ 
+  | { name: 'post'; key: string }
+  | { name: 'settings'; screen: string };
 
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#/, '');
@@ -21,7 +26,9 @@ export function parseRoute(hash: string): Route {
   if (m) return { name: 'post', key: m[1] };
   m = path.match(/^\/ayarlar\/([a-z-]+)$/);
   if (m) return { name: 'settings', screen: m[1] };
-  return { name: 'posts' };
+  if (path === '/yazilar') return { name: 'posts', tab: 'live' };
+  if (path === '/yazilar/taslaklar') return { name: 'posts', tab: 'drafts' };
+  return { name: 'home' };
 }
 
 export function useRoute(): Route {

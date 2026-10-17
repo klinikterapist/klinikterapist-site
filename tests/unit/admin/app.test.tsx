@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { App } from '../../../src/admin/ui/App';
 import { createMockApi } from '../../../src/admin/api/mock';
 import { createSessionStore } from '../../../src/admin/api/session';
@@ -48,6 +48,30 @@ describe('App', () => {
     await screen.findByRole('heading', { level: 2, name: 'İletişim' });
     expect(screen.queryByRole('heading', { name: /giriş/i })).toBeNull();
     expect((screen.getByLabelText('E-posta adresi') as HTMLInputElement).value).toBe('yeni@klinikterapist.com');
+  });
+
+  it('the sidebar has both logos, the main links, the new-post button and a theme toggle', async () => {
+    const store = createSessionStore(localStorage);
+    store.set('s', Date.now() + 3600e3);
+    render(<App api={createMockApi()} store={store} config={config} />);
+    const nav = await screen.findByRole('navigation', { name: 'Panel menüsü' });
+    const srcs = Array.from(nav.querySelectorAll('img[alt="klinikterapist"]')).map((i) => i.getAttribute('src'));
+    expect(srcs).toEqual(['/admin/logo-black.png', '/admin/logo-white.png']);
+    expect(within(nav).getByRole('link', { name: 'Ana sayfa' })).toBeTruthy();
+    expect(within(nav).getByRole('link', { name: 'Yazılar' })).toBeTruthy();
+    expect(within(nav).getByRole('link', { name: /Siteyi aç/ })).toBeTruthy();
+    expect(within(nav).getByRole('button', { name: 'Yeni yazı' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Karanlık mod' }));
+    expect(screen.getByRole('button', { name: 'Açık mod' })).toBeTruthy();
+  });
+
+  it('"Yeni yazı" in the sidebar opens a fresh draft', async () => {
+    const store = createSessionStore(localStorage);
+    store.set('s', Date.now() + 3600e3);
+    render(<App api={createMockApi()} store={store} config={config} />);
+    const nav = await screen.findByRole('navigation', { name: 'Panel menüsü' });
+    fireEvent.click(within(nav).getByRole('button', { name: 'Yeni yazı' }));
+    expect(location.hash).toMatch(/^#\/yazi\/taslak-/);
   });
 
   it('an unconfigured panel says so', async () => {

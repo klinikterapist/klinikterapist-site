@@ -48,6 +48,7 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
             ) : route.name === 'settings' ? (
               <SettingsPage key={route.screen} screen={route.screen} />
             ) : (
+              // Home and the posts list share the list until Task 3/4 give each its own screen.
               <PostsList />
             )}
           </Shell>
