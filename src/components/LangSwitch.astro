@@ -1,0 +1,41 @@
+---
+import type { Lang } from '../lib/settings';
+import { otherLang } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  alternatePaths: { tr: string; en: string };
+}
+const { lang, alternatePaths } = Astro.props;
+const other = otherLang(lang);
+---
+
+<a
+  class="lang-switch"
+  href={alternatePaths[other]}
+  hreflang={other}
+  lang={other}
+  aria-label={t(lang, 'switchLangLabel')}
+>{other.toUpperCase()}</a>
+
+<style>
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 44px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    color: var(--forest);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+  }
+
+  .lang-switch:hover {
+    background: var(--sage-soft);
+  }
+</style>

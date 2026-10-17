@@ -1,0 +1,30 @@
+---
+/** Decorative leaf sprig line drawing. Inherits colour from `currentColor`. */
+interface Props {
+  size?: number;
+  class?: string;
+}
+const { size = 32, class: className } = Astro.props;
+---
+
+<svg
+  class:list={['leaf', className]}
+  width={size}
+  height={size}
+  viewBox="0 0 48 48"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.6"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  <path d="M14 44c3-10 7-18 15-27" />
+  <path d="M29 17c1-6 5-11 12-13 1 7-3 13-12 13z" />
+  <path d="M29 17c3-3 6-6 9-9" />
+  <path d="M22 26c-6-1-11-5-12-12 7 0 11 5 12 12z" />
+  <path d="M22 26c-3-3-6-6-9-9" />
+  <path d="M18 34c5-4 11-5 17-2-5 5-12 5-17 2z" />
+  <path d="M18 34c5-1 10-1 14-1" />
+</svg>

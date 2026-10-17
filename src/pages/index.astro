@@ -1,18 +1,25 @@
 ---
+// Temporary home page: real pages arrive in Task 5.
+import BaseLayout from '../layouts/BaseLayout.astro';
 import { getPosts } from '../lib/posts';
+import { buildMeta } from '../lib/seo';
+import { getSeo } from '../lib/settings';
+import { personLd, professionalServiceLd } from '../lib/jsonld';
+
 await getPosts('tr'); // temporary: forces pair validation on every build
+
+const alternatePaths = { tr: '/', en: '/en/' };
+const meta = buildMeta({
+  lang: 'tr',
+  title: 'Ana Sayfa',
+  description: getSeo().defaultDescription.tr,
+  path: '/',
+  alternates: alternatePaths,
+});
 ---
 
-<html lang="tr">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Site</title>
-	</head>
-	<body>
-		<h1>Site</h1>
-	</body>
-</html>
+<BaseLayout lang="tr" meta={meta} alternatePaths={alternatePaths} jsonLd={[personLd('tr'), professionalServiceLd('tr')]}>
+  <div class="container">
+    <h1>Kaygı ile Yaşamak: Düşman mı? PsikoterapiİlişkilerSağlıkKüçükAdımlarÜzerineDüşünceler</h1>
+  </div>
+</BaseLayout>

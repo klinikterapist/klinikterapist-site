@@ -1,0 +1,27 @@
+---
+import { getSeo } from '../lib/settings';
+import type { Meta } from '../lib/seo';
+
+interface Props {
+  meta: Meta;
+  jsonLd?: object[];
+}
+const { meta, jsonLd = [] } = Astro.props;
+const { gscVerification } = getSeo();
+
+// `<` is escaped so a value can never close the script element.
+const toScript = (data: object) => JSON.stringify(data).replace(/</g, '\\u003c');
+const ogEntries = Object.entries(meta.og);
+---
+
+<title>{meta.title}</title>
+<meta name="description" content={meta.description} />
+<link rel="canonical" href={meta.canonical} />
+{meta.alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+{
+  ogEntries.map(([key, value]) =>
+    key.startsWith('twitter:') ? <meta name={key} content={value} /> : <meta property={key} content={value} />,
+  )
+}
+{gscVerification && <meta name="google-site-verification" content={gscVerification} />}
+{jsonLd.map((data) => <script is:inline type="application/ld+json" set:html={toScript(data)} />)}

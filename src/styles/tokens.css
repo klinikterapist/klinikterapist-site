@@ -1,0 +1,65 @@
+/* Design tokens: cream, forest and sage, light theme only. */
+@import '@fontsource-variable/fraunces/wght.css';
+@import '@fontsource-variable/dm-sans/wght.css';
+@import '@fontsource/caveat/latin-400.css';
+@import '@fontsource/caveat/latin-ext-400.css';
+
+:root {
+  color-scheme: light;
+
+  /* Colours */
+  --cream: #f4efe6;        /* page background */
+  --paper: #fbf8f2;        /* cards, raised surfaces */
+  --forest: #2f4a3a;       /* primary: buttons, headings, links */
+  --forest-deep: #22382b;  /* hover / pressed */
+  --sage: #8fa58f;         /* line drawings, accents */
+  --sage-soft: #e3e8dc;    /* soft surfaces, chips, placeholders */
+  --ink: #1f2a24;          /* body text */
+  --muted: #5b675f;        /* secondary text (≥ 4.5:1 on cream) */
+  --line: #ddd6c8;         /* hairlines, card borders */
+  --on-forest: #fbf8f2;    /* text on forest */
+  --focus: #b5651d;        /* focus ring, distinct from the greens */
+
+  /* Type */
+  --font-serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-hand: 'Caveat', 'Segoe Script', cursive;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: clamp(1.5rem, 1.2rem + 1.2vw, 1.875rem);
+  --text-2xl: clamp(1.875rem, 1.4rem + 2vw, 2.5rem);
+  --text-3xl: clamp(2.25rem, 1.6rem + 3vw, 3.25rem);
+  --leading: 1.65;
+  --leading-tight: 1.15;
+
+  /* Spacing (4 px scale) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --gutter: 1rem;          /* 16 px side gutter on phones */
+
+  /* Layout */
+  --max-wide: 72rem;       /* header, footer, grids */
+  --max-text: 42rem;       /* reading column */
+
+  /* Shape */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-pill: 999px;
+  --shadow-soft: 0 1px 2px rgb(31 42 36 / 0.04), 0 4px 16px rgb(31 42 36 / 0.06);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 2rem;
+  }
+}
