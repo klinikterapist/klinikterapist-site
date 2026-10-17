@@ -6,7 +6,7 @@ export type AdminConfig = { apiUrl: string; googleClientId: string; ownerEmail: 
 
 export const ADMIN_CONFIG: AdminConfig = {
   apiUrl: '',
-  googleClientId: '',
+  googleClientId: '617877268772-jdl3mf9em8g59vcr0hrds5cejm3hrrvt.apps.googleusercontent.com',
   ownerEmail: 'merhaba@klinikterapist.com',
 };
 
