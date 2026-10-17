@@ -52,6 +52,28 @@ describe('buildPublishChangeset — subtitle', () => {
   });
 });
 
+describe('buildPublishChangeset — citations', () => {
+  const ray = { id: 'ray2004', type: 'article' as const, authors: [{ family: 'Ray', given: 'O.' }], year: 2004, title: 'Mind' };
+  const cited = (): JSONContent => ({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metin ' }, { type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: false } }] }],
+  });
+
+  it('writes citations from the language references', () => {
+    const d = draft();
+    d.tr = { ...d.tr, doc: cited(), references: [ray] };
+    const tr = buildPublishChangeset({ ...base, draft: d, live: null }).writes.find((w) => w.path.endsWith('tr.md'))!.content;
+    expect(tr).toContain('Metin <cite data-refs="ray2004">(Ray, 2004)</cite>');
+    expect(tr).toContain('references: [{"id":"ray2004"');
+  });
+
+  it('a citation to a missing reference is refused', () => {
+    const d = draft();
+    d.en = { ...d.en, doc: cited() };
+    expect(() => buildPublishChangeset({ ...base, draft: d, live: null })).toThrow(PublishError);
+  });
+});
+
 describe('buildPublishChangeset — new post', () => {
   it('writes both languages under the TR slug as the folder key, with no redirects', () => {
     const cs = buildPublishChangeset({ ...base, draft: draft(), live: null });

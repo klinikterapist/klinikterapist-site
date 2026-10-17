@@ -8,6 +8,7 @@ category: "yasam"
 cover: "./cover.webp"
 coverAlt: "Adaçayı yeşili tonlarında yaprak çizimi"
 publishedAt: 2026-03-10
+references: [{"id":"smith2010","type":"book","authors":[{"family":"Smith","given":"John"},{"family":"Lee","given":"Kim"}],"year":2010,"title":"Small steps","publisher":"Example Press"},{"id":"ray2004","type":"article","authors":[{"family":"Ray","given":"Oakley"}],"year":2004,"title":"How the mind hurts and heals the body","container":"American Psychologist","volume":"59","issue":"1","pages":"29-40","doi":"10.1037/0003-066X.59.1.29"},{"id":"zeta2020","type":"book","authors":[{"family":"Zeta","given":"Ada"}],"year":2020,"title":"Uncited book"}]
 ---
 
 Büyük değişimler çoğu zaman küçük, tutarlı adımlarla başlar. Kendinize karşı nazik olmak, bu yolculuğun ilk şartıdır.
@@ -21,3 +22,5 @@ Bir günde her şeyi değiştirmeye çalışmak yerine, bugün yalnızca tek bir
 Her gün yapılan küçük bir davranış, ayda bir yapılan büyük bir çabadan daha kalıcı sonuçlar verir.
 
 Bu ~~eski~~ ve <mark>önemli</mark> bir cümle.
+
+Zihin bedeni etkiler <cite data-refs="ray2004">(Ray, 2004)</cite>. <cite data-refs="smith2010" data-narrative>Smith ve Lee (2010)</cite> küçük adımları önerir; ikisi birlikte de okunabilir <cite data-refs="ray2004;smith2010~p~34">(Ray, 2004; Smith ve Lee, 2010, s. 34)</cite>.

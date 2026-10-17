@@ -47,6 +47,27 @@ describe('blog', () => {
     expect(tr.querySelector('.prose mark')?.text).toBe('önemli');
   });
 
+  it('citations render as cite text and the cited references as the Kaynakça', () => {
+    const tr = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
+    const cites = tr.querySelectorAll('.prose cite');
+    expect(cites.map((c) => c.text)).toEqual(['(Ray, 2004)', 'Smith ve Lee (2010)', '(Ray, 2004; Smith ve Lee, 2010, s. 34)']);
+    expect(tr.querySelector('section.references h2')?.text).toBe('Kaynakça');
+    const items = tr.querySelectorAll('section.references li');
+    expect(items).toHaveLength(2);
+    expect(items[0].text).toMatch(/^Ray, O\./);
+    expect(items[1].text).toMatch(/^Smith, J\. ve Lee, K\./);
+    expect(tr.querySelector('section.references')?.text).not.toContain('Uncited');
+    expect(items[0].querySelector('a')?.getAttribute('href')).toBe('https://doi.org/10.1037/0003-066X.59.1.29');
+
+    const en = loadPage('/en/blog/small-steps-towards-a-better-life/');
+    expect(en.querySelector('.prose cite')?.text).toBe('(Ray, 2004)');
+    expect(en.querySelector('section.references h2')?.text).toBe('References');
+    expect(en.querySelectorAll('section.references li')).toHaveLength(2);
+
+    // A post without citations has no reference list.
+    expect(loadPage('/blog/kapaksiz-ornek/').querySelector('section.references')).toBeNull();
+  });
+
   it('EN post switches back to the TR translation', () => {
     const en = loadPage('/en/blog/no-cover-example/');
     expect(en.querySelector('a.lang-switch')?.getAttribute('href')).toBe('/blog/kapaksiz-ornek/');

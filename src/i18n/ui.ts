@@ -48,6 +48,7 @@ const STRINGS = {
   published: { tr: 'Yayın tarihi', en: 'Published' },
   lastUpdated: { tr: 'Son güncelleme', en: 'Last updated' },
   relatedPosts: { tr: 'İlgili Yazılar', en: 'Related Posts' },
+  references: { tr: 'Kaynakça', en: 'References' },
   aboutAuthor: { tr: 'Yazar hakkında', en: 'About the author' },
   moreAboutMe: { tr: 'Hakkımda daha fazlası', en: 'More about me' },
   newsletterTitle: { tr: 'Yeni Yazılardan Haberdar Olun', en: 'Get New Posts by E-mail' },

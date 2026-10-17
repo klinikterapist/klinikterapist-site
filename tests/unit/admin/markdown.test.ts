@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import type { JSONContent } from '@tiptap/core';
 import { docToMarkdown, markdownToDoc } from '../../../src/admin/lib/markdown';
 import { parsePost } from '../../../src/admin/lib/frontmatter';
+import type { CiteItem, Reference } from '../../../src/lib/apa';
 
 const t = (text: string, ...marks: JSONContent['marks'] & object): JSONContent => (marks.length ? { type: 'text', text, marks } : { type: 'text', text });
 const p = (...content: JSONContent[]): JSONContent => ({ type: 'paragraph', content });
@@ -133,5 +134,68 @@ describe('readable source', () => {
     const md = docToMarkdown(doc, 'tr');
     expect(md).toBe('Merhaba! Ali & Ayşe; \\&amp; kalır.\n');
     expect(norm(markdownToDoc(md))).toEqual(norm(doc));
+  });
+});
+
+describe('citations', () => {
+  const RAY: Reference = { id: 'ray2004', type: 'article', authors: [{ family: 'Ray', given: 'O.' }], year: 2004, title: 'Mind' };
+  const SMITH: Reference = {
+    id: 'smith2010', type: 'book', authors: [{ family: 'Smith', given: 'J.' }, { family: 'Lee', given: 'K.' }], year: 2010, title: 'Steps',
+  };
+  const NOAUTH: Reference = { id: 'book2020', type: 'book', authors: [], year: 2020, title: 'Untitled <book>' };
+  const RAY_B: Reference = { ...RAY, id: 'ray2004-2', title: 'Other' };
+  const cite = (items: CiteItem[], narrative = false): JSONContent => ({ type: 'citation', attrs: { items, narrative } });
+  const both = [{ id: 'ray2004' }, { id: 'smith2010', locator: { kind: 'p' as const, value: '34' } }];
+
+  it('writes a parenthetical citation as a cite tag and reads it back as the same node', () => {
+    const doc: JSONContent = { type: 'doc', content: [p(t('Bkz. '), cite(both), t(' sonra.'))] };
+    const md = docToMarkdown(doc, 'tr', [SMITH, RAY]);
+    expect(md).toContain('<cite data-refs="ray2004;smith2010~p~34">(Ray, 2004; Smith ve Lee, 2010, s. 34)</cite>');
+    expect(norm(markdownToDoc(md))).toEqual(norm(doc));
+  });
+
+  it('marks narrative citations with data-narrative', () => {
+    const doc: JSONContent = { type: 'doc', content: [p(cite(both, true), t(' gösterdi.'))] };
+    const md = docToMarkdown(doc, 'tr', [SMITH, RAY]);
+    expect(md).toContain('<cite data-refs="ray2004;smith2010~p~34" data-narrative>Ray (2004) ve Smith ve Lee (2010, s. 34)</cite>');
+    expect(norm(markdownToDoc(md))).toEqual(norm(doc));
+  });
+
+  it('italicises a no-author title and escapes the text', () => {
+    const doc: JSONContent = { type: 'doc', content: [p(cite([{ id: 'book2020' }]))] };
+    const md = docToMarkdown(doc, 'en', [NOAUTH]);
+    expect(md).toContain('<cite data-refs="book2020">(<i>Untitled \\<book\\></i>, 2020)</cite>');
+    expect(norm(markdownToDoc(md))).toEqual(norm(doc));
+  });
+
+  it('computes 2004a/2004b over the cited references only', () => {
+    const one: JSONContent = { type: 'doc', content: [p(cite([{ id: 'ray2004' }]))] };
+    expect(docToMarkdown(one, 'en', [RAY, RAY_B])).toContain('>(Ray, 2004)</cite>');
+    const two: JSONContent = { type: 'doc', content: [p(cite([{ id: 'ray2004' }]), t(' '), cite([{ id: 'ray2004-2' }]))] };
+    const md = docToMarkdown(two, 'en', [RAY, RAY_B]);
+    expect(md).toContain('>(Ray, 2004a)</cite>');
+    expect(md).toContain('>(Ray, 2004b)</cite>');
+  });
+
+  it('keeps a cite with an unknown attribute shape as plain text', () => {
+    for (const md of ['<cite data-refs="a b">(x)</cite>\n', '<cite class="c" data-refs="a">(x)</cite>\n', '<cite data-refs="a" data-x>(x)</cite>\n']) {
+      const doc = markdownToDoc(md);
+      expect(JSON.stringify(doc), md).not.toContain('"citation"');
+      expect(doc.content![0].content!.map((n) => n.text).join(''), md).toBe(md.trim());
+    }
+  });
+
+  it('keeps escaped cite text as text', () => {
+    const doc: JSONContent = { type: 'doc', content: [p(t('<cite data-refs="x">(Ray, 2004)</cite>'))] };
+    const md = docToMarkdown(doc, 'tr');
+    expect(md).toContain('\\<cite data-refs="x"\\>');
+    expect(norm(markdownToDoc(md))).toEqual(norm(doc));
+    expect(JSON.stringify(markdownToDoc('\\<cite data-refs="x">y\\</cite>\n'))).not.toContain('"citation"');
+  });
+
+  it('closes open marks around a citation', () => {
+    const doc: JSONContent = { type: 'doc', content: [p(t('kalın', bold), cite([{ id: 'ray2004' }]), t('son', bold))] };
+    const md = docToMarkdown(doc, 'tr', [RAY]);
+    expect(md).toBe('**kalın**<cite data-refs="ray2004">(Ray, 2004)</cite>**son**\n');
   });
 });

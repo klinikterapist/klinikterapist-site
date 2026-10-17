@@ -8,6 +8,7 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import AuthorBox from '../components/AuthorBox.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
+import References from '../components/References.astro';
 import { getCategories } from '../lib/settings';
 import type { PostEntry } from '../lib/posts';
 import { getRelated, getTranslation } from '../lib/posts';
@@ -110,6 +111,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="prose">
         <Content />
       </div>
+      <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
       <AuthorBox lang={lang} />
     </div>
   </article>
@@ -298,6 +300,11 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     color: inherit;
   }
 
+  /* A citation reads as ordinary text. */
+  .prose :global(cite) {
+    font-style: normal;
+  }
+
   .prose :global(hr) {
     width: 6rem;
     margin: 2.5em auto;
@@ -370,6 +377,33 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     width: 100%;
     height: 100%;
     border: 0;
+  }
+
+  /* Kaynakça: APA hanging indent, no visible numbers. */
+  .container-text :global(.references) {
+    max-width: 68ch;
+    margin: 0 0 var(--space-7);
+  }
+
+  .container-text :global(.references h2) {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xl);
+  }
+
+  .container-text :global(.references-list) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .container-text :global(.references-list li) {
+    padding-left: 1.5em;
+    text-indent: -1.5em;
+    overflow-wrap: anywhere;
+  }
+
+  .container-text :global(.references-list li + li) {
+    margin-top: var(--space-3);
   }
 
   /* Same width as the cover, so the page keeps one centred axis. */

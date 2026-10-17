@@ -2,6 +2,7 @@ import type { Reference } from './apa/types';
 import type { Lang } from './settings';
 import { RESERVED_SLUGS } from './schemas';
 import { readingTime } from './readingTime';
+import { validateCitations } from './citations';
 
 export type PostData = {
   title: string;
@@ -105,6 +106,7 @@ async function loadAll(): Promise<PostEntry[]> {
   validatePostPairs(entries.map((e) => e.id));
   validateUniqueSlugs(entries);
   validateReservedSlugs(entries);
+  for (const e of entries) validateCitations(e.body ?? '', e.data.references ?? [], `${e.id}.md`);
   return entries.map(toPostEntry);
 }
 

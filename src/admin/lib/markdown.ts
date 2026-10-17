@@ -5,6 +5,8 @@
 import type { JSONContent } from '@tiptap/core';
 import { Lexer, type Token, type Tokens } from 'marked';
 import type { Lang } from '../../lib/schemas';
+import { bibliography, citationText, type CiteItem, type Reference } from '../../lib/apa';
+import { CITE_OPEN, parseCiteAttr, writeCiteAttr } from '../../lib/citations';
 
 type Mark = NonNullable<JSONContent['marks']>[number];
 
@@ -31,6 +33,36 @@ function escapeLineStart(line: string): string {
   return line.replace(/^(\s*)([-+=])/, '$1\\$2').replace(/^(\s*\d+)([.)])/, '$1\\$2');
 }
 
+/** What the doc → Markdown pass needs besides the doc: `refs` holds only the cited references (for 2004a/b). */
+type Ctx = { lang: Lang; refs: Reference[] };
+
+const reEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** `<cite …>` with the APA text; a no-author book or web page title is italic. */
+function citeMarkdown(node: JSONContent, ctx: Ctx): string {
+  const items = (Array.isArray(node.attrs?.items) ? node.attrs.items : []) as CiteItem[];
+  if (!items.length) return '';
+  const narrative = node.attrs?.narrative === true;
+  const text = citationText({ items, narrative }, ctx.refs, ctx.lang);
+  const titles = [
+    ...new Set(
+      items
+        .map((i) => ctx.refs.find((r) => r.id === i.id))
+        .filter((r): r is Reference => !!r && !r.authors.length && (r.type === 'book' || r.type === 'web') && !!r.title)
+        .map((r) => r.title),
+    ),
+  ].sort((a, b) => b.length - a.length);
+  const parts = titles.length ? text.split(new RegExp(`(${titles.map(reEscape).join('|')})`)) : [text];
+  const inner = parts.map((part, i) => (i % 2 ? `<i>${escapeText(part)}</i>` : escapeText(part))).join('');
+  return `<cite data-refs="${writeCiteAttr(items)}"${narrative ? ' data-narrative' : ''}>${inner}</cite>`;
+}
+
+function collectCited(node: JSONContent, out: Set<string>): Set<string> {
+  if (node.type === 'citation' && Array.isArray(node.attrs?.items)) for (const i of node.attrs.items as CiteItem[]) out.add(i.id);
+  node.content?.forEach((c) => collectCited(c, out));
+  return out;
+}
+
 const escapeHref = (href: string) => href.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
 
 /** Opening order (outermost first). */
@@ -44,7 +76,7 @@ const CLOSE: Record<string, string> = { bold: '**', italic: '_', strike: '~~', h
 const openMark = (m: Mark) => OPEN[m.type];
 const closeMark = (m: Mark) => (m.type === 'link' ? `](${escapeHref(String(m.attrs?.href ?? ''))})` : CLOSE[m.type]);
 
-function inline(nodes: JSONContent[] = []): string {
+function inline(nodes: JSONContent[] = [], ctx: Ctx): string {
   let out = '';
   let stack: Mark[] = [];
   let pendingTrail = '';
@@ -55,6 +87,12 @@ function inline(nodes: JSONContent[] = []): string {
     if (node.type === 'hardBreak') {
       closeTo(0);
       out += `${pendingTrail}\\\n`;
+      pendingTrail = '';
+      continue;
+    }
+    if (node.type === 'citation') {
+      closeTo(0);
+      out += pendingTrail + citeMarkdown(node, ctx);
       pendingTrail = '';
       continue;
     }
@@ -97,18 +135,18 @@ const indent = (text: string, pad: string) =>
     .map((l, i) => (i === 0 || !l ? l : pad + l))
     .join('\n');
 
-function block(node: JSONContent, lang: Lang): string | null {
+function block(node: JSONContent, ctx: Ctx): string | null {
   switch (node.type) {
     case 'paragraph': {
-      const text = inline(node.content);
+      const text = inline(node.content, ctx);
       return text.trim() ? escapeLineStart(text) : null;
     }
     case 'heading': {
       const level = node.attrs?.level === 3 ? 3 : 2;
-      return `${'#'.repeat(level)} ${inline(node.content)}`;
+      return `${'#'.repeat(level)} ${inline(node.content, ctx)}`;
     }
     case 'blockquote': {
-      const inner = blocks(node.content, lang);
+      const inner = blocks(node.content, ctx);
       return inner
         .split('\n')
         .map((l) => (l ? `> ${l}` : '>'))
@@ -120,7 +158,7 @@ function block(node: JSONContent, lang: Lang): string | null {
       return (node.content ?? [])
         .map((item, i) => {
           const bullet = node.type === 'bulletList' ? '- ' : `${start + i}. `;
-          const inner = blocks(item.content, lang) || '';
+          const inner = blocks(item.content, ctx) || '';
           return bullet + indent(inner, ' '.repeat(bullet.length));
         })
         .join('\n');
@@ -136,10 +174,10 @@ function block(node: JSONContent, lang: Lang): string | null {
     case 'youtube': {
       const id = String(node.attrs?.id ?? '');
       if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return null;
-      return `<div class="youtube" data-id="${id}"><a href="https://www.youtube.com/watch?v=${id}">${YOUTUBE_TEXT[lang]}</a></div>`;
+      return `<div class="youtube" data-id="${id}"><a href="https://www.youtube.com/watch?v=${id}">${YOUTUBE_TEXT[ctx.lang]}</a></div>`;
     }
     case 'callout': {
-      const inner = blocks(node.content, lang);
+      const inner = blocks(node.content, ctx);
       return inner ? `${CALLOUT_OPEN}\n\n${inner}\n\n${CALLOUT_CLOSE}` : null;
     }
     default:
@@ -147,15 +185,18 @@ function block(node: JSONContent, lang: Lang): string | null {
   }
 }
 
-function blocks(nodes: JSONContent[] = [], lang: Lang): string {
+function blocks(nodes: JSONContent[] = [], ctx: Ctx): string {
   return nodes
-    .map((n) => block(n, lang))
+    .map((n) => block(n, ctx))
     .filter((s): s is string => s !== null)
     .join('\n\n');
 }
 
-export function docToMarkdown(doc: JSONContent, lang: Lang): string {
-  const md = blocks(doc.content, lang);
+/** `refs`: the post's references in this language; citations are written from them. */
+export function docToMarkdown(doc: JSONContent, lang: Lang, refs: Reference[] = []): string {
+  // 2004a/2004b are counted over the cited references only, as on the site's reference list.
+  const cited = bibliography(refs, collectCited(doc, new Set()), lang);
+  const md = blocks(doc.content, { lang, refs: cited });
   return md ? `${md}\n` : '';
 }
 
@@ -204,6 +245,15 @@ function inlineTokens(tokens: Token[] = []): JSONContent[] {
         out.push(...addMark(inlineTokens((tok as Tokens.Del).tokens), { type: 'strike' }));
         break;
       case 'html': {
+        // `<cite data-refs="…">…</cite>` with a valid attribute is a citation; its text is regenerated on save.
+        const open = tok.raw.match(CITE_OPEN);
+        const items = open ? parseCiteAttr(open[1]) : null;
+        const close = items ? tokens.findIndex((t, j) => j > i && isHtml(t, '</cite>')) : -1;
+        if (items && close > i) {
+          out.push({ type: 'citation', attrs: { items, narrative: !!open![2] } });
+          i = close;
+          break;
+        }
         // Only the exact tag pair <mark>…</mark> is the highlight mark; any other inline HTML stays text.
         const end = isHtml(tok, '<mark>') ? tokens.findIndex((t, j) => j > i && isHtml(t, '</mark>')) : -1;
         if (end > i) {

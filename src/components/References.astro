@@ -1,0 +1,16 @@
+---
+/** The post's Kaynakça / References: only the cited references, APA-sorted. Nothing when none is cited. */
+import type { Reference } from '../lib/apa';
+import { citedIds, renderReferencesSection } from '../lib/citations';
+import type { Lang } from '../lib/schemas';
+
+interface Props {
+  references: Reference[];
+  body: string;
+  lang: Lang;
+}
+const { references, body, lang } = Astro.props;
+const html = renderReferencesSection(references, citedIds(body), lang);
+---
+
+{html && <Fragment set:html={html} />}

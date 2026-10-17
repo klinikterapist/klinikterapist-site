@@ -107,9 +107,15 @@ export function buildPublishChangeset(input: {
     };
     const valid = schema.safeParse(fm);
     if (!valid.success) throw new PublishError(`${LANG_NAME[lang]}: ${valid.error.issues.map((i) => i.message).join('; ')}`);
+    let body: string;
+    try {
+      body = docToMarkdown(f.doc, lang, f.references);
+    } catch (e) {
+      throw new PublishError(`${LANG_NAME[lang]}: ${(e as Error).message}`);
+    }
     writes.push({
       path: `${postDir(key)}${lang}.md`,
-      content: serializePost(fm, docToMarkdown(f.doc, lang)),
+      content: serializePost(fm, body),
       encoding: 'utf8',
       expectSha: live?.[lang].sha ?? null,
     });

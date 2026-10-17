@@ -143,7 +143,13 @@ function Editing({ loaded }: { loaded: Loaded }) {
     if (auto.status === 'kaydedildi' && draft.rev > 0) setInDrive(true);
   }, [auto.status, draft.rev]);
 
-  const markdown = useMemo(() => docToMarkdown(draft[lang].doc, lang), [draft, lang]);
+  const markdown = useMemo(() => {
+    try {
+      return docToMarkdown(draft[lang].doc, lang, draft[lang].references);
+    } catch {
+      return ''; // a citation to a missing reference; publishing reports it
+    }
+  }, [draft, lang]);
   const words = useMemo(() => countWords(markdown), [markdown]);
   const minutes = useMemo(() => readingTime(markdown), [markdown]);
 
