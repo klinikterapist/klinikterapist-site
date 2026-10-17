@@ -83,6 +83,9 @@ export type DraftSummary = {
   title: { tr: string; en: string };
 };
 
+/** One snapshot of a draft (the stored copy as it was before a later save). */
+export type VersionSummary = { name: string; rev: number; savedAt: string; title: { tr: string; en: string } };
+
 export type Session = { session: string; email: string; expiresAt: number };
 
 /** One method per backend action. Methods throw `ApiFailure`. */
@@ -96,7 +99,10 @@ export interface Api {
   listDrafts(): Promise<{ drafts: DraftSummary[] }>;
   getDraft(key: string): Promise<{ draft: Draft }>;
   /** Throws `ApiFailure('conflict')` with `current` set to the stored draft. */
-  saveDraft(draft: Draft): Promise<{ rev: number; updatedAt: string }>;
+  saveDraft(draft: Draft, opts?: { snapshot?: boolean }): Promise<{ rev: number; updatedAt: string }>;
+  /** Snapshots of a draft, newest first. */
+  listVersions(key: string): Promise<{ versions: VersionSummary[] }>;
+  getVersion(key: string, name: string): Promise<{ draft: Draft }>;
   deleteDraft(key: string): Promise<void>;
   putImage(key: string, name: string, base64: string): Promise<void>;
   getImage(key: string, name: string): Promise<{ base64: string }>;
@@ -125,6 +131,8 @@ export const ACTIONS = {
   listDrafts: 'drafts.list',
   getDraft: 'drafts.get',
   saveDraft: 'drafts.save',
+  listVersions: 'drafts.versions',
+  getVersion: 'drafts.version',
   deleteDraft: 'drafts.delete',
   putImage: 'images.put',
   getImage: 'images.get',

@@ -59,6 +59,20 @@ describe('createHttpApi', () => {
     expect(err.current).toEqual({ rev: 7 });
   });
 
+  it('sends snapshot flag and version requests on the wire', async () => {
+    const store = createSessionStore(memoryStorage(), () => 1000);
+    store.set('s', 5000);
+    const fetchMock = vi.fn(() => reply({ ok: true, data: { versions: [] } }));
+    const api = createHttpApi('u', store, { fetch: fetchMock });
+    const body = () => JSON.parse(String((fetchMock.mock.calls.at(-1) as unknown as [string, RequestInit])[1].body));
+    await api.saveDraft({ key: 'k' } as never, { snapshot: true });
+    expect(body()).toEqual({ action: 'drafts.save', session: 's', draft: { key: 'k' }, snapshot: true });
+    await api.listVersions('k');
+    expect(body()).toEqual({ action: 'drafts.versions', session: 's', key: 'k' });
+    await api.getVersion('k', '1-20261017T144300Z.json');
+    expect(body()).toEqual({ action: 'drafts.version', session: 's', key: 'k', name: '1-20261017T144300Z.json' });
+  });
+
   it('a network failure becomes a Turkish network error', async () => {
     const store = createSessionStore(memoryStorage(), () => 1000);
     store.set('s', 5000);

@@ -22,10 +22,12 @@ export type MockState = {
   files: Map<string, File>;
   drafts: Map<string, Draft>;
   images: Map<string, string>;
+  /** Snapshots by draft key, oldest first. `at` is epoch ms. */
+  versions: Map<string, { name: string; at: number; draft: Draft }[]>;
   commits: { message: string; writes: CommitWrite[]; deletes: CommitDelete[] }[];
 };
 
-export function createMockApi(opts: { latency?: number; seed?: Record<string, string> } = {}): Api & { state: MockState } {
+export function createMockApi(opts: { latency?: number; seed?: Record<string, string>; now?: () => number } = {}): Api & { state: MockState } {
   const files = new Map<string, File>();
   const put = (path: string, content: string, encoding: Encoding) => files.set(path, { content, encoding, sha: sha(content) });
   if (opts.seed) {
@@ -35,10 +37,12 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), commits: [] };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [] };
   let head = 1;
   let status: SiteStatus = { state: 'success', commitSha: 'c1', url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' };
   let pollsSinceCommit = 0;
+
+  const clock = opts.now ?? Date.now;
 
   const wait = <T>(v: () => T): Promise<T> =>
     new Promise((resolve, reject) =>
@@ -93,19 +97,42 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         if (!d) throw new ApiFailure('not_found', 'Taslak bulunamadı.');
         return { draft: structuredClone(d) };
       }),
-    saveDraft: (draft) =>
+    saveDraft: (draft, saveOpts) =>
       wait(() => {
         const current = state.drafts.get(draft.key);
         if (current ? current.rev !== draft.rev : draft.rev !== 0) {
           throw new ApiFailure('conflict', 'Bu taslak başka bir cihazda daha yeni kaydedilmiş.', current ? structuredClone(current) : undefined);
         }
-        const next = { ...structuredClone(draft), rev: draft.rev + 1, updatedAt: new Date().toISOString() };
+        if (current) {
+          const now = clock();
+          const kept = (state.versions.get(draft.key) ?? []).filter((v) => now - v.at <= 30 * 24 * 3600e3);
+          const last = kept.at(-1);
+          if (saveOpts?.snapshot === true || !last || now - last.at >= 10 * 60e3) {
+            const stamp = new Date(now).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+            kept.push({ name: `${current.rev}-${stamp}.json`, at: now, draft: structuredClone(current) });
+          }
+          state.versions.set(draft.key, kept);
+        }
+        const next = { ...structuredClone(draft), rev: draft.rev + 1, updatedAt: new Date(clock()).toISOString() };
         state.drafts.set(draft.key, next);
         return { rev: next.rev, updatedAt: next.updatedAt };
+      }),
+    listVersions: (key) =>
+      wait(() => ({
+        versions: [...(state.versions.get(key) ?? [])]
+          .reverse()
+          .map((v) => ({ name: v.name, rev: v.draft.rev, savedAt: new Date(v.at).toISOString(), title: { tr: v.draft.tr.title, en: v.draft.en.title } })),
+      })),
+    getVersion: (key, name) =>
+      wait(() => {
+        const v = state.versions.get(key)?.find((x) => x.name === name);
+        if (!v) throw new ApiFailure('not_found', 'Bu sürüm bulunamadı. 30 günden eski sürümler silinir.');
+        return { draft: structuredClone(v.draft) };
       }),
     deleteDraft: (key) =>
       wait(() => {
         state.drafts.delete(key);
+        state.versions.delete(key);
         for (const k of [...state.images.keys()]) if (k.startsWith(`${key}/`)) state.images.delete(k);
       }),
     putImage: (key, name, base64) => wait(() => void state.images.set(`${key}/${name}`, base64)),

@@ -2,11 +2,15 @@
  * Drafts and draft images in the owner's Drive (spec §8.4): `Klinikterapist Panel/taslaklar/<key>.json`
  * and `Klinikterapist Panel/gorseller/<key>/<name>`. Nothing here touches GitHub.
  */
-import type { Draft, DraftSummary } from '../../src/admin/api/types';
+import type { Draft, DraftSummary, VersionSummary } from '../../src/admin/api/types';
 import type { FolderLike, Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 
 const KEY_RE = /^[a-z0-9-]{1,80}$/;
+/** Snapshots are thinned to at least this far apart and kept this long (spec §5.5). */
+const SNAPSHOT_GAP_MS = 10 * 60 * 1000;
+const SNAPSHOT_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
+const VERSION_RE = /^(\d+)-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z\.json$/;
 const NAME_RE = /^[a-z0-9-]+\.(webp|jpg)$/;
 
 function key(value: unknown): string {
@@ -37,6 +41,45 @@ function stored(gas: Gas, k: string): Draft | null {
   return file ? (JSON.parse(file.read()) as Draft) : null;
 }
 
+function versionName(value: unknown): string {
+  if (typeof value !== 'string' || !VERSION_RE.test(value)) throw badRequest('Geçersiz sürüm adı.');
+  return value;
+}
+
+/** The time a snapshot was taken, read from its file name; null for a file that is not one. */
+function snapshotTime(name: string): number | null {
+  const m = VERSION_RE.exec(name);
+  return m ? Date.UTC(+m[2], +m[3] - 1, +m[4], +m[5], +m[6], +m[7]) : null;
+}
+
+function versionFolder(gas: Gas, k: string, create: boolean): FolderLike | null {
+  const root = create ? sub(gas, 'surumler', true) : sub(gas, 'surumler', false);
+  if (!root) return null;
+  return root.findFolder(k) ?? (create ? root.createFolder(k) : null);
+}
+
+/**
+ * Stores `previous` as a snapshot unless one was taken less than 10 minutes ago (or `force`), and
+ * trashes snapshots older than 30 days. Called inside the save lock, before the draft is overwritten.
+ */
+function snapshot(gas: Gas, k: string, previous: Draft, force: boolean): void {
+  const now = gas.now();
+  const existing = (versionFolder(gas, k, false)?.listFiles() ?? []).flatMap((f) => {
+    const at = snapshotTime(f.getName());
+    return at === null ? [] : [{ file: f, at }];
+  });
+  for (const e of existing) if (now - e.at > SNAPSHOT_KEEP_MS) e.file.trash();
+  const newest = existing.reduce((max, e) => Math.max(max, e.at), -Infinity);
+  if (!force && now - newest < SNAPSHOT_GAP_MS) return;
+  const stamp = new Date(now).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const name = `${previous.rev}-${stamp}.json`;
+  const folder = versionFolder(gas, k, true)!;
+  const text = JSON.stringify(previous);
+  const same = folder.findFile(name);
+  if (same) same.write(text);
+  else folder.createFile(name, text, 'json');
+}
+
 const notFound = () => new ApiError('not_found', 'Taslak bulunamadı. Silinmiş ya da yayınlanmış olabilir.');
 
 export function getDraft(gas: Gas, p: { key?: unknown }): { draft: Draft } {
@@ -52,13 +95,14 @@ function checkDraft(value: unknown): Draft {
   return d;
 }
 
-export function saveDraft(gas: Gas, p: { draft?: unknown }): { rev: number; updatedAt: string } {
+export function saveDraft(gas: Gas, p: { draft?: unknown; snapshot?: unknown }): { rev: number; updatedAt: string } {
   const draft = checkDraft(p.draft);
   return gas.withLock(() => {
     const current = stored(gas, draft.key);
     if (current ? current.rev !== draft.rev : draft.rev !== 0) {
       throw new ApiError('conflict', 'Bu taslak başka bir cihazda daha yeni kaydedilmiş.', current ? { current } : undefined);
     }
+    if (current) snapshot(gas, draft.key, current, p.snapshot === true);
     const next: Draft = { ...draft, rev: draft.rev + 1, updatedAt: new Date(gas.now()).toISOString() };
     const folder = sub(gas, 'taslaklar', true);
     const file = folder.findFile(`${draft.key}.json`);
@@ -67,6 +111,29 @@ export function saveDraft(gas: Gas, p: { draft?: unknown }): { rev: number; upda
     else folder.createFile(`${draft.key}.json`, text, 'json');
     return { rev: next.rev, updatedAt: next.updatedAt };
   });
+}
+
+export function listVersions(gas: Gas, p: { key?: unknown }): { versions: VersionSummary[] } {
+  const folder = versionFolder(gas, key(p.key), false);
+  const versions = (folder?.listFiles() ?? [])
+    .flatMap((f) => {
+      const at = snapshotTime(f.getName());
+      return at === null ? [] : [{ f, at }];
+    })
+    .sort((a, b) => b.at - a.at || b.f.getName().localeCompare(a.f.getName()))
+    .map(({ f, at }): VersionSummary => {
+      const d = JSON.parse(f.read()) as Draft;
+      return { name: f.getName(), rev: d.rev, savedAt: new Date(at).toISOString(), title: { tr: d.tr.title, en: d.en.title } };
+    });
+  return { versions };
+}
+
+export function getVersion(gas: Gas, p: { key?: unknown; name?: unknown }): { draft: Draft } {
+  const k = key(p.key);
+  const name = versionName(p.name);
+  const file = versionFolder(gas, k, false)?.findFile(name);
+  if (!file) throw new ApiError('not_found', 'Bu sürüm bulunamadı. 30 günden eski sürümler silinir.');
+  return { draft: JSON.parse(file.read()) as Draft };
 }
 
 export function listDrafts(gas: Gas): { drafts: DraftSummary[] } {
@@ -87,6 +154,7 @@ export function deleteDraft(gas: Gas, p: { key?: unknown }): Record<string, neve
   gas.withLock(() => {
     sub(gas, 'taslaklar', false)?.findFile(`${k}.json`)?.trash();
     imageFolder(gas, k, false)?.trash();
+    versionFolder(gas, k, false)?.trash();
   });
   return {};
 }

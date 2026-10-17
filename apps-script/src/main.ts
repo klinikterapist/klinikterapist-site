@@ -7,7 +7,7 @@ import { realGas, type Gas } from './gas';
 import { checkSession, issueSession, logout, verifyIdToken } from './auth';
 import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, status, tree } from './github';
-import { deleteDraft, getDraft, getImage, listDrafts, putImage, saveDraft } from './drive';
+import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listVersions, putImage, saveDraft } from './drive';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
@@ -25,6 +25,8 @@ export const ACTIONS: Record<string, Handler> = {
   'drafts.list': (gas) => listDrafts(gas),
   'drafts.get': (gas, p) => getDraft(gas, p),
   'drafts.save': (gas, p) => saveDraft(gas, p),
+  'drafts.versions': (gas, p) => listVersions(gas, p),
+  'drafts.version': (gas, p) => getVersion(gas, p),
   'drafts.delete': (gas, p) => deleteDraft(gas, p),
   'images.put': (gas, p) => putImage(gas, p),
   'images.get': (gas, p) => getImage(gas, p),

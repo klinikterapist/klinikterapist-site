@@ -54,7 +54,9 @@ export function createHttpApi(
     status: () => call(ACTIONS.status),
     listDrafts: () => call(ACTIONS.listDrafts),
     getDraft: (key) => call(ACTIONS.getDraft, { key }),
-    saveDraft: (draft) => call(ACTIONS.saveDraft, { draft }),
+    saveDraft: (draft, opts) => call(ACTIONS.saveDraft, { draft, snapshot: opts?.snapshot === true }),
+    listVersions: (key) => call(ACTIONS.listVersions, { key }),
+    getVersion: (key, name) => call(ACTIONS.getVersion, { key, name }),
     deleteDraft: async (key) => {
       await call(ACTIONS.deleteDraft, { key });
     },

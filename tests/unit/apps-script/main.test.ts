@@ -74,4 +74,18 @@ describe('draft actions are wired', () => {
     expect(res).toMatchObject({ ok: false, error: { code: 'conflict' }, data: { current: { rev: 1 } } });
     expect(handle(gas, JSON.stringify({ action: 'drafts.list', session }))).toMatchObject({ ok: true, data: { drafts: [{ key: 'k' }] } });
   });
+
+  it('drafts.versions and drafts.version are wired', () => {
+    const gas = fakeGas({ props, now });
+    const { session } = issueSession(gas, 'merhaba@klinikterapist.com');
+    const l = { title: 'T', subtitle: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: { type: 'doc' } };
+    const draft = { key: 'k', rev: 0, updatedAt: '', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17', tr: l, en: l };
+    handle(gas, JSON.stringify({ action: 'drafts.save', session, draft }));
+    handle(gas, JSON.stringify({ action: 'drafts.save', session, draft: { ...draft, rev: 1 }, snapshot: true }));
+    const list = handle(gas, JSON.stringify({ action: 'drafts.versions', session, key: 'k' })) as { ok: true; data: { versions: { name: string }[] } };
+    expect(list.data.versions).toHaveLength(1);
+    const { name } = list.data.versions[0];
+    expect(handle(gas, JSON.stringify({ action: 'drafts.version', session, key: 'k', name }))).toMatchObject({ ok: true, data: { draft: { key: 'k', rev: 1 } } });
+    expect(handle(gas, JSON.stringify({ action: 'drafts.version', session, key: 'k', name: 'x' }))).toMatchObject({ ok: false, error: { code: 'bad_request' } });
+  });
 });
