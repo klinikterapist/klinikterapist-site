@@ -6,6 +6,7 @@ import type { ApiResponse } from '../../src/admin/api/types';
 import { realGas, type Gas } from './gas';
 import { checkSession, issueSession, logout, verifyIdToken } from './auth';
 import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
+import { commit, read, status, tree } from './github';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
@@ -16,6 +17,10 @@ export const ACTIONS: Record<string, Handler> = {
     logout(gas);
     return {};
   },
+  'site.tree': (gas) => tree(gas),
+  'site.read': (gas, p) => read(gas, p),
+  'site.commit': (gas, p) => commit(gas, p),
+  'site.status': (gas) => status(gas),
 };
 
 export function handle(gas: Gas, body: string): ApiResponse {

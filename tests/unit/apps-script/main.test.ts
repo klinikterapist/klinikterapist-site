@@ -49,3 +49,16 @@ describe('handle', () => {
     expect(gas.logs.join('\n')).not.toContain('SECRET-TOKEN-VALUE');
   });
 });
+
+describe('site actions are wired', () => {
+  it('site.tree answers through the router with a session', async () => {
+    const { FakeGitHub } = await import('./fake-github');
+    const gh = new FakeGitHub({ 'src/data/seo.json': '{}' });
+    const gas = fakeGas({ props: { ...props, GITHUB_TOKEN: 't' }, now, routes: [gh.route] });
+    const { session } = issueSession(gas, 'merhaba@klinikterapist.com');
+    expect(handle(gas, JSON.stringify({ action: 'site.tree', session }))).toMatchObject({
+      ok: true,
+      data: { headSha: 'c0', files: [{ path: 'src/data/seo.json' }] },
+    });
+  });
+});
