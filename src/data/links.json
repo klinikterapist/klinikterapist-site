@@ -8,6 +8,22 @@
     "inFooter": true
   },
   {
+    "id": "linkedin",
+    "label": "LinkedIn",
+    "url": "https://www.linkedin.com/in/oguneso/",
+    "icon": "linkedin",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
+    "id": "medium",
+    "label": "Medium",
+    "url": "https://medium.com/@oguneso",
+    "icon": "medium",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
     "id": "email",
     "label": "E-posta",
     "url": "mailto:merhaba@klinikterapist.com",
