@@ -1,0 +1,204 @@
+---
+/** Blog list (all posts) or one category page. Category filtering is plain links, no JavaScript. */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import CategoryNav from '../components/CategoryNav.astro';
+import PostCard from '../components/PostCard.astro';
+import NewsletterBox from '../components/NewsletterBox.astro';
+import Leaf from '../components/Leaf.astro';
+import type { Category, Lang } from '../lib/settings';
+import { getPosts } from '../lib/posts';
+import { absoluteUrl, buildMeta } from '../lib/seo';
+import { breadcrumbLd } from '../lib/jsonld';
+import { categoryPath, pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  category?: Category;
+}
+const { lang, category } = Astro.props;
+
+const all = await getPosts(lang);
+const posts = category ? all.filter((p) => p.data.category === category.id) : all;
+
+const blogPaths = { tr: pathFor('blog', 'tr'), en: pathFor('blog', 'en') };
+const alternatePaths = category
+  ? { tr: categoryPath(category, 'tr'), en: categoryPath(category, 'en') }
+  : blogPaths;
+const heading = category ? category.label[lang] : t(lang, 'blogTitle');
+const lead = category ? `${category.label[lang]} ${t(lang, 'categoryLead')}` : t(lang, 'blogLead');
+const meta = buildMeta({
+  lang,
+  title: category ? `${category.label[lang]} · ${t(lang, 'navBlog')}` : t(lang, 'blogTitle'),
+  description: lead,
+  path: alternatePaths[lang],
+  alternates: alternatePaths,
+});
+
+const crumbs = [
+  { name: t(lang, 'navHome'), href: pathFor('home', lang) },
+  { name: t(lang, 'navBlog'), href: blogPaths[lang] },
+  ...(category ? [{ name: category.label[lang], href: alternatePaths[lang] }] : []),
+];
+const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl(c.href) })))];
+const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
+---
+
+<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths}>
+  <link slot="head" rel="alternate" type="application/rss+xml" title={t(lang, 'rssTitle')} href={absoluteUrl(rss)} />
+
+  <div class="container blog">
+    <Breadcrumb lang={lang} items={crumbs} />
+
+    <header class="page-head">
+      <div>
+        <h1>{heading}</h1>
+        <p class="lead">{lead}</p>
+      </div>
+      <p class="slogan hand" aria-hidden="true">
+        {t(lang, 'slogan')}
+        <Leaf size={36} class="slogan-leaf" />
+      </p>
+    </header>
+
+    <CategoryNav lang={lang} current={category} />
+
+    {
+      posts.length > 0 ? (
+        <section aria-label={t(lang, 'postList')}>
+          <ul class="posts">
+            {posts.map((p, i) => (
+              <li>
+                <PostCard post={p} lang={lang} level={2} eager={i < 2} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <div class="empty">
+          <Leaf size={56} class="empty-leaf" />
+          <p>{t(lang, category ? 'noPostsInCategory' : 'noPosts')}</p>
+          {category && (
+            <a href={blogPaths[lang]}>{t(lang, 'allPosts')}</a>
+          )}
+        </div>
+      )
+    }
+
+    <NewsletterBox lang={lang} />
+  </div>
+</BaseLayout>
+
+<style>
+  .blog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding-top: var(--space-4);
+    padding-bottom: var(--space-6);
+  }
+
+  .page-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .page-head h1 {
+    margin-bottom: var(--space-2);
+  }
+
+  .lead {
+    max-width: 36rem;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .slogan {
+    display: none;
+    flex: none;
+    flex-direction: column;
+    align-items: flex-end;
+    max-width: 9rem;
+    margin: 0;
+    color: var(--muted);
+    font-size: 1.375rem;
+    line-height: 1.2;
+    text-align: right;
+  }
+
+  .slogan :global(.slogan-leaf) {
+    margin-top: var(--space-2);
+    color: var(--sage);
+  }
+
+  .posts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .posts > li {
+    display: flex;
+  }
+
+  .posts > li > :global(*) {
+    flex: 1;
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-7) var(--space-4);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-lg);
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .empty p {
+    max-width: 28rem;
+    margin: 0;
+  }
+
+  .empty :global(.empty-leaf) {
+    color: var(--sage);
+  }
+
+  .empty a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+  }
+
+  @media (min-width: 560px) {
+    .posts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .slogan {
+      display: flex;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .blog {
+      gap: var(--space-6);
+      padding-top: var(--space-6);
+      padding-bottom: var(--space-7);
+    }
+
+    .posts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+  }
+</style>

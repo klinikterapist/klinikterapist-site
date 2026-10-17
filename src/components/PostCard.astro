@@ -7,6 +7,7 @@ import { getCategories } from '../lib/settings';
 import type { PostEntry } from '../lib/posts';
 import { postPath } from '../i18n/routes';
 import { t } from '../i18n/ui';
+import { formatDate, isoDay } from '../lib/date';
 import Leaf from './Leaf.astro';
 import Icon from './Icon.astro';
 
@@ -23,12 +24,7 @@ const href = postPath(data.slug, lang);
 const category = getCategories().find((c) => c.id === data.category);
 const cover = data.cover as ImageMetadata | undefined;
 const date = data.publishedAt;
-const dateText = new Intl.DateTimeFormat(lang === 'tr' ? 'tr-TR' : 'en-GB', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-}).format(date);
+const dateText = formatDate(date, lang);
 const Heading = level === 2 ? 'h2' : 'h3';
 ---
 
@@ -56,7 +52,7 @@ const Heading = level === 2 ? 'h2' : 'h3';
     <Heading class="card-title"><a href={href}>{data.title}</a></Heading>
     <p class="desc">{data.description}</p>
     <p class="meta">
-      <time datetime={date.toISOString().slice(0, 10)}>{dateText}</time>
+      <time datetime={isoDay(date)}>{dateText}</time>
       <span aria-hidden="true">·</span>
       <span class="read"><Icon name="clock" size={14} />{post.readingMinutes} {t(lang, 'minRead')}</span>
     </p>

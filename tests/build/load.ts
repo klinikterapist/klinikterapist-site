@@ -25,11 +25,14 @@ function walk(dir: string, out: string[]): void {
   }
 }
 
-/** Every built page as a site path (`/`, `/en/about/`, …) plus `/404.html`. */
+/** Redirect stubs (from redirects.json) are not real pages: no h1, no description. */
+const isRedirect = (file: string) => /<meta[^>]+http-equiv=["']?refresh/i.test(readFileSync(file, 'utf8'));
+
+/** Every built page as a site path (`/`, `/en/about/`, …) plus `/404.html`, without redirect stubs. */
 export function allPages(): string[] {
   const files: string[] = [];
   walk(DIST, files);
-  const pages = files.map((f) => {
+  const pages = files.filter((f) => !isRedirect(f)).map((f) => {
     const dir = relative(DIST, f).split(sep).slice(0, -1).join('/');
     return dir ? `/${dir}/` : '/';
   });

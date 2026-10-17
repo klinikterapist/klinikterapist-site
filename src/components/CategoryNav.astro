@@ -1,0 +1,72 @@
+---
+/** Category filter as real links to category pages (works without JavaScript). */
+import type { Category, Lang } from '../lib/settings';
+import { getCategories } from '../lib/settings';
+import { categoryPath, pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  /** The category page being shown; none on the full blog list. */
+  current?: Category;
+}
+const { lang, current } = Astro.props;
+const items = [
+  { href: pathFor('blog', lang), label: t(lang, 'filterAll'), active: !current },
+  ...getCategories().map((c) => ({
+    href: categoryPath(c, lang),
+    label: c.label[lang],
+    active: current?.id === c.id,
+  })),
+];
+---
+
+<nav class="category-nav" aria-label={t(lang, 'categories')}>
+  <ul>
+    {
+      items.map((item) => (
+        <li>
+          <a class:list={['chip-link', { active: item.active }]} href={item.href} aria-current={item.active ? 'page' : undefined}>
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chip-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .chip-link:hover {
+    border-color: var(--sage);
+    color: var(--forest);
+  }
+
+  .chip-link.active {
+    border-color: var(--forest);
+    background: var(--forest);
+    color: var(--on-forest);
+  }
+</style>

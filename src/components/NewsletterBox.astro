@@ -1,0 +1,96 @@
+---
+/** Newsletter call-out: links to the Substack page from links.json (no form, no third-party script). */
+import type { Lang } from '../lib/settings';
+import { getLinks } from '../lib/settings';
+import { t } from '../i18n/ui';
+import Icon from './Icon.astro';
+import Leaf from './Leaf.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const substack = getLinks().find((l) => l.icon === 'substack');
+---
+
+{
+  substack && (
+    <aside class="newsletter" aria-labelledby="newsletter-title">
+      <span class="icon-wrap" aria-hidden="true">
+        <Icon name="mail" size={24} />
+      </span>
+      <div class="text">
+        <h2 id="newsletter-title">{t(lang, 'newsletterTitle')}</h2>
+        <p>{t(lang, 'newsletterText')}</p>
+      </div>
+      <a class="btn" href={substack.url} target="_blank" rel="noopener">
+        {t(lang, 'newsletterCta')}
+        <span class="visually-hidden"> {t(lang, 'opensInNewTab')}</span>
+      </a>
+      <Leaf size={72} class="nl-leaf" />
+    </aside>
+  )
+}
+
+<style>
+  .newsletter {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--sage-soft);
+  }
+
+  .icon-wrap {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+  }
+
+  .text {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+
+  h2 {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-lg);
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+
+  .btn {
+    position: relative;
+    z-index: 1;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .newsletter :global(.nl-leaf) {
+    position: absolute;
+    right: -12px;
+    bottom: -18px;
+    color: var(--forest);
+    opacity: 0.12;
+    pointer-events: none;
+  }
+
+  @media (max-width: 559px) {
+    .btn {
+      width: 100%;
+    }
+  }
+</style>

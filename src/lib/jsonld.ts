@@ -58,7 +58,7 @@ export function blogPostingLd(post: PostEntry, translationUrl: string) {
     '@type': 'BlogPosting',
     headline: data.title,
     description: data.description,
-    inLanguage: post.lang,
+    inLanguage: post.lang === 'tr' ? 'tr-TR' : 'en-US',
     url,
     mainEntityOfPage: url,
     datePublished: data.publishedAt.toISOString(),

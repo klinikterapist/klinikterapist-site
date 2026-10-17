@@ -1,0 +1,75 @@
+---
+/** Visible breadcrumb trail. The last item is the current page (no link). Pair with `breadcrumbLd`. */
+import type { Lang } from '../lib/settings';
+import { t } from '../i18n/ui';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+  items: { name: string; href: string }[];
+}
+const { lang, items } = Astro.props;
+const last = items.length - 1;
+---
+
+<nav class="breadcrumb" aria-label={t(lang, 'breadcrumb')}>
+  <ol>
+    {
+      items.map((item, i) => (
+        <li>
+          {i < last ? (
+            <a href={item.href}>
+              {i === 0 && <Icon name="home" size={15} />}
+              {item.name}
+            </a>
+          ) : (
+            <span aria-current="page">{item.name}</span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<style>
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    list-style: none;
+  }
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  li + li::before {
+    content: '/';
+    margin: 0 var(--space-2);
+    color: var(--line);
+  }
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 32px;
+    color: var(--muted);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--forest);
+    text-decoration: underline;
+  }
+
+  span {
+    overflow-wrap: anywhere;
+  }
+</style>

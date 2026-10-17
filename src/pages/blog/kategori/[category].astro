@@ -1,0 +1,13 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BlogListView from '../../../views/BlogListView.astro';
+import { getCategories, type Category } from '../../../lib/settings';
+
+// Every category gets a page, even without posts (it shows an empty state).
+export const getStaticPaths = (() =>
+  getCategories().map((category) => ({ params: { category: category.slug.tr }, props: { category } }))) satisfies GetStaticPaths;
+
+const { category } = Astro.props as { category: Category };
+---
+
+<BlogListView lang="tr" category={category} />

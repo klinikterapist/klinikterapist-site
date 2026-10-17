@@ -73,7 +73,7 @@ describe('jsonld', () => {
       },
     } as PostEntry;
     expect(blogPostingLd(post, 'https://example.com/en/blog/anxiety/')).toMatchObject({
-      '@type': 'BlogPosting', headline: 'Kaygı', description: 'açıklama', inLanguage: 'tr',
+      '@type': 'BlogPosting', headline: 'Kaygı', description: 'açıklama', inLanguage: 'tr-TR',
       url: 'https://example.com/blog/kaygi/', datePublished: '2026-09-01T00:00:00.000Z',
       dateModified: '2026-09-05T00:00:00.000Z', image: 'https://example.com/og-default.jpg',
       workTranslation: { '@id': 'https://example.com/en/blog/anxiety/' },

@@ -1,0 +1,327 @@
+---
+/** One blog post: breadcrumb, header, cover, Markdown body, author box, related posts. */
+import { render } from 'astro:content';
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import AuthorBox from '../components/AuthorBox.astro';
+import PostCard from '../components/PostCard.astro';
+import Icon from '../components/Icon.astro';
+import { getCategories } from '../lib/settings';
+import type { PostEntry } from '../lib/posts';
+import { getRelated, getTranslation } from '../lib/posts';
+import { absoluteUrl, buildMeta } from '../lib/seo';
+import { blogPostingLd, breadcrumbLd } from '../lib/jsonld';
+import { formatDate, isoDay } from '../lib/date';
+import { categoryPath, pathFor, postPath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  post: PostEntry;
+}
+const { post } = Astro.props;
+const { lang, data } = post;
+
+const translation = await getTranslation(post);
+const alternatePaths =
+  lang === 'tr'
+    ? { tr: postPath(data.slug, 'tr'), en: postPath(translation.data.slug, 'en') }
+    : { tr: postPath(translation.data.slug, 'tr'), en: postPath(data.slug, 'en') };
+const path = alternatePaths[lang];
+const translationUrl = absoluteUrl(alternatePaths[translation.lang]);
+
+const cover = data.cover as ImageMetadata | undefined;
+// Share image: a JPEG rendition of the cover (widest support); the default from seo.json otherwise.
+const shareImage = cover ? (await getImage({ src: cover, width: 1200, format: 'jpg' })).src : undefined;
+
+const meta = buildMeta({
+  lang,
+  title: data.seoTitle ?? data.title,
+  description: data.description,
+  path,
+  alternates: alternatePaths,
+  image: shareImage,
+  type: 'article',
+});
+meta.og['article:published_time'] = data.publishedAt.toISOString();
+if (data.updatedAt) meta.og['article:modified_time'] = data.updatedAt.toISOString();
+
+const category = getCategories().find((c) => c.id === data.category);
+const crumbs = [
+  { name: t(lang, 'navHome'), href: pathFor('home', lang) },
+  { name: t(lang, 'navBlog'), href: pathFor('blog', lang) },
+  ...(category ? [{ name: category.label[lang], href: categoryPath(category, lang) }] : []),
+  { name: data.title, href: path },
+];
+const jsonLd = [
+  blogPostingLd(post, translationUrl),
+  breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl(c.href) }))),
+];
+
+const related = await getRelated(post, 3);
+const { Content } = await render(post as never);
+const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
+---
+
+<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths}>
+  <link slot="head" rel="alternate" type="application/rss+xml" title={t(lang, 'rssTitle')} href={absoluteUrl(rss)} />
+
+  <article class="post">
+    <div class="container-text head">
+      <Breadcrumb lang={lang} items={crumbs} />
+      {category && <a class="category" href={categoryPath(category, lang)}>{category.label[lang]}</a>}
+      <h1>{data.title}</h1>
+      <p class="standfirst">{data.description}</p>
+      <p class="meta">
+        <span>
+          <span class="visually-hidden">{t(lang, 'published')}: </span>
+          <time datetime={isoDay(data.publishedAt)}>{formatDate(data.publishedAt, lang)}</time>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span class="read"><Icon name="clock" size={15} />{post.readingMinutes} {t(lang, 'minRead')}</span>
+        {
+          data.updatedAt && (
+            <span class="updated">
+              {t(lang, 'lastUpdated')}: <time datetime={isoDay(data.updatedAt)}>{formatDate(data.updatedAt, lang)}</time>
+            </span>
+          )
+        }
+      </p>
+    </div>
+
+    {
+      cover && (
+        <figure class="cover-wrap">
+          <Image
+            src={cover}
+            alt={data.coverAlt ?? ''}
+            widths={[480, 800, 1200, 1600]}
+            sizes="(min-width: 960px) 880px, 100vw"
+            loading="eager"
+            fetchpriority="high"
+            class="cover"
+          />
+        </figure>
+      )
+    }
+
+    <div class="container-text">
+      <div class="prose">
+        <Content />
+      </div>
+      <AuthorBox lang={lang} />
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <section class="container related" aria-labelledby="related-title">
+        <h2 id="related-title">{t(lang, 'relatedPosts')}</h2>
+        <ul class="posts">
+          {related.map((p) => (
+            <li>
+              <PostCard post={p} lang={lang} level={3} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .post {
+    padding-top: var(--space-4);
+  }
+
+  .head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .category {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    margin-top: var(--space-5);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--sage-soft);
+    color: var(--forest);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .category:hover {
+    background: #d6dfcf;
+  }
+
+  h1 {
+    margin: var(--space-4) 0 var(--space-3);
+    font-size: var(--text-3xl);
+  }
+
+  .standfirst {
+    margin-bottom: var(--space-4);
+    color: var(--muted);
+    font-size: var(--text-lg);
+    line-height: 1.55;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+
+  .read {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .updated {
+    flex-basis: 100%;
+    font-style: italic;
+  }
+
+  .cover-wrap {
+    max-width: calc(55rem + 2 * var(--gutter));
+    margin: var(--space-6) auto 0;
+    padding-inline: var(--gutter);
+  }
+
+  .cover-wrap :global(.cover) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-lg);
+    object-fit: cover;
+  }
+
+  /* Reading column: about 68 characters a line, generous leading. */
+  .prose {
+    max-width: 68ch;
+    margin: var(--space-6) 0 var(--space-7);
+    font-size: 1.125rem;
+    line-height: 1.8;
+  }
+
+  .prose > :global(* + *) {
+    margin-top: 1.25em;
+  }
+
+  .prose :global(p),
+  .prose :global(ul),
+  .prose :global(ol),
+  .prose :global(blockquote) {
+    margin-bottom: 0;
+  }
+
+  .prose :global(h2) {
+    margin: 2.2em 0 0;
+    font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  }
+
+  .prose :global(h3) {
+    margin: 1.8em 0 0;
+    font-size: var(--text-lg);
+  }
+
+  .prose :global(h2 + *),
+  .prose :global(h3 + *) {
+    margin-top: 0.75em;
+  }
+
+  .prose :global(ul),
+  .prose :global(ol) {
+    padding-left: 1.4em;
+  }
+
+  .prose :global(li + li) {
+    margin-top: 0.4em;
+  }
+
+  .prose :global(li::marker) {
+    color: var(--sage);
+  }
+
+  .prose :global(blockquote) {
+    margin-inline: 0;
+    padding: 0.2em 0 0.2em 1.2em;
+    border-left: 3px solid var(--sage);
+    color: var(--forest);
+    font-family: var(--font-serif);
+    font-size: 1.2rem;
+    font-style: italic;
+  }
+
+  .prose :global(img) {
+    border-radius: var(--radius-md);
+  }
+
+  .prose :global(a) {
+    overflow-wrap: anywhere;
+  }
+
+  .prose :global(hr) {
+    width: 6rem;
+    margin: 2.5em auto;
+    border: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  /* Same width as the cover, so the page keeps one centred axis. */
+  .related {
+    max-width: calc(55rem + 2 * var(--gutter));
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-7);
+  }
+
+  .related h2 {
+    font-size: var(--text-xl);
+  }
+
+  .posts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .posts > li {
+    display: flex;
+  }
+
+  .posts > li > :global(*) {
+    flex: 1;
+  }
+
+  @media (min-width: 560px) {
+    .posts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .post {
+      padding-top: var(--space-6);
+    }
+
+    .posts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+  }
+</style>

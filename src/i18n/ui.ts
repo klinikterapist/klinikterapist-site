@@ -27,6 +27,37 @@ const STRINGS = {
   sections: { tr: 'Bölümler', en: 'Sections' },
   opensInNewTab: { tr: '(yeni sekmede açılır)', en: '(opens in a new tab)' },
 
+  // Blog
+  blogTitle: { tr: 'Blog Yazılarım', en: 'My Blog Posts' },
+  blogLead: {
+    tr: 'Psikoloji, zihinsel sağlık ve daha iyi bir yaşam üzerine notlar, düşünceler ve bilimsel içerikler.',
+    en: 'Notes, reflections and science-based writing on psychology, mental health and a better life.',
+  },
+  categoryLead: {
+    tr: 'kategorisindeki yazılar: psikoloji ve daha iyi bir yaşam üzerine notlar.',
+    en: 'posts: notes on psychology and a better life.',
+  },
+  categories: { tr: 'Kategoriler', en: 'Categories' },
+  breadcrumb: { tr: 'Sayfa yolu', en: 'Breadcrumb' },
+  postList: { tr: 'Yazılar', en: 'Posts' },
+  noPosts: {
+    tr: 'Henüz yazı yok. İlk yazılar çok yakında burada olacak.',
+    en: 'No posts yet. The first ones will be here soon.',
+  },
+  noPostsInCategory: { tr: 'Bu kategoride henüz yazı yok.', en: 'There are no posts in this category yet.' },
+  published: { tr: 'Yayın tarihi', en: 'Published' },
+  lastUpdated: { tr: 'Son güncelleme', en: 'Last updated' },
+  relatedPosts: { tr: 'İlgili Yazılar', en: 'Related Posts' },
+  aboutAuthor: { tr: 'Yazar hakkında', en: 'About the author' },
+  moreAboutMe: { tr: 'Hakkımda daha fazlası', en: 'More about me' },
+  newsletterTitle: { tr: 'Yeni Yazılardan Haberdar Olun', en: 'Get New Posts by E-mail' },
+  newsletterText: {
+    tr: 'Psikoloji, zihinsel sağlık ve yaşam üzerine yeni yazılarımı Substack üzerinden e-posta ile alabilirsiniz.',
+    en: 'Receive my new posts on psychology, mental health and life by e-mail through Substack.',
+  },
+  newsletterCta: { tr: "Substack'te Abone Ol", en: 'Subscribe on Substack' },
+  rssTitle: { tr: 'Blog yazıları (RSS)', en: 'Blog posts (RSS)' },
+
   // About
   areasOfWork: { tr: 'Çalışma alanları', en: 'Areas of work' },
   whoAmI: { tr: 'Ben Kimim?', en: 'Who Am I?' },

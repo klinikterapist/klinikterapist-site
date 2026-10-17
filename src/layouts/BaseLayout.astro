@@ -29,6 +29,7 @@ const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
     <meta name="generator" content={Astro.generator} />
     {noindex && <meta name="robots" content="noindex" />}
     <Seo meta={meta} jsonLd={jsonLd} />
+    <slot name="head" />
   </head>
   <body id="top">
     <a class="skip-link" href="#main">{t(lang, 'skipToContent')}</a>

@@ -1,0 +1,33 @@
+---
+/**
+ * Old-address redirects from redirects.json. GitHub Pages has no server redirects, so each
+ * `from` gets a tiny page that refreshes to `to`, is canonical to it and stays out of the index.
+ */
+import type { GetStaticPaths } from 'astro';
+import { getRedirects, type Redirect } from '../lib/settings';
+import { absoluteUrl } from '../lib/seo';
+
+export const getStaticPaths = (() =>
+  getRedirects().map((r) => ({
+    // `/blog/eski-adres/` → `blog/eski-adres`
+    params: { redirect: r.from.replace(/^\/+|\/+$/g, '') || undefined },
+    props: { redirect: r },
+  }))) satisfies GetStaticPaths;
+
+const { redirect } = Astro.props as { redirect: Redirect };
+const target = absoluteUrl(redirect.to);
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0; url=${redirect.to}`} />
+    <link rel="canonical" href={target} />
+    <title>Yönlendiriliyor… · Redirecting…</title>
+  </head>
+  <body>
+    <p><a href={redirect.to}>{target}</a></p>
+  </body>
+</html>
