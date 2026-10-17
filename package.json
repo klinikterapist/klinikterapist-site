@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run tests/unit",
-    "test:build": "cross-env CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && vitest run tests/build"
+    "test:build": "cross-env CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && vitest run tests/build",
+    "check:launch": "node scripts/check-launch.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
