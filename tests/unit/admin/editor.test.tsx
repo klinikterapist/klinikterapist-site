@@ -161,4 +161,33 @@ describe('EditorPage', () => {
     setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
     expect(await screen.findByText('1 kelime · 1 dk okuma')).toBeTruthy();
   });
+
+  it('the Daha fazla menu closes with Escape and on an outside click', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const trigger = await screen.findByRole('button', { name: 'Daha fazla' });
+    fireEvent.click(trigger);
+    expect(screen.getByRole('menu')).toBeTruthy();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    fireEvent.click(trigger);
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
+  it('on a narrow screen the settings column starts hidden, and a stored closed state stays hidden', async () => {
+    const orig = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+    try {
+      setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+      expect(await screen.findByRole('button', { name: 'Yazı ayarlarını göster' })).toBeTruthy();
+      cleanup();
+      Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
+      localStorage.setItem('panel.side', 'closed');
+      setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+      expect(await screen.findByRole('button', { name: 'Yazı ayarlarını göster' })).toBeTruthy();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
+    }
+  });
 });

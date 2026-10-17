@@ -961,18 +961,22 @@ textarea.k-input {
 }
 
 .ed-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 2px;
-  margin: 0 calc(var(--space-4) * -1) var(--space-4);
-  padding: 4px var(--space-4);
+  padding: 4px var(--space-3);
   overflow-x: auto;
-  border-bottom: 1px solid var(--p-border);
+  border: 1px solid var(--p-border);
+  border-radius: var(--radius-lg);
   background: var(--p-field);
+}
+
+.editor-toolbar-slot {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin-bottom: var(--space-3);
 }
 
 .ed-toolbar > * {
@@ -983,7 +987,7 @@ textarea.k-input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
+  min-width: 36px;
   min-height: 40px;
   border: 0;
   border-radius: var(--radius-md, 8px);
@@ -1051,13 +1055,6 @@ textarea.k-input {
 
 .ed-more-menu button:hover {
   background: var(--p-selected);
-}
-
-@media (min-width: 700px) {
-  .ed-toolbar {
-    margin-inline: calc(var(--space-7) * -1);
-    padding-inline: var(--space-7);
-  }
 }
 
 .editor-side {

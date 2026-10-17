@@ -2,7 +2,7 @@
  * Always-visible formatting row above the text (sticky). On narrow screens it scrolls sideways
  * instead of wrapping.
  */
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
 
 const svg = (children: ReactNode) => (
@@ -35,6 +35,35 @@ export type ToolbarProps = {
 
 export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: ToolbarProps) {
   const [more, setMore] = useState<{ top: number; right: number } | null>(null);
+  const bar = useRef<HTMLDivElement>(null);
+  const moreBtn = useRef<HTMLButtonElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!more) return;
+    const close = () => setMore(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMore(null);
+        moreBtn.current?.focus();
+      }
+    };
+    const onDown = (e: Event) => {
+      const t = e.target as Node;
+      if (!menu.current?.contains(t) && !moreBtn.current?.contains(t)) setMore(null);
+    };
+    const el = bar.current;
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('resize', close);
+    el?.addEventListener('scroll', close);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('resize', close);
+      el?.removeEventListener('scroll', close);
+    };
+  }, [more]);
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -74,7 +103,7 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: Too
   };
 
   return (
-    <div className="ed-toolbar" role="toolbar" aria-label="Biçimlendirme">
+    <div ref={bar} className="ed-toolbar" role="toolbar" aria-label="Biçimlendirme">
       {btn('Geri al', ICON.undo, () => chain().undo().run(), { disabled: !s.canUndo })}
       {btn('Yinele', ICON.redo, () => chain().redo().run(), { disabled: !s.canRedo })}
       <select className="ed-block-select" aria-label="Paragraf türü" value={s.block} onChange={(e) => setBlock(e.target.value)}>
@@ -95,8 +124,10 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: Too
       {btn('Referans ekle', ICON.book, () => onReference?.(), { disabled: !onReference })}
       <div className="ed-more">
         <button
+          ref={moreBtn}
           type="button"
           className="ed-tool"
+          aria-controls="ed-more-menu"
           aria-label="Daha fazla"
           title="Daha fazla"
           aria-haspopup="menu"
@@ -110,7 +141,7 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: Too
           {ICON.more}
         </button>
         {more && (
-          <div className="ed-more-menu" role="menu" style={{ top: more.top, right: more.right }}>
+          <div ref={menu} id="ed-more-menu" className="ed-more-menu" role="menu" style={{ top: more.top, right: more.right }}>
             <button
               type="button"
               role="menuitem"

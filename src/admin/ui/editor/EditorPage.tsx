@@ -108,6 +108,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [done, setDone] = useState<Done | null>(null);
   const [inDrive, setInDrive] = useState(loaded.inDrive);
   const [stale, setStale] = useState(false);
+  const [toolbarHost, setToolbarHost] = useState<HTMLElement | null>(null);
   const [side, setSide] = useState<'open' | 'closed'>(() => {
     try {
       const v = window.localStorage.getItem('panel.side');
@@ -286,7 +287,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
                   className={`lang-btn ${lang === l ? 'is-active' : ''}`}
                   onClick={() => setLang(l)}
                 >
-                  {l.toUpperCase()} <span className={`dot ${ok ? 'dot-ok' : 'dot-missing'}`}>{ok ? '✓' : '⚠'}</span>
+                  {l.toUpperCase()}{' '}
+                  <span className={`dot ${ok ? 'dot-ok' : 'dot-missing'}`} aria-hidden="true">
+                    {ok ? '✓' : '⚠'}
+                  </span>
+                  <span className="k-visually-hidden">{ok ? ' tamam' : ' eksik alanlar var'}</span>
                 </button>
               );
             })}
@@ -330,10 +335,12 @@ function Editing({ loaded }: { loaded: Loaded }) {
       )}
       {message && <Banner tone="error">{message}</Banner>}
 
+      <div className="editor-toolbar-slot" ref={setToolbarHost} />
+
       <div className={`editor-grid ${side === 'closed' ? 'side-closed' : ''}`}>
         <div className="editor-main">
           <div aria-label={LANG_LABEL[lang]}>
-            <PostEditor key={`${lang}-${version}`} lang={lang} fields={draft[lang]} onChange={onLang} images={images} onError={setMessage} />
+            <PostEditor key={`${lang}-${version}`} lang={lang} fields={draft[lang]} onChange={onLang} images={images} onError={setMessage} toolbarHost={toolbarHost} />
           </div>
         </div>
 

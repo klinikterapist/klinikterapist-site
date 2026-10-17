@@ -1,6 +1,7 @@
 /**
  * Writing surface for one language: a fixed toolbar, a big title, then the body.
  */
+import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
@@ -63,8 +64,10 @@ export function PostEditor(props: {
   onChange: (patch: Partial<LangFields>) => void;
   images: ImageStore;
   onError: (message: string | null) => void;
+  /** Where the toolbar is mounted (full editor width, above the text and the settings column). */
+  toolbarHost?: HTMLElement | null;
 }) {
-  const { lang, fields, onChange, images, onError } = props;
+  const { lang, fields, onChange, images, onError, toolbarHost } = props;
   const editor = useTiptap(lang, fields.doc, images, (doc) => onChange({ doc }));
   const [ask, setAsk] = useState<Ask | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -130,13 +133,14 @@ export function PostEditor(props: {
 
   return (
     <div className="post-editor">
-      {editor && (
+      {editor && toolbarHost && createPortal(
         <Toolbar
           editor={editor}
           onLink={() => setAsk({ kind: 'link', value: String(editor.getAttributes('link').href ?? ''), error: null })}
           onImage={() => file.current?.click()}
           onYoutube={() => setAsk({ kind: 'youtube', value: '', error: null })}
-        />
+        />,
+        toolbarHost,
       )}
       <label className="k-visually-hidden" htmlFor={`title-${lang}`}>
         Başlık ({LANG_LABEL[lang]})
