@@ -1,7 +1,7 @@
 /** APA 7 reference and in-text citation formatting, shared by the site build and the admin panel. */
 import type { Lang } from '../settings';
 import { SAFE_LINK } from '../safe-link';
-import { directName, familyOf, foldAscii, invertedName } from './names';
+import { directName, familyOf, foldAscii, initials, invertedName } from './names';
 import { TERMS, type Terms } from './terms';
 import type { Citation, CiteItem, LocatorKind, Person, Reference, Year } from './types';
 
@@ -14,23 +14,36 @@ const endDot = (s: string) => (endsWithStop(s) ? s : `${s}.`);
 
 /* ---------- sentence case ---------- */
 
-const lower = (s: string) => s.replace(/İ/g, 'i').toLowerCase();
+const TURKISH_LETTERS = /[ğĞşŞıİçÇöÖüÜ]/;
 
-/** `How the Mind Hurts: The Body and APA` -> `How the mind hurts: The body and APA`. Acronyms and mixed-case words stay. */
-export function sentenceCase(title: string): string {
-  const parts = title.split(/(\s+)/);
+/**
+ * `How the Mind Hurts: The Body and APA` -> `How the mind hurts: The body and APA`. Acronyms, a lone "I"
+ * and mixed-case words (per hyphen part) stay. Case mapping is Turkish when `lang` is 'tr' or the text has Turkish letters.
+ */
+export function sentenceCase(title: string, lang?: Lang): string {
+  const tr = lang === 'tr' || (lang === undefined && TURKISH_LETTERS.test(title));
+  const loc = tr ? 'tr' : undefined;
+  const low = (x: string) => x.toLocaleLowerCase(loc);
+  const up = (x: string) => x.toLocaleUpperCase(loc);
+  const keep = (seg: string) => {
+    const letters = seg.replace(/[^\p{L}]/gu, '');
+    if (letters === 'I') return true;
+    if (letters.length >= 2 && letters === up(letters) && letters !== low(letters)) return true;
+    return /\p{Lu}/u.test(letters.slice(1));
+  };
   let capitalise = true;
-  return parts
+  return title
+    .split(/(\s+)/)
     .map((part) => {
       if (!part.trim()) return part;
-      const letters = part.replace(/[^\p{L}]/gu, '');
-      let out = part;
-      const acronym = letters.length >= 2 && letters === letters.toUpperCase() && letters !== letters.toLowerCase();
-      const mixed = /\p{Lu}/u.test(letters.slice(1));
-      if (!acronym && !mixed) {
-        out = lower(part);
-        if (capitalise) out = out.replace(/\p{L}/u, (c) => (c === 'i' ? 'I' : c.toUpperCase()));
-      }
+      const out = part
+        .split('-')
+        .map((seg, i) => {
+          let r = keep(seg) ? seg : low(seg);
+          if (i === 0 && capitalise) r = r.replace(/\p{L}/u, (c) => up(c));
+          return r;
+        })
+        .join('-');
       capitalise = /[:?!]$/.test(part);
       return out;
     })
@@ -79,15 +92,25 @@ function locatorText(loc: NonNullable<CiteItem['locator']>, t: Terms): string {
 
 const yearRank = (y: Year) => (y === 'nd' ? -Infinity : y === 'inpress' ? Infinity : y);
 
+const sortTitle = (title: string, lang: Lang) => (lang === 'en' ? title.replace(/^(a|an|the)\s+/i, '') : title);
+
+/** APA 9.46: author lists compared one by one (surname, then initials); a list that is a prefix of another comes first. */
 function compareRefs(a: Reference, b: Reference, lang: Lang): number {
-  const ka = a.authors.length ? familyOf(a.authors[0]) : a.title;
-  const kb = b.authors.length ? familyOf(b.authors[0]) : b.title;
-  const byName = ka.localeCompare(kb, lang);
-  if (byName) return byName;
+  const keys = (r: Reference): [string, string][] =>
+    r.authors.length
+      ? r.authors.map((p): [string, string] => [familyOf(p), 'given' in p && p.given ? initials(p.given) : ''])
+      : [[sortTitle(r.title, lang), '']];
+  const ka = keys(a);
+  const kb = keys(b);
+  for (let i = 0; i < Math.min(ka.length, kb.length); i++) {
+    const c = ka[i][0].localeCompare(kb[i][0], lang) || ka[i][1].localeCompare(kb[i][1], lang);
+    if (c) return c;
+  }
+  if (ka.length !== kb.length) return ka.length - kb.length;
   const ya = yearRank(a.year);
   const yb = yearRank(b.year);
   if (ya !== yb) return ya < yb ? -1 : 1;
-  return a.title.localeCompare(b.title, lang);
+  return sortTitle(a.title, lang).localeCompare(sortTitle(b.title, lang), lang);
 }
 
 /** Plain-text citation, e.g. `(Ray, 2004; Smith ve Lee, 2010, s. 34)`. The caller escapes it. */
@@ -100,20 +123,22 @@ export function citationText(c: Citation, refs: Reference[], lang: Lang): string
   });
   items.sort((a, b) => compareRefs(a.ref, b.ref, lang));
 
-  const groups: { author: string; parts: string[] }[] = [];
+  const byKey = new Map<string, { author: string; parts: string[] }>();
   for (const { ref, item } of items) {
-    const author = citeAuthor(ref, t, c.narrative);
     let part = yearLabel(ref, refs, lang);
     if (item.locator) part += `, ${locatorText(item.locator, t)}`;
-    const last = groups[groups.length - 1];
-    if (last && last.author === author) last.parts.push(part);
-    else groups.push({ author, parts: [part] });
+    const key = authorKey(ref);
+    const group = byKey.get(key);
+    if (group) group.parts.push(part);
+    else byKey.set(key, { author: citeAuthor(ref, t, c.narrative), parts: [part] });
   }
+  const groups = [...byKey.values()];
 
   if (c.narrative) {
     const texts = groups.map((g) => `${g.author} (${g.parts.join(', ')})`);
     if (texts.length < 2) return texts[0] ?? '';
-    return `${texts.slice(0, -1).join(', ')} ${t.andNarrative} ${texts[texts.length - 1]}`;
+    const serial = texts.length > 2 && lang === 'en' ? ',' : '';
+    return `${texts.slice(0, -1).join(', ')}${serial} ${t.andNarrative} ${texts[texts.length - 1]}`;
   }
   return `(${groups.map((g) => `${g.author}, ${g.parts.join(', ')}`).join('; ')})`;
 }
@@ -125,9 +150,9 @@ export function bibliography(refs: Reference[], citedIds: Set<string>, lang: Lan
   return refs.filter((r) => citedIds.has(r.id)).sort((a, b) => compareRefs(a, b, lang));
 }
 
-function joinNames(names: string[], t: Terms, comma: boolean): string {
+function joinNames(names: string[], t: Terms, comma: boolean, twoComma = comma): string {
   if (names.length <= 1) return names[0] ?? '';
-  if (names.length === 2) return `${names[0]}${comma ? ',' : ''} ${t.and} ${names[1]}`;
+  if (names.length === 2) return `${names[0]}${twoComma ? ',' : ''} ${t.and} ${names[1]}`;
   const head = names.slice(0, -1).join(', ');
   return `${head}${comma ? ',' : ''} ${t.and} ${names[names.length - 1]}`;
 }
@@ -142,7 +167,7 @@ function authorList(authors: Person[], t: Terms): string {
 function editorList(editors: Person[], t: Terms): string {
   const names = editors.map(directName);
   const label = editors.length > 1 ? t.eds : t.ed;
-  return `${joinNames(names, t, t.and === '&')} ${label}`;
+  return `${joinNames(names, t, t.and === '&', false)} ${label}`;
 }
 
 function ordinal(edition: string, t: Terms): string {
@@ -150,8 +175,8 @@ function ordinal(edition: string, t: Terms): string {
   return m ? t.edition(Number(m[1])) : edition.trim();
 }
 
-function linkHtml(href: string): string {
-  return `<a href="${esc(href)}">${esc(href)}</a>`;
+function linkHtml(href: string, hrefEncoded = href): string {
+  return `<a href="${esc(hrefEncoded)}">${esc(href)}</a>`;
 }
 
 function accessedPrefix(accessed: string | undefined, t: Terms): string {
@@ -192,18 +217,19 @@ export function formatReferenceHtml(ref: Reference, refs: Reference[], lang: Lan
       const label = isRange(ref.pages) ? t.pp : t.p;
       inner.push(`${label} ${dashRange(ref.pages)}`);
     }
-    const book = `<i>${esc(ref.container ?? '')}</i>`;
-    const editors = ref.editors?.length ? `${esc(editorList(ref.editors, t))}, ` : '';
-    let src = `${esc(t.chapterBefore)}${editors}${book}${esc(t.chapterAfter)}`;
-    if (!ref.container && !editors) src = '';
+    const book = ref.container ? `<i>${esc(ref.container)}</i>` : '';
+    const editors = ref.editors?.length ? esc(editorList(ref.editors, t)) : '';
+    const names = [editors, book].filter(Boolean).join(', ');
+    let src = names ? `${esc(t.chapterBefore)}${names}${book ? esc(t.chapterAfter) : ''}` : '';
     if (src && inner.length) src += ` (${esc(inner.join(', '))})`;
     if (src) parts.push(`${src}.`);
   }
 
+  if (ref.type === 'web' && ref.container) parts.push(esc(endDot(ref.container)));
   if (ref.publisher) parts.push(esc(endDot(ref.publisher)));
 
   if (ref.doi) {
-    parts.push(linkHtml(`https://doi.org/${ref.doi}`));
+    parts.push(linkHtml(`https://doi.org/${ref.doi}`, `https://doi.org/${encodeURI(ref.doi).replace(/#/g, '%23').replace(/\?/g, '%3F')}`));
   } else if (ref.url) {
     const shown = SAFE_LINK.test(ref.url) ? linkHtml(ref.url) : esc(ref.url);
     parts.push(`${accessedPrefix(ref.accessed, t)}${shown}`);

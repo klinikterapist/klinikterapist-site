@@ -14,6 +14,7 @@ export function foldAscii(s: string): string {
 /** `Robert M.` -> `R. M.`, `Jean-Paul` -> `J.-P.` */
 export function initials(given: string): string {
   return given
+    .replace(/\.(?=\p{L})/gu, ' ')
     .split(/\s+/)
     .filter(Boolean)
     .map((part) =>

@@ -195,3 +195,66 @@ describe('makeRefId', () => {
     expect(makeRefId({ authors: [], year: 2022, title: 'Mental health today' }, new Set())).toBe('mental2022');
   });
 });
+
+describe('review fixes', () => {
+  const mkA = (id: string, authors: { family: string; given?: string }[], year: Reference['year'], title = 'T'): Reference =>
+    ({ id, type: 'book', authors, year, title });
+  const r03 = mkA('r03', [{ family: 'Ray', given: 'O' }], 2003);
+  const rs04 = mkA('rs04', [{ family: 'Ray', given: 'O' }, { family: 'Smith', given: 'J' }], 2004);
+  const r10 = mkA('r10', [{ family: 'Ray', given: 'O' }], 2010);
+
+  it('orders author lists APA-style and merges years by author key', () => {
+    const refs = [rs04, r10, r03];
+    expect(bibliography(refs, new Set(['r03', 'rs04', 'r10']), 'en').map((r) => r.id)).toEqual(['r03', 'r10', 'rs04']);
+    expect(citationText(cite(['r03', 'rs04', 'r10']), refs, 'en')).toBe('(Ray, 2003, 2010; Ray & Smith, 2004)');
+  });
+  it('compares initials when surnames tie', () => {
+    const a = mkA('a', [{ family: 'Ray', given: 'Z' }], 2000);
+    const b = mkA('b', [{ family: 'Ray', given: 'A' }], 2000);
+    expect(bibliography([a, b], new Set(['a', 'b']), 'en').map((r) => r.id)).toEqual(['b', 'a']);
+  });
+  it('ignores a leading article when sorting by title (EN)', () => {
+    const t = (id: string, title: string): Reference => ({ id, type: 'book', authors: [], year: 2000, title });
+    const refs = [t('z', 'Zebra'), t('a', 'The Apple'), t('m', 'Mango')];
+    expect(bibliography(refs, new Set(['z', 'a', 'm']), 'en').map((r) => r.id)).toEqual(['a', 'm', 'z']);
+  });
+  const chapter = (editors: { family: string; given: string }[]): Reference =>
+    ({ id: 'c', type: 'chapter', authors: [{ family: 'Y', given: 'A' }], editors, year: 2019, title: 'T', container: 'Book', pages: '1-2' });
+  const E = [{ family: 'Demir', given: 'B' }, { family: 'Kaya', given: 'C' }, { family: 'Aslan', given: 'D' }];
+  it('editor lists', () => {
+    const two = chapter(E.slice(0, 2));
+    expect(formatReferenceHtml(two, [two], 'en')).toContain('In B. Demir &amp; C. Kaya (Eds.), <i>Book</i>');
+    expect(formatReferenceHtml(two, [two], 'tr')).toContain('B. Demir ve C. Kaya (Ed.), <i>Book</i> içinde');
+    const three = chapter(E);
+    expect(formatReferenceHtml(three, [three], 'en')).toContain('In B. Demir, C. Kaya, &amp; D. Aslan (Eds.)');
+    expect(formatReferenceHtml(three, [three], 'tr')).toContain('B. Demir, C. Kaya ve D. Aslan (Ed.)');
+  });
+  it('chapter without a container has no empty italics', () => {
+    const c: Reference = { ...chapter(E.slice(0, 1)), container: undefined, pages: undefined };
+    expect(formatReferenceHtml(c, [c], 'en')).not.toContain('<i></i>');
+  });
+  it('sentence case with Turkish and I', () => {
+    expect(sentenceCase('İnsan ve Işık: İstanbul Örneği')).toBe('İnsan ve ışık: İstanbul örneği');
+    expect(sentenceCase('What I Learned About Self-Esteem')).toBe('What I learned about self-esteem');
+  });
+  it('serial comma in narrative lists', () => {
+    const mk = (id: string, f: string, y: number): Reference => ({ id, type: 'book', authors: [{ family: f }], year: y, title: 'T' });
+    const refs = [mk('a', 'Ay', 2001), mk('b', 'Bo', 2002), mk('c', 'Cy', 2003)];
+    expect(citationText(cite(['a', 'b', 'c'], true), refs, 'en')).toBe('Ay (2001), Bo (2002), and Cy (2003)');
+    expect(citationText(cite(['a', 'b', 'c'], true), refs, 'tr')).toBe('Ay (2001), Bo (2002) ve Cy (2003)');
+  });
+  it('prints the site name for web pages', () => {
+    const w: Reference = { id: 'w', type: 'web', authors: [{ literal: 'WHO' }], year: 2022, title: 'Mental health', container: 'WHO News', url: 'https://example.org/x' };
+    expect(formatReferenceHtml(w, [w], 'en')).toContain('<i>Mental health</i>. WHO News. <a');
+  });
+  it('initials from dotted input', () => {
+    const k: Reference = { id: 'k', type: 'book', authors: [{ family: 'Sapolsky', given: 'R.M.' }], year: 2004, title: 'T' };
+    expect(formatReferenceHtml(k, [k], 'en')).toMatch(/^Sapolsky, R\. M\. \(2004\)/);
+  });
+  it('percent-encodes the DOI in the href only', () => {
+    const d: Reference = { ...R, doi: '10.1002/a#b?c' };
+    const html = formatReferenceHtml(d, [d], 'en');
+    expect(html).toContain('href="https://doi.org/10.1002/a%23b%3Fc"');
+    expect(html).toContain('>https://doi.org/10.1002/a#b?c</a>');
+  });
+});
