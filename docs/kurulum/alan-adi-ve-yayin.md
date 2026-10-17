@@ -28,12 +28,12 @@ Dosyalar yüklendikten sonra:
 
 ## 3. Alan adı doğrulaması (önerilir)
 
-Başkalarının alan adınızı kendi GitHub hesabına bağlamasını engeller.
+Başkalarının alan adınızı kendi GitHub hesabına bağlamasını engeller. **Bu adımı 4. adımdaki DNS işlemiyle birlikte yapın:** GitHub size bir TXT kaydı verecek, onu DNS panelini açtığınızda A/AAAA/CNAME kayıtlarıyla aynı oturumda ekleyeceksiniz.
 
 1. GitHub'da sağ üstte profil resminize, sonra **Settings**'e tıklayın (bu sefer deponun değil, hesabınızın ayarları).
 2. Sol menüde **Pages**'e tıklayın.
 3. **Add a domain** düğmesine basın, `klinikterapist.com` yazın.
-4. GitHub size bir **TXT kaydı** gösterir (ad ve değer). Bunu 4. adımdaki gibi alan adınızın DNS ayarlarına yeni bir **TXT** kaydı olarak ekleyin. Sonra **Verify** düğmesine basın (birkaç dakika sürebilir).
+4. GitHub size bir **TXT kaydı** gösterir (ad ve değer). Bunu DNS panelinde (4. adım) yeni bir **TXT** kaydı olarak ekleyin. **Mevcut TXT kayıtlarını silmeyin ya da değiştirmeyin; bu kaydı yenisi olarak EKLEYİN.** Sonra GitHub sayfasında **Verify** düğmesine basın (birkaç dakika sürebilir).
 
 ## 4. DNS ayarları
 
@@ -46,7 +46,7 @@ Alan adı Google üzerinden alındıysa: Google Domains 2023'te **Squarespace Do
 3. `klinikterapist.com` satırındaki bilgi/ayar bağlantısı DNS'in hangi hizmette olduğunu gösterir. Emin olamazsanız ekran görüntüsünü Claude'a gönderin.
 
 > **UYARI: Google Workspace e-posta kayıtlarına DOKUNMAYIN.**
-> **MX** kayıtlarını ve **TXT** kayıtlarını (SPF, DKIM, `google-site-verification` ile başlayanlar) **silmeyin, değiştirmeyin.** Aksi halde e-postalarınız çalışmayı durdurur.
+> Mevcut **MX** ve **TXT** kayıtlarını (SPF, DKIM, `google-site-verification` ile başlayanlar) **silmeyin/değiştirmeyin** (yeni TXT eklemek sorun değil). Aksi halde e-postalarınız çalışmayı durdurur.
 > Yalnızca şunları kaldırın: başka bir yere işaret eden eski **A**, **AAAA** kayıtlarını ve **www** için olan **CNAME** kaydını (örneğin Squarespace'in "park" sayfası kayıtları).
 
 ### Eklenecek kayıtlar
@@ -67,7 +67,7 @@ DNS panelinde **Add record / Kayıt ekle** deyip şunları girin. Ana alan adı 
 
 CNAME değerinde depo adını yazmayın; yalnızca `<kullanici-adiniz>.github.io`. Değişikliklerin yayılması 24 saate kadar sürebilir. Bu değerler GitHub'ın yukarıdaki güncel belgesinden doğrulanmıştır.
 
-Ayrıca 3. adımdaki doğrulama TXT kaydını da burada ekleyin (varsa).
+Ayrıca 3. adımdaki doğrulama TXT kaydını da şimdi, burada ekleyin. Mevcut TXT kayıtlarını silmeyin ya da değiştirmeyin; bu kaydı yenisi olarak EKLEYİN.
 
 ## 5. Kontrol
 
@@ -79,7 +79,7 @@ Ayrıca 3. adımdaki doğrulama TXT kaydını da burada ekleyin (varsa).
 
 1. https://search.google.com/search-console adresine girin.
 2. **Mülk ekle (Add property)** > **Alan adı (Domain)** kutusuna `klinikterapist.com` yazın.
-3. Google bir **TXT kaydı** verir; 4. adımdaki gibi DNS'e ekleyip **Doğrula**'ya basın. (Faz 2'ye kadar doğrulama kodunu Claude'a gönderin, o yerleştirir.)
+3. Google bir **TXT kaydı** verir; 4. adımdaki gibi DNS paneline ekleyip **Doğrula**'ya basın. Mevcut TXT kayıtlarını silmeyin ya da değiştirmeyin; bu kaydı yenisi olarak EKLEYİN. (Faz 2'ye kadar doğrulama kodunu Claude'a gönderin, o yerleştirir.)
 4. Sol menüde **Site Haritaları (Sitemaps)** bölümüne `https://klinikterapist.com/sitemap-index.xml` yazıp gönderin.
 
 ## Yazı yayın düzeni
