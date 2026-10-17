@@ -1,0 +1,20 @@
+{
+  "name": "Osman Güneş Özkurt",
+  "title": {
+    "tr": "Psikolog",
+    "en": "Psychologist"
+  },
+  "tagline": {
+    "tr": "Daha iyi bir yaşam mümkün.",
+    "en": "A better life is possible."
+  },
+  "intro": {
+    "tr": "Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.",
+    "en": "Understanding yourself is the first step of change. I am by your side on this journey."
+  },
+  "photo": null,
+  "photoAlt": {
+    "tr": "Osman Güneş Özkurt'un portresi",
+    "en": "Portrait of Osman Güneş Özkurt"
+  }
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "id": "zihinsel-saglik",
+    "slug": {
+      "tr": "zihinsel-saglik",
+      "en": "mental-health"
+    },
+    "label": {
+      "tr": "Zihinsel Sağlık",
+      "en": "Mental Health"
+    }
+  },
+  {
+    "id": "psikoloji",
+    "slug": {
+      "tr": "psikoloji",
+      "en": "psychology"
+    },
+    "label": {
+      "tr": "Psikoloji",
+      "en": "Psychology"
+    }
+  },
+  {
+    "id": "terapi",
+    "slug": {
+      "tr": "terapi",
+      "en": "therapy"
+    },
+    "label": {
+      "tr": "Terapi",
+      "en": "Therapy"
+    }
+  },
+  {
+    "id": "yasam",
+    "slug": {
+      "tr": "yasam",
+      "en": "life"
+    },
+    "label": {
+      "tr": "Yaşam",
+      "en": "Life"
+    }
+  },
+  {
+    "id": "duygular",
+    "slug": {
+      "tr": "duygular",
+      "en": "emotions"
+    },
+    "label": {
+      "tr": "Duygular",
+      "en": "Emotions"
+    }
+  },
+  {
+    "id": "arastirma",
+    "slug": {
+      "tr": "arastirma",
+      "en": "research"
+    },
+    "label": {
+      "tr": "Araştırma",
+      "en": "Research"
+    }
+  }
+]

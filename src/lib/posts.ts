@@ -1,0 +1,85 @@
+import type { Lang } from './settings';
+import { readingTime } from './readingTime';
+
+export type PostData = {
+  title: string;
+  seoTitle?: string;
+  description: string;
+  slug: string;
+  focusKeyword: string;
+  category: string;
+  cover?: unknown;
+  coverAlt?: string;
+  publishedAt: Date;
+  updatedAt?: Date;
+};
+
+/** Minimal shape of an `astro:content` entry that the helpers need. */
+export type RawPost = { id: string; body?: string; data: PostData; [k: string]: unknown };
+
+export type PostEntry = RawPost & { key: string; lang: Lang; readingMinutes: number };
+
+const LANGS: Lang[] = ['tr', 'en'];
+
+export function validatePostPairs(ids: string[]): void {
+  const byKey = new Map<string, Set<string>>();
+  for (const id of ids) {
+    const slash = id.lastIndexOf('/');
+    const key = id.slice(0, slash);
+    const lang = id.slice(slash + 1);
+    if (!byKey.has(key)) byKey.set(key, new Set());
+    byKey.get(key)!.add(lang);
+  }
+  for (const [key, langs] of byKey) {
+    for (const lang of LANGS) {
+      if (!langs.has(lang)) {
+        throw new Error(`Yazı "${key}" için ${lang}.md eksik — her yazı iki dilde olmalı.`);
+      }
+    }
+  }
+}
+
+export function toPostEntry(entry: RawPost): PostEntry {
+  const slash = entry.id.lastIndexOf('/');
+  return {
+    ...entry,
+    key: entry.id.slice(0, slash),
+    lang: entry.id.slice(slash + 1) as Lang,
+    readingMinutes: readingTime(entry.body ?? ''),
+  };
+}
+
+export function sortNewestFirst(posts: PostEntry[]): PostEntry[] {
+  return [...posts].sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime());
+}
+
+export function pickRelated(post: PostEntry, all: PostEntry[], n = 3): PostEntry[] {
+  const others = sortNewestFirst(all.filter((p) => p.key !== post.key));
+  const same = others.filter((p) => p.data.category === post.data.category);
+  const rest = others.filter((p) => p.data.category !== post.data.category);
+  return [...same, ...rest].slice(0, n);
+}
+
+async function loadAll(): Promise<PostEntry[]> {
+  // Imported lazily so the pure helpers above stay usable outside an Astro build (Vitest).
+  const { getCollection } = await import('astro:content');
+  const entries = (await getCollection('posts')) as unknown as RawPost[];
+  validatePostPairs(entries.map((e) => e.id));
+  return entries.map(toPostEntry);
+}
+
+export async function getPosts(lang: Lang): Promise<PostEntry[]> {
+  const all = await loadAll();
+  return sortNewestFirst(all.filter((p) => p.lang === lang));
+}
+
+export async function getTranslation(post: PostEntry): Promise<PostEntry> {
+  const other: Lang = post.lang === 'tr' ? 'en' : 'tr';
+  const found = (await loadAll()).find((p) => p.key === post.key && p.lang === other);
+  if (!found) throw new Error(`Yazı "${post.key}" için ${other}.md eksik — her yazı iki dilde olmalı.`);
+  return found;
+}
+
+export async function getRelated(post: PostEntry, n = 3): Promise<PostEntry[]> {
+  return pickRelated(post, await getPosts(post.lang), n);
+}

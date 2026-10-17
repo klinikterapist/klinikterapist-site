@@ -1,0 +1,42 @@
+[
+  {
+    "id": "instagram",
+    "label": "Instagram",
+    "url": "https://instagram.com/klinikterapist",
+    "icon": "instagram",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
+    "id": "linkedin",
+    "label": "LinkedIn",
+    "url": "https://www.linkedin.com/",
+    "icon": "linkedin",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
+    "id": "medium",
+    "label": "Medium",
+    "url": "https://medium.com/",
+    "icon": "medium",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
+    "id": "substack",
+    "label": "Substack",
+    "url": "https://substack.com/",
+    "icon": "substack",
+    "inHero": false,
+    "inFooter": true
+  },
+  {
+    "id": "email",
+    "label": "E-posta",
+    "url": "mailto:iletisim@example.com",
+    "icon": "email",
+    "inHero": true,
+    "inFooter": true
+  }
+]

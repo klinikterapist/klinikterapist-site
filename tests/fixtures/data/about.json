@@ -1,0 +1,98 @@
+{
+  "heading": {
+    "tr": "Hakkımda",
+    "en": "About Me"
+  },
+  "lead": {
+    "tr": "İnsanı ve yaşamı anlamaya duyduğum merak, mesleki yolculuğumun her zaman merkezinde oldu.",
+    "en": "My curiosity about understanding people and life has always been at the heart of my professional journey."
+  },
+  "areas": [
+    {
+      "icon": "leaf",
+      "label": {
+        "tr": "Bireysel Terapi",
+        "en": "Individual Therapy"
+      }
+    },
+    {
+      "icon": "user",
+      "label": {
+        "tr": "Yetişkin Psikolojisi",
+        "en": "Adult Psychology"
+      }
+    },
+    {
+      "icon": "brain",
+      "label": {
+        "tr": "Bilişsel Davranışçı Terapi (BDT)",
+        "en": "Cognitive Behavioral Therapy (CBT)"
+      }
+    },
+    {
+      "icon": "book",
+      "label": {
+        "tr": "Psikolojik Eğitim ve Kaynaklar",
+        "en": "Psychoeducation and Resources"
+      }
+    }
+  ],
+  "whoAmI": {
+    "tr": "Merhaba, ben Osman Güneş Özkurt. Psikoloji alanında edindiğim bilgi ve deneyimle, bireylerin yaşam kalitesini artırmalarına, kendilerini daha iyi tanımalarına ve zorlayıcı yaşam deneyimleriyle daha sağlıklı başa çıkmalarına destek oluyorum. Çalışmalarımda bilimsel temelli yaklaşımları, empatik ve kabul edici bir tutumla birleştirerek her danışanın kendine özgü ihtiyaçlarını merkeze alıyorum.",
+    "en": "Hello, I am Osman Güneş Özkurt. With the knowledge and experience I have gained in psychology, I support people in improving their quality of life, getting to know themselves better and coping more healthily with challenging life experiences. In my work I combine evidence-based approaches with an empathetic and accepting attitude, placing each client's unique needs at the center."
+  },
+  "whyThisWork": {
+    "tr": "İnsanların kendilerini daha iyi anlamalarına, potansiyellerini keşfetmelerine ve daha tatmin edici bir yaşam sürmelerine eşlik etmek benim için anlamlı ve değerli bir yolculuk. Psikolojinin, bireysel iyilik halini güçlendirirken toplumsal değişime de katkı sağladığına inanıyorum.",
+    "en": "Accompanying people as they understand themselves better, discover their potential and live a more fulfilling life is a meaningful and valuable journey for me. I believe psychology strengthens individual well-being while also contributing to social change."
+  },
+  "quote": {
+    "tr": "Her insan, kendi hikâyesinin uzmanıdır. Biz, o hikâyeyi birlikte daha iyi anlamak için buradayız.",
+    "en": "Every person is the expert of their own story. We are here to understand that story better together."
+  },
+  "timeline": [
+    {
+      "title": {
+        "tr": "Lisans",
+        "en": "Bachelor's Degree"
+      },
+      "detail": {
+        "tr": "Psikoloji, [Üniversite Adı]",
+        "en": "Psychology, [University Name]"
+      },
+      "period": "2016–2020"
+    },
+    {
+      "title": {
+        "tr": "Yüksek Lisans",
+        "en": "Master's Degree"
+      },
+      "detail": {
+        "tr": "Klinik Psikoloji, [Üniversite Adı]",
+        "en": "Clinical Psychology, [University Name]"
+      },
+      "period": "2021–2023"
+    },
+    {
+      "title": {
+        "tr": "Eğitimler",
+        "en": "Trainings"
+      },
+      "detail": {
+        "tr": "BDT, Kabul ve Kararlılık Terapisi (ACT)",
+        "en": "CBT, Acceptance and Commitment Therapy (ACT)"
+      },
+      "period": "2022–2024"
+    },
+    {
+      "title": {
+        "tr": "Süpervizyon",
+        "en": "Supervision"
+      },
+      "detail": {
+        "tr": "Bireysel ve grup süpervizyonları",
+        "en": "Individual and group supervision"
+      },
+      "period": "Devam ediyor"
+    }
+  ]
+}

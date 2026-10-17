@@ -1,4 +1,5 @@
-export type Lang = 'tr' | 'en';
+import type { Lang } from './settings';
+export type { Lang };
 
 const TR_MAP: Record<string, string> = {
   ç: 'c',

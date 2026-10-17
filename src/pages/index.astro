@@ -1,4 +1,6 @@
 ---
+import { getPosts } from '../lib/posts';
+const posts = await getPosts('tr');
 ---
 
 <html lang="tr">
@@ -12,5 +14,6 @@
 	</head>
 	<body>
 		<h1>Site</h1>
+		<p>{posts.length}</p>
 	</body>
 </html>

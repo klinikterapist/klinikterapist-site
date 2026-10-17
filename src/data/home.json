@@ -1,0 +1,68 @@
+{
+  "cards": [
+    {
+      "id": "about",
+      "target": {
+        "page": "about"
+      },
+      "title": {
+        "tr": "Hakkımda",
+        "en": "About Me"
+      },
+      "subtitle": {
+        "tr": "Yolculuğum ve yaklaşımım",
+        "en": "My journey and approach"
+      },
+      "icon": "user",
+      "visible": true
+    },
+    {
+      "id": "blog",
+      "target": {
+        "page": "blog"
+      },
+      "title": {
+        "tr": "Blog Yazıları",
+        "en": "Blog Posts"
+      },
+      "subtitle": {
+        "tr": "Düşünceler, notlar, keşifler",
+        "en": "Thoughts, notes, discoveries"
+      },
+      "icon": "pen",
+      "visible": true
+    },
+    {
+      "id": "resources",
+      "target": {
+        "page": "resources"
+      },
+      "title": {
+        "tr": "Kaynaklar",
+        "en": "Resources"
+      },
+      "subtitle": {
+        "tr": "Öneriler ve faydalı içerikler",
+        "en": "Recommendations and useful content"
+      },
+      "icon": "book",
+      "visible": true
+    },
+    {
+      "id": "contact",
+      "target": {
+        "page": "contact"
+      },
+      "title": {
+        "tr": "İletişim",
+        "en": "Contact"
+      },
+      "subtitle": {
+        "tr": "Sorularınız için ulaşın",
+        "en": "Reach out with your questions"
+      },
+      "icon": "mail",
+      "visible": true
+    }
+  ]
+}

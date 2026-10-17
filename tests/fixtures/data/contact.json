@@ -1,0 +1,19 @@
+{
+  "intro": {
+    "tr": "Sorularınız, iş birlikleri veya randevu talepleriniz için benimle iletişime geçebilirsiniz.",
+    "en": "You can get in touch with me for your questions, collaborations or appointment requests."
+  },
+  "workStyle": {
+    "tr": "İhtiyaçlarınıza uygun, esnek görüşme seçenekleri sunuyorum. Online görüşme — Türkiye'nin her yerinden ve yurt dışından.",
+    "en": "I offer flexible session options that fit your needs. Online sessions, from anywhere in Türkiye and abroad."
+  },
+  "responseTime": {
+    "tr": "Dönüş süresi: 24–48 saat.",
+    "en": "Response time: 24–48 hours."
+  },
+  "emergencyNote": {
+    "tr": "Acil durumlar için bu sayfa yerine 112 Acil Çağrı Merkezi'ne veya en yakın sağlık kuruluşuna başvurunuz.",
+    "en": "In an emergency, please do not use this page. Call your local emergency number (112 in Türkiye) or go to the nearest health facility."
+  },
+  "email": "iletisim@example.com"
+}
