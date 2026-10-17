@@ -58,7 +58,7 @@ describe('EditorPage', () => {
     const missing = screen.getByRole('list', { name: 'Eksikler' });
     expect(within(missing).getByText('İngilizce: Başlık')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('tab', { name: /İngilizce/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^EN/ }));
     fireEvent.change(screen.getByLabelText('Başlık (İngilizce)'), { target: { value: 'Living with anxiety' } });
     await waitFor(() => expect((screen.getByRole('button', { name: 'Yayınla' }) as HTMLButtonElement).disabled).toBe(false));
   });
@@ -105,5 +105,60 @@ describe('EditorPage', () => {
     expect(await screen.findByText(/diğer cihazda daha yeni bir sürüm/)).toBeTruthy();
     expect(screen.getByRole('button', { name: /Bu cihazdakini kaydet/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Geri yükle' })).toBeNull();
+  });
+
+  it('shows the toolbar controls in order', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const bar = await screen.findByRole('toolbar', { name: 'Biçimlendirme' });
+    const names = Array.from(bar.querySelectorAll('button, select'))
+      .map((el) => el.getAttribute('aria-label') ?? el.textContent);
+    expect(names).toEqual([
+      'Geri al', 'Yinele', 'Paragraf türü', 'Kalın', 'İtalik', 'Üstü çizili', 'Vurgula', 'Bağlantı', 'Görsel', 'YouTube',
+      'Alıntı', 'Madde listesi', 'Numaralı liste', 'Referans ekle', 'Daha fazla',
+    ]);
+    const select = within(bar).getByRole('combobox', { name: 'Paragraf türü' });
+    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Paragraf', 'Alt başlık', 'Küçük alt başlık']);
+    expect((within(bar).getByRole('button', { name: 'Referans ekle' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(within(bar).getByRole('button', { name: 'Daha fazla' }));
+    expect(screen.getByRole('menuitem', { name: 'Vurgu kutusu' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Ayraç' })).toBeTruthy();
+  });
+
+  it('Kalın toggles with a selection', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const bar = await screen.findByRole('toolbar', { name: 'Biçimlendirme' });
+    const ed = (await screen.findByLabelText('Yazı metni (Türkçe)')) as HTMLElement;
+    const p = ed.querySelector('p')!;
+    const range = document.createRange();
+    range.selectNodeContents(p.firstChild!);
+    const sel = window.getSelection()!;
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+    const bold = within(bar).getByRole('button', { name: 'Kalın' });
+    fireEvent.click(bold);
+    await waitFor(() => expect(within(bar).getByRole('button', { name: 'Kalın' }).getAttribute('aria-pressed')).toBe('true'));
+  });
+
+  it('language buttons show completeness and switch the editor', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('', '') });
+    const group = await screen.findByRole('group', { name: 'Dil' });
+    expect(within(group).getByRole('button', { name: /^TR/ }).textContent).toContain('✓');
+    expect(within(group).getByRole('button', { name: /^EN/ }).textContent).toContain('⚠');
+    fireEvent.click(within(group).getByRole('button', { name: /^EN/ }));
+    expect(await screen.findByLabelText('Başlık (İngilizce)')).toBeTruthy();
+  });
+
+  it('the settings column can be hidden and the choice is remembered', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    fireEvent.click(await screen.findByRole('button', { name: 'Yazı ayarlarını gizle' }));
+    expect(screen.queryByRole('button', { name: 'Yayınla' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Yazı ayarlarını göster' })).toBeTruthy();
+    expect(localStorage.getItem('panel.side')).toBe('closed');
+  });
+
+  it('the footer shows word count and reading time', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    expect(await screen.findByText('1 kelime · 1 dk okuma')).toBeTruthy();
   });
 });

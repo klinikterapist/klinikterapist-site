@@ -1,11 +1,9 @@
 /**
- * Medium-style writing surface for one language: a big title, then the body. Selecting text opens
- * a floating toolbar; an empty line shows "+" for image, divider, YouTube and callout.
+ * Writing surface for one language: a fixed toolbar, a big title, then the body.
  */
 import { useEffect, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
-import { EditorContent, useEditor, type Editor } from '@tiptap/react';
-import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
+import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import { Placeholder } from '@tiptap/extensions';
@@ -17,6 +15,7 @@ import { IMAGE_PRESETS, ImageError, fileNameFor, resizeImage } from '../../lib/i
 import { Button, Dialog, Field } from '../kit';
 import { Callout, Figure, Youtube } from './nodes';
 import type { ImageStore } from './images';
+import { Toolbar } from './Toolbar';
 
 /** Same rule as the site's Markdown renderer: https, mailto or a site path. */
 const SAFE_LINK = /^(https:\/\/|mailto:|\/(?![\/\\]))/i;
@@ -68,7 +67,6 @@ export function PostEditor(props: {
   const { lang, fields, onChange, images, onError } = props;
   const editor = useTiptap(lang, fields.doc, images, (doc) => onChange({ doc }));
   const [ask, setAsk] = useState<Ask | null>(null);
-  const [plusOpen, setPlusOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const title = useRef<HTMLTextAreaElement>(null);
@@ -95,8 +93,6 @@ export function PostEditor(props: {
     onChange({ title: next.title, slug: autoSlug(next, lang) });
   };
 
-  const run = (fn: (e: Editor) => void) => editor && fn(editor);
-
   const confirmAsk = () => {
     if (!ask || !editor) return;
     if (ask.kind === 'link') {
@@ -117,7 +113,6 @@ export function PostEditor(props: {
 
   const onFile = async (f: File | undefined) => {
     if (!f || !editor) return;
-    setPlusOpen(false);
     setUploading(true);
     onError(null);
     try {
@@ -133,14 +128,16 @@ export function PostEditor(props: {
     }
   };
 
-  const tool = (label: string, active: boolean, fn: () => void, text: string) => (
-    <button type="button" className={`ed-tool ${active ? 'is-active' : ''}`} aria-label={label} aria-pressed={active} title={label} onMouseDown={(e) => e.preventDefault()} onClick={fn}>
-      {text}
-    </button>
-  );
-
   return (
     <div className="post-editor">
+      {editor && (
+        <Toolbar
+          editor={editor}
+          onLink={() => setAsk({ kind: 'link', value: String(editor.getAttributes('link').href ?? ''), error: null })}
+          onImage={() => file.current?.click()}
+          onYoutube={() => setAsk({ kind: 'youtube', value: '', error: null })}
+        />
+      )}
       <label className="k-visually-hidden" htmlFor={`title-${lang}`}>
         Başlık ({LANG_LABEL[lang]})
       </label>
@@ -167,72 +164,6 @@ export function PostEditor(props: {
         value={fields.subtitle}
         onChange={(e) => onChange({ subtitle: e.target.value.replace(/\n/g, ' ') })}
       />
-      {editor && (
-        <BubbleMenu
-          editor={editor}
-          className="ed-bubble"
-          shouldShow={({ editor: ed, state }) => !state.selection.empty && !ed.isActive('figure') && !ed.isActive('youtube')}
-        >
-          {tool('Kalın', editor.isActive('bold'), () => run((e) => e.chain().focus().toggleBold().run()), 'K')}
-          {tool('İtalik', editor.isActive('italic'), () => run((e) => e.chain().focus().toggleItalic().run()), 'İ')}
-          {tool('Alt başlık (H2)', editor.isActive('heading', { level: 2 }), () => run((e) => e.chain().focus().toggleHeading({ level: 2 }).run()), 'H2')}
-          {tool('Küçük alt başlık (H3)', editor.isActive('heading', { level: 3 }), () => run((e) => e.chain().focus().toggleHeading({ level: 3 }).run()), 'H3')}
-          {tool('Bağlantı', editor.isActive('link'), () => setAsk({ kind: 'link', value: String(editor.getAttributes('link').href ?? ''), error: null }), '🔗')}
-          {tool('Alıntı', editor.isActive('blockquote'), () => run((e) => e.chain().focus().toggleBlockquote().run()), '❝')}
-          {tool('Madde listesi', editor.isActive('bulletList'), () => run((e) => e.chain().focus().toggleBulletList().run()), '•')}
-        </BubbleMenu>
-      )}
-      {editor && (
-        <FloatingMenu editor={editor} className="ed-plus">
-          <button
-            type="button"
-            className="ed-plus-toggle"
-            aria-label="Ekle"
-            aria-expanded={plusOpen}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setPlusOpen(!plusOpen)}
-          >
-            +
-          </button>
-          {plusOpen && (
-            <div className="ed-plus-menu" role="menu">
-              <button type="button" role="menuitem" onClick={() => file.current?.click()}>
-                Görsel
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setPlusOpen(false);
-                  editor.chain().focus().setHorizontalRule().run();
-                }}
-              >
-                Ayraç
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setPlusOpen(false);
-                  setAsk({ kind: 'youtube', value: '', error: null });
-                }}
-              >
-                YouTube
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setPlusOpen(false);
-                  editor.chain().focus().wrapIn('callout').run();
-                }}
-              >
-                Vurgu kutusu
-              </button>
-            </div>
-          )}
-        </FloatingMenu>
-      )}
       <EditorContent editor={editor} />
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       {uploading && <p className="ed-muted" role="status">Görsel küçültülüp yükleniyor…</p>}

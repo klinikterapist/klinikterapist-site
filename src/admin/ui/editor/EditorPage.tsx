@@ -7,6 +7,8 @@ import { ApiFailure, type Draft, type LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
 import { canPublish, describeMissing, isoDay, LANG_LABEL, missingFields, normalizeDraft } from '../../lib/draft';
+import { docToMarkdown } from '../../lib/markdown';
+import { countWords, readingTime } from '../../../lib/readingTime';
 import { liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
 import { PublishError, buildPublishChangeset, buildUnpublishChangeset } from '../../lib/publish';
 import { go, usePanel } from '../context';
@@ -106,6 +108,24 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [done, setDone] = useState<Done | null>(null);
   const [inDrive, setInDrive] = useState(loaded.inDrive);
   const [stale, setStale] = useState(false);
+  const [side, setSide] = useState<'open' | 'closed'>(() => {
+    try {
+      const v = window.localStorage.getItem('panel.side');
+      if (v === 'open' || v === 'closed') return v;
+    } catch {
+      /* storage unavailable */
+    }
+    return window.innerWidth < 768 ? 'closed' : 'open';
+  });
+  const toggleSide = () => {
+    const next = side === 'open' ? 'closed' : 'open';
+    setSide(next);
+    try {
+      window.localStorage.setItem('panel.side', next);
+    } catch {
+      /* storage unavailable */
+    }
+  };
 
   const repoImages = useMemo(
     () =>
@@ -121,6 +141,10 @@ function Editing({ loaded }: { loaded: Loaded }) {
   useEffect(() => {
     if (auto.status === 'kaydedildi' && draft.rev > 0) setInDrive(true);
   }, [auto.status, draft.rev]);
+
+  const markdown = useMemo(() => docToMarkdown(draft[lang].doc, lang), [draft, lang]);
+  const words = useMemo(() => countWords(markdown), [markdown]);
+  const minutes = useMemo(() => readingTime(markdown), [markdown]);
 
   const check = canPublish(draft);
   const missing = describeMissing(check);
@@ -249,6 +273,28 @@ function Editing({ loaded }: { loaded: Loaded }) {
         <span className={`save-status save-${auto.status}`} role="status">
           {STATUS_TEXT[auto.status]}
         </span>
+        <div className="editor-top-actions">
+          <div className="lang-switch" role="group" aria-label="Dil">
+            {(['tr', 'en'] as Lang[]).map((l) => {
+              const ok = missingFields(draft[l], l, !!draft.cover).length === 0;
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  aria-pressed={lang === l}
+                  title={`${LANG_LABEL[l]}${ok ? '' : ' (eksik alanlar var)'}`}
+                  className={`lang-btn ${lang === l ? 'is-active' : ''}`}
+                  onClick={() => setLang(l)}
+                >
+                  {l.toUpperCase()} <span className={`dot ${ok ? 'dot-ok' : 'dot-missing'}`}>{ok ? '✓' : '⚠'}</span>
+                </button>
+              );
+            })}
+          </div>
+          <Button variant="ghost" onClick={toggleSide}>
+            {side === 'open' ? 'Yazı ayarlarını gizle' : 'Yazı ayarlarını göster'}
+          </Button>
+        </div>
       </div>
 
       {restore && (
@@ -284,31 +330,14 @@ function Editing({ loaded }: { loaded: Loaded }) {
       )}
       {message && <Banner tone="error">{message}</Banner>}
 
-      <div className="editor-grid">
+      <div className={`editor-grid ${side === 'closed' ? 'side-closed' : ''}`}>
         <div className="editor-main">
-          <div className="lang-tabs" role="tablist" aria-label="Dil">
-            {(['tr', 'en'] as Lang[]).map((l) => {
-              const ok = missingFields(draft[l], l, !!draft.cover).length === 0;
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  role="tab"
-                  aria-selected={lang === l}
-                  className={`lang-tab ${lang === l ? 'is-active' : ''}`}
-                  onClick={() => setLang(l)}
-                >
-                  {LANG_LABEL[l]} <span className={`dot ${ok ? 'dot-ok' : 'dot-missing'}`}>{ok ? '✓' : '(eksik)'}</span>
-                </button>
-              );
-            })}
-          </div>
-          <div role="tabpanel" aria-label={LANG_LABEL[lang]}>
+          <div aria-label={LANG_LABEL[lang]}>
             <PostEditor key={`${lang}-${version}`} lang={lang} fields={draft[lang]} onChange={onLang} images={images} onError={setMessage} />
           </div>
         </div>
 
-        <aside className="editor-side">
+        <aside className="editor-side" hidden={side === 'closed'}>
           <section className="side-card publish-card" aria-label="Yayın">
             {draft.published ? <p className="badge badge-live">Yayında</p> : <p className="badge">Taslak</p>}
             <Button variant="primary" disabled={!check.ok} busy={busy && confirm === 'publish'} onClick={() => setConfirm('publish')}>
@@ -351,6 +380,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
           <SeoPanel lang={lang} draft={draft} otherKeywords={otherKeywords} images={images} />
         </aside>
       </div>
+
+      <footer className="editor-footer">
+        <span className="editor-footer-left">{/* "Sürüm geçmişi" (Task 14) */}</span>
+        <span>{`${words} kelime · ${minutes} dk okuma`}</span>
+      </footer>
 
       {confirm === 'publish' && (
         <Dialog

@@ -713,28 +713,60 @@ textarea.k-input {
   }
 }
 
-.lang-tabs {
+.editor-top-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--p-border);
 }
 
-.lang-tab {
-  min-height: 44px;
+.lang-switch {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--p-border);
+  border-radius: var(--radius-pill);
+}
+
+.lang-btn {
+  min-height: 40px;
   padding: 0 var(--space-3);
   border: 0;
-  border-bottom: 3px solid transparent;
-  background: none;
+  background: var(--p-surface);
   color: var(--p-muted);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
-.lang-tab.is-active {
-  border-bottom-color: var(--p-accent);
+.lang-btn + .lang-btn {
+  border-left: 1px solid var(--p-border);
+}
+
+.lang-btn.is-active {
+  background: var(--p-selected);
   color: var(--p-heading);
+}
+
+.editor-grid.side-closed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.editor-side[hidden] {
+  display: none;
+}
+
+.editor-footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--p-border);
+  background: var(--p-surface);
+  color: var(--p-muted);
+  font-size: var(--text-sm);
 }
 
 .dot {
@@ -928,76 +960,104 @@ textarea.k-input {
   color: var(--p-on-media);
 }
 
-.ed-bubble {
+.ed-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 2px;
-  padding: 4px;
-  border-radius: var(--radius-pill);
-  background: var(--p-accent-deep);
-  box-shadow: var(--shadow-soft);
+  margin: 0 calc(var(--space-4) * -1) var(--space-4);
+  padding: 4px var(--space-4);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--p-border);
+  background: var(--p-field);
+}
+
+.ed-toolbar > * {
+  flex: none;
 }
 
 .ed-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 40px;
   min-height: 40px;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md, 8px);
   background: none;
-  color: var(--p-accent-text);
+  color: var(--p-text);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 
+.ed-tool:disabled {
+  color: var(--p-placeholder);
+  cursor: default;
+}
+
 .ed-tool.is-active,
-.ed-tool:hover {
-  background: rgb(255 255 255 / 0.15);
+.ed-tool:hover:not(:disabled) {
+  background: var(--p-selected);
+  color: var(--p-heading);
 }
 
-.ed-plus {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.ed-tool-mark {
+  padding: 0 4px;
+  background: var(--p-highlight);
+  color: var(--p-text);
 }
 
-.ed-plus-toggle {
-  width: 36px;
-  height: 36px;
+.ed-block-select {
+  min-height: 40px;
+  margin: 0 4px;
+  padding: 0 var(--space-2);
   border: 1px solid var(--p-border);
-  border-radius: 50%;
+  border-radius: var(--radius-md, 8px);
   background: var(--p-field);
-  color: var(--p-muted);
-  font-size: 1.3rem;
-  line-height: 1;
-  cursor: pointer;
+  color: var(--p-text);
+  font: inherit;
+  font-size: var(--text-sm);
 }
 
-.ed-plus-menu {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+.ed-more-menu {
+  position: fixed;
+  z-index: 20;
+  display: grid;
+  min-width: 10rem;
   padding: 4px;
   border: 1px solid var(--p-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md, 8px);
   background: var(--p-field);
   box-shadow: var(--shadow-soft);
 }
 
-.ed-plus-menu button {
-  min-height: 36px;
+.ed-more-menu button {
+  min-height: 40px;
   padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md, 8px);
   background: none;
   color: var(--p-heading);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
+  text-align: left;
   cursor: pointer;
 }
 
-.ed-plus-menu button:hover {
+.ed-more-menu button:hover {
   background: var(--p-selected);
+}
+
+@media (min-width: 700px) {
+  .ed-toolbar {
+    margin-inline: calc(var(--space-7) * -1);
+    padding-inline: var(--space-7);
+  }
 }
 
 .editor-side {
