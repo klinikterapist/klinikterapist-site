@@ -1,6 +1,6 @@
 ---
 import { getPosts } from '../lib/posts';
-const posts = await getPosts('tr');
+await getPosts('tr'); // temporary: forces pair validation on every build
 ---
 
 <html lang="tr">
@@ -14,6 +14,5 @@ const posts = await getPosts('tr');
 	</head>
 	<body>
 		<h1>Site</h1>
-		<p>{posts.length}</p>
 	</body>
 </html>
