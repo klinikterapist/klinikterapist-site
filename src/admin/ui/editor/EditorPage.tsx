@@ -156,7 +156,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
     }
   }, [draft, lang]);
   // Kaynakça under the text, as on the site: only cited references, for this language.
-  const referencesHtml = useMemo(() => renderReferencesSection(draft[lang].references, citedIds(markdown), lang), [draft, lang, markdown]);
+  const referencesHtml = useMemo(() => renderReferencesSection(draft[lang].references, citedIds(markdown), lang, 'editor-references-title'), [draft, lang, markdown]);
   const words = useMemo(() => countWords(markdown), [markdown]);
   const minutes = useMemo(() => readingTime(markdown), [markdown]);
 

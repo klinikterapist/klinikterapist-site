@@ -215,20 +215,6 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     font-style: italic;
   }
 
-  .cover-wrap {
-    max-width: calc(55rem + 2 * var(--gutter));
-    margin: var(--space-6) auto 0;
-    padding-inline: var(--gutter);
-  }
-
-  .cover-wrap :global(.cover) {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    border-radius: var(--radius-lg);
-    object-fit: cover;
-  }
-
   /* Same width as the cover, so the page keeps one centred axis. */
   .related {
     max-width: calc(55rem + 2 * var(--gutter));

@@ -88,13 +88,13 @@ export function validateCitations(body: string, refs: Reference[], file: string)
 }
 
 /** The Kaynakça / References section as HTML; empty when nothing is cited. */
-export function renderReferencesSection(refs: Reference[], cited: Set<string>, lang: Lang): string {
+export function renderReferencesSection(refs: Reference[], cited: Set<string>, lang: Lang, headingId = 'references-title'): string {
   const bib = bibliography(refs, cited, lang);
   if (!bib.length) return '';
   const items = bib.map((r) => `<li>${formatReferenceHtml(r, bib, lang)}</li>`).join('');
   return (
-    `<section class="references" aria-labelledby="references-title">` +
-    `<h2 id="references-title">${t(lang, 'references')}</h2>` +
+    `<section class="references" aria-labelledby="${headingId}">` +
+    `<h2 id="${headingId}">${t(lang, 'references')}</h2>` +
     `<ol class="references-list">${items}</ol></section>`
   );
 }

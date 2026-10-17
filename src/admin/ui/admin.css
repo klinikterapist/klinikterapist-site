@@ -1833,8 +1833,61 @@ textarea.k-input {
   padding-top: var(--space-6);
 }
 
+/* Base rules of the site stylesheet (global.css) that the post page relies on, scoped to the preview. */
+:where(.preview-root) .container-text {
+  width: 100%;
+  max-width: calc(var(--max-text) + 2 * var(--gutter));
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+:where(.preview-root) h1,
+:where(.preview-root) h2,
+:where(.preview-root) h3,
+:where(.preview-root) h4 {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-serif);
+  line-height: var(--leading-tight);
+  hyphens: auto;
+  text-wrap: balance;
+}
+
+:where(.preview-root) p {
+  margin: 0 0 var(--space-4);
+}
+
+:where(.preview-root) img,
+:where(.preview-root) svg,
+:where(.preview-root) video {
+  max-width: 100%;
+  height: auto;
+}
+
+:where(.preview-root) img {
+  display: block;
+}
+
+:where(.preview-root) a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+:where(.preview-root) a:hover {
+  color: var(--forest-deep);
+}
+
+:where(.preview-root) ::selection {
+  background: var(--sage-soft);
+}
+
+.preview-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .preview-page h1 {
-  margin: 0 0 var(--space-3);
+  margin: var(--space-4) 0 var(--space-3);
   font-size: var(--text-3xl);
 }
 
@@ -1843,19 +1896,6 @@ textarea.k-input {
   color: var(--muted);
   font-size: var(--text-lg);
   line-height: 1.55;
-}
-
-.preview-page .cover-wrap {
-  margin: var(--space-5) 0 0;
-}
-
-.preview-page .cover {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius-lg);
-  object-fit: cover;
 }
 
 .preview-missing {

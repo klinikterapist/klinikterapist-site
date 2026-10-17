@@ -84,3 +84,13 @@ describe('renderPreviewHtml', () => {
     expect(html).toMatch(/referans/i);
   });
 });
+
+describe('renderPreviewHtml: missing image', () => {
+  it('shows a notice instead of a broken figure', () => {
+    const d = draftOf({ doc: doc({ type: 'figure', attrs: { src: './yok.webp', alt: 'A', caption: 'Yazı' } }) });
+    const html = renderPreviewHtml(d, 'tr', urls);
+    expect(html).toContain('preview-missing');
+    expect(html).not.toContain('<img');
+    expect(html).toContain('<figcaption>Yazı</figcaption>');
+  });
+});

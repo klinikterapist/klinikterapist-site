@@ -69,7 +69,7 @@ export function renderPreviewHtml(draft: Draft, lang: Lang, imageUrl: (name: str
   const f = draft[lang];
   const cover = draft.cover ? img(imageUrl(draft.cover), f.coverAlt, 'cover') : '';
   const header =
-    `<header class="preview-head"><h1>${escapeHtml(f.title)}</h1>` +
+    `<header class="container-text preview-head"><h1>${escapeHtml(f.title)}</h1>` +
     `<p class="standfirst">${escapeHtml(f.subtitle || f.description)}</p></header>` +
     (cover ? `<figure class="cover-wrap">${cover}</figure>` : '');
   let markdown: string;
@@ -77,8 +77,8 @@ export function renderPreviewHtml(draft: Draft, lang: Lang, imageUrl: (name: str
     markdown = docToMarkdown(f.doc, lang, f.references);
   } catch (e) {
     if (!(e instanceof UnknownReferenceError)) throw e;
-    return `${header}<p class="preview-error" role="alert">Metinde kayıtlı olmayan bir referansa atıf var. Atıfı silin ya da referansı ekleyin; sonra önizleme gösterilir.</p>`;
+    return `${header}<div class="container-text"><p class="preview-error" role="alert">Metinde kayıtlı olmayan bir referansa atıf var. Atıfı silin ya da referansı ekleyin; sonra önizleme gösterilir.</p></div>`;
   }
   const refs = renderReferencesSection(f.references, citedIds(markdown), lang);
-  return `${header}<div class="prose">${bodyHtml(markdown, imageUrl)}</div>${refs}`;
+  return `${header}<div class="container-text"><div class="prose">${bodyHtml(markdown, imageUrl)}</div>${refs}</div>`;
 }

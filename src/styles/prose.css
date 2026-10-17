@@ -1,5 +1,20 @@
 /* The post body (.prose) and Kaynakça (.references): shared by the site's post page and the admin preview. */
 
+/* Cover: a wider column than the text. */
+.cover-wrap {
+  max-width: calc(55rem + 2 * var(--gutter));
+  margin: var(--space-6) auto 0;
+  padding-inline: var(--gutter);
+}
+
+.cover-wrap .cover {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+}
+
 /* Reading column: about 68 characters a line, generous leading. */
 .prose {
   max-width: 68ch;

@@ -41,11 +41,33 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
 
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
-    rootRef.current?.querySelector<HTMLElement>('button')?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusable = () => Array.from(rootRef.current?.querySelectorAll<HTMLElement>('button, a[href], [tabindex]:not([tabindex=\'-1\'])') ?? []);
+    focusable()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') return onClose();
+      if (e.key !== 'Tab') return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!rootRef.current?.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
       prev?.focus?.();
     };
   }, [onClose]);
@@ -61,7 +83,7 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
         </Button>
       </div>
       <div className="preview-scroll">
-        <article className="preview-page container-text">{urls ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <Spinner label="Önizleme hazırlanıyor…" />}</article>
+        <article className="preview-page">{urls ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <Spinner label="Önizleme hazırlanıyor…" />}</article>
       </div>
     </div>
   );
