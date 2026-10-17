@@ -54,6 +54,21 @@ describe('cslToReference', () => {
   });
 });
 
+describe('cslToReference edge cases', () => {
+  const base = { type: 'article', title: 'X', author: [{ family: 'Ray', given: 'O' }], issued: { 'date-parts': [[2020]] } };
+  it('flags preprints', () => {
+    expect(cslToReference(base, new Set())).toMatchObject({ unsupported: 'preprint', ref: { type: 'article' } });
+    expect(cslToReference({ ...base, 'container-title': 'J', subtype: 'preprint' }, new Set()).unsupported).toBe('preprint');
+    expect(cslToReference({ ...base, 'container-title': 'J' }, new Set()).unsupported).toBeNull();
+  });
+  it('does not read the prototype chain', () => {
+    expect(cslToReference({ type: 'constructor', title: 'X' }, new Set()).unsupported).toBe('constructor');
+  });
+  it('appends subtitle', () => {
+    expect(cslToReference({ type: 'book', title: 'Main Title', subtitle: ['The Sub Part'] }, new Set()).ref.title).toBe('Main title: The sub part');
+  });
+});
+
 describe('fetchCsl', () => {
   it('GETs doi.org with the CSL accept header', async () => {
     let seen: [unknown, RequestInit | undefined] = [null, undefined];

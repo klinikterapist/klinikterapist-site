@@ -28,10 +28,10 @@ export async function fetchCsl(doi: string, fetchFn: typeof fetch = fetch): Prom
   }
 }
 
-const TYPES: Record<string, RefType> = {
+const TYPES = new Map<string, RefType>(Object.entries({
   'article-journal': 'article', article: 'article', 'article-magazine': 'article', 'article-newspaper': 'article',
   book: 'book', chapter: 'chapter', webpage: 'web', post: 'web', 'post-weblog': 'web',
-};
+} as Record<string, RefType>));
 
 const str = (v: unknown): string | undefined => {
   const x = Array.isArray(v) ? v[0] : v;
@@ -65,9 +65,10 @@ function yearOf(csl: Record<string, unknown>): Year {
 export function cslToReference(csl: unknown, taken: Set<string>): { ref: Reference; unsupported: string | null } {
   const c = (csl ?? {}) as Record<string, unknown>;
   const cslType = str(c.type) ?? '';
-  const mapped = TYPES[cslType];
+  const mapped = TYPES.get(cslType);
   const lang = str(c.language)?.toLowerCase().startsWith('tr') ? 'tr' : undefined;
-  const title = sentenceCase(str(c.title) ?? '', lang);
+  const subtitle = str(c.subtitle);
+  const title = sentenceCase([str(c.title) ?? '', subtitle].filter(Boolean).join(': '), lang);
   const authors = people(c.author);
   const year = yearOf(c);
   const ref: Reference = { id: makeRefId({ authors, year, title }, taken), type: mapped ?? 'book', authors, year, title };
@@ -85,5 +86,8 @@ export function cslToReference(csl: unknown, taken: Set<string>): { ref: Referen
   const doi = str(c.DOI);
   opt('doi', doi ? (parseDoi(doi) ?? doi) : undefined);
   opt('url', str(c.URL));
-  return { ref, unsupported: mapped ? null : cslType || 'unknown' };
+  const preprint =
+    /preprint/i.test(`${str(c.subtype) ?? ''} ${str(c.genre) ?? ''}`) || cslType === 'posted-content' ||
+    ((cslType === 'article' || cslType === 'article-journal') && !ref.container);
+  return { ref, unsupported: preprint ? 'preprint' : mapped ? null : cslType || 'unknown' };
 }
