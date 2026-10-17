@@ -18,6 +18,7 @@
   --muted: #5b675f;        /* secondary text (≥ 4.5:1 on cream) */
   --line: #ddd6c8;         /* hairlines, card borders */
   --on-forest: #fbf8f2;    /* text on forest */
+  --highlight: #f6e7c8;    /* <mark> in post text */
   --focus: #b5651d;        /* focus ring, distinct from the greens */
 
   /* Type */

@@ -8,7 +8,7 @@ import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
 import { canPublish, describeMissing, isoDay, LANG_LABEL, missingFields, normalizeDraft } from '../../lib/draft';
 import { docToMarkdown } from '../../lib/markdown';
-import { UnknownReferenceError } from '../../../lib/citations';
+import { UnknownReferenceError, citedIds, renderReferencesSection } from '../../../lib/citations';
 import { countWords, readingTime } from '../../../lib/readingTime';
 import { liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
 import { PublishError, buildPublishChangeset, buildUnpublishChangeset } from '../../lib/publish';
@@ -18,6 +18,7 @@ import { Banner, Button, Dialog, Spinner } from '../kit';
 import { ImageStore } from './images';
 import { PostEditor } from './PostEditor';
 import { PostSettings } from './PostSettings';
+import { PreviewDialog } from './PreviewDialog';
 import { clearBackup, readBackup, useAutosave, type AutosaveStatus } from './useAutosave';
 import { SeoPanel } from './SeoPanel';
 
@@ -109,6 +110,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [done, setDone] = useState<Done | null>(null);
   const [inDrive, setInDrive] = useState(loaded.inDrive);
   const [stale, setStale] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const closePreview = useCallback(() => setPreviewing(false), []);
   const [toolbarHost, setToolbarHost] = useState<HTMLElement | null>(null);
   const [side, setSide] = useState<'open' | 'closed'>(() => {
     try {
@@ -152,6 +155,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
       throw e;
     }
   }, [draft, lang]);
+  // Kaynakça under the text, as on the site: only cited references, for this language.
+  const referencesHtml = useMemo(() => renderReferencesSection(draft[lang].references, citedIds(markdown), lang), [draft, lang, markdown]);
   const words = useMemo(() => countWords(markdown), [markdown]);
   const minutes = useMemo(() => readingTime(markdown), [markdown]);
 
@@ -304,6 +309,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
               );
             })}
           </div>
+          <Button onClick={() => setPreviewing(true)}>Önizle</Button>
           <Button variant="ghost" onClick={toggleSide}>
             {side === 'open' ? 'Yazı ayarlarını gizle' : 'Yazı ayarlarını göster'}
           </Button>
@@ -350,6 +356,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
           <div aria-label={LANG_LABEL[lang]}>
             <PostEditor key={`${lang}-${version}`} lang={lang} fields={draft[lang]} onChange={onLang} images={images} onError={setMessage} toolbarHost={toolbarHost} />
           </div>
+          {referencesHtml && <div className="editor-references" dangerouslySetInnerHTML={{ __html: referencesHtml }} />}
         </div>
 
         <aside className="editor-side" hidden={side === 'closed'}>
@@ -401,6 +408,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
         <span>{`${words} kelime · ${minutes} dk okuma`}</span>
       </footer>
 
+      {previewing && <PreviewDialog draft={draft} lang={lang} images={images} onClose={closePreview} />}
       {confirm === 'publish' && (
         <Dialog
           title="Yayınlansın mı?"

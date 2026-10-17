@@ -1760,3 +1760,116 @@ textarea.k-input {
   gap: var(--space-1, 4px);
   margin-bottom: var(--space-3);
 }
+
+/* Kaynakça under the text in the editor (read-only; same markup as the site). */
+.editor-references {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--p-border);
+}
+
+.editor-references .references {
+  margin-bottom: 0;
+  color: var(--p-text);
+}
+
+/* Önizle: full screen, always the site's light look (the panel's dark theme is ignored). */
+.preview-root {
+  color-scheme: light;
+  --p-text: var(--ink);
+  --p-heading: var(--forest);
+  --p-accent: var(--forest);
+  --p-muted: var(--muted);
+  --p-border: var(--line);
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: var(--leading);
+}
+
+.preview-root h1,
+.preview-root h2,
+.preview-root h3 {
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.preview-root a {
+  color: var(--forest);
+}
+
+.preview-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--gutter);
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  font-size: var(--text-sm);
+}
+
+.preview-bar .k-btn {
+  background: var(--paper);
+  border-color: var(--line);
+  color: var(--forest-deep);
+}
+
+.preview-scroll {
+  flex: 1;
+  overflow: auto;
+  padding-bottom: var(--space-7);
+}
+
+.preview-page {
+  padding-top: var(--space-6);
+}
+
+.preview-page h1 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-3xl);
+}
+
+.preview-page .standfirst {
+  margin-bottom: var(--space-4);
+  color: var(--muted);
+  font-size: var(--text-lg);
+  line-height: 1.55;
+}
+
+.preview-page .cover-wrap {
+  margin: var(--space-5) 0 0;
+}
+
+.preview-page .cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+}
+
+.preview-missing {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--sage-soft);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.preview-error {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: #f5d9d3;
+  color: #6e2216;
+}

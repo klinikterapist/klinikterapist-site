@@ -1,0 +1,179 @@
+/* The post body (.prose) and Kaynakça (.references): shared by the site's post page and the admin preview. */
+
+/* Reading column: about 68 characters a line, generous leading. */
+.prose {
+  max-width: 68ch;
+  margin: var(--space-6) 0 var(--space-7);
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+.prose > * + * {
+  margin-top: 1.25em;
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote {
+  margin-bottom: 0;
+}
+
+.prose h2 {
+  margin: 2.2em 0 0;
+  font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+}
+
+.prose h3 {
+  margin: 1.8em 0 0;
+  font-size: var(--text-lg);
+}
+
+.prose h2 + *,
+.prose h3 + * {
+  margin-top: 0.75em;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.4em;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose li::marker {
+  color: var(--sage);
+}
+
+.prose blockquote {
+  margin-inline: 0;
+  padding: 0.2em 0 0.2em 1.2em;
+  border-left: 3px solid var(--sage);
+  color: var(--forest);
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+.prose img {
+  border-radius: var(--radius-md);
+}
+
+.prose a {
+  overflow-wrap: anywhere;
+}
+
+.prose mark {
+  padding: 0 0.15em;
+  border-radius: 3px;
+  background: var(--highlight);
+  color: inherit;
+}
+
+/* A citation reads as ordinary text. */
+.prose cite {
+  font-style: normal;
+}
+
+.prose hr {
+  width: 6rem;
+  margin: 2.5em auto;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.prose figure {
+  margin-inline: 0;
+}
+
+.prose figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.prose figcaption {
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.prose .callout {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--sage-soft);
+  color: var(--forest-deep);
+}
+
+.prose .callout > :first-child {
+  margin-top: 0;
+}
+
+/* YouTube: a link until clicked; only then the (no-cookie) player loads. */
+.prose .youtube {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--forest-deep);
+}
+
+.prose .youtube a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: var(--space-4);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.prose .youtube a::before {
+  content: '';
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.92)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2322382b' d='M8 5v14l11-7z'/%3E%3C/svg%3E")
+    center / 55% no-repeat;
+}
+
+.prose .youtube iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Kaynakça: APA hanging indent, no visible numbers. */
+.references {
+  max-width: 68ch;
+  margin: 0 0 var(--space-7);
+}
+
+.references h2 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-xl);
+}
+
+.references-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.references-list li {
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+  overflow-wrap: anywhere;
+}
+
+.references-list li + li {
+  margin-top: var(--space-3);
+}

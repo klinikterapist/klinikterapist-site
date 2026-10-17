@@ -190,4 +190,35 @@ describe('EditorPage', () => {
       Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
     }
   });
+
+  it('Önizle shows the selected language full screen, never saves or publishes, and Kapat closes it', async () => {
+    const api = setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    await screen.findByRole('button', { name: 'Yayınla' });
+    fireEvent.click(screen.getByRole('button', { name: /^EN/ }));
+    const commits = api.state.commits.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Önizle' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Önizleme' });
+    await waitFor(() => expect(within(dialog).getByRole('heading', { level: 1, name: 'Anxiety' })).toBeTruthy());
+    expect(within(dialog).getByText('Metin.')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kapat' }));
+    expect(screen.queryByRole('dialog', { name: 'Önizleme' })).toBeNull();
+    expect(api.state.commits.length).toBe(commits);
+  });
+
+  it('the editor shows the Kaynakça of the cited references under the text', async () => {
+    const ref = { id: 'ray2004', type: 'article' as const, authors: [{ family: 'Ray', given: 'Oakley' }], year: 2004, title: 'Why we need positive psychology' };
+    const unused = { id: 'lee2010', type: 'book' as const, authors: [{ family: 'Lee', given: 'Ann' }], year: 2010, title: 'Uncited book', publisher: 'P' };
+    const cited = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metin ' }, { type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: false } }] }] };
+    setup({ ...base(), tr: { ...filled('Kaygı', 'kaygi'), doc: cited, references: [ref, unused] }, en: filled('Anxiety', 'anxiety') });
+    const section = await waitFor(() => {
+      const el = document.querySelector('.editor-references .references');
+      if (!el) throw new Error('no references yet');
+      return el as HTMLElement;
+    });
+    expect(within(section).getByRole('heading', { name: 'Kaynakça' })).toBeTruthy();
+    expect(section.textContent).toContain('Why we need positive psychology');
+    expect(section.textContent).not.toContain('Uncited book');
+    fireEvent.click(screen.getByRole('button', { name: /^EN/ }));
+    expect(document.querySelector('.editor-references')).toBeNull();
+  });
 });
