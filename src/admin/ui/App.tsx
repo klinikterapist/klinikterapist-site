@@ -51,8 +51,7 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
             ) : route.name === 'home' ? (
               <Home />
             ) : (
-              // The posts list keeps its own screen until Task 4.
-              <PostsList />
+              <PostsList tab={route.tab} />
             )}
           </Shell>
           {!signedIn && (

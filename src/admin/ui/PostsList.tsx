@@ -9,13 +9,14 @@ import { Banner, Button, Field, Select, Spinner } from './kit';
 
 const fold = (s: string) => s.toLocaleLowerCase('tr-TR').replace(/i̇/g, 'i');
 
-export function PostsList() {
+export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
   const { api } = usePanel();
   const [rows, setRows] = useState<PostRow[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
+  const [sort, setSort] = useState<'newest' | 'oldest'>('newest');
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -33,10 +34,23 @@ export function PostsList() {
     };
   }, [api, attempt]);
 
+  const counts = useMemo(
+    () => ({
+      live: (rows ?? []).filter((r) => r.status !== 'taslak').length,
+      drafts: (rows ?? []).filter((r) => r.status !== 'yayında').length,
+    }),
+    [rows],
+  );
+
   const shown = useMemo(() => {
     const q = fold(query.trim());
-    return (rows ?? []).filter((r) => (!category || r.category === category) && (!q || fold(`${r.title} ${r.titleEn}`).includes(q)));
-  }, [rows, query, category]);
+    const inTab = (r: PostRow) => (tab === 'live' ? r.status !== 'taslak' : r.status !== 'yayında');
+    const list = (rows ?? []).filter(
+      (r) => inTab(r) && (!category || r.category === category) && (!q || fold(`${r.title} ${r.titleEn}`).includes(q)),
+    );
+    const dir = sort === 'newest' ? -1 : 1;
+    return list.sort((a, b) => dir * a.updatedAt.localeCompare(b.updatedAt));
+  }, [rows, tab, query, category, sort]);
 
   const create = () => {
     go(startNewPost(window.localStorage, new Date()));
@@ -52,6 +66,14 @@ export function PostsList() {
           Yeni yazı
         </Button>
       </div>
+      <nav className="tabs" aria-label="Yazı grupları">
+        <a className={`tab ${tab === 'live' ? 'is-active' : ''}`} href="#/yazilar" aria-current={tab === 'live' ? 'page' : undefined}>
+          {`Yayında ${counts.live}`}
+        </a>
+        <a className={`tab ${tab === 'drafts' ? 'is-active' : ''}`} href="#/yazilar/taslaklar" aria-current={tab === 'drafts' ? 'page' : undefined}>
+          {`Taslaklar ${counts.drafts}`}
+        </a>
+      </nav>
       <div className="filters">
         <Field label="Ara" value={query} onChange={setQuery} placeholder="Başlıkta ara (Türkçe ya da İngilizce)" />
         <Select
@@ -59,6 +81,15 @@ export function PostsList() {
           value={category}
           options={[{ value: '', label: 'Tüm kategoriler' }, ...categories.map((c) => ({ value: c.id, label: c.label.tr }))]}
           onChange={setCategory}
+        />
+        <Select
+          label="Sırala"
+          value={sort}
+          options={[
+            { value: 'newest', label: 'En yeni önce' },
+            { value: 'oldest', label: 'En eski önce' },
+          ]}
+          onChange={(v) => setSort(v === 'oldest' ? 'oldest' : 'newest')}
         />
       </div>
       {error && (
@@ -68,7 +99,9 @@ export function PostsList() {
       )}
       {!rows && !error && <Spinner label="Yazılar yükleniyor…" />}
       {rows && rows.length === 0 && <p className="empty">Henüz yazı yok. İlk yazınızı “Yeni yazı” ile başlatın.</p>}
-      {rows && rows.length > 0 && shown.length === 0 && <p className="empty">Aramanıza uyan yazı yok.</p>}
+      {rows && rows.length > 0 && shown.length === 0 && (
+        <p className="empty">{query || category ? 'Aramanıza uyan yazı yok.' : tab === 'drafts' ? 'Taslak yok.' : 'Yayında yazı yok.'}</p>
+      )}
       {shown.length > 0 && (
         <ul className="post-rows">
           {shown.map((r) => (
