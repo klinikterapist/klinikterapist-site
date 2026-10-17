@@ -23,7 +23,9 @@ const NAV: [PageKey, UiKey][] = [
 const current = Astro.url.pathname;
 const items = NAV.map(([key, label]) => {
   const href = pathFor(key, lang);
-  return { href, label: t(lang, label), active: current === href || (key === 'blog' && current.startsWith(href)) };
+  // `page` only on the exact page; inside the blog (posts, categories) Blog is marked as the current section.
+  const ariaCurrent = current === href ? 'page' : key === 'blog' && current.startsWith(href) ? 'true' : undefined;
+  return { href, label: t(lang, label), ariaCurrent };
 });
 ---
 
@@ -39,7 +41,7 @@ const items = NAV.map(([key, label]) => {
 
     <nav class="nav" aria-label={t(lang, 'mainNav')}>
       <ul class="nav-inline">
-        {items.map((i) => <li><a href={i.href} aria-current={i.active ? 'page' : undefined}>{i.label}</a></li>)}
+        {items.map((i) => <li><a href={i.href} aria-current={i.ariaCurrent}>{i.label}</a></li>)}
       </ul>
       <details class="nav-menu">
         <summary aria-label={t(lang, 'menu')}>
@@ -48,7 +50,7 @@ const items = NAV.map(([key, label]) => {
         </summary>
         <ul class="nav-panel">
           <li><a href={home} aria-current={current === home ? 'page' : undefined}>{t(lang, 'navHome')}</a></li>
-          {items.map((i) => <li><a href={i.href} aria-current={i.active ? 'page' : undefined}>{i.label}</a></li>)}
+          {items.map((i) => <li><a href={i.href} aria-current={i.ariaCurrent}>{i.label}</a></li>)}
         </ul>
       </details>
     </nav>
@@ -187,7 +189,7 @@ const items = NAV.map(([key, label]) => {
   }
 
   .nav-panel a:hover,
-  .nav-panel a[aria-current='page'] {
+  .nav-panel a[aria-current] {
     background: var(--sage-soft);
     color: var(--forest);
   }
@@ -270,7 +272,7 @@ const items = NAV.map(([key, label]) => {
       background: var(--sage-soft);
     }
 
-    .nav-inline a[aria-current='page'] {
+    .nav-inline a[aria-current] {
       color: var(--forest);
       text-decoration: underline;
       text-decoration-thickness: 2px;

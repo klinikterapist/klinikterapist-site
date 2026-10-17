@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { allPages, distFile, loadPage } from './load';
 
 const STATIC_PAGES = [
@@ -92,5 +93,45 @@ describe('static pages', () => {
     const d = loadPage('/404.html');
     expect(d.querySelector('main a[href="/"]')).not.toBeNull();
     expect(d.querySelector('main a[href="/en/"]')).not.toBeNull();
+  });
+});
+
+describe('final-review fixes', () => {
+  const fixture = (file: string) => JSON.parse(readFileSync(join('tests/fixtures/data', file), 'utf8'));
+
+  it('about texts are rendered as Markdown, with raw HTML escaped (I3)', () => {
+    const who = loadPage('/hakkimda/').querySelector('.who-text .md')!;
+    expect(who.querySelectorAll('p')).toHaveLength(2);
+    expect(who.querySelector('strong')?.text).toBe('Osman Güneş Özkurt');
+    expect(who.querySelector('em')?.text).toBe('bilimsel temelli');
+    expect(who.querySelector('a[href="/blog/"]')).not.toBeNull();
+    expect(who.querySelector('script')).toBeNull();
+    expect(who.text).toContain('<script>alert(1)</script>');
+  });
+
+  it('EN about shows the localized timeline period (M1)', () => {
+    const en = loadPage('/en/about/');
+    expect(en.textContent).not.toContain('Devam ediyor');
+    expect(en.querySelectorAll('.period').map((p) => p.text)).toContain('Ongoing');
+    expect(loadPage('/hakkimda/').querySelectorAll('.period').map((p) => p.text)).toContain('Devam ediyor');
+  });
+
+  it('footer e-mail link is labelled in the page language (M1)', () => {
+    expect(loadPage('/en/').querySelector('.social a[href^="mailto:"]')?.getAttribute('aria-label')).toBe('E-mail');
+    expect(loadPage('/').querySelector('.social a[href^="mailto:"]')?.getAttribute('aria-label')).toBe('E-posta');
+  });
+
+  it('resources owner note comes from resources.json (myNote)', () => {
+    const { myNote } = fixture('resources.json');
+    expect(loadPage('/kaynaklar/').textContent).toContain(myNote.tr);
+    expect(loadPage('/en/resources/').textContent).toContain(myNote.en);
+  });
+
+  it('Blog nav item is aria-current="page" only on the blog page itself (M6)', () => {
+    const navBlog = (path: string, href: string) =>
+      loadPage(path).querySelectorAll(`.site-header a[href="${href}"]`).map((a) => a.getAttribute('aria-current'));
+    expect(navBlog('/blog/', '/blog/')).toEqual(['page', 'page']);
+    expect(navBlog('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/', '/blog/')).toEqual(['true', 'true']);
+    expect(navBlog('/en/blog/category/mental-health/', '/en/blog/')).toEqual(['true', 'true']);
   });
 });

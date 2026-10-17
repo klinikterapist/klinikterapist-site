@@ -31,7 +31,7 @@ const external = (url: string) => /^https?:\/\//.test(url);
             <li>
               <a
                 href={l.url}
-                aria-label={l.label}
+                aria-label={l.icon === 'email' ? t(lang, 'emailLabel') : l.label}
                 {...(external(l.url) ? { target: '_blank', rel: 'noopener noreferrer me' } : {})}
               >
                 <Icon name={l.icon} />
