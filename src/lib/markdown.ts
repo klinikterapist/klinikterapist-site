@@ -1,4 +1,5 @@
 import { Marked, type Tokens } from 'marked';
+import { SAFE_LINK } from './safe-link';
 
 /**
  * Markdown for short settings texts (about.json `whoAmI`, `whyThisWork`): paragraphs, emphasis,
@@ -7,9 +8,6 @@ import { Marked, type Tokens } from 'marked';
  */
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-// A site path, but not `//host` or `/\host` (browsers treat both as protocol-relative).
-const SAFE_HREF = /^(https:\/\/|mailto:|\/(?![\/\\]))/i;
 
 const md = new Marked({
   async: false,
@@ -20,7 +18,7 @@ const md = new Marked({
     },
     link({ href, tokens }: Tokens.Link) {
       const inner = this.parser.parseInline(tokens);
-      return SAFE_HREF.test(href) ? `<a href="${escapeHtml(href)}">${inner}</a>` : inner;
+      return SAFE_LINK.test(href) ? `<a href="${escapeHtml(href)}">${inner}</a>` : inner;
     },
     image({ text }: Tokens.Image) {
       return escapeHtml(text);
