@@ -1,12 +1,12 @@
 /** The small menu a citation opens, and the "Atıfı düzenle" dialog (page and format). */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { citationText, type CiteItem, type Reference } from '../../../lib/apa';
 import { sanitizeCiteItems } from '../../../lib/citations';
 import type { Lang } from '../../../lib/schemas';
 import { Button, Dialog } from '../kit';
 import type { CitationAttrs } from './Citation';
 import { FormatSelect, LocatorFields, type LocatorInput } from './CiteSettings';
-import { parseLocator } from './referenceModel';
+import { locatorError, parseLocator } from './referenceModel';
 
 export type MenuAction = { kind: 'locator' } | { kind: 'edit'; id: string } | { kind: 'add' } | { kind: 'remove' };
 
@@ -17,6 +17,16 @@ export function shortLabel(id: string, references: Reference[], lang: Lang): str
   } catch {
     return id;
   }
+}
+
+const GAP = 8;
+
+/** Below the citation, or above it near the bottom edge; kept inside the viewport on both sides. */
+export function placeMenu(rect: DOMRect, size: { width: number; height: number }, viewport: { width: number; height: number }) {
+  const left = Math.max(GAP, Math.min(rect.left, viewport.width - size.width - GAP));
+  const below = rect.bottom + 4;
+  const top = below + size.height > viewport.height - GAP ? Math.max(GAP, rect.top - size.height - 4) : below;
+  return { top, left };
 }
 
 export function CitationMenu(props: {
@@ -51,9 +61,13 @@ export function CitationMenu(props: {
       {label}
     </button>
   );
-  const left = Math.max(8, Math.min(rect.left, window.innerWidth - 248));
+  const [pos, setPos] = useState({ top: rect.bottom + 4, left: Math.max(GAP, rect.left) });
+  useLayoutEffect(() => {
+    const el = menu.current;
+    if (el) setPos(placeMenu(rect, { width: el.offsetWidth, height: el.offsetHeight }, { width: window.innerWidth, height: window.innerHeight }));
+  }, [rect]);
   return (
-    <div ref={menu} className="ed-more-menu ed-cite-menu" role="menu" aria-label="Atıf" style={{ top: rect.bottom + 4, left }}>
+    <div ref={menu} className="ed-more-menu ed-cite-menu" role="menu" aria-label="Atıf" style={pos}>
       {item('Sayfayı / biçimi değiştir', { kind: 'locator' })}
       {ids.length === 1
         ? item('Referansı düzenle', { kind: 'edit', id: ids[0] })
@@ -90,7 +104,7 @@ export function CitationEditDialog(props: {
       actions={
         <>
           <Button onClick={props.onClose}>Vazgeç</Button>
-          <Button variant="primary" onClick={save}>
+          <Button variant="primary" disabled={rows.some((r) => locatorError(r.loc.page))} onClick={save}>
             Kaydet
           </Button>
         </>

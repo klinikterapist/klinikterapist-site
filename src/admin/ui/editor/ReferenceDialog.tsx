@@ -4,14 +4,14 @@
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
-import { formatReferenceHtml, makeRefId, type LocatorKind, type Reference } from '../../../lib/apa';
+import { bibliography, formatReferenceHtml, makeRefId, type LocatorKind, type Reference } from '../../../lib/apa';
 import type { Lang } from '../../../lib/schemas';
 import { DoiError, cslToReference, fetchCsl, parseDoi } from '../../lib/doi';
 import { Banner, Button, Dialog, Field } from '../kit';
-import { canRemoveReference } from './Citation';
+import { canRemoveReference, citedIdsInDoc } from './Citation';
 import { FormatSelect, LocatorFields, type LocatorInput } from './CiteSettings';
 import { ReferenceForm } from './ReferenceForm';
-import { emptyForm, formFromReference, parseLocator, referenceFromForm, type RefForm } from './referenceModel';
+import { emptyForm, formFromReference, locatorError, parseLocator, referenceFromForm, type RefForm } from './referenceModel';
 
 export type InsertRequest = { ref: Reference; isNew: boolean; locator?: { kind: LocatorKind; value: string }; narrative: boolean };
 
@@ -19,7 +19,17 @@ const TITLE_CASE_WARNING = 'Başlığın büyük/küçük harflerini kontrol edi
 const NOT_A_DOI = 'Bu bir DOI gibi görünmüyor. DOI "10." ile başlar, örneğin 10.1037/0003-066X.59.1.29.';
 const unsupportedText = (type: string) => `Bu kaynak türü (${type}) otomatik biçimlendirilemiyor. Uygun türü seçip alanları kontrol edin.`;
 
-function Preview({ reference: ref, references, lang }: { reference: Reference | null; references: Reference[]; lang: Lang }) {
+/**
+ * One reference as APA HTML, with the 2004a/2004b letters the site would give it: counted over
+ * the references cited in the doc plus this one (R8).
+ */
+function referenceHtml(ref: Reference, references: Reference[], doc: JSONContent, lang: Lang): string {
+  const all = [...references.filter((r) => r.id !== ref.id), ref];
+  const cited = citedIdsInDoc(doc).add(ref.id);
+  return formatReferenceHtml(ref, bibliography(all, cited, lang), lang);
+}
+
+function Preview({ reference: ref, references, doc, lang }: { reference: Reference | null; references: Reference[]; doc: JSONContent; lang: Lang }) {
   const id = useId();
   return (
     <div className="ref-preview">
@@ -27,7 +37,7 @@ function Preview({ reference: ref, references, lang }: { reference: Reference | 
         Önizleme (APA 7)
       </p>
       {ref ? (
-        <section aria-labelledby={id} dangerouslySetInnerHTML={{ __html: formatReferenceHtml(ref, [...references.filter((r) => r.id !== ref.id), ref], lang) }} />
+        <section aria-labelledby={id} dangerouslySetInnerHTML={{ __html: referenceHtml(ref, references, doc, lang) }} />
       ) : (
         <section aria-labelledby={id} className="k-hint">
           Tür, yıl ve başlık girilince künye burada görünür.
@@ -38,7 +48,7 @@ function Preview({ reference: ref, references, lang }: { reference: Reference | 
 }
 
 /** Edit-only form for one saved reference. */
-function EditPane(props: { initial: Reference; references: Reference[]; lang: Lang; onSave: (ref: Reference) => void; onCancel: () => void; dialogTitle: string; onClose: () => void }) {
+function EditPane(props: { initial: Reference; references: Reference[]; doc: JSONContent; lang: Lang; onSave: (ref: Reference) => void; onCancel: () => void; dialogTitle: string; onClose: () => void }) {
   const [form, setForm] = useState<RefForm>(() => formFromReference(props.initial));
   const ref = referenceFromForm(form, props.initial.id);
   return (
@@ -56,7 +66,7 @@ function EditPane(props: { initial: Reference; references: Reference[]; lang: La
     >
       <div className="ref-dialog">
         <ReferenceForm form={form} onChange={setForm} />
-        <Preview reference={ref} references={props.references} lang={props.lang} />
+        <Preview reference={ref} references={props.references} doc={props.doc} lang={props.lang} />
       </div>
     </Dialog>
   );
@@ -100,6 +110,7 @@ export function ReferenceDialog(props: {
       <EditPane
         initial={editing}
         references={references}
+        doc={props.doc}
         lang={lang}
         dialogTitle="Referansı düzenle"
         onClose={onClose}
@@ -121,13 +132,15 @@ export function ReferenceDialog(props: {
   const lookup = async () => {
     const doi = parseDoi(doiInput);
     setLookupError(null);
-    setUnsupported(null);
-    setFromDoi(false);
     if (!doi) {
       setLookupError(NOT_A_DOI);
       setForm((f) => f ?? emptyForm());
       return;
     }
+    // A form filled by an earlier lookup belongs to that DOI; it must not survive a failed one.
+    const keep = fromDoi ? null : form;
+    setUnsupported(null);
+    setFromDoi(false);
     setBusy(true);
     try {
       const { ref, unsupported: u } = cslToReference(await fetchCsl(doi, props.fetchFn ?? window.fetch.bind(window)), taken);
@@ -138,7 +151,9 @@ export function ReferenceDialog(props: {
     } catch (e) {
       if (!alive.current) return;
       setLookupError(e instanceof DoiError ? e.message : 'Bilgiler okunamadı. Alanları elle doldurun.');
-      setForm((f) => ({ ...(f ?? emptyForm()), doi }));
+      // A DOI that doi.org does not know is never attached; after a network error it stays in the DOI field.
+      const notFound = e instanceof DoiError && e.notFound;
+      setForm({ ...(keep ?? emptyForm()), doi: notFound ? (keep && keep.doi !== doi ? keep.doi : '') : doi });
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -170,7 +185,7 @@ export function ReferenceDialog(props: {
       actions={
         <>
           <Button onClick={onClose}>Vazgeç</Button>
-          <Button variant="primary" disabled={!chosen || busy} onClick={insert}>
+          <Button variant="primary" disabled={!chosen || busy || !!locatorError(locator.page)} onClick={insert}>
             Ekle
           </Button>
         </>
@@ -192,7 +207,7 @@ export function ReferenceDialog(props: {
                     <li key={r.id} className={selected === r.id ? 'is-selected' : ''}>
                       <label className="ref-saved-choice">
                         <input type="radio" name={`${tabsId}-saved`} checked={selected === r.id} onChange={() => setSelected(r.id)} />
-                        <span dangerouslySetInnerHTML={{ __html: formatReferenceHtml(r, references, lang) }} />
+                        <span dangerouslySetInnerHTML={{ __html: referenceHtml(r, references, props.doc, lang) }} />
                       </label>
                       <span className="ref-saved-tools">
                         <Button variant="ghost" onClick={() => setEditing(r)}>
@@ -236,7 +251,7 @@ export function ReferenceDialog(props: {
                   {unsupported && <Banner tone="warning">{unsupportedText(unsupported)}</Banner>}
                   {fromDoi && <Banner tone="warning">{TITLE_CASE_WARNING}</Banner>}
                   <ReferenceForm form={form} onChange={setForm} />
-                  <Preview reference={newRef} references={references} lang={lang} />
+                  <Preview reference={newRef} references={references} doc={props.doc} lang={lang} />
                 </>
               ) : (
                 <Button variant="ghost" onClick={() => setForm(emptyForm())}>

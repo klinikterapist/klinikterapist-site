@@ -1,7 +1,12 @@
 /** DOI lookup: turns a DOI into an APA reference via doi.org content negotiation (CSL-JSON). */
 import { makeRefId, sentenceCase, type Person, type Reference, type RefType, type Year } from '../../lib/apa';
 
-export class DoiError extends Error {}
+export class DoiError extends Error {
+  /** doi.org answered that the DOI does not exist (not a network problem). */
+  constructor(message: string, readonly notFound = false) {
+    super(message);
+  }
+}
 
 const NOT_FOUND = 'Bu DOI bulunamadı.';
 const UNREACHABLE = 'DOI servisine ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.';
@@ -19,7 +24,7 @@ export async function fetchCsl(doi: string, fetchFn: typeof fetch = fetch): Prom
   } catch {
     throw new DoiError(UNREACHABLE);
   }
-  if (res.status === 404) throw new DoiError(NOT_FOUND);
+  if (res.status === 404) throw new DoiError(NOT_FOUND, true);
   if (!res.ok) throw new DoiError(UNREACHABLE);
   try {
     return await res.json();

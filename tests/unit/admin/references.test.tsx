@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import type { Editor, JSONContent } from '@tiptap/core';
 import { PostEditor } from '../../../src/admin/ui/editor/PostEditor';
 import { Citation, canRemoveReference } from '../../../src/admin/ui/editor/Citation';
+import { placeMenu } from '../../../src/admin/ui/editor/CitationMenu';
 import { Editor as CoreEditor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { EditorPage } from '../../../src/admin/ui/editor/EditorPage';
@@ -170,6 +171,69 @@ describe('Referans ekle', () => {
     expect(within(dlg).getByLabelText('Başlık')).toBeTruthy();
   });
 
+  it('a lookup that fails after a successful one clears the form and does not keep the unknown DOI (review 1)', async () => {
+    setup();
+    const dlg = await openDialog();
+    await lookup(dlg, '10.1037/0003-066X.59.1.29');
+    await within(dlg).findByText('Başlığın büyük/küçük harflerini kontrol edin.');
+    await lookup(dlg, '10.9999/yok');
+    expect(await within(dlg).findByText('Bu DOI bulunamadı.')).toBeTruthy();
+    expect((within(dlg).getByLabelText('Başlık') as HTMLInputElement).value).toBe('');
+    expect((within(dlg).getAllByLabelText('Soyadı')[0] as HTMLInputElement).value).toBe('');
+    expect((within(dlg).getByLabelText('DOI') as HTMLInputElement).value).toBe('');
+    expect(within(dlg).queryByText('Başlığın büyük/küçük harflerini kontrol edin.')).toBeNull();
+    expect(ekle(dlg).disabled).toBe(true);
+  });
+
+  it('a network failure keeps the DOI in the editable DOI field', async () => {
+    const fetchFn = vi.fn(async () => {
+      throw new TypeError('offline');
+    }) as unknown as typeof fetch;
+    render(<Harness initial={fields(para({ type: 'text', text: 'Metin ' }))} fetchFn={fetchFn} />);
+    const dlg = await openDialog();
+    await lookup(dlg, 'doi:10.1000/smith');
+    expect(await within(dlg).findByText(/DOI servisine ulaşılamadı/)).toBeTruthy();
+    expect((within(dlg).getByLabelText('DOI') as HTMLInputElement).value).toBe('10.1000/smith');
+  });
+
+  it('the DOI is an editable, checked field (review 2)', async () => {
+    setup();
+    const dlg = await openDialog();
+    await lookup(dlg, '10.1037/0003-066X.59.1.29');
+    await within(dlg).findByText('Başlığın büyük/küçük harflerini kontrol edin.');
+    const doi = within(dlg).getByLabelText('DOI') as HTMLInputElement;
+    expect(doi.value).toBe('10.1037/0003-066X.59.1.29');
+    fireEvent.change(doi, { target: { value: 'abc' } });
+    expect(within(dlg).getByText("Bu bir DOI gibi görünmüyor. Boş bırakın ya da 10. ile başlayan DOI'yi yazın.")).toBeTruthy();
+    expect(ekle(dlg).disabled).toBe(true);
+    fireEvent.change(doi, { target: { value: '' } });
+    expect(within(dlg).getByRole('region', { name: 'Önizleme (APA 7)' }).textContent).not.toContain('doi.org');
+    fireEvent.change(doi, { target: { value: 'https://doi.org/10.1000/xyz' } });
+    fireEvent.click(ekle(dlg));
+    await waitFor(() => expect(latest.references[0]?.doi).toBe('10.1000/xyz'));
+  });
+
+  it('a page with forbidden characters is refused with a hint (review 7)', async () => {
+    setup();
+    const dlg = await openDialog();
+    await lookup(dlg, '10.1037/0003-066X.59.1.29');
+    await within(dlg).findByText('Başlığın büyük/küçük harflerini kontrol edin.');
+    fireEvent.change(within(dlg).getByLabelText('Sayfa (isteğe bağlı)'), { target: { value: '3;4' } });
+    expect(within(dlg).getByText('Sayfa alanında ; ~ " < > & işaretleri kullanılamaz.')).toBeTruthy();
+    expect(ekle(dlg).disabled).toBe(true);
+  });
+
+  it('previews use the same 2004a/2004b letters as the site (review 3)', async () => {
+    const ray2 = { ...rayRef, id: 'ray2004-2', title: 'Another title' };
+    const cite = { type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: false } };
+    setup(fields(para({ type: 'text', text: 'Metin ' }, cite), [rayRef, ray2]));
+    await waitFor(() => expect(editorText()).toContain('(Ray, 2004)'));
+    const dlg = await openDialog();
+    const radios = within(dlg).getAllByRole('radio').map((r) => r.closest('label')!.textContent);
+    expect(radios[0]).toContain('(2004)');
+    expect(radios[1]).toContain('(2004a)');
+  });
+
   it('the manual form offers four types and its fields follow the type', async () => {
     setup();
     const dlg = await openDialog();
@@ -288,6 +352,16 @@ describe('Referans ekle', () => {
     expect(latest.references).toEqual([]);
   });
 
+  it('the citation storage is seeded at creation, so the first paint has the APA text (review 5)', () => {
+    const e = new CoreEditor({
+      extensions: [StarterKit, Citation.configure({ refs: [rayRef], lang: 'tr' })],
+      content: para({ type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: false } }),
+    });
+    expect(e.storage.citation.refs).toEqual([rayRef]);
+    expect(e.getText()).toBe('(Ray, 2004)');
+    e.destroy();
+  });
+
   it('a citation to a missing reference shows "[geçersiz atıf]" instead of crashing', async () => {
     const cite = { type: 'citation', attrs: { items: [{ id: 'yok2000' }], narrative: false } };
     setup(fields(para({ type: 'text', text: 'Metin ' }, cite), []));
@@ -303,6 +377,16 @@ describe('Referans ekle', () => {
     expect(b.getJSON().content?.[0].content).toEqual([{ type: 'citation', attrs }]);
     a.destroy();
     b.destroy();
+  });
+
+  it('the citation menu stays inside a 360px screen and flips up near the bottom (review 4)', () => {
+    const rect = (left: number, top: number) => ({ left, top, bottom: top + 20, right: left + 80, width: 80, height: 20 }) as DOMRect;
+    const view = { width: 360, height: 640 };
+    const size = { width: 250, height: 180 };
+    expect(placeMenu(rect(300, 100), size, view)).toEqual({ left: 102, top: 124 });
+    expect(placeMenu(rect(-20, 100), size, view).left).toBe(8);
+    expect(placeMenu(rect(10, 560), size, view)).toEqual({ left: 10, top: 376 });
+    expect(placeMenu(rect(10, 100), { width: 400, height: 180 }, view).left).toBe(8);
   });
 
   it('canRemoveReference is false only for an id cited in the doc', () => {

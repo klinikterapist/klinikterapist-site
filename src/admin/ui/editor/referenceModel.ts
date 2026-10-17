@@ -20,7 +20,6 @@ export type RefForm = {
   publisher: string;
   url: string;
   accessed: string;
-  /** Kept from the lookup or the reference being edited; not shown as a field. */
   doi: string;
 };
 
@@ -80,6 +79,15 @@ export function parseYear(input: string): Year | null {
 }
 
 export const YEAR_ERROR = 'Yıl bir sayı, "t.y." ya da "baskıda" olmalı.';
+export const DOI_ERROR = "Bu bir DOI gibi görünmüyor. Boş bırakın ya da 10. ile başlayan DOI'yi yazın.";
+
+/** The DOI field may be empty; otherwise it must be a DOI (bare, doi: or doi.org link). */
+export const doiError = (input: string): string | null => (input.trim() && !parseDoi(input) ? DOI_ERROR : null);
+
+/** Characters the stored citation cannot hold (see `sanitizeCiteItems`). */
+const LOCATOR_FORBIDDEN = /[;~"<>&\u0000-\u001f]/;
+export const LOCATOR_ERROR = 'Sayfa alanında ; ~ " < > & işaretleri kullanılamaz.';
+export const locatorError = (page: string): string | null => (LOCATOR_FORBIDDEN.test(page) ? LOCATOR_ERROR : null);
 
 function people(rows: PersonRow[]): Person[] {
   const out: Person[] = [];
@@ -99,7 +107,7 @@ function people(rows: PersonRow[]): Person[] {
 /** The reference the form describes (without a final id), or null when it is not complete. */
 export function referenceFromForm(f: RefForm, id = ''): Reference | null {
   const year = parseYear(f.year);
-  if (!f.type || year === null || !f.title.trim()) return null;
+  if (!f.type || year === null || !f.title.trim() || doiError(f.doi)) return null;
   const ref: Reference = { id, type: f.type, authors: people(f.authors), year, title: f.title.trim() };
   const shown = new Set(TYPE_FIELDS[f.type]);
   if (shown.has('editors')) {

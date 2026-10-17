@@ -2,7 +2,7 @@
  * Writing surface for one language: a fixed toolbar, a big title, then the body.
  */
 import { createPortal } from 'react-dom';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -17,10 +17,11 @@ import { Button, Dialog, Field } from '../kit';
 import { Callout, Figure, Youtube } from './nodes';
 import type { ImageStore } from './images';
 import { Toolbar } from './Toolbar';
-import { Citation, citationAtCursor, syncCitationRefs, type CitationAttrs } from './Citation';
+import { Citation, citationAtCursor, citedRefs, syncCitationRefs, type CitationAttrs } from './Citation';
 import { CitationEditDialog, CitationMenu, type MenuAction } from './CitationMenu';
 import { ReferenceDialog, ReferenceEditDialog, type InsertRequest } from './ReferenceDialog';
-import type { CiteItem, Reference } from '../../../lib/apa';
+import type { Reference } from '../../../lib/apa';
+import { sanitizeCiteItems } from '../../../lib/citations';
 
 /** Same rule as the site's Markdown renderer: https, mailto or a site path. */
 const SAFE_LINK = /^(https:\/\/|mailto:|\/(?![\/\\]))/i;
@@ -33,7 +34,7 @@ export function normalizeLink(input: string): string | null {
   return SAFE_LINK.test(v) ? v : null;
 }
 
-function useTiptap(lang: Lang, doc: JSONContent, images: ImageStore, onDoc: (doc: JSONContent) => void) {
+function useTiptap(lang: Lang, doc: JSONContent, references: Reference[], images: ImageStore, onDoc: (doc: JSONContent) => void) {
   const onDocRef = useRef(onDoc);
   onDocRef.current = onDoc;
   return useEditor(
@@ -51,7 +52,7 @@ function useTiptap(lang: Lang, doc: JSONContent, images: ImageStore, onDoc: (doc
         Highlight,
         Youtube,
         Callout,
-        Citation,
+        Citation.configure({ refs: citedRefs(references, doc, lang), lang }),
       ],
       content: doc,
       editorProps: { attributes: { class: 'ed-body prose', lang, 'aria-label': `Yazı metni (${LANG_LABEL[lang]})` } },
@@ -82,12 +83,12 @@ export function PostEditor(props: {
   fetchFn?: typeof fetch;
 }) {
   const { lang, fields, onChange, images, onError, toolbarHost } = props;
-  const editor = useTiptap(lang, fields.doc, images, (doc) => onChange({ doc }));
+  const editor = useTiptap(lang, fields.doc, fields.references, images, (doc) => onChange({ doc }));
   const [ask, setAsk] = useState<Ask | null>(null);
   const [cite, setCite] = useState<CiteUi | null>(null);
   const closeCite = useCallback(() => setCite(null), []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (editor) syncCitationRefs(editor, fields.references, fields.doc, lang);
   }, [editor, fields.references, fields.doc, lang]);
   useEffect(() => {
@@ -156,7 +157,8 @@ export function PostEditor(props: {
     if (!editor) return;
     const references = r.isNew ? [...fields.references, r.ref] : fields.references;
     if (r.isNew) onChange({ references });
-    const item: CiteItem = r.locator ? { id: r.ref.id, locator: r.locator } : { id: r.ref.id };
+    // The dialog refuses forbidden characters; this is the same boundary the Markdown writer uses.
+    const [item] = sanitizeCiteItems([r.locator ? { id: r.ref.id, locator: r.locator } : { id: r.ref.id }]);
     const existing = join ? citationAt(join.pos) : null;
     if (join && existing) {
       setCitation(join.pos, { items: [...existing.items.filter((i) => i.id !== item.id), item], narrative: r.narrative });
@@ -258,6 +260,7 @@ export function PostEditor(props: {
           <ReferenceEditDialog
             initial={ref}
             references={fields.references}
+            doc={fields.doc}
             lang={lang}
             dialogTitle="Referansı düzenle"
             onClose={closeCite}

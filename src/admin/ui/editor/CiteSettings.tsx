@@ -2,17 +2,23 @@
 import { useId } from 'react';
 import { citationText, type LocatorKind, type Reference } from '../../../lib/apa';
 import type { Lang } from '../../../lib/schemas';
-import { LOCATOR_OPTIONS } from './referenceModel';
+import { LOCATOR_OPTIONS, locatorError } from './referenceModel';
 
 export type LocatorInput = { page: string; kind: LocatorKind };
 
 export function LocatorFields({ value, onChange, label = 'Sayfa (isteğe bağlı)' }: { value: LocatorInput; onChange: (v: LocatorInput) => void; label?: string }) {
   const id = useId();
+  const error = locatorError(value.page);
   return (
     <div className="k-field cite-locator">
       <label htmlFor={id}>{label}</label>
       <div className="row">
-        <input id={id} className="k-input" value={value.page} placeholder="Örneğin 34" onChange={(e) => onChange({ ...value, page: e.target.value })} />
+        <input
+          id={id}
+          className="k-input"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-err` : undefined}
+          value={value.page} placeholder="Örneğin 34" onChange={(e) => onChange({ ...value, page: e.target.value })} />
         <select className="k-input" aria-label="Konum türü" value={value.kind} onChange={(e) => onChange({ ...value, kind: e.target.value as LocatorKind })}>
           {LOCATOR_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -21,6 +27,11 @@ export function LocatorFields({ value, onChange, label = 'Sayfa (isteğe bağlı
           ))}
         </select>
       </div>
+      {error && (
+        <p className="k-error" id={`${id}-err`} role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

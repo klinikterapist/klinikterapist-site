@@ -2,7 +2,7 @@
 import { useId } from 'react';
 import type { RefType } from '../../../lib/apa';
 import { Button, Field, Toggle } from '../kit';
-import { TYPE_FIELDS, TYPE_OPTIONS, YEAR_ERROR, emptyRow, parseYear, type PersonRow, type RefForm } from './referenceModel';
+import { TYPE_FIELDS, TYPE_OPTIONS, YEAR_ERROR, doiError, emptyRow, parseYear, type PersonRow, type RefForm } from './referenceModel';
 
 const CONTAINER_LABEL: Record<RefType, string> = { article: 'Dergi adı', book: 'Kitap adı', chapter: 'Kitap adı', web: 'Site adı' };
 
@@ -79,6 +79,7 @@ export function ReferenceForm({ form, onChange }: { form: RefForm; onChange: (fo
         {text('edition', 'Baskı', 'Örneğin 2 (ilk baskıysa boş bırakın)')}
         {text('publisher', 'Yayınevi')}
       </div>
+      <Field label="DOI" value={form.doi} onChange={(doi) => set({ doi })} placeholder="10.1037/…" hint="İsteğe bağlı. Varsa künyede doi.org bağlantısı olarak görünür." error={doiError(form.doi)} />
       {text('url', 'Bağlantı (URL)')}
       {shown.has('accessed') && (
         <Field label="Erişim tarihi" type="date" value={form.accessed} onChange={(accessed) => set({ accessed })} hint="Yalnızca içeriği zamanla değişen sayfalarda gerekir." />

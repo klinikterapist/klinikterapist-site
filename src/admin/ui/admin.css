@@ -1529,6 +1529,7 @@ textarea.k-input {
   gap: var(--space-3);
   margin-bottom: var(--space-3);
   border-bottom: 1px solid var(--p-border);
+  overflow-x: auto;
 }
 
 .tab {

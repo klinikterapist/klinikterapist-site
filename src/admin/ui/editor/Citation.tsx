@@ -46,7 +46,7 @@ export function canRemoveReference(doc: JSONContent, id: string): boolean {
 export function syncCitationRefs(editor: Editor, references: Reference[], doc: JSONContent, lang: Lang): void {
   const s = editor.storage.citation;
   if (!s) return;
-  s.refs = bibliography(references, citedIdsInDoc(doc), lang);
+  s.refs = citedRefs(references, doc, lang);
   s.lang = lang;
   s.listeners.forEach((l) => l());
 }
@@ -101,15 +101,23 @@ function CitationView({ node, editor, getPos, selected }: ReactNodeViewProps) {
   );
 }
 
-export const Citation = Node.create({
+export type CitationOptions = { refs: Reference[]; lang: Lang };
+
+/** Seed the storage at creation (`citedRefs`), so the first paint already shows the APA text. */
+export const citedRefs = (references: Reference[], doc: JSONContent, lang: Lang): Reference[] => bibliography(references, citedIdsInDoc(doc), lang);
+
+export const Citation = Node.create<CitationOptions, CitationStorage>({
   name: 'citation',
   group: 'inline',
   inline: true,
   atom: true,
   selectable: true,
   draggable: true,
-  addStorage(): CitationStorage {
-    return { refs: [], lang: 'tr', onOpen: null, listeners: new Set() };
+  addOptions() {
+    return { refs: [], lang: 'tr' };
+  },
+  addStorage() {
+    return { refs: this.options.refs, lang: this.options.lang, onOpen: null, listeners: new Set() };
   },
   addAttributes() {
     return { items: { default: [] }, narrative: { default: false } };
