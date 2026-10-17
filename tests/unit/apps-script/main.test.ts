@@ -62,3 +62,16 @@ describe('site actions are wired', () => {
     });
   });
 });
+
+describe('draft actions are wired', () => {
+  it('a conflicting drafts.save carries the stored draft to the panel', () => {
+    const gas = fakeGas({ props, now });
+    const { session } = issueSession(gas, 'merhaba@klinikterapist.com');
+    const l = { title: 'T', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: { type: 'doc' } };
+    const draft = { key: 'k', rev: 0, updatedAt: '', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17', tr: l, en: l };
+    expect(handle(gas, JSON.stringify({ action: 'drafts.save', session, draft }))).toMatchObject({ ok: true, data: { rev: 1 } });
+    const res = handle(gas, JSON.stringify({ action: 'drafts.save', session, draft }));
+    expect(res).toMatchObject({ ok: false, error: { code: 'conflict' }, data: { current: { rev: 1 } } });
+    expect(handle(gas, JSON.stringify({ action: 'drafts.list', session }))).toMatchObject({ ok: true, data: { drafts: [{ key: 'k' }] } });
+  });
+});
