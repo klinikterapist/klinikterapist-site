@@ -1,0 +1,82 @@
+/** Draft helpers: a new empty draft, what is still missing before publishing, the automatic slug. */
+import type { JSONContent } from '@tiptap/core';
+import type { Draft, LangFields } from '../api/types';
+import type { Lang } from '../../lib/schemas';
+import { slugError } from '../../lib/schemas';
+import { slugify } from '../../lib/slug';
+
+export type { Draft, LangFields };
+
+export const LANG_LABEL: Record<Lang, string> = { tr: 'Türkçe', en: 'İngilizce' };
+
+export const emptyDoc = (): JSONContent => ({ type: 'doc', content: [{ type: 'paragraph' }] });
+
+const emptyLang = (): LangFields => ({
+  title: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: emptyDoc(),
+});
+
+/** Local calendar day, `YYYY-MM-DD`. */
+export function isoDay(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function newDraft(now: Date): Draft {
+  const random = Math.random().toString(36).slice(2, 6).padEnd(4, '0');
+  return {
+    key: `taslak-${now.getTime().toString(36)}${random}`,
+    rev: 0,
+    updatedAt: '',
+    published: false,
+    category: '',
+    cover: null,
+    publishedAt: isoDay(now),
+    tr: emptyLang(),
+    en: emptyLang(),
+  };
+}
+
+export function hasText(doc: JSONContent): boolean {
+  if (doc.type === 'text') return !!doc.text?.trim();
+  return (doc.content ?? []).some(hasText);
+}
+
+/** Turkish labels of what this language still needs; empty when it is ready. */
+export function missingFields(f: LangFields, lang: Lang, hasCover = false): string[] {
+  const out: string[] = [];
+  if (!f.title.trim()) out.push('Başlık');
+  if (!f.slug) out.push('URL kısa adı');
+  else {
+    const err = slugError(f.slug, lang);
+    if (err) out.push(err);
+  }
+  if (!f.description.trim()) out.push('Meta açıklama');
+  if (!f.focusKeyword.trim()) out.push('Odak kelime');
+  if (!hasText(f.doc)) out.push('Yazı metni boş');
+  if (hasCover && !f.coverAlt.trim()) out.push('Kapak görselinin alt metni');
+  return out;
+}
+
+export type PublishCheck = { ok: boolean; missing: { tr: string[]; en: string[]; shared: string[] } };
+
+export function canPublish(d: Draft): PublishCheck {
+  const missing = {
+    tr: missingFields(d.tr, 'tr', !!d.cover),
+    en: missingFields(d.en, 'en', !!d.cover),
+    shared: d.category ? [] : ['Kategori'],
+  };
+  return { ok: !missing.tr.length && !missing.en.length && !missing.shared.length, missing };
+}
+
+/** One line per problem: `İngilizce: Yazı metni boş`. */
+export function describeMissing(r: PublishCheck): string[] {
+  return [
+    ...r.missing.shared,
+    ...r.missing.tr.map((m) => `${LANG_LABEL.tr}: ${m}`),
+    ...r.missing.en.map((m) => `${LANG_LABEL.en}: ${m}`),
+  ];
+}
+
+export function autoSlug(f: LangFields, lang: Lang): string {
+  return f.slugTouched ? f.slug : slugify(f.title, lang);
+}
