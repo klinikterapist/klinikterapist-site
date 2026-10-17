@@ -130,6 +130,24 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
   }
 </BaseLayout>
 
+<script>
+  // Click-to-load: no request to YouTube until the reader asks for the video.
+  for (const box of document.querySelectorAll<HTMLElement>('.prose .youtube[data-id]')) {
+    const id = box.dataset.id ?? '';
+    const link = box.querySelector('a');
+    if (!/^[A-Za-z0-9_-]{11}$/.test(id) || !link) continue;
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
+      frame.title = link.textContent ?? 'YouTube';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture';
+      frame.allowFullscreen = true;
+      box.replaceChildren(frame);
+    });
+  }
+</script>
+
 <style>
   .post {
     padding-top: var(--space-4);
@@ -278,6 +296,73 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     margin: 2.5em auto;
     border: 0;
     border-top: 1px solid var(--line);
+  }
+
+  .prose :global(figure) {
+    margin-inline: 0;
+  }
+
+  .prose :global(figure img) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .prose :global(figcaption) {
+    margin-top: var(--space-2);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    text-align: center;
+  }
+
+  .prose :global(.callout) {
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--sage-soft);
+    color: var(--forest-deep);
+  }
+
+  .prose :global(.callout > :first-child) {
+    margin-top: 0;
+  }
+
+  /* YouTube: a link until clicked; only then the (no-cookie) player loads. */
+  .prose :global(.youtube) {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    background: var(--forest-deep);
+  }
+
+  .prose :global(.youtube a) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    height: 100%;
+    padding: var(--space-4);
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .prose :global(.youtube a::before) {
+    content: '';
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.92)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2322382b' d='M8 5v14l11-7z'/%3E%3C/svg%3E")
+      center / 55% no-repeat;
+  }
+
+  .prose :global(.youtube iframe) {
+    width: 100%;
+    height: 100%;
+    border: 0;
   }
 
   /* Same width as the cover, so the page keeps one centred axis. */

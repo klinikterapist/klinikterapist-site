@@ -48,7 +48,7 @@ describe('blog', () => {
 
   it('blog list shows every post and links to every category', () => {
     const list = loadPage('/blog/');
-    expect(list.querySelectorAll('.post-card').length).toBe(2);
+    expect(list.querySelectorAll('.post-card').length).toBe(3);
     expect(list.querySelector('a[href="/blog/kategori/zihinsel-saglik/"]')).not.toBeNull();
     expect(list.querySelector('a[href="/blog/"][aria-current=page]')).not.toBeNull();
     expect(loadPage('/en/blog/').querySelector('a.lang-switch')?.getAttribute('href')).toBe('/blog/');
@@ -94,6 +94,20 @@ describe('blog', () => {
   it('author box shows the explicit short intro', () => {
     const intro = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/').querySelector('.author-box .intro');
     expect(intro?.textContent).toBe('Kısa tanıtım: Uzm. Psk. olarak çalışıyorum.');
+  });
+
+  it('rich post body: captioned figure, callout box, click-to-load YouTube without an iframe', () => {
+    for (const path of ['/blog/ornek-zengin/', '/en/blog/rich-example/']) {
+      const d = loadPage(path);
+      const fig = d.querySelector('.prose figure');
+      expect(fig?.querySelector('img'), path).not.toBeNull();
+      expect(fig?.querySelector('img')?.getAttribute('title'), path).toBeFalsy();
+      expect(fig?.querySelector('figcaption')?.textContent.trim(), path).toMatch(/yaprak|leaf/i);
+      expect(d.querySelector('.prose aside.callout p strong'), path).not.toBeNull();
+      const yt = d.querySelector('.prose .youtube[data-id="dQw4w9WgXcQ"] a');
+      expect(yt?.getAttribute('href'), path).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+      expect(d.toString(), path).not.toContain('<iframe');
+    }
   });
 
   it('blog pages advertise their RSS feed', () => {

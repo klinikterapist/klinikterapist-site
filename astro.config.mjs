@@ -3,6 +3,8 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { SITE as site } from './src/lib/site.ts';
 import { getRedirects } from './src/lib/settings.ts';
+import { satteri } from '@astrojs/markdown-satteri';
+import { figurePlugin } from './src/lib/markdown-figure.ts';
 
 // Redirect stubs (redirects.json) are noindex pages: keep them out of the sitemap.
 // Same validated list the stub pages use (paths are site-relative with a trailing slash).
@@ -12,6 +14,7 @@ export default defineConfig({
   site,
   trailingSlash: 'always',
   build: { format: 'directory' },
+  markdown: { processor: satteri({ mdastPlugins: [figurePlugin] }) },
   i18n: {
     locales: ['tr', 'en'],
     defaultLocale: 'tr',
