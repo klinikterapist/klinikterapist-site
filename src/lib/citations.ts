@@ -34,14 +34,36 @@ export function parseCiteAttr(v: string): CiteItem[] | null {
   return items;
 }
 
-/** The `data-refs` value. Forbidden characters are dropped from locators; an emptied locator is left out. */
+/** A citation names a reference the post does not have. */
+export class UnknownReferenceError extends Error {
+  constructor(readonly id: string) {
+    super(`Metindeki bir atıf, referans listesinde olmayan "${id}" referansına işaret ediyor.`);
+    this.name = 'UnknownReferenceError';
+  }
+}
+
+/**
+ * The safety boundary for citation items from a draft (Drive JSON is not shape-checked): an invalid
+ * id throws; a locator with an unknown kind or a non-string value is left out; forbidden characters
+ * are dropped from the value and an emptied locator is left out.
+ */
+export function sanitizeCiteItems(items: CiteItem[]): CiteItem[] {
+  return items.map((item) => {
+    const id: unknown = item?.id;
+    if (typeof id !== 'string' || !ID.test(id)) throw new Error(`Geçersiz referans kimliği: "${String(id)}"`);
+    const loc: unknown = item.locator;
+    if (!loc || typeof loc !== 'object') return { id };
+    const { kind, value } = loc as { kind?: unknown; value?: unknown };
+    if (typeof kind !== 'string' || !KINDS.includes(kind as LocatorKind) || typeof value !== 'string') return { id };
+    const clean = value.replace(FORBIDDEN, '').trim();
+    return clean ? { id, locator: { kind: kind as LocatorKind, value: clean } } : { id };
+  });
+}
+
+/** The `data-refs` value, from sanitized items. */
 export function writeCiteAttr(items: CiteItem[]): string {
-  return items
-    .map((item) => {
-      if (!ID.test(item.id)) throw new Error(`Geçersiz referans kimliği: "${item.id}"`);
-      const value = item.locator?.value.replace(FORBIDDEN, '').trim();
-      return item.locator && value ? `${item.id}~${item.locator.kind}~${value}` : item.id;
-    })
+  return sanitizeCiteItems(items)
+    .map((item) => (item.locator ? `${item.id}~${item.locator.kind}~${item.locator.value}` : item.id))
     .join(';');
 }
 

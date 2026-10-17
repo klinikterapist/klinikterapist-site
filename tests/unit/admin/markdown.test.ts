@@ -4,6 +4,7 @@ import type { JSONContent } from '@tiptap/core';
 import { docToMarkdown, markdownToDoc } from '../../../src/admin/lib/markdown';
 import { parsePost } from '../../../src/admin/lib/frontmatter';
 import type { CiteItem, Reference } from '../../../src/lib/apa';
+import { UnknownReferenceError } from '../../../src/lib/citations';
 
 const t = (text: string, ...marks: JSONContent['marks'] & object): JSONContent => (marks.length ? { type: 'text', text, marks } : { type: 'text', text });
 const p = (...content: JSONContent[]): JSONContent => ({ type: 'paragraph', content });
@@ -191,6 +192,21 @@ describe('citations', () => {
     expect(md).toContain('\\<cite data-refs="x"\\>');
     expect(norm(markdownToDoc(md))).toEqual(norm(doc));
     expect(JSON.stringify(markdownToDoc('\\<cite data-refs="x">y\\</cite>\n'))).not.toContain('"citation"');
+  });
+
+  it('writes the text and the attribute from the same sanitized items', () => {
+    const doc: JSONContent = { type: 'doc', content: [p(cite([{ id: 'ray2004', locator: { kind: 'p', value: '1;2' } }]))] };
+    expect(docToMarkdown(doc, 'tr', [RAY])).toBe('<cite data-refs="ray2004~p~12">(Ray, 2004, s. 12)</cite>\n');
+  });
+
+  it('never writes a malicious locator kind', () => {
+    const evil = { id: 'ray2004', locator: { kind: '"><img src=x onerror=alert(1)>', value: '1' } } as unknown as CiteItem;
+    const md = docToMarkdown({ type: 'doc', content: [p(cite([evil]))] }, 'en', [RAY]);
+    expect(md).toBe('<cite data-refs="ray2004">(Ray, 2004)</cite>\n');
+  });
+
+  it('a citation to a missing reference throws UnknownReferenceError', () => {
+    expect(() => docToMarkdown({ type: 'doc', content: [p(cite([{ id: 'nope' }]))] }, 'tr', [RAY])).toThrow(UnknownReferenceError);
   });
 
   it('closes open marks around a citation', () => {

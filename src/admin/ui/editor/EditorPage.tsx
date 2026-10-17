@@ -8,6 +8,7 @@ import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
 import { canPublish, describeMissing, isoDay, LANG_LABEL, missingFields, normalizeDraft } from '../../lib/draft';
 import { docToMarkdown } from '../../lib/markdown';
+import { UnknownReferenceError } from '../../../lib/citations';
 import { countWords, readingTime } from '../../../lib/readingTime';
 import { liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
 import { PublishError, buildPublishChangeset, buildUnpublishChangeset } from '../../lib/publish';
@@ -146,8 +147,9 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const markdown = useMemo(() => {
     try {
       return docToMarkdown(draft[lang].doc, lang, draft[lang].references);
-    } catch {
-      return ''; // a citation to a missing reference; publishing reports it
+    } catch (e) {
+      if (e instanceof UnknownReferenceError) return ''; // publishing reports it
+      throw e;
     }
   }, [draft, lang]);
   const words = useMemo(() => countWords(markdown), [markdown]);

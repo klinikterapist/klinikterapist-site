@@ -6,7 +6,7 @@ import type { JSONContent } from '@tiptap/core';
 import { Lexer, type Token, type Tokens } from 'marked';
 import type { Lang } from '../../lib/schemas';
 import { bibliography, citationText, type CiteItem, type Reference } from '../../lib/apa';
-import { CITE_OPEN, parseCiteAttr, writeCiteAttr } from '../../lib/citations';
+import { CITE_OPEN, UnknownReferenceError, parseCiteAttr, sanitizeCiteItems, writeCiteAttr } from '../../lib/citations';
 
 type Mark = NonNullable<JSONContent['marks']>[number];
 
@@ -40,8 +40,11 @@ const reEscape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** `<cite …>` with the APA text; a no-author book or web page title is italic. */
 function citeMarkdown(node: JSONContent, ctx: Ctx): string {
-  const items = (Array.isArray(node.attrs?.items) ? node.attrs.items : []) as CiteItem[];
+  // Sanitized once, so the attribute and the text are written from the same items.
+  const items = sanitizeCiteItems((Array.isArray(node.attrs?.items) ? node.attrs.items : []) as CiteItem[]);
   if (!items.length) return '';
+  const missing = items.find((i) => !ctx.refs.some((r) => r.id === i.id));
+  if (missing) throw new UnknownReferenceError(missing.id);
   const narrative = node.attrs?.narrative === true;
   const text = citationText({ items, narrative }, ctx.refs, ctx.lang);
   const titles = [

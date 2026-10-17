@@ -67,6 +67,17 @@ describe('buildPublishChangeset — citations', () => {
     expect(tr).toContain('references: [{"id":"ray2004"');
   });
 
+  it('an uncited reference stays in the frontmatter, with no cite in the body', () => {
+    const zeta = { id: 'zeta2020', type: 'book' as const, authors: [{ family: 'Zeta', given: 'A.' }], year: 2020, title: 'Uncited' };
+    const d = draft();
+    d.tr = { ...d.tr, doc: cited(), references: [ray, zeta] };
+    const tr = buildPublishChangeset({ ...base, draft: d, live: null }).writes.find((w) => w.path.endsWith('tr.md'))!.content;
+    const { fm, body } = parsePost(tr);
+    expect(fm.references?.map((r) => r.id)).toEqual(['ray2004', 'zeta2020']);
+    expect(body).not.toContain('zeta2020');
+    expect(body).toContain('<cite data-refs="ray2004">');
+  });
+
   it('a citation to a missing reference is refused', () => {
     const d = draft();
     d.en = { ...d.en, doc: cited() };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { citedIds, parseCiteAttr, renderReferencesSection, validateCitations, writeCiteAttr } from '../../src/lib/citations';
-import type { Reference } from '../../src/lib/apa';
+import { citedIds, parseCiteAttr, renderReferencesSection, sanitizeCiteItems, validateCitations, writeCiteAttr } from '../../src/lib/citations';
+import type { CiteItem, Reference } from '../../src/lib/apa';
 
 const RAY: Reference = {
   id: 'ray2004', type: 'article', authors: [{ family: 'Ray', given: 'Oakley' }], year: 2004,
@@ -35,6 +35,32 @@ describe('parseCiteAttr / writeCiteAttr', () => {
     expect(writeCiteAttr([{ id: 'a', locator: { kind: 'p', value: ';;' } }])).toBe('a');
     const items = [{ id: 'x', locator: { kind: 'para' as const, value: '5' } }];
     expect(parseCiteAttr(writeCiteAttr(items))).toEqual(items);
+  });
+});
+
+describe('writeCiteAttr as the safety boundary', () => {
+  const evil = '"><img src=x onerror=alert(1)>';
+
+  it('leaves out a locator with an unknown kind or a non-string value', () => {
+    const items = [
+      { id: 'a', locator: { kind: evil, value: '1' } },
+      { id: 'b', locator: { kind: 'p', value: 34 } },
+      { id: 'c', locator: 'x' },
+    ] as unknown as CiteItem[];
+    const out = writeCiteAttr(items);
+    expect(out).toBe('a;b;c');
+    expect(out).not.toContain('<img');
+    expect(sanitizeCiteItems(items)).toEqual([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+  });
+
+  it('throws on an invalid or missing id', () => {
+    expect(() => writeCiteAttr([{ id: evil }])).toThrow('Geçersiz referans kimliği');
+    expect(() => writeCiteAttr([{} as CiteItem])).toThrow('Geçersiz referans kimliği');
+    expect(() => writeCiteAttr([null as unknown as CiteItem])).toThrow('Geçersiz referans kimliği');
+  });
+
+  it('cleans values once: forbidden characters out, trimmed', () => {
+    expect(sanitizeCiteItems([{ id: 'a', locator: { kind: 'p', value: ' 1;2 ' } }])).toEqual([{ id: 'a', locator: { kind: 'p', value: '12' } }]);
   });
 });
 
