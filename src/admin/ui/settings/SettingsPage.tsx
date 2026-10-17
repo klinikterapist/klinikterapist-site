@@ -25,7 +25,7 @@ export function SettingsPage({ screen }: { screen: string }) {
       <section>
         <h2>Ayarlar</h2>
         <p>
-          Bu ayar ekranı bulunamadı. <a href="#/">Yazılara dön</a>
+          Bu ayar ekranı bulunamadı. <a href="#/yazilar">Yazılara dön</a>
         </p>
       </section>
     );

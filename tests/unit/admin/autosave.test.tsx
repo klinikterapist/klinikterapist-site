@@ -185,3 +185,97 @@ describe('old drafts without the new fields', () => {
     expect(result.current.conflict?.en.references).toEqual([]);
   });
 });
+
+describe('restoring a version (review Focus 5)', () => {
+  const restoredTitle = (d: Draft) => ({ ...d, tr: { ...d.tr, title: 'Eski sürüm' } });
+
+  it('text typed just before restoring is saved first, then the restore keeps it as a version', async () => {
+    const { api, saveDraft } = fakeApi(ok);
+    const { result } = renderHook(() => useAutosave(initial(), api));
+    type(result, 'Az önce yazdım');
+    let restored = false;
+    await act(async () => void (restored = await result.current.restoreWith(restoredTitle)));
+    await tick(0);
+    expect(restored).toBe(true);
+    expect(saveDraft).toHaveBeenCalledTimes(2);
+    expect(saveDraft.mock.calls[0][0].tr.title).toBe('Az önce yazdım');
+    expect(saveDraft.mock.calls[0][1]).toBeUndefined();
+    // The second save replaces the stored "Az önce yazdım" and keeps it as a version.
+    expect(saveDraft.mock.calls[1][0]).toMatchObject({ rev: 1, tr: { title: 'Eski sürüm' } });
+    expect(saveDraft.mock.calls[1][1]).toEqual({ snapshot: true });
+    expect(result.current.draft.tr.title).toBe('Eski sürüm');
+  });
+
+  it('a save in flight finishes first, and the restore builds on the newest copy', async () => {
+    const saveDraft = vi.fn((d: Draft) => new Promise<{ rev: number; updatedAt: string }>((res) => setTimeout(() => res({ rev: d.rev + 1, updatedAt: 'x' }), 1000)));
+    const api = { saveDraft } as unknown as Api;
+    const { result } = renderHook(() => useAutosave(initial(), api));
+    type(result, 'Birinci');
+    await tick(2000); // save of "Birinci" now in flight
+    expect(saveDraft).toHaveBeenCalledOnce();
+    act(() => result.current.update((d) => ({ ...d, tr: { ...d.tr, title: 'İkinci' }, en: { ...d.en, title: 'English edit' } })));
+    let restored: Promise<boolean> = Promise.resolve(false);
+    act(() => void (restored = result.current.restoreWith(restoredTitle)));
+    await tick(5000);
+    expect(await restored).toBe(true);
+    const calls = saveDraft.mock.calls.map(([d, o]) => [d.tr.title, d.rev, o?.snapshot === true]);
+    expect(calls).toEqual([
+      ['Birinci', 0, false],
+      ['İkinci', 1, false],
+      ['Eski sürüm', 2, true],
+    ]);
+    // The other language's edit made before restoring is not lost.
+    expect(result.current.draft.en.title).toBe('English edit');
+    expect(result.current.status).toBe('kaydedildi');
+  });
+
+  it('when pending text cannot be saved, nothing is restored', async () => {
+    const { api, saveDraft } = fakeApi(() => Promise.reject(new ApiFailure('network', 'yok')));
+    const { result } = renderHook(() => useAutosave(initial(), api));
+    type(result, 'Kaybolmasın');
+    let restored = true;
+    await act(async () => void (restored = await result.current.restoreWith(restoredTitle)));
+    expect(restored).toBe(false);
+    expect(saveDraft).toHaveBeenCalledOnce();
+    expect(result.current.draft.tr.title).toBe('Kaybolmasın');
+  });
+
+  it('a restore that hits a conflict still keeps a version when "Bu cihazdakini kaydet" is chosen', async () => {
+    const theirs = { ...initial(), rev: 5 };
+    let first = true;
+    const { api, saveDraft } = fakeApi((d) => {
+      if (first) {
+        first = false;
+        return Promise.reject(new ApiFailure('conflict', 'çakışma', theirs));
+      }
+      return ok(d);
+    });
+    const { result } = renderHook(() => useAutosave(initial(), api));
+    await act(async () => void (await result.current.restoreWith(restoredTitle)));
+    await tick(0);
+    expect(result.current.status).toBe('çakışma');
+    expect(saveDraft.mock.calls[0][1]).toEqual({ snapshot: true });
+    await act(async () => void (await result.current.keepMine()));
+    expect(saveDraft.mock.calls[1][0]).toMatchObject({ rev: 5, tr: { title: 'Eski sürüm' } });
+    expect(saveDraft.mock.calls[1][1]).toEqual({ snapshot: true });
+  });
+
+  it('choosing the other copy after a conflicting restore drops the pending version flag', async () => {
+    const theirs = { ...initial(), rev: 5 };
+    let first = true;
+    const { api, saveDraft } = fakeApi((d) => {
+      if (first) {
+        first = false;
+        return Promise.reject(new ApiFailure('conflict', 'çakışma', theirs));
+      }
+      return ok(d);
+    });
+    const { result } = renderHook(() => useAutosave(initial(), api));
+    await act(async () => void (await result.current.restoreWith(restoredTitle)));
+    await tick(0);
+    act(() => result.current.keepTheirs());
+    type(result, 'Sonra yazdım');
+    await tick(2000);
+    expect(saveDraft.mock.calls[1][1]).toBeUndefined();
+  });
+});

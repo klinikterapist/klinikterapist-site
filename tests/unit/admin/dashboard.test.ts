@@ -37,3 +37,19 @@ describe('dashboard', () => {
     ]);
   });
 });
+
+describe('dashboard month boundary (final review M4)', () => {
+  it('"this month" is the local month: 1 November 01:00 in Istanbul (UTC+3) counts November posts', () => {
+    const tz = process.env.TZ;
+    process.env.TZ = 'Europe/Istanbul';
+    try {
+      const firstOfMonth = new Date('2026-11-01T01:00:00+03:00'); // still 31 October in UTC
+      expect(firstOfMonth.getDate()).toBe(1);
+      const d = dashboard([live('ekim1', '2026-10-31'), live('ekim2', '2026-10-05'), live('kasim', '2026-11-01')], [], firstOfMonth);
+      expect(d.publishedThisMonth).toBe(1);
+    } finally {
+      if (tz === undefined) delete process.env.TZ;
+      else process.env.TZ = tz;
+    }
+  });
+});

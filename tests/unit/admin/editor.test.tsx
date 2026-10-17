@@ -51,6 +51,32 @@ function setup(draft: Draft, extra: Record<string, string> = {}) {
 const base = () => ({ ...newDraft(new Date('2026-10-17T10:00:00')), category: 'terapi' });
 
 describe('EditorPage', () => {
+  it('the back links go to the posts list, not to Ana sayfa', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    expect((await screen.findByRole('link', { name: '← Yazılar' })).getAttribute('href')).toBe('#/yazilar');
+  });
+
+  it('a post that cannot be found links back to the posts list', async () => {
+    const api = createMockApi({ seed: { 'src/data/categories.json': '[]\n', 'src/data/redirects.json': '[]\n' } });
+    const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+    render(
+      <Panel.Provider value={{ api, config, store: createSessionStore(localStorage) }}>
+        <DeployProvider api={api}>
+          <EditorPage postKey="yok" />
+        </DeployProvider>
+      </Panel.Provider>,
+    );
+    expect((await screen.findByRole('link', { name: '← Yazılara dön' })).getAttribute('href')).toBe('#/yazilar');
+  });
+
+  it('after publishing, "Yazılara dön" opens the posts list', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    fireEvent.click(await screen.findByRole('button', { name: 'Yayınla' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Evet, yayınla' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Yazılara dön' }));
+    expect(window.location.hash).toBe('#/yazilar');
+  });
+
   it('publishing stays off until both languages are complete, and says what is missing', async () => {
     setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('', '') });
     const publish = await screen.findByRole('button', { name: 'Yayınla' });

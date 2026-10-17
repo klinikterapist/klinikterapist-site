@@ -113,3 +113,51 @@ describe('EditorPage version history', () => {
     expect((await mock.getDraft('k1')).draft.tr.title).toBe('Eski başlık');
   });
 });
+
+describe('EditorPage restore with unsaved text', () => {
+  const mount = async () => {
+    const mock = createMockApi({
+      seed: { 'src/data/categories.json': '[{"id":"terapi","slug":{"tr":"terapi","en":"therapy"},"label":{"tr":"Terapi","en":"Therapy"}}]\n', 'src/data/redirects.json': '[]\n' },
+    });
+    mock.state.drafts.set('k1', { ...draft(1, 'Eski başlık', 'Old'), rev: 1 });
+    const first = await mock.saveDraft({ ...draft(1, 'Eski başlık', 'Old') }, { snapshot: true });
+    await mock.saveDraft({ ...draft(first.rev, 'Yeni başlık', 'Old') });
+    const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+    render(
+      <Panel.Provider value={{ api: mock, config, store: createSessionStore(localStorage) }}>
+        <DeployProvider api={mock}>
+          <EditorPage postKey="k1" />
+        </DeployProvider>
+      </Panel.Provider>,
+    );
+    await screen.findByDisplayValue('Yeni başlık');
+    return mock;
+  };
+  const restoreOldest = async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Sürüm geçmişi' }));
+    const dlg = await screen.findByRole('dialog', { name: 'Sürüm geçmişi' });
+    const items = await within(dlg).findAllByRole('button', { name: /sürüm \d+/ });
+    fireEvent.click(items.at(-1)!);
+    fireEvent.click(await within(dlg).findByRole('button', { name: 'Bu sürüme dön' }));
+  };
+
+  it('text typed just before restoring ends up in the version history', async () => {
+    const mock = await mount();
+    fireEvent.change(screen.getByLabelText('Başlık (Türkçe)'), { target: { value: 'Az önce yazdığım' } });
+    await restoreOldest();
+    expect(await screen.findByDisplayValue('Eski başlık')).toBeTruthy();
+    await waitFor(async () => expect((await mock.getDraft('k1')).draft.tr.title).toBe('Eski başlık'));
+    const { versions } = await mock.listVersions('k1');
+    const titles = await Promise.all(versions.map(async (v) => (await mock.getVersion('k1', v.name)).draft.tr.title));
+    expect(titles).toContain('Az önce yazdığım');
+  });
+
+  it('when the unsaved text cannot be saved, nothing is restored and the owner is told why', async () => {
+    const mock = await mount();
+    vi.spyOn(mock, 'saveDraft').mockRejectedValue(new ApiFailure('network', 'yok'));
+    fireEvent.change(screen.getByLabelText('Başlık (Türkçe)'), { target: { value: 'Kaybolmasın' } });
+    await restoreOldest();
+    expect(await screen.findByText('Önce mevcut değişiklikler kaydedilmeli. İnternet bağlantınızı kontrol edip tekrar deneyin.')).toBeTruthy();
+    expect(screen.getByDisplayValue('Kaybolmasın')).toBeTruthy();
+  });
+});

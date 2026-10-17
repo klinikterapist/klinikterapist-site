@@ -4,6 +4,7 @@ import {
   citationText,
   formatReferenceHtml,
   makeRefId,
+  referenceSchema,
   sentenceCase,
   type Citation,
   type Reference,
@@ -75,14 +76,25 @@ describe('formatReferenceHtml', () => {
     const k: Reference = { id: 'k', type: 'book', authors: [{ family: 'Sartre', given: 'Jean-Paul' }], year: 1943, title: 'T' };
     expect(formatReferenceHtml(k, [k], 'en')).toMatch(/^Sartre, J\.-P\. \(1943\)\./);
   });
-  it('lists 21 authors in full and abbreviates 22', () => {
+  it('lists 20 authors in full and abbreviates 21 or more (APA 7 §9.8, ruling R13)', () => {
     const mk = (n: number): Reference => ({ id: 'm', type: 'article', authors: Array.from({ length: n }, (_, i) => person(i)), year: 2020, title: 'T' });
+    const h20 = formatReferenceHtml(mk(20), [], 'en');
+    for (let i = 0; i < 20; i++) expect(h20).toContain(`Author${String.fromCharCode(65 + i)}, X.`);
+    expect(h20).not.toContain('. . .');
     const h21 = formatReferenceHtml(mk(21), [], 'en');
-    for (let i = 0; i < 21; i++) expect(h21).toContain(`Author${String.fromCharCode(65 + i)}, X.`);
-    expect(h21).not.toContain('. . .');
+    expect(h21).toContain('AuthorS, X., . . . AuthorU, X. (2020).');
+    expect(h21).not.toContain('AuthorT,');
     const h22 = formatReferenceHtml(mk(22), [], 'en');
     expect(h22).toContain('AuthorS, X., . . . AuthorV, X. (2020).');
     expect(h22).not.toContain('AuthorT,');
+  });
+  it('an access date must be a real calendar date', () => {
+    const w = { id: 'w', type: 'web', authors: [], year: 2022, title: 'T', url: 'https://example.org' };
+    expect(referenceSchema.safeParse({ ...w, accessed: '2026-01-05' }).success).toBe(true);
+    expect(referenceSchema.safeParse({ ...w, accessed: '2026-12-31' }).success).toBe(true);
+    for (const bad of ['2026-13-01', '2026-00-10', '2026-01-32', '2026-01-00', '2026-1-5']) {
+      expect(referenceSchema.safeParse({ ...w, accessed: bad }).success, bad).toBe(false);
+    }
   });
   it('title leads when there is no author', () => {
     const b: Reference = { id: 'b', type: 'book', authors: [], year: 2022, title: 'Mental health', publisher: 'Pub' };

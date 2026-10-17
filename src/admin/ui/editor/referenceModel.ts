@@ -1,5 +1,5 @@
 /** The reference form's state (all plain strings) and its conversion to and from a `Reference`. */
-import type { LocatorKind, Person, Reference, RefType, Year } from '../../../lib/apa';
+import { isRealDate, type LocatorKind, type Person, type Reference, type RefType, type Year } from '../../../lib/apa';
 import { parseDoi } from '../../lib/doi';
 
 /** `suffix` ("Jr.") is kept from a lookup but has no field of its own. */
@@ -117,7 +117,7 @@ export function referenceFromForm(f: RefForm, id = ''): Reference | null {
   for (const k of ['container', 'volume', 'issue', 'pages', 'edition', 'publisher', 'url', 'accessed'] as const) {
     if (shown.has(k) && f[k].trim()) ref[k] = f[k].trim();
   }
-  if (ref.accessed && !/^\d{4}-\d{2}-\d{2}$/.test(ref.accessed)) delete ref.accessed;
+  if (ref.accessed && !isRealDate(ref.accessed)) delete ref.accessed;
   const doi = parseDoi(f.doi);
   if (doi) ref.doi = doi;
   return ref;

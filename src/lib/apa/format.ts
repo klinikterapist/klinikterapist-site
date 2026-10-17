@@ -159,7 +159,8 @@ function joinNames(names: string[], t: Terms, comma: boolean, twoComma = comma):
 
 function authorList(authors: Person[], t: Terms): string {
   const names = authors.map(invertedName);
-  if (names.length > 21) return `${names.slice(0, 19).join(', ')}, . . . ${names[names.length - 1]}`;
+  // APA 7 §9.8: up to 20 authors in full; 21 or more → the first 19, ". . .", the last.
+  if (names.length >= 21) return `${names.slice(0, 19).join(', ')}, . . . ${names[names.length - 1]}`;
   // The comma before the last author belongs to the "&" form; Turkish "ve" takes none.
   return joinNames(names, t, t.and === '&');
 }

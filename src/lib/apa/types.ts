@@ -18,6 +18,15 @@ const personSchema = z.union([
   z.object({ literal: z.string() }),
 ]);
 
+/** "YYYY-MM-DD" naming a day that exists (month 01–12, day within that month). */
+export function isRealDate(s: string): boolean {
+  const m = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.exec(s);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  return dt.getUTCMonth() === mo - 1 && dt.getUTCDate() === d;
+}
+
 export const referenceSchema = z.object({
   id: z.string().min(1),
   type: z.enum(['article', 'book', 'chapter', 'web']),
@@ -33,5 +42,5 @@ export const referenceSchema = z.object({
   publisher: z.string().optional(),
   doi: z.string().optional(),
   url: z.string().optional(),
-  accessed: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  accessed: z.string().refine(isRealDate, 'Geçerli bir tarih olmalı (YYYY-AA-GG).').optional(),
 });

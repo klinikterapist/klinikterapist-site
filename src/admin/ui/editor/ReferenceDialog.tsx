@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
 import { bibliography, formatReferenceHtml, makeRefId, type LocatorKind, type Reference } from '../../../lib/apa';
 import type { Lang } from '../../../lib/schemas';
-import { DoiError, cslToReference, fetchCsl, parseDoi } from '../../lib/doi';
+import { DoiError, cslToReference, fetchCsl, parseDoi, sameDoi } from '../../lib/doi';
 import { Banner, Button, Dialog, Field } from '../kit';
 import { canRemoveReference, citedIdsInDoc } from './Citation';
 import { FormatSelect, LocatorFields, type LocatorInput } from './CiteSettings';
@@ -17,6 +17,8 @@ export type InsertRequest = { ref: Reference; isNew: boolean; locator?: { kind: 
 
 const TITLE_CASE_WARNING = 'Başlığın büyük/küçük harflerini kontrol edin.';
 const NOT_A_DOI = 'Bu bir DOI gibi görünmüyor. DOI "10." ile başlar, örneğin 10.1037/0003-066X.59.1.29.';
+const ALREADY_SAVED = 'Bu referans zaten kayıtlı.';
+const duplicateText = 'Bu DOI ile bir referans zaten kayıtlı. “Kayıtlı referanslar” sekmesinden seçin.';
 const unsupportedText = (type: string) => `Bu kaynak türü (${type}) otomatik biçimlendirilemiyor. Uygun türü seçip alanları kontrol edin.`;
 
 /**
@@ -96,6 +98,7 @@ export function ReferenceDialog(props: {
   const [unsupported, setUnsupported] = useState<string | null>(null);
   const [locator, setLocator] = useState<LocatorInput>({ page: '', kind: 'p' });
   const [narrative, setNarrative] = useState(props.joining?.narrative ?? false);
+  const [notice, setNotice] = useState<string | null>(null);
   const alive = useRef(true);
   const tabsId = useId();
   useEffect(
@@ -127,14 +130,24 @@ export function ReferenceDialog(props: {
   const draftRef = form ? referenceFromForm(form) : null;
   const newRef = draftRef ? { ...draftRef, id: makeRefId(draftRef, taken) } : null;
   const savedRef = references.find((r) => r.id === selected) ?? null;
-  const chosen = tab === 'saved' ? savedRef : newRef;
+  // A new reference must not repeat a saved one's DOI (it would become ray2004-2 next to ray2004).
+  const duplicate = newRef?.doi ? (references.find((r) => sameDoi(r.doi, newRef.doi)) ?? null) : null;
+  const chosen = tab === 'saved' ? savedRef : duplicate ? null : newRef;
 
   const lookup = async () => {
     const doi = parseDoi(doiInput);
     setLookupError(null);
+    setNotice(null);
     if (!doi) {
       setLookupError(NOT_A_DOI);
       setForm((f) => f ?? emptyForm());
+      return;
+    }
+    const saved = references.find((r) => sameDoi(r.doi, doi));
+    if (saved) {
+      setSelected(saved.id);
+      setTab('saved');
+      setNotice(ALREADY_SAVED);
       return;
     }
     // A form filled by an earlier lookup belongs to that DOI; it must not survive a failed one.
@@ -172,7 +185,10 @@ export function ReferenceDialog(props: {
       aria-selected={tab === value}
       aria-controls={`${tabsId}-panel`}
       className={`ref-tab ${tab === value ? 'is-active' : ''}`}
-      onClick={() => setTab(value)}
+      onClick={() => {
+        setTab(value);
+        setNotice(null);
+      }}
     >
       {label}
     </button>
@@ -198,6 +214,7 @@ export function ReferenceDialog(props: {
         </div>
 
         <div role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${tab}`} className="ref-panel">
+          {tab === 'saved' && notice && <Banner>{notice}</Banner>}
           {tab === 'saved' ? (
             references.length ? (
               <ul className="ref-saved" role="radiogroup" aria-label="Kayıtlı referanslar">
@@ -251,6 +268,7 @@ export function ReferenceDialog(props: {
                   {unsupported && <Banner tone="warning">{unsupportedText(unsupported)}</Banner>}
                   {fromDoi && <Banner tone="warning">{TITLE_CASE_WARNING}</Banner>}
                   <ReferenceForm form={form} onChange={setForm} />
+                  {duplicate && <Banner tone="error">{duplicateText}</Banner>}
                   <Preview reference={newRef} references={references} doc={props.doc} lang={lang} />
                 </>
               ) : (

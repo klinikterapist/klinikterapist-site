@@ -537,7 +537,8 @@ textarea.k-input {
 
   .shell {
     display: grid;
-    grid-template-columns: 15rem minmax(0, 1fr);
+    /* Wide enough that no sidebar label ("Sosyal ve linkler", "Site ana sayfası" …) wraps. */
+    grid-template-columns: 16.5rem minmax(0, 1fr);
     align-items: start;
   }
 
@@ -609,9 +610,25 @@ textarea.k-input {
   margin-bottom: var(--space-4);
 }
 
+/* Phones: stacked. Tablets: search on its own row, category and sort beside each other.
+   Desktop (≥ 1024 px): search, category and sort on one row. */
 @media (min-width: 640px) {
   .filters {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .filters {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .filters > :first-child {
+    grid-column: auto;
   }
 }
 
@@ -824,7 +841,10 @@ textarea.k-input {
   outline: none;
 }
 
-.ed-body {
+/* The editor body also carries .prose (lists, figures, links as on the site). In the built page
+   prose.css can come after this file, so every editor rule is .ed-body.prose …: one class more than
+   prose.css, whatever the order (the panel's dark theme must win over the site's light colours). */
+.ed-body.prose {
   min-height: 50vh;
   margin-top: var(--space-4);
   font-size: 1.125rem;
@@ -832,32 +852,32 @@ textarea.k-input {
   outline: none;
 }
 
-.ed-body mark {
+.ed-body.prose mark {
   padding: 0 0.15em;
   border-radius: 3px;
   background: var(--p-highlight);
   color: inherit;
 }
 
-.ed-body > * + * {
+.ed-body.prose > * + * {
   margin-top: 1em;
 }
 
-.ed-body p {
+.ed-body.prose p {
   margin: 0;
 }
 
-.ed-body h2 {
+.ed-body.prose h2 {
   margin: 1.8em 0 0;
   font-size: 1.6rem;
 }
 
-.ed-body h3 {
+.ed-body.prose h3 {
   margin: 1.4em 0 0;
   font-size: 1.25rem;
 }
 
-.ed-body blockquote {
+.ed-body.prose blockquote {
   margin: 0;
   padding-left: 1.1em;
   border-left: 3px solid var(--sage);
@@ -866,15 +886,15 @@ textarea.k-input {
   font-style: italic;
 }
 
-.ed-body hr {
+.ed-body.prose hr {
   width: 6rem;
   margin: 2em auto;
   border: 0;
   border-top: 1px solid var(--p-border);
 }
 
-.ed-body .is-editor-empty:first-child::before,
-.ed-body p.is-empty::before {
+.ed-body.prose .is-editor-empty:first-child::before,
+.ed-body.prose p.is-empty::before {
   content: attr(data-placeholder);
   float: left;
   height: 0;
@@ -882,11 +902,12 @@ textarea.k-input {
   pointer-events: none;
 }
 
-.ed-callout {
+.ed-body.prose .ed-callout {
   display: block;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-md);
   background: var(--p-selected);
+  color: var(--p-text);
 }
 
 .ed-figure {
@@ -1442,7 +1463,7 @@ textarea.k-input {
   gap: var(--space-4);
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .home-grid {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1952,15 +1973,35 @@ textarea.k-input {
   border-color: var(--p-accent);
 }
 
+/* A version is shown as the site shows the post: always light, like Önizle (.preview-root). */
 .versions-view {
+  color-scheme: light;
+  --p-text: var(--ink);
+  --p-heading: var(--forest);
+  --p-accent: var(--forest);
+  --p-muted: var(--muted);
+  --p-border: var(--line);
+  --p-highlight: var(--highlight);
+  --p-selected: var(--sage-soft);
   max-height: 40vh;
   padding: var(--space-3);
   overflow: auto;
-  border: 1px solid var(--p-border);
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: var(--p-surface);
-  color: var(--p-text);
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
   overflow-wrap: anywhere;
+}
+
+.versions-view h1,
+.versions-view h2,
+.versions-view h3 {
+  color: var(--ink);
+}
+
+.versions-view a {
+  color: var(--forest);
 }
 
 .versions-view h1 {

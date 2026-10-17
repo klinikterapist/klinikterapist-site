@@ -86,3 +86,37 @@ describe('fetchCsl', () => {
     await expect(fetchCsl('10.1/x', (async () => res(503)) as unknown as typeof fetch)).rejects.toBeInstanceOf(DoiError);
   });
 });
+
+describe('Crossref titles with inline markup (final review M7)', () => {
+  it('drops <i>, <sup>, <scp> and similar tags from the title and container title', () => {
+    const { ref } = cslToReference(
+      {
+        type: 'article-journal',
+        title: 'The Role of <i>BDNF</i> in CO<sub>2</sub> Sensitivity: A <scp>Meta</scp>-Analysis',
+        subtitle: ['Effects in <b>Adolescents</b>'],
+        'container-title': '<i>Journal</i> of Affective &amp; Mood Disorders',
+        author: [{ family: 'Ray', given: 'O' }],
+        issued: { 'date-parts': [[2020]] },
+      },
+      new Set(),
+    );
+    expect(ref.title).toBe('The role of BDNF in CO2 sensitivity: A meta-analysis: Effects in adolescents');
+    expect(ref.container).toBe('Journal of Affective & Mood Disorders');
+  });
+});
+
+describe('fetchCsl URL encoding (final review M7)', () => {
+  const seenUrl = async (doi: string) => {
+    let url = '';
+    const fn = (async (u: unknown) => { url = String(u); return res(200, {}); }) as unknown as typeof fetch;
+    await fetchCsl(doi, fn);
+    return url;
+  };
+  it('encodes each path segment and keeps the slashes', async () => {
+    expect(await seenUrl('10.1000/a/b')).toBe('https://doi.org/10.1000/a/b');
+    expect(await seenUrl('10.1000/a#b?c')).toBe('https://doi.org/10.1000/a%23b%3Fc');
+    expect(await seenUrl('10.1002/(SICI)1097-4679(199901)55:1<1::AID-JCLP1>3.0.CO;2-X')).toBe(
+      'https://doi.org/10.1002/(SICI)1097-4679(199901)55%3A1%3C1%3A%3AAID-JCLP1%3E3.0.CO%3B2-X',
+    );
+  });
+});

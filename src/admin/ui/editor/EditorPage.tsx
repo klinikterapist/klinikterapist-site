@@ -86,7 +86,7 @@ export function EditorPage({ postKey }: { postKey: string }) {
           {error}
         </Banner>
         <p>
-          <a href="#/">← Yazılara dön</a>
+          <a href="#/yazilar">← Yazılara dön</a>
         </p>
       </section>
     );
@@ -175,10 +175,17 @@ function Editing({ loaded }: { loaded: Loaded }) {
   };
 
   /** Restoring is a normal save (rev check, conflict dialog) that also keeps the replaced text as a version. */
-  const restoreVersion = (v: Draft) => {
-    auto.replaceAndSnapshot(restoreLang(draft, v, lang));
-    setVersion((n) => n + 1);
+  const restoreVersion = async (v: Draft) => {
+    setMessage(null);
+    const restoreIn = lang;
+    // Pending text is saved first (so it is kept as a version); the restore builds on the newest copy.
+    const ok = await auto.restoreWith((d) => restoreLang(d, v, restoreIn));
     setVersioning(false);
+    if (!ok) {
+      setMessage('Önce mevcut değişiklikler kaydedilmeli. İnternet bağlantınızı kontrol edip tekrar deneyin.');
+      return;
+    }
+    setVersion((n) => n + 1);
   };
 
   const publish = async (force = false) => {
@@ -283,7 +290,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
           </>
         )}
         {done.kind === 'unpublished' && <p>Yazı sitede görünmeyecek; içeriği taslaklarda duruyor. Eski adresler blog sayfasına yönlendirilir.</p>}
-        <Button variant="primary" onClick={() => go('#/')}>
+        <Button variant="primary" onClick={() => go('#/yazilar')}>
           Yazılara dön
         </Button>
       </section>
@@ -294,7 +301,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
     <div className="editor-page">
       <h2 className="k-visually-hidden">Yazıyı düzenle</h2>
       <div className="editor-top">
-        <a href="#/">← Yazılar</a>
+        <a href="#/yazilar">← Yazılar</a>
         <span className={`save-status save-${auto.status}`} role="status">
           {STATUS_TEXT[auto.status]}
         </span>
@@ -517,7 +524,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
           onClose={() => {}}
           actions={
             <>
-              <Button onClick={() => go('#/')}>Yazılara dön</Button>
+              <Button onClick={() => go('#/yazilar')}>Yazılara dön</Button>
               <Button variant="primary" onClick={async () => go(`#/yazi/${await auto.keepAsNew()}`)}>
                 Bu cihazdakini yeni taslak olarak sakla
               </Button>

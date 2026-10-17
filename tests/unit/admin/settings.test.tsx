@@ -81,8 +81,9 @@ describe('settings screens', () => {
   it('Kategoriler: a category in use cannot be deleted', async () => {
     setup('kategoriler');
     const row = (await screen.findByDisplayValue('Yaşam')).closest('li')!;
+    // Usage is checked after the list shows; wait for it before looking at the buttons.
+    expect(await within(row).findByText(/Kullanımda/)).toBeTruthy();
     expect((within(row).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(true);
-    expect(within(row).getByText(/Kullanımda/)).toBeTruthy();
     const unused = screen.getByDisplayValue('Araştırma').closest('li')!;
     expect((within(unused).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(false);
   });
@@ -99,5 +100,6 @@ describe('settings screens', () => {
   it('an unknown screen says so', async () => {
     setup('yok-boyle');
     expect(await screen.findByText(/Bu ayar ekranı bulunamadı/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Yazılara dön' }).getAttribute('href')).toBe('#/yazilar');
   });
 });

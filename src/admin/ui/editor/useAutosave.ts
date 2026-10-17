@@ -93,6 +93,8 @@ export function useAutosave(
         }
         return true;
       } catch (e) {
+        // A pending restore still keeps the replaced text as a version once the owner resolves this.
+        if (snapshot) snapshotNext.current = true;
         if (e instanceof ApiFailure && e.code === 'conflict' && e.current) {
           blocked.current = true;
           setConflict(normalizeDraft(e.current));
@@ -105,7 +107,6 @@ export function useAutosave(
           setStatus('silinmiş');
           return false;
         }
-        if (snapshot) snapshotNext.current = true;
         setStatus('cihazda');
         clearTimer();
         timer.current = setTimeout(() => void save(), retryMs);
@@ -148,6 +149,7 @@ export function useAutosave(
     const theirs = conflict;
     if (!theirs) return;
     blocked.current = false;
+    snapshotNext.current = false;
     latest.current = theirs;
     savedSeq.current = seq.current;
     setDraft(theirs);
@@ -186,12 +188,21 @@ export function useAutosave(
     [update],
   );
 
-  /** Replace the draft with a restored version and save it at once, keeping the replaced text as a version. */
-  const replaceAndSnapshot = useCallback(
-    (d: Draft) => {
+  /**
+   * Restore an old version: first saves any pending text (so it ends up in the version history),
+   * then replaces the draft with `fn(latest copy)` and saves it at once, keeping the replaced text
+   * as a version. Returns false (and changes nothing) when the pending text could not be saved.
+   */
+  const restoreWith = useCallback(
+    async (fn: (d: Draft) => Draft): Promise<boolean> => {
+      if (blocked.current) return false;
+      if (inFlight.current || seq.current !== savedSeq.current) {
+        if (!(await save())) return false;
+      }
       snapshotNext.current = true;
-      update(() => d);
+      update(fn);
       void save();
+      return true;
     },
     [save, update],
   );
@@ -226,5 +237,5 @@ export function useAutosave(
     clearBackup(latest.current.key, storage);
   }, [storage]);
 
-  return { draft, update, status, conflict, saveNow: save, keepTheirs, keepMine, keepAsNew, replace, replaceAndSnapshot, stop };
+  return { draft, update, status, conflict, saveNow: save, keepTheirs, keepMine, keepAsNew, replace, restoreWith, stop };
 }

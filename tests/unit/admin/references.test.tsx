@@ -162,6 +162,35 @@ describe('Referans ekle', () => {
     expect(latest.references).toHaveLength(1);
   });
 
+  it('looking up a DOI that is already saved selects the saved reference instead of adding ray2004-2 (final review I4)', async () => {
+    const fetchFn = setup(fields(para({ type: 'text', text: 'Metin ' }), [{ ...rayRef, doi: '10.1037/0003-066X.59.1.29' }]));
+    const dlg = await openDialog();
+    await lookup(dlg, 'https://doi.org/10.1037/0003-066x.59.1.29');
+    expect(await within(dlg).findByText('Bu referans zaten kayıtlı.')).toBeTruthy();
+    expect(within(dlg).getByRole('tab', { name: 'Kayıtlı referanslar (1)', selected: true })).toBeTruthy();
+    expect((within(dlg).getByRole('radio', { name: /Ray, O\. \(2004\)/ }) as HTMLInputElement).checked).toBe(true);
+    expect(fetchFn).not.toHaveBeenCalled();
+    fireEvent.click(ekle(dlg));
+    await waitFor(() => expect(editorText()).toContain('(Ray, 2004)'));
+    expect(latest.references.map((r) => r.id)).toEqual(['ray2004']);
+  });
+
+  it('a new reference typed by hand with the DOI of a saved reference cannot be added (final review I4)', async () => {
+    setup(fields(para({ type: 'text', text: 'Metin ' }), [{ ...rayRef, doi: '10.1037/0003-066X.59.1.29' }]));
+    const dlg = await openDialog();
+    fireEvent.click(within(dlg).getByRole('tab', { name: 'Yeni referans' }));
+    fireEvent.click(within(dlg).getByRole('button', { name: 'DOI yok, elle doldur' }));
+    fireEvent.change(within(dlg).getByLabelText('Tür'), { target: { value: 'article' } });
+    fireEvent.change(within(dlg).getByLabelText('Yıl'), { target: { value: '2004' } });
+    fireEvent.change(within(dlg).getByLabelText('Başlık'), { target: { value: 'Başka bir başlık' } });
+    fireEvent.change(within(dlg).getAllByLabelText('Soyadı')[0], { target: { value: 'Ray' } });
+    fireEvent.change(within(dlg).getByLabelText('DOI'), { target: { value: '10.1037/0003-066X.59.1.29' } });
+    expect(await within(dlg).findByText(/Bu DOI ile bir referans zaten kayıtlı/)).toBeTruthy();
+    expect(ekle(dlg).disabled).toBe(true);
+    fireEvent.change(within(dlg).getByLabelText('DOI'), { target: { value: '10.1000/baska' } });
+    await waitFor(() => expect(ekle(dlg).disabled).toBe(false));
+  });
+
   it('a failed lookup shows the Turkish error and switches to the manual form', async () => {
     setup();
     const dlg = await openDialog();

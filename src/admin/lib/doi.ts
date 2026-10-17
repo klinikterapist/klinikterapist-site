@@ -17,10 +17,19 @@ export function parseDoi(input: string): string | null {
   return /^10\.\d{4,9}\/\S+$/.test(s) ? s : null;
 }
 
+/** True when both are the same DOI (DOIs are case-insensitive; URL and "doi:" forms are accepted). */
+export function sameDoi(a: string | undefined | null, b: string | undefined | null): boolean {
+  const norm = (x: string | undefined | null) => (x ? (parseDoi(x) ?? x.trim()).toLowerCase() : '');
+  const na = norm(a);
+  return na !== '' && na === norm(b);
+}
+
 export async function fetchCsl(doi: string, fetchFn: typeof fetch = fetch): Promise<unknown> {
   let res: Response;
   try {
-    res = await fetchFn(`https://doi.org/${doi}`, { headers: { Accept: 'application/vnd.citationstyles.csl+json' } });
+    // Each segment encoded (SICI DOIs hold '#', '?', ';', '<'…); the '/' separators stay.
+    const path = doi.split('/').map(encodeURIComponent).join('/');
+    res = await fetchFn(`https://doi.org/${path}`, { headers: { Accept: 'application/vnd.citationstyles.csl+json' } });
   } catch {
     throw new DoiError(UNREACHABLE);
   }
@@ -42,6 +51,26 @@ const str = (v: unknown): string | undefined => {
   const x = Array.isArray(v) ? v[0] : v;
   return typeof x === 'string' && x.trim() ? x.trim() : typeof x === 'number' ? String(x) : undefined;
 };
+
+const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Crossref titles carry inline markup (<i>, <sup>, <scp>, MathML…): keep only the text. */
+function plainText(v: unknown): string | undefined {
+  const s = str(v);
+  if (!s) return undefined;
+  const out = s
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) => {
+      if (e[0] === '#') {
+        const n = e[1] === 'x' || e[1] === 'X' ? parseInt(e.slice(2), 16) : Number(e.slice(1));
+        return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : m;
+      }
+      return ENTITIES[e.toLowerCase()] ?? m;
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+  return out || undefined;
+}
 
 function people(v: unknown): Person[] {
   if (!Array.isArray(v)) return [];
@@ -72,8 +101,8 @@ export function cslToReference(csl: unknown, taken: Set<string>): { ref: Referen
   const cslType = str(c.type) ?? '';
   const mapped = TYPES.get(cslType);
   const lang = str(c.language)?.toLowerCase().startsWith('tr') ? 'tr' : undefined;
-  const subtitle = str(c.subtitle);
-  const title = sentenceCase([str(c.title) ?? '', subtitle].filter(Boolean).join(': '), lang);
+  const subtitle = plainText(c.subtitle);
+  const title = sentenceCase([plainText(c.title) ?? '', subtitle].filter(Boolean).join(': '), lang);
   const authors = people(c.author);
   const year = yearOf(c);
   const ref: Reference = { id: makeRefId({ authors, year, title }, taken), type: mapped ?? 'book', authors, year, title };
@@ -82,7 +111,7 @@ export function cslToReference(csl: unknown, taken: Set<string>): { ref: Referen
   const opt = (k: 'container' | 'volume' | 'issue' | 'pages' | 'edition' | 'publisher' | 'doi' | 'url', v: string | undefined) => {
     if (v) ref[k] = v;
   };
-  opt('container', str(c['container-title']));
+  opt('container', plainText(c['container-title']));
   opt('volume', str(c.volume));
   opt('issue', str(c.issue));
   opt('pages', str(c.page)?.replace(/\s*[-\u2010-\u2013]\s*/g, '–'));
