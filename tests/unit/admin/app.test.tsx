@@ -19,19 +19,19 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: /Giriş/ })).toBeTruthy();
   });
 
-  it('with a session shows the posts list, also for an unknown address', async () => {
+  it('with a session shows the home dashboard, also for an unknown address', async () => {
     const store = createSessionStore(localStorage);
     store.set('s', Date.now() + 3600e3);
     location.hash = '#/boyle-bir-sayfa-yok';
     render(<App api={createMockApi()} store={store} config={config} />);
-    expect(await screen.findByRole('heading', { level: 2, name: 'Yazılar' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Ana sayfa' })).toBeTruthy();
     expect(screen.getByRole('navigation', { name: 'Panel menüsü' })).toBeTruthy();
   });
 
   it('signing in (mock backend) opens the panel', async () => {
     render(<App api={createMockApi()} store={createSessionStore(localStorage)} config={{ ...config, apiUrl: 'mock' }} />);
     fireEvent.click(await screen.findByRole('button', { name: /Deneme girişi/ }));
-    expect(await screen.findByRole('heading', { level: 2, name: 'Yazılar' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Ana sayfa' })).toBeTruthy();
   });
 
   it('when the session ends, sign-in appears on top and the open screen keeps its edits (review I6)', async () => {

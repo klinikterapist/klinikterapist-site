@@ -7,6 +7,7 @@ import { Panel, useRoute } from './context';
 import { DeployProvider } from './DeployStatus';
 import { Login } from './Login';
 import { Shell } from './Shell';
+import { Home } from './Home';
 import { PostsList } from './PostsList';
 import { EditorPage } from './editor/EditorPage';
 import { SettingsPage } from './settings/SettingsPage';
@@ -47,8 +48,10 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <EditorPage key={route.key} postKey={route.key} />
             ) : route.name === 'settings' ? (
               <SettingsPage key={route.screen} screen={route.screen} />
+            ) : route.name === 'home' ? (
+              <Home />
             ) : (
-              // Home and the posts list share the list until Task 3/4 give each its own screen.
+              // The posts list keeps its own screen until Task 4.
               <PostsList />
             )}
           </Shell>

@@ -6,8 +6,9 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import type { Api, SiteStatus } from '../api/types';
 import { Banner } from './kit';
 
-type Deploy = { track: (commitSha: string) => void };
-const DeployContext = createContext<Deploy>({ track: () => {} });
+export type SitePhase = 'ok' | 'updating' | 'failed';
+type Deploy = { track: (commitSha: string) => void; phase: SitePhase };
+const DeployContext = createContext<Deploy>({ track: () => {}, phase: 'ok' });
 export const useDeploy = () => useContext(DeployContext);
 
 const DAY = 24 * 3600 * 1000;
@@ -65,7 +66,7 @@ export function DeployProvider({ api, children, intervalMs = 15000 }: { api: Api
   const expiresSoon = tokenExpiresAt && new Date(tokenExpiresAt).getTime() - Date.now() < 30 * DAY;
 
   return (
-    <DeployContext.Provider value={{ track }}>
+    <DeployContext.Provider value={{ track, phase: tracking ? 'updating' : status?.state === 'failure' ? 'failed' : 'ok' }}>
       <div className="deploy-status" aria-live="polite">
         {tracking && <Banner>Site güncelleniyor (1–3 dk)… Bu sırada çalışmaya devam edebilirsiniz.</Banner>}
         {!tracking && status?.state === 'success' && <Banner tone="success">Yayında ✓ Değişiklikleriniz sitede.</Banner>}
