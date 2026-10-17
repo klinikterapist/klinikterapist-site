@@ -94,6 +94,7 @@ export function buildPublishChangeset(input: {
     }
     const fm: PostFrontmatter = {
       title: f.title.trim(),
+      ...(f.subtitle.trim() ? { subtitle: f.subtitle.trim() } : {}),
       ...(f.seoTitle.trim() ? { seoTitle: f.seoTitle.trim() } : {}),
       description: f.description.trim(),
       slug: f.slug,
@@ -102,6 +103,7 @@ export function buildPublishChangeset(input: {
       ...(draft.cover ? { cover: `./${draft.cover}`, coverAlt: f.coverAlt.trim() } : {}),
       publishedAt: draft.publishedAt,
       ...(live ? { updatedAt: input.today } : {}),
+      ...(f.references.length ? { references: f.references } : {}),
     };
     const valid = schema.safeParse(fm);
     if (!valid.success) throw new PublishError(`${LANG_NAME[lang]}: ${valid.error.issues.map((i) => i.message).join('; ')}`);

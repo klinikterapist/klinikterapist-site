@@ -771,6 +771,25 @@ textarea.k-input {
   outline: none;
 }
 
+.ed-subtitle {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: none;
+  color: var(--p-muted);
+  font-family: var(--font-serif);
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  resize: none;
+}
+
+.ed-subtitle:focus {
+  outline: none;
+}
+
 .ed-body {
   min-height: 50vh;
   margin-top: var(--space-4);

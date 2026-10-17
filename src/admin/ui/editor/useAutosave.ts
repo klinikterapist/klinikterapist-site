@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiFailure, type Api, type Draft } from '../../api/types';
-import { newDraft } from '../../lib/draft';
+import { newDraft, normalizeDraft } from '../../lib/draft';
 
 export type AutosaveStatus = 'kaydedildi' | 'kaydediliyor' | 'cihazda' | 'çakışma' | 'silinmiş';
 
@@ -13,7 +13,8 @@ const backupKey = (key: string) => `kt-draft-${key}`;
 
 export function readBackup(key: string, storage: Storage): Draft | null {
   try {
-    return JSON.parse(storage.getItem(backupKey(key)) ?? 'null') as Draft | null;
+    const raw: unknown = JSON.parse(storage.getItem(backupKey(key)) ?? 'null');
+    return raw ? normalizeDraft(raw) : null;
   } catch {
     return null;
   }
@@ -90,7 +91,7 @@ export function useAutosave(
       } catch (e) {
         if (e instanceof ApiFailure && e.code === 'conflict' && e.current) {
           blocked.current = true;
-          setConflict(e.current as Draft);
+          setConflict(normalizeDraft(e.current));
           setStatus('çakışma');
           return false;
         }

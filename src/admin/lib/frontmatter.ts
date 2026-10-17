@@ -3,9 +3,11 @@
  * Values are written JSON-encoded (valid YAML) in a fixed key order, dates as bare `YYYY-MM-DD`.
  */
 import { parse } from 'yaml';
+import type { Reference } from '../../lib/apa/types';
 
 export type PostFrontmatter = {
   title: string;
+  subtitle?: string;
   seoTitle?: string;
   description: string;
   slug: string;
@@ -17,15 +19,16 @@ export type PostFrontmatter = {
   /** `YYYY-MM-DD` */
   publishedAt: string;
   updatedAt?: string;
+  references?: Reference[];
 };
 
-const ORDER = ['title', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'publishedAt', 'updatedAt'] as const;
+const ORDER = ['title', 'subtitle', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'publishedAt', 'updatedAt', 'references'] as const;
 const DATES = new Set(['publishedAt', 'updatedAt']);
 
 export function serializePost(fm: PostFrontmatter, body: string): string {
   const lines = ORDER.flatMap((k) => {
     const v = fm[k];
-    if (v === undefined || v === '') return [];
+    if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) return [];
     return [`${k}: ${DATES.has(k) ? v : JSON.stringify(v)}`];
   });
   return `---\n${lines.join('\n')}\n---\n\n${body.replace(/^\n+/, '')}`;
@@ -50,11 +53,13 @@ export function parsePost(text: string): { fm: PostFrontmatter; body: string } {
     category: String(raw.category ?? ''),
     publishedAt: day(raw.publishedAt) ?? '',
   };
+  if (raw.subtitle) fm.subtitle = String(raw.subtitle);
   if (raw.seoTitle) fm.seoTitle = String(raw.seoTitle);
   if (raw.cover) fm.cover = String(raw.cover);
   if (raw.coverAlt) fm.coverAlt = String(raw.coverAlt);
   const updated = day(raw.updatedAt);
   if (updated) fm.updatedAt = updated;
+  if (Array.isArray(raw.references) && raw.references.length) fm.references = raw.references as Reference[];
   // Keep the object's key order equal to ORDER, so equal frontmatter compares equal.
   const ordered = Object.fromEntries(ORDER.filter((k) => fm[k] !== undefined).map((k) => [k, fm[k]])) as PostFrontmatter;
   return { fm: ordered, body: normalized.slice(m[0].length).replace(/^\n+/, '') };

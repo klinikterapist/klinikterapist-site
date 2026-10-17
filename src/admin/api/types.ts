@@ -4,6 +4,7 @@
  * Both sides import this file (Apps Script only for types).
  */
 import type { JSONContent } from '@tiptap/core';
+import type { Reference } from '../../lib/apa/types';
 
 export type ErrorCode =
   | 'unauthorized'
@@ -41,6 +42,8 @@ export type SiteStatus = {
 
 export type LangFields = {
   title: string;
+  /** Optional line under the title; shown on the post page instead of the description. */
+  subtitle: string;
   seoTitle: string;
   slug: string;
   /** The owner edited the slug by hand: stop deriving it from the title. */
@@ -49,6 +52,8 @@ export type LangFields = {
   focusKeyword: string;
   coverAlt: string;
   doc: JSONContent;
+  /** Works cited in this language's text. */
+  references: Reference[];
 };
 
 export type Draft = {

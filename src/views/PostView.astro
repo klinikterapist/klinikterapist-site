@@ -72,7 +72,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <Breadcrumb lang={lang} items={crumbs} />
       {category && <a class="category" href={categoryPath(category, lang)}>{category.label[lang]}</a>}
       <h1>{data.title}</h1>
-      <p class="standfirst">{data.description}</p>
+      <p class="standfirst">{data.subtitle || data.description}</p>
       <p class="meta">
         <span>
           <span class="visually-hidden">{t(lang, 'published')}: </span>

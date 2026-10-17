@@ -21,7 +21,7 @@ const doc = (...images: string[]): JSONContent => ({
   ],
 });
 const lang = (title: string, slug: string, images: string[] = []): LangFields => ({
-  title, seoTitle: '', slug, slugTouched: true, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: 'Kapak', doc: doc(...images),
+  title, subtitle: '', references: [], seoTitle: '', slug, slugTouched: true, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: 'Kapak', doc: doc(...images),
 });
 const draft = (over: Partial<Draft> = {}): Draft => ({
   key: 'taslak-x', rev: 3, updatedAt: '', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17',
@@ -40,6 +40,17 @@ const livePost = (key: string, trSlug: string, enSlug: string, extra: { path: st
 const noRedirects = { list: [], sha: 'r0' };
 const base = { allLive: [] as LivePost[], redirects: noRedirects, categories, images: new Map(), today: '2026-10-20' };
 const paths = (xs: { path: string }[]) => xs.map((x) => x.path).sort();
+
+describe('buildPublishChangeset — subtitle', () => {
+  it('writes the subtitle into the frontmatter', () => {
+    const d = draft();
+    d.tr.subtitle = 'Kaygı düşman değil';
+    const cs = buildPublishChangeset({ ...base, draft: d, live: null });
+    const tr = cs.writes.find((w) => w.path.endsWith('tr.md'))!.content;
+    expect(tr).toContain('subtitle: "Kaygı düşman değil"');
+    expect(cs.writes.find((w) => w.path.endsWith('en.md'))!.content).not.toContain('subtitle');
+  });
+});
 
 describe('buildPublishChangeset — new post', () => {
   it('writes both languages under the TR slug as the folder key, with no redirects', () => {

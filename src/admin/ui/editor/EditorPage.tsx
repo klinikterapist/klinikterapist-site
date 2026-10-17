@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type Draft, type LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
-import { canPublish, describeMissing, isoDay, LANG_LABEL, missingFields } from '../../lib/draft';
+import { canPublish, describeMissing, isoDay, LANG_LABEL, missingFields, normalizeDraft } from '../../lib/draft';
 import { liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
 import { PublishError, buildPublishChangeset, buildUnpublishChangeset } from '../../lib/publish';
 import { go, usePanel } from '../context';
@@ -54,7 +54,7 @@ export function EditorPage({ postKey }: { postKey: string }) {
       const live = site.posts.find((p) => p.key === postKey) ?? null;
       let draft: Draft | null = null;
       try {
-        draft = (await api.getDraft(postKey)).draft;
+        draft = normalizeDraft((await api.getDraft(postKey)).draft);
       } catch (e) {
         if (!(e instanceof ApiFailure && e.code === 'not_found')) throw e;
       }

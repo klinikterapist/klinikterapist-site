@@ -71,6 +71,7 @@ export function PostEditor(props: {
   const [uploading, setUploading] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const title = useRef<HTMLTextAreaElement>(null);
+  const subtitle = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const t = title.current;
@@ -79,6 +80,14 @@ export function PostEditor(props: {
       t.style.height = `${t.scrollHeight}px`;
     }
   }, [fields.title]);
+
+  useEffect(() => {
+    const t = subtitle.current;
+    if (t) {
+      t.style.height = 'auto';
+      t.style.height = `${t.scrollHeight}px`;
+    }
+  }, [fields.subtitle]);
 
   const onTitle = (value: string) => {
     const next = { ...fields, title: value.replace(/\n/g, ' ') };
@@ -143,6 +152,19 @@ export function PostEditor(props: {
         placeholder={lang === 'tr' ? 'Başlık' : 'Title'}
         value={fields.title}
         onChange={(e) => onTitle(e.target.value)}
+      />
+      <label className="k-visually-hidden" htmlFor={`subtitle-${lang}`}>
+        Alt başlık ({LANG_LABEL[lang]})
+      </label>
+      <textarea
+        id={`subtitle-${lang}`}
+        ref={subtitle}
+        className="ed-subtitle"
+        rows={1}
+        lang={lang}
+        placeholder={lang === 'tr' ? 'Alt başlık ekleyin…' : 'Add a subtitle…'}
+        value={fields.subtitle}
+        onChange={(e) => onChange({ subtitle: e.target.value.replace(/\n/g, ' ') })}
       />
       {editor && (
         <BubbleMenu

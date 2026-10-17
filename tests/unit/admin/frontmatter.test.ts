@@ -26,6 +26,9 @@ describe('serializePost / parsePost', () => {
     const keys = text.split('\n').slice(1, 11).map((l) => l.split(':')[0]);
     expect(keys).toEqual(['title', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'publishedAt', 'updatedAt']);
     expect(text).toContain('\npublishedAt: 2026-10-17\n');
+    const sub = serializePost({ ...fm, subtitle: 'Kaygı düşman değil' }, 'x\n');
+    expect(sub.split('\n')[2]).toBe('subtitle: "Kaygı düşman değil"');
+    expect(serializePost({ ...fm, subtitle: '' }, 'x\n')).not.toContain('subtitle');
     const bare = serializePost({ ...fm, cover: undefined, coverAlt: undefined }, 'x\n');
     expect(bare).not.toContain('cover');
     expect(bare.startsWith('---\n')).toBe(true);
@@ -47,5 +50,19 @@ describe('serializePost / parsePost', () => {
 
   it('throws a Turkish error for a file without frontmatter', () => {
     expect(() => parsePost('no frontmatter')).toThrow(/frontmatter/);
+  });
+});
+
+describe('subtitle and references', () => {
+  it('round-trips subtitle and references, references written as one JSON line', () => {
+    const references = [
+      { id: 'a', type: 'article' as const, authors: [{ family: 'Beck', given: 'A. T.' }, { literal: 'WHO' }], year: 2020, title: 'Bilişsel terapi', container: 'J', doi: '10.1/x' },
+      { id: 'b', type: 'web' as const, authors: [], year: 'nd' as const, title: 'Sayfa', url: 'https://example.com', accessed: '2026-10-17' },
+    ];
+    const full = { ...fm, subtitle: 'Alt başlık', references };
+    const text = serializePost(full, 'x\n');
+    expect(text.split('\n').filter((l) => l.startsWith('references:'))).toHaveLength(1);
+    expect(parsePost(text).fm).toEqual(full);
+    expect(postFrontmatterSchema(['duygular']).safeParse(full).success).toBe(true);
   });
 });

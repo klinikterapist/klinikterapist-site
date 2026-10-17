@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { autoSlug, canPublish, describeMissing, missingFields, newDraft } from '../../../src/admin/lib/draft';
+import { autoSlug, canPublish, describeMissing, missingFields, newDraft, normalizeDraft } from '../../../src/admin/lib/draft';
 import type { Draft, LangFields } from '../../../src/admin/api/types';
 
 const body = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metin.' }] }] };
 const complete = (over: Partial<LangFields> = {}): LangFields => ({
-  title: 'Başlık', seoTitle: '', slug: 'baslik', slugTouched: false, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: '', doc: body, ...over,
+  title: 'Başlık', subtitle: '', seoTitle: '', slug: 'baslik', slugTouched: false, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: '', doc: body, references: [], ...over,
 });
 const draft = (over: Partial<Draft> = {}): Draft => ({
   ...newDraft(new Date('2026-10-17T10:00:00')),
@@ -65,5 +65,18 @@ describe('autoSlug', () => {
     const slug = autoSlug(f, 'tr');
     expect(slug).toBe('');
     expect(missingFields({ ...f, slug }, 'tr')).toContain('URL kısa adı');
+  });
+});
+
+describe('normalizeDraft', () => {
+  it('fills subtitle and references that old drafts lack, and keeps existing ones', () => {
+    const old = JSON.parse(JSON.stringify(draft()));
+    delete old.tr.subtitle; delete old.tr.references; delete old.en.subtitle; delete old.en.references;
+    const n = normalizeDraft(old);
+    expect(n.tr.subtitle).toBe('');
+    expect(n.en.references).toEqual([]);
+    expect(n.tr.title).toBe('Başlık');
+    const kept = normalizeDraft(draft({ tr: complete({ subtitle: 'Alt' }) }));
+    expect(kept.tr.subtitle).toBe('Alt');
   });
 });

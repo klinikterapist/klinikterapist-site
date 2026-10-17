@@ -167,3 +167,21 @@ describe('useAutosave', () => {
     expect(result.current.status).toBe('kaydedildi');
   });
 });
+
+describe('old drafts without the new fields', () => {
+  it('a device copy and a conflict draft are normalized', async () => {
+    const old = JSON.parse(JSON.stringify(initial()));
+    delete old.tr.subtitle; delete old.tr.references; delete old.en.subtitle; delete old.en.references;
+    localStorage.setItem(`kt-draft-${old.key}`, JSON.stringify(old));
+    const b = readBackup(old.key, localStorage)!;
+    expect(b.tr.subtitle).toBe('');
+    expect(b.en.references).toEqual([]);
+
+    const { api } = fakeApi(() => Promise.reject(new ApiFailure('conflict', 'x', old)));
+    const { result } = renderHook(() => useAutosave(initial(), api));
+    type(result, 'B');
+    await tick(2500);
+    expect(result.current.conflict?.tr.subtitle).toBe('');
+    expect(result.current.conflict?.en.references).toEqual([]);
+  });
+});

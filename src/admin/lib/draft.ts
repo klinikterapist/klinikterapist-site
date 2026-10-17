@@ -12,8 +12,19 @@ export const LANG_LABEL: Record<Lang, string> = { tr: 'Türkçe', en: 'İngilizc
 export const emptyDoc = (): JSONContent => ({ type: 'doc', content: [{ type: 'paragraph' }] });
 
 const emptyLang = (): LangFields => ({
-  title: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: emptyDoc(),
+  title: '', subtitle: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: emptyDoc(), references: [],
 });
+
+const normalizeLang = (v: unknown): LangFields => {
+  const f = (v && typeof v === 'object' ? v : {}) as Partial<LangFields>;
+  return { ...emptyLang(), ...f, subtitle: f.subtitle ?? '', references: Array.isArray(f.references) ? f.references : [] };
+};
+
+/** Fill the fields older drafts lack. Apply on every path a draft enters the editor. */
+export function normalizeDraft(d: unknown): Draft {
+  const x = d as Draft;
+  return { ...x, tr: normalizeLang(x.tr), en: normalizeLang(x.en) };
+}
 
 /** Local calendar day, `YYYY-MM-DD`. */
 export function isoDay(d: Date): string {

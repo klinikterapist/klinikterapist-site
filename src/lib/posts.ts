@@ -1,9 +1,11 @@
+import type { Reference } from './apa/types';
 import type { Lang } from './settings';
 import { RESERVED_SLUGS } from './schemas';
 import { readingTime } from './readingTime';
 
 export type PostData = {
   title: string;
+  subtitle?: string;
   seoTitle?: string;
   description: string;
   slug: string;
@@ -13,6 +15,7 @@ export type PostData = {
   coverAlt?: string;
   publishedAt: Date;
   updatedAt?: Date;
+  references?: Reference[];
 };
 
 /** Minimal shape of an `astro:content` entry that the helpers need. */

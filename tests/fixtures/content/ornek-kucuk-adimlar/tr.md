@@ -1,5 +1,6 @@
 ---
 title: "Daha İyi Bir Yaşam İçin Küçük Adımlar"
+subtitle: "Küçük adımlar, kalıcı değişim"
 description: "Büyük değişimler çoğu zaman küçük, tutarlı adımlarla başlar. Bu yazıda günlük hayatta uygulayabileceğiniz birkaç basit adımı ele alıyoruz."
 slug: "daha-iyi-bir-yasam-icin-kucuk-adimlar"
 focusKeyword: "küçük adımlar"

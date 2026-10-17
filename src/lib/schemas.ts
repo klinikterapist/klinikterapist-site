@@ -1,4 +1,5 @@
 import { z } from 'astro/zod';
+import { referenceSchema } from './apa/types';
 
 /**
  * Settings and post schemas, shared by the build (`settings.ts`, `content.config.ts`) and the
@@ -190,6 +191,7 @@ const redirectsSchema = z
 export function postFrontmatterSchema(categoryIds: string[]) {
   return z.object({
     title: z.string(),
+    subtitle: z.string().optional(),
     seoTitle: z.string().optional(),
     description: z.string(),
     slug: slugSchema,
@@ -201,6 +203,7 @@ export function postFrontmatterSchema(categoryIds: string[]) {
     coverAlt: z.string().optional(),
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
+    references: z.array(referenceSchema).optional(),
   });
 }
 

@@ -33,6 +33,14 @@ describe('blog', () => {
       .toBe('https://example.com/og-default.jpg');
   });
 
+  it('standfirst shows the subtitle when set, the meta description stays the SEO text', () => {
+    const tr = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
+    expect(tr.querySelector('.standfirst')?.text.trim()).toBe('Küçük adımlar, kalıcı değişim');
+    expect(tr.querySelector('meta[name=description]')?.getAttribute('content')).toBe(
+      'Büyük değişimler çoğu zaman küçük, tutarlı adımlarla başlar. Bu yazıda günlük hayatta uygulayabileceğiniz birkaç basit adımı ele alıyoruz.',
+    );
+  });
+
   it('EN post switches back to the TR translation', () => {
     const en = loadPage('/en/blog/no-cover-example/');
     expect(en.querySelector('a.lang-switch')?.getAttribute('href')).toBe('/blog/kapaksiz-ornek/');

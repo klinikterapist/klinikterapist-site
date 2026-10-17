@@ -1,6 +1,7 @@
 /** Loading what is live in the repo, and turning it into editable drafts and list rows. */
 import type { Api, Draft, DraftSummary, LangFields } from '../api/types';
 import { parseCategories, parseRedirects, type Category, type Lang } from '../../lib/schemas';
+import { normalizeDraft } from './draft';
 import { parsePost, type PostFrontmatter } from './frontmatter';
 import { markdownToDoc } from './markdown';
 import type { LivePost, RedirectsFile } from './publish';
@@ -51,6 +52,7 @@ export async function loadSiteState(api: Api): Promise<SiteState> {
 function langFields(fm: PostFrontmatter, body: string): LangFields {
   return {
     title: fm.title,
+    subtitle: fm.subtitle ?? '',
     seoTitle: fm.seoTitle ?? '',
     slug: fm.slug,
     slugTouched: true,
@@ -58,11 +60,12 @@ function langFields(fm: PostFrontmatter, body: string): LangFields {
     focusKeyword: fm.focusKeyword,
     coverAlt: fm.coverAlt ?? '',
     doc: markdownToDoc(body),
+    references: fm.references ?? [],
   };
 }
 
 export function liveToDraft(p: LoadedPost): Draft {
-  return {
+  return normalizeDraft({
     key: p.key,
     rev: 0,
     updatedAt: '',
@@ -73,7 +76,7 @@ export function liveToDraft(p: LoadedPost): Draft {
     base: { tr: p.tr.sha, en: p.en.sha },
     tr: langFields(p.tr.fm, p.body.tr),
     en: langFields(p.en.fm, p.body.en),
-  };
+  });
 }
 
 export type PostStatus = 'taslak' | 'yayında' | 'yayında-değişiklik-var';
