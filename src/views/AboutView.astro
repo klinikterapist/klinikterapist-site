@@ -7,6 +7,7 @@ import Leaf from '../components/Leaf.astro';
 import type { Lang } from '../lib/settings';
 import { getAbout, getProfile } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
+import { renderMarkdown } from '../lib/markdown';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -51,7 +52,7 @@ const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], ab
     <section class="who" aria-labelledby="who-title">
       <div class="who-text">
         <h2 id="who-title">{t(lang, 'whoAmI')}</h2>
-        <p>{about.whoAmI[lang]}</p>
+        <div class="md" set:html={renderMarkdown(about.whoAmI[lang])} />
       </div>
       <figure class="quote card">
         <Icon name="quote" size={28} class="quote-mark" />
@@ -66,7 +67,7 @@ const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], ab
           <Icon name="leaf" size={22} />
           {t(lang, 'whyThisWork')}
         </h2>
-        <p>{about.whyThisWork[lang]}</p>
+        <div class="md" set:html={renderMarkdown(about.whyThisWork[lang])} />
       </div>
       <Leaf size={120} class="why-leaf" />
     </section>
@@ -170,8 +171,15 @@ const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], ab
     gap: var(--space-4);
   }
 
-  .who-text p {
-    margin: 0;
+  /* Markdown output (about.json whoAmI / whyThisWork): paragraphs, lists, links. */
+  .md :global(p),
+  .md :global(ul),
+  .md :global(ol) {
+    margin: 0 0 var(--space-3);
+  }
+
+  .md > :global(:last-child) {
+    margin-bottom: 0;
   }
 
   .quote {
@@ -223,8 +231,7 @@ const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], ab
     color: var(--forest);
   }
 
-  .why p {
-    margin: 0;
+  .why .md {
     font-size: var(--text-sm);
   }
 
@@ -274,7 +281,7 @@ const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], ab
       font-size: 1.375rem;
     }
 
-    .why p {
+    .why .md {
       font-size: var(--text-base);
     }
 
