@@ -8,7 +8,8 @@ import { Marked, type Tokens } from 'marked';
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-const SAFE_HREF = /^(https:\/\/|mailto:|\/(?!\/))/i;
+// A site path, but not `//host` or `/\host` (browsers treat both as protocol-relative).
+const SAFE_HREF = /^(https:\/\/|mailto:|\/(?![\/\\]))/i;
 
 const md = new Marked({
   async: false,

@@ -12,8 +12,8 @@ interface Props {
 }
 const { lang } = Astro.props;
 const profile = getProfile();
-// One line: the first sentence of the intro.
-const intro = profile.intro[lang].split(/(?<=[.!?])\s/)[0];
+// One line: the explicit short intro; the full intro when none is set.
+const intro = profile.shortIntro?.[lang] ?? profile.intro[lang];
 ---
 
 <aside class="author-box card" aria-labelledby="author-name">

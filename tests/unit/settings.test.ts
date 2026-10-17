@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getProfile, getLinks, getHome, getAbout, getContact, getResources,
   getCategories, getSeo, getRedirects, parseProfile, parseLinks, parseHome,
-  parseRedirects, parseCategories, parseResources, parseAbout, checkRedirectCollisions, slugSchema, periodText,
+  parseRedirects, parseCategories, parseResources, parseAbout, checkRedirectCollisions, slugSchema, periodText, parseContact, slugError,
 } from '../../src/lib/settings';
 import { staticPagePaths } from '../../src/i18n/routes';
 
@@ -158,5 +158,28 @@ describe('resources note (myNote) and timeline period', () => {
     for (const item of getAbout().timeline) {
       if (typeof item.period === 'string') expect(item.period).toMatch(/^[\d–\-\s]+$/);
     }
+  });
+});
+
+describe('Phase 2 hardening', () => {
+  const contact = { intro: { tr: 'a', en: 'a' }, workStyle: { tr: 'a', en: 'a' }, responseTime: { tr: 'a', en: 'a' }, emergencyNote: { tr: 'a', en: 'a' } };
+  it('contact e-mail must be an e-mail address', () => {
+    expect(() => parseContact({ ...contact, email: 'not-an-email' })).toThrow(/contact\.json.*email/);
+    expect(() => parseContact({ ...contact, email: 'merhaba@klinikterapist.com' })).not.toThrow();
+  });
+  it('reserved category base paths are not valid post slugs in their language', () => {
+    expect(slugError('kategori', 'tr')).toMatch(/kategori/);
+    expect(slugError('category', 'en')).toMatch(/category/);
+    expect(slugError('kategori', 'en')).toBeNull();
+    expect(slugError('category', 'tr')).toBeNull();
+    expect(slugError('', 'tr')).toBeTruthy();
+    expect(slugError('Büyük-Harf', 'tr')).toBeTruthy();
+    expect(slugError('kaygi-ile-yasamak', 'tr')).toBeNull();
+  });
+  it('profile accepts an optional short intro', () => {
+    const p = getProfile();
+    expect(() => parseProfile({ ...p, shortIntro: { tr: 'Kısa.', en: 'Short.' } })).not.toThrow();
+    const { shortIntro: _omit, ...rest } = { ...p, shortIntro: undefined };
+    expect(() => parseProfile(rest)).not.toThrow();
   });
 });

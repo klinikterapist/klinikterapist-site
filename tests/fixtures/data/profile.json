@@ -12,6 +12,10 @@
     "tr": "Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.",
     "en": "Understanding yourself is the first step of change. I am by your side on this journey."
   },
+  "shortIntro": {
+    "tr": "Kısa tanıtım: Uzm. Psk. olarak çalışıyorum.",
+    "en": "Short intro: I work as a clinical psychologist."
+  },
   "photo": "/portrait.svg",
   "photoAlt": {
     "tr": "Osman Güneş Özkurt'un portresi",

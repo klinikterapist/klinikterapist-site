@@ -73,6 +73,29 @@ describe('blog', () => {
     expect(distText('sitemap-0.xml')).not.toContain('eski-adres');
   });
 
+  it('redirect pages use the language of their target and show visible fallback text', () => {
+    const tr = loadPage('/blog/eski-adres/');
+    expect(tr.querySelector('html')?.getAttribute('lang')).toBe('tr');
+    expect(tr.querySelector('body')?.textContent).toContain('Bu sayfa taşındı');
+    expect(tr.querySelector('body a')?.getAttribute('href')).toBe('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
+    const en = loadPage('/en/blog/old-address/');
+    expect(en.querySelector('html')?.getAttribute('lang')).toBe('en');
+    expect(en.querySelector('body')?.textContent).toContain('This page has moved');
+    expect(en.querySelector('body a')?.getAttribute('href')).toBe('/en/blog/small-steps-towards-a-better-life/');
+  });
+
+  it('empty category pages are noindex, categories with posts are indexable', () => {
+    expect(loadPage('/blog/kategori/arastirma/').querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
+    expect(loadPage('/en/blog/category/research/').querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
+    expect(loadPage('/blog/kategori/zihinsel-saglik/').querySelector('meta[name=robots]')).toBeNull();
+    expect(loadPage('/blog/').querySelector('meta[name=robots]')).toBeNull();
+  });
+
+  it('author box shows the explicit short intro', () => {
+    const intro = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/').querySelector('.author-box .intro');
+    expect(intro?.textContent).toBe('Kısa tanıtım: Uzm. Psk. olarak çalışıyorum.');
+  });
+
   it('blog pages advertise their RSS feed', () => {
     expect(loadPage('/blog/').querySelector('link[type="application/rss+xml"]')?.getAttribute('href'))
       .toBe('https://example.com/rss.xml');

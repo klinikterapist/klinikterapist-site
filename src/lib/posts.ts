@@ -1,4 +1,5 @@
 import type { Lang } from './settings';
+import { RESERVED_SLUGS } from './schemas';
 import { readingTime } from './readingTime';
 
 export type PostData = {
@@ -60,6 +61,18 @@ export function validateUniqueSlugs(entries: { id: string; data: { slug: string 
   }
 }
 
+/** A slug equal to the category base path (`kategori` / `category`) would shadow the category pages. */
+export function validateReservedSlugs(entries: { id: string; data: { slug: string } }[]): void {
+  for (const { id, data } of entries) {
+    const slash = id.lastIndexOf('/');
+    const key = id.slice(0, slash);
+    const lang = id.slice(slash + 1) as Lang;
+    if (RESERVED_SLUGS[lang]?.includes(data.slug)) {
+      throw new Error(`"${key}" yazısının ${lang} slug değeri "${data.slug}" kategori sayfalarına ayrılmış — başka bir adres seçin.`);
+    }
+  }
+}
+
 export function toPostEntry(entry: RawPost): PostEntry {
   const slash = entry.id.lastIndexOf('/');
   return {
@@ -88,6 +101,7 @@ async function loadAll(): Promise<PostEntry[]> {
   const entries = (await getCollection('posts')) as unknown as RawPost[];
   validatePostPairs(entries.map((e) => e.id));
   validateUniqueSlugs(entries);
+  validateReservedSlugs(entries);
   return entries.map(toPostEntry);
 }
 

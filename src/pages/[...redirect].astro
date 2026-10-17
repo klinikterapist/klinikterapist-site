@@ -27,18 +27,20 @@ export const getStaticPaths = (async () => {
 
 const { redirect } = Astro.props as { redirect: Redirect };
 const target = absoluteUrl(redirect.to);
+const lang = redirect.to.startsWith('/en/') ? 'en' : 'tr';
+const text = lang === 'en' ? 'This page has moved:' : 'Bu sayfa taşındı:';
 ---
 
 <!doctype html>
-<html lang="tr">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="robots" content="noindex" />
     <meta http-equiv="refresh" content={`0; url=${redirect.to}`} />
     <link rel="canonical" href={target} />
-    <title>Yönlendiriliyor… · Redirecting…</title>
+    <title>{lang === 'en' ? 'Redirecting…' : 'Yönlendiriliyor…'}</title>
   </head>
   <body>
-    <p><a href={redirect.to}>{target}</a></p>
+    <p>{text} <a href={redirect.to}>{target}</a></p>
   </body>
 </html>

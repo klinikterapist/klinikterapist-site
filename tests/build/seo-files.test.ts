@@ -9,7 +9,10 @@ describe('sitemap, robots, verification', () => {
   it('sitemap lists pages with hreflang alternates, without redirects or 404', () => {
     const sm = read('sitemap-0.xml');
     expect(sm).toContain('https://example.com/en/about/');
-    expect(sm).toContain('hreflang="tr-TR"');
+    expect(sm).toContain('hreflang="tr"');
+    expect(sm).toContain('hreflang="en"');
+    expect(sm).not.toMatch(/hreflang="(tr-TR|en-US)"/);
+    expect(sm).not.toContain('/admin/');
     expect(sm).not.toContain('/blog/eski-adres/');
     expect(sm).not.toContain('404');
   });
@@ -17,6 +20,7 @@ describe('sitemap, robots, verification', () => {
   it('robots.txt allows all and points to the sitemap index', () => {
     const robots = read('robots.txt');
     expect(robots).toContain('User-agent: *');
+    expect(robots).toContain('Disallow: /admin/');
     expect(robots).toContain('Sitemap: https://example.com/sitemap-index.xml');
   });
 

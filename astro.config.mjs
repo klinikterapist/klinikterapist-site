@@ -19,8 +19,8 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
-      filter: (page) => !redirectUrls.has(page),
-      i18n: { defaultLocale: 'tr', locales: { tr: 'tr-TR', en: 'en-US' } },
+      filter: (page) => !redirectUrls.has(page) && !new URL(page).pathname.startsWith('/admin/'),
+      i18n: { defaultLocale: 'tr', locales: { tr: 'tr', en: 'en' } },
     }),
   ],
 });

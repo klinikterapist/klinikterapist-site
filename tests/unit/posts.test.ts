@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validatePostPairs, validateUniqueSlugs, sortNewestFirst, pickRelated, toPostEntry } from '../../src/lib/posts';
+import { validatePostPairs, validateUniqueSlugs, validateReservedSlugs, sortNewestFirst, pickRelated, toPostEntry } from '../../src/lib/posts';
 
 describe('validatePostPairs', () => {
   it('throws naming folder and missing language', () => {
@@ -50,5 +50,16 @@ describe('validateUniqueSlugs (I2)', () => {
     expect(() => validateUniqueSlugs([e('a/tr', 'ayni'), e('b/tr', 'ayni')]))
       .toThrow('"a" ve "b" yazıları aynı tr slug değerini kullanıyor: "ayni"');
     expect(() => validateUniqueSlugs([e('a/en', 'same'), e('a/tr', 'x'), e('b/en', 'same')])).toThrow(/"a" ve "b".*en/);
+  });
+});
+
+describe('validateReservedSlugs', () => {
+  const e = (id: string, slug: string) => ({ id, data: { slug } });
+  it('rejects the category base path as a slug in its language, naming the folder', () => {
+    expect(() => validateReservedSlugs([e('a/tr', 'kategori')])).toThrow(/"a"/);
+    expect(() => validateReservedSlugs([e('b/en', 'category')])).toThrow(/"b"/);
+  });
+  it('allows the other language to use it', () => {
+    expect(() => validateReservedSlugs([e('a/en', 'kategori'), e('a/tr', 'category')])).not.toThrow();
   });
 });

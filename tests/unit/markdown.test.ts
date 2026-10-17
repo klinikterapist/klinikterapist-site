@@ -26,4 +26,8 @@ describe('renderMarkdown (I3: about texts are Markdown)', () => {
     expect(html).toContain('tıkla');
     expect(html).toContain('resim');
   });
+  it('rejects backslash protocol-relative paths but keeps site paths', () => {
+    expect(renderMarkdown('[x](/\\evil.com)')).not.toContain('href');
+    expect(renderMarkdown('[x](/hakkimda/)')).toContain('href="/hakkimda/"');
+  });
 });

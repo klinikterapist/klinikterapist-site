@@ -2,5 +2,9 @@
   {
     "from": "/blog/eski-adres/",
     "to": "/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/"
+  },
+  {
+    "from": "/en/blog/old-address/",
+    "to": "/en/blog/small-steps-towards-a-better-life/"
   }
 ]
