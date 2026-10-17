@@ -155,13 +155,35 @@ describe('draft snapshots', () => {
     expect(names[0].startsWith('2-')).toBe(true);
   });
 
-  it('lists versions newest first with rev, savedAt and titles', () => {
+  it('lists versions newest first with rev and savedAt, without reading contents', () => {
     const gas = fakeGas({ now: Date.UTC(2026, 9, 17, 14, 0, 0) });
     saves(gas, 4, 11 * MIN);
     const { versions } = listVersions(gas, { key: 'taslak-abc' });
     expect(versions.map((v) => v.rev)).toEqual([3, 2, 1]);
-    expect(versions[0]).toEqual({ name: '3-20261017T143300Z.json', rev: 3, savedAt: '2026-10-17T14:33:00.000Z', title: { tr: 'v3', en: 'Title' } });
+    expect(versions[0]).toEqual({ name: '3-20261017T143300Z.json', rev: 3, savedAt: '2026-10-17T14:33:00.000Z' });
     expect(listVersions(gas, { key: 'yok' })).toEqual({ versions: [] });
+  });
+
+  it('listing ignores foreign file names, never parses contents, and returns at most 50', () => {
+    const gas = fakeGas();
+    const folder = gas.root.createFolder('surumler').createFolder('taslak-abc');
+    folder.createFile('notlar.txt', 'x', 'json');
+    folder.createFile('3-bozuk.json', 'x', 'json');
+    folder.createFile('1-20261017T100000Z.json', '{bozuk json', 'json');
+    for (let i = 0; i < 60; i++) folder.createFile(`${i + 2}-2026101${i % 10}T1${String(i % 10)}0000Z.json`, '{bozuk', 'json');
+    const { versions } = listVersions(gas, { key: 'taslak-abc' });
+    expect(versions).toHaveLength(50);
+    expect(versions.every((v) => /^\d+-\d{8}T\d{6}Z\.json$/.test(v.name))).toBe(true);
+    expect(versions.map((v) => v.savedAt)).toEqual([...versions.map((v) => v.savedAt)].sort().reverse());
+    expect(Object.keys(versions[0])).toEqual(['name', 'rev', 'savedAt']);
+  });
+
+  it('a corrupt snapshot is a Turkish not_found on getVersion', () => {
+    const gas = fakeGas();
+    gas.root.createFolder('surumler').createFolder('taslak-abc').createFile('1-20261017T100000Z.json', '{bozuk', 'json');
+    const e = errorOf(() => getVersion(gas, { key: 'taslak-abc', name: '1-20261017T100000Z.json' }));
+    expect(e.code).toBe('not_found');
+    expect(e.message).toBe('Bu sürüm okunamadı.');
   });
 
   it('a bad version name is bad_request, a missing one not_found', () => {

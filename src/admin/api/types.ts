@@ -84,7 +84,7 @@ export type DraftSummary = {
 };
 
 /** One snapshot of a draft (the stored copy as it was before a later save). */
-export type VersionSummary = { name: string; rev: number; savedAt: string; title: { tr: string; en: string } };
+export type VersionSummary = { name: string; rev: number; savedAt: string };
 
 export type Session = { session: string; email: string; expiresAt: number };
 

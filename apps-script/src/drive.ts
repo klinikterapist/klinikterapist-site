@@ -113,18 +113,20 @@ export function saveDraft(gas: Gas, p: { draft?: unknown; snapshot?: unknown }):
   });
 }
 
+const MAX_VERSIONS = 50;
+
+/** Names only: never opens a snapshot, so the cost stays flat however many exist. */
 export function listVersions(gas: Gas, p: { key?: unknown }): { versions: VersionSummary[] } {
   const folder = versionFolder(gas, key(p.key), false);
   const versions = (folder?.listFiles() ?? [])
     .flatMap((f) => {
-      const at = snapshotTime(f.getName());
-      return at === null ? [] : [{ f, at }];
+      const name = f.getName();
+      const at = snapshotTime(name);
+      return at === null ? [] : [{ name, at }];
     })
-    .sort((a, b) => b.at - a.at || b.f.getName().localeCompare(a.f.getName()))
-    .map(({ f, at }): VersionSummary => {
-      const d = JSON.parse(f.read()) as Draft;
-      return { name: f.getName(), rev: d.rev, savedAt: new Date(at).toISOString(), title: { tr: d.tr.title, en: d.en.title } };
-    });
+    .sort((a, b) => b.at - a.at || b.name.localeCompare(a.name))
+    .slice(0, MAX_VERSIONS)
+    .map(({ name, at }): VersionSummary => ({ name, rev: Number(/^(\d+)-/.exec(name)![1]), savedAt: new Date(at).toISOString() }));
   return { versions };
 }
 
@@ -133,7 +135,11 @@ export function getVersion(gas: Gas, p: { key?: unknown; name?: unknown }): { dr
   const name = versionName(p.name);
   const file = versionFolder(gas, k, false)?.findFile(name);
   if (!file) throw new ApiError('not_found', 'Bu sürüm bulunamadı. 30 günden eski sürümler silinir.');
-  return { draft: JSON.parse(file.read()) as Draft };
+  try {
+    return { draft: JSON.parse(file.read()) as Draft };
+  } catch {
+    throw new ApiError('not_found', 'Bu sürüm okunamadı.');
+  }
 }
 
 export function listDrafts(gas: Gas): { drafts: DraftSummary[] } {

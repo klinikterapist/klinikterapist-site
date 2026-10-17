@@ -120,8 +120,9 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     listVersions: (key) =>
       wait(() => ({
         versions: [...(state.versions.get(key) ?? [])]
-          .reverse()
-          .map((v) => ({ name: v.name, rev: v.draft.rev, savedAt: new Date(v.at).toISOString(), title: { tr: v.draft.tr.title, en: v.draft.en.title } })),
+          .sort((a, b) => b.at - a.at)
+          .slice(0, 50)
+          .map((v) => ({ name: v.name, rev: v.draft.rev, savedAt: new Date(v.at).toISOString() })),
       })),
     getVersion: (key, name) =>
       wait(() => {
