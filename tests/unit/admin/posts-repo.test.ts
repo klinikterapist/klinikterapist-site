@@ -36,6 +36,7 @@ describe('liveToDraft', () => {
     const [p] = (await loadSiteState(createMockApi({ seed }))).posts;
     const d = liveToDraft(p);
     expect(d).toMatchObject({ key: 'kaygi', rev: 0, published: true, category: 'terapi', cover: 'cover.webp', publishedAt: '2026-03-10' });
+    expect(d.base).toEqual({ tr: p.tr.sha, en: p.en.sha });
     expect(d.tr).toMatchObject({ title: 'Kaygı', slug: 'kaygi', slugTouched: true, coverAlt: 'Alt' });
     expect(d.tr.doc.content?.[0].content?.[1]).toMatchObject({ text: 'kalın', marks: [{ type: 'bold' }] });
   });

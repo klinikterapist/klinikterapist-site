@@ -12,7 +12,11 @@ import { docToMarkdown } from './markdown';
 import { applyPathChanges, redirectsJson, type PathChange } from './redirects';
 
 export class PublishError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    /** `stale`: the live post changed since this draft was started from it. */
+    readonly code?: 'stale',
+  ) {
     super(message);
     this.name = 'PublishError';
   }
@@ -72,6 +76,9 @@ export function buildPublishChangeset(input: {
   const check = canPublish(draft);
   if (!check.ok) throw new PublishError(`Yayınlamadan önce tamamlayın:\n${describeMissing(check).join('\n')}`);
 
+  if (live && draft.base && (draft.base.tr !== live.tr.sha || draft.base.en !== live.en.sha)) {
+    throw new PublishError('Bu yazının yayındaki sürümü siz düzenlerken başka bir cihazda güncellenmiş.', 'stale');
+  }
   const key = live?.key ?? uniqueKey(draft.tr.slug, new Set(allLive.map((p) => p.key)));
   const others = allLive.filter((p) => p.key !== key);
   const schema = postFrontmatterSchema(input.categories.map((c) => c.id));

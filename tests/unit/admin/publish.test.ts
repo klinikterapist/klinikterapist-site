@@ -120,6 +120,20 @@ describe('buildPublishChangeset — live post', () => {
     expect(r.content.endsWith('\n')).toBe(true);
   });
 
+  it('publishing an older copy over a newer published version is refused (review I1)', () => {
+    const d = draft({ key: 'kaygi', published: true, base: { tr: 'kaygi-tr-old', en: 'kaygi-en' }, tr: lang('Kaygı', 'kaygi', ['kalan.webp']) });
+    let err: unknown;
+    try {
+      buildPublishChangeset({ ...base, draft: d, live, allLive: [live], images });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(PublishError);
+    expect((err as PublishError).code).toBe('stale');
+    const fresh = { ...d, base: { tr: 'kaygi-tr', en: 'kaygi-en' } };
+    expect(() => buildPublishChangeset({ ...base, draft: fresh, live, allLive: [live], images })).not.toThrow();
+  });
+
   it('a replaced image with the same name is written over the existing file', () => {
     const live2 = livePost('kaygi', 'kaygi', 'anxiety', [{ path: 'src/content/posts/kaygi/cover.webp', sha: 's-cover' }]);
     const d = draft({ key: 'kaygi', published: true, cover: 'cover.webp' });

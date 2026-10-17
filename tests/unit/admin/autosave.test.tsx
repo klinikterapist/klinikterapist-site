@@ -138,4 +138,32 @@ describe('useAutosave', () => {
     expect(sent).toEqual(sent.map((_, i) => i));
     expect(saveDraft.mock.calls.at(-1)![0].tr.title).toBe('m79');
   });
+
+  it('a successful save on unmount clears the device copy (review I2)', async () => {
+    const { api } = fakeApi(ok);
+    const start = initial();
+    const { result, unmount } = renderHook(() => useAutosave(start, api));
+    type(result, 'Kapatmadan önce');
+    unmount();
+    await tick(0);
+    expect(readBackup(start.key, localStorage)).toBeNull();
+  });
+
+  it('a draft published or deleted on another device stops saving and can be kept as a new draft (review I3)', async () => {
+    let gone = true;
+    const { api, saveDraft } = fakeApi((d) => (gone ? Promise.reject(new ApiFailure('conflict', 'yok')) : ok(d)));
+    const start = { ...initial(), rev: 4, published: true };
+    const { result } = renderHook(() => useAutosave(start, api));
+    type(result, 'Laptopta yazmaya devam');
+    await tick(2000);
+    expect(result.current.status).toBe('silinmiş');
+    await tick(30000);
+    expect(saveDraft).toHaveBeenCalledOnce();
+    gone = false;
+    let newKey = '';
+    await act(async () => void (newKey = await result.current.keepAsNew()));
+    expect(newKey).not.toBe(start.key);
+    expect(saveDraft.mock.calls[1][0]).toMatchObject({ key: newKey, rev: 0, published: false, base: null, tr: { title: 'Laptopta yazmaya devam' } });
+    expect(result.current.status).toBe('kaydedildi');
+  });
 });

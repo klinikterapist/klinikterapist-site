@@ -25,9 +25,16 @@ const filled = (title: string, slug: string): LangFields => ({
   title, seoTitle: '', slug, slugTouched: false, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: '', doc: body,
 });
 
-function setup(draft: Draft) {
+const livePost = (slug: string, title: string) =>
+  `---\ntitle: "${title}"\ndescription: "D"\nslug: "${slug}"\nfocusKeyword: "k"\ncategory: "terapi"\npublishedAt: 2026-03-10\n---\n\nMetin.\n`;
+
+function setup(draft: Draft, extra: Record<string, string> = {}) {
   const api = createMockApi({
-    seed: { 'src/data/categories.json': '[{"id":"terapi","slug":{"tr":"terapi","en":"therapy"},"label":{"tr":"Terapi","en":"Therapy"}}]\n', 'src/data/redirects.json': '[]\n' },
+    seed: {
+      'src/data/categories.json': '[{"id":"terapi","slug":{"tr":"terapi","en":"therapy"},"label":{"tr":"Terapi","en":"Therapy"}}]\n',
+      'src/data/redirects.json': '[]\n',
+      ...extra,
+    },
   });
   api.state.drafts.set(draft.key, { ...draft, rev: 1 });
   const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
@@ -75,5 +82,28 @@ describe('EditorPage', () => {
     const commit = api.state.commits.at(-1)!;
     expect(commit.writes.map((w) => w.path).sort()).toEqual(['src/content/posts/kaygi/en.md', 'src/content/posts/kaygi/tr.md']);
     expect(api.state.drafts.size).toBe(0);
+  });
+
+  it('publishing over a version changed on another device asks first (review I1)', async () => {
+    const api = setup(
+      { ...base(), key: 'kaygi', published: true, base: { tr: 'eski', en: 'eski' }, tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') },
+      { 'src/content/posts/kaygi/tr.md': livePost('kaygi', 'Kaygı (telefonda)'), 'src/content/posts/kaygi/en.md': livePost('anxiety', 'Anxiety') },
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Değişiklikleri yayınla' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Evet, yayınla' }));
+    expect(await screen.findByText(/başka bir cihazda güncellenmiş/)).toBeTruthy();
+    expect(api.state.commits).toHaveLength(0);
+    fireEvent.click(screen.getByRole('button', { name: /Yine de yayınla/ }));
+    await screen.findByText(/Yazı yayınlandı/);
+    expect(api.state.commits).toHaveLength(1);
+  });
+
+  it('an older copy on this device is offered with a warning, not as a plain restore (review I2)', async () => {
+    const d = { ...base(), tr: filled('Telefondaki yeni', 'kaygi'), en: filled('Anxiety', 'anxiety') };
+    localStorage.setItem(`kt-draft-${d.key}`, JSON.stringify({ ...d, rev: 0, tr: { ...d.tr, title: 'Laptoptaki eski' } }));
+    setup(d);
+    expect(await screen.findByText(/diğer cihazda daha yeni bir sürüm/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Bu cihazdakini kaydet/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Geri yükle' })).toBeNull();
   });
 });

@@ -65,6 +65,8 @@ export type Draft = {
   publishedAt: string;
   tr: LangFields;
   en: LangFields;
+  /** For an edit of a live post: the blob shas of tr.md / en.md it started from. */
+  base?: { tr: string; en: string } | null;
 };
 
 export type DraftSummary = {

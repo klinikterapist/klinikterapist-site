@@ -5,8 +5,9 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiFailure, type Api, type Draft } from '../../api/types';
+import { newDraft } from '../../lib/draft';
 
-export type AutosaveStatus = 'kaydedildi' | 'kaydediliyor' | 'cihazda' | 'çakışma';
+export type AutosaveStatus = 'kaydedildi' | 'kaydediliyor' | 'cihazda' | 'çakışma' | 'silinmiş';
 
 const backupKey = (key: string) => `kt-draft-${key}`;
 
@@ -93,6 +94,12 @@ export function useAutosave(
           setStatus('çakışma');
           return false;
         }
+        if (e instanceof ApiFailure && e.code === 'conflict') {
+          // No stored copy any more: published or deleted on another device.
+          blocked.current = true;
+          setStatus('silinmiş');
+          return false;
+        }
         setStatus('cihazda');
         clearTimer();
         timer.current = setTimeout(() => void save(), retryMs);
@@ -151,6 +158,20 @@ export function useAutosave(
     return save();
   }, [conflict, save]);
 
+  /** After "silinmiş": keep this device's text as a brand-new draft; returns its key. */
+  const keepAsNew = useCallback(async () => {
+    const old = latest.current;
+    const fresh = newDraft(new Date());
+    latest.current = { ...old, key: fresh.key, rev: 0, published: false, base: null };
+    seq.current++;
+    setDraft(latest.current);
+    clearBackup(old.key, storage);
+    writeBackup(latest.current, storage);
+    blocked.current = false;
+    await save();
+    return fresh.key;
+  }, [save, storage]);
+
   /** Replace the whole draft (e.g. restoring a device copy) and save it. */
   const replace = useCallback(
     (d: Draft) => {
@@ -171,9 +192,15 @@ export function useAutosave(
     return () => {
       window.removeEventListener('beforeunload', warn);
       clearTimer();
-      if (seq.current !== savedSeq.current && !blocked.current) void api.saveDraft(latest.current).catch(() => {});
+      if (seq.current !== savedSeq.current && !blocked.current) {
+        const last = latest.current;
+        void api.saveDraft(last).then(
+          () => clearBackup(last.key, storage),
+          () => {},
+        );
+      }
     };
-  }, [api]);
+  }, [api, storage]);
 
   /** After publishing or deleting: no more saves, and no device copy left behind. */
   const stop = useCallback(() => {
@@ -183,5 +210,5 @@ export function useAutosave(
     clearBackup(latest.current.key, storage);
   }, [storage]);
 
-  return { draft, update, status, conflict, saveNow: save, keepTheirs, keepMine, replace, stop };
+  return { draft, update, status, conflict, saveNow: save, keepTheirs, keepMine, keepAsNew, replace, stop };
 }

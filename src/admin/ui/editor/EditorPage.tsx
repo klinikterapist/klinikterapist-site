@@ -25,6 +25,7 @@ const STATUS_TEXT: Record<AutosaveStatus, string> = {
   kaydediliyor: 'Kaydediliyor…',
   cihazda: 'Bağlantı yok — bu cihazda saklandı, tekrar denenecek',
   çakışma: 'Başka bir cihazda daha yeni bir kopya var',
+  silinmiş: 'Bu taslak başka bir cihazda yayınlanmış ya da silinmiş',
 };
 
 function figureNames(d: Draft): Set<string> {
@@ -104,6 +105,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState<Done | null>(null);
   const [inDrive, setInDrive] = useState(loaded.inDrive);
+  const [stale, setStale] = useState(false);
 
   const repoImages = useMemo(
     () =>
@@ -130,16 +132,19 @@ function Editing({ loaded }: { loaded: Loaded }) {
     setVersion((v) => v + 1);
   };
 
-  const publish = async () => {
+  const publish = async (force = false) => {
     setBusy(true);
     setMessage(null);
+    setStale(false);
     try {
       if (!(await auto.saveNow())) throw new PublishError('Taslak kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.');
       const site = await loadSiteState(api);
       const live = site.posts.find((p) => p.key === draft.key) ?? null;
       const imgs = await images.forPublish(figureNames(draft));
+      // "Yine de yayınla": the owner chose to replace the version published elsewhere.
+      const toPublish = force && live ? { ...draft, base: { tr: live.tr.sha, en: live.en.sha } } : draft;
       const cs = buildPublishChangeset({
-        draft,
+        draft: toPublish,
         live,
         allLive: site.posts,
         redirects: site.redirects,
@@ -158,7 +163,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
       deploy.track(commitSha);
       setDone({ kind: 'published', urls: { tr: postPath(draft.tr.slug, 'tr'), en: postPath(draft.en.slug, 'en') }, notices: cs.notices });
     } catch (e) {
-      setMessage(e instanceof PublishError || e instanceof ApiFailure ? e.message : 'Yayınlanamadı. Değişiklikleriniz taslakta duruyor; tekrar deneyin.');
+      if (e instanceof PublishError && e.code === 'stale') setStale(true);
+      else setMessage(e instanceof PublishError || e instanceof ApiFailure ? e.message : 'Yayınlanamadı. Değişiklikleriniz taslakta duruyor; tekrar deneyin.');
     } finally {
       setBusy(false);
       setConfirm(null);
@@ -251,12 +257,13 @@ function Editing({ loaded }: { loaded: Loaded }) {
           action={
             <span className="row">
               <Button
+                variant={restore.rev < draft.rev ? 'danger' : 'secondary'}
                 onClick={() => {
                   replaceDraft({ ...restore, rev: draft.rev });
                   setRestore(null);
                 }}
               >
-                Geri yükle
+                {restore.rev < draft.rev ? 'Bu cihazdakini kaydet (diğerinin üzerine yaz)' : 'Geri yükle'}
               </Button>
               <Button
                 variant="ghost"
@@ -270,7 +277,9 @@ function Editing({ loaded }: { loaded: Loaded }) {
             </span>
           }
         >
-          Bu cihazda kaydedilmemiş değişiklikler var. Geri yükleyelim mi?
+          {restore.rev < draft.rev
+            ? `Bu cihazda kaydedilmemiş eski bir kopya var, ama bu taslağın diğer cihazda daha yeni bir sürümü kaydedilmiş (${new Date(draft.updatedAt).toLocaleString('tr-TR')}). Bu cihazdakini kaydederseniz diğer cihazdaki değişiklikler kaybolur.`
+            : 'Bu cihazda kaydedilmemiş değişiklikler var. Geri yükleyelim mi?'}
         </Banner>
       )}
       {message && <Banner tone="error">{message}</Banner>}
@@ -352,7 +361,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
               <Button onClick={() => setConfirm(null)} disabled={busy}>
                 Vazgeç
               </Button>
-              <Button variant="primary" busy={busy} onClick={publish}>
+              <Button variant="primary" busy={busy} onClick={() => publish()}>
                 Evet, yayınla
               </Button>
             </>
@@ -402,6 +411,51 @@ function Editing({ loaded }: { loaded: Loaded }) {
             {loaded.live
               ? 'Yayındaki yazı olduğu gibi kalır; kaydedilmemiş değişiklikler silinir.'
               : "Taslak Drive'daki çöp kutusuna taşınır (30 gün içinde oradan geri alınabilir)."}
+          </p>
+        </Dialog>
+      )}
+      {stale && (
+        <Dialog
+          title="Yayındaki sürüm değişmiş"
+          onClose={() => !busy && setStale(false)}
+          actions={
+            <>
+              <Button
+                disabled={busy}
+                onClick={async () => {
+                  auto.stop();
+                  await api.deleteDraft(draft.key).catch(() => {});
+                  clearBackup(draft.key, window.localStorage);
+                  window.location.reload();
+                }}
+              >
+                Yayındaki sürümü aç (buradaki değişiklikleri at)
+              </Button>
+              <Button variant="danger" busy={busy} onClick={() => publish(true)}>
+                Yine de yayınla (onun üzerine yaz)
+              </Button>
+            </>
+          }
+        >
+          <p>Bu yazının yayındaki sürümü siz düzenlerken başka bir cihazda güncellenmiş. Burada yayınlarsanız oradaki değişiklikler kaybolur.</p>
+        </Dialog>
+      )}
+      {auto.status === 'silinmiş' && (
+        <Dialog
+          title="Bu taslak başka bir cihazda yayınlanmış ya da silinmiş."
+          onClose={() => {}}
+          actions={
+            <>
+              <Button onClick={() => go('#/')}>Yazılara dön</Button>
+              <Button variant="primary" onClick={async () => go(`#/yazi/${await auto.keepAsNew()}`)}>
+                Bu cihazdakini yeni taslak olarak sakla
+              </Button>
+            </>
+          }
+        >
+          <p>
+            Burada yazdıklarınız kaydedilemedi, çünkü taslak artık yok. Bu cihazdaki metni yeni bir taslak olarak saklayabilir ya da yazılara dönüp yayındaki
+            sürüme bakabilirsiniz.
           </p>
         </Dialog>
       )}

@@ -70,6 +70,7 @@ export function liveToDraft(p: LoadedPost): Draft {
     category: p.tr.fm.category,
     cover: p.tr.fm.cover ? p.tr.fm.cover.replace(/^\.\//, '') : null,
     publishedAt: p.tr.fm.publishedAt,
+    base: { tr: p.tr.sha, en: p.en.sha },
     tr: langFields(p.tr.fm, p.body.tr),
     en: langFields(p.en.fm, p.body.en),
   };
