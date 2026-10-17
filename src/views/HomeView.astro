@@ -1,0 +1,148 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import LinkCard from '../components/LinkCard.astro';
+import PostCard from '../components/PostCard.astro';
+import Icon from '../components/Icon.astro';
+import type { HomeCard, Lang } from '../lib/settings';
+import { getHome, getProfile, getSeo } from '../lib/settings';
+import { getPosts } from '../lib/posts';
+import { pageMeta } from '../lib/seo';
+import { personLd, professionalServiceLd } from '../lib/jsonld';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const { meta, alternatePaths } = pageMeta('home', lang, getProfile().name, getSeo().defaultDescription[lang]);
+const cards = getHome().cards.filter((c) => c.visible);
+const posts = (await getPosts(lang)).slice(0, 3);
+
+const cardHref = (c: HomeCard) => ('page' in c.target ? pathFor(c.target.page, lang) : c.target.url);
+const isExternal = (c: HomeCard) => 'url' in c.target && /^https?:\/\//.test(c.target.url);
+---
+
+<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths} jsonLd={[personLd(lang), professionalServiceLd(lang)]}>
+  <Hero lang={lang} />
+
+  {
+    cards.length > 0 && (
+      <nav class="container cards-wrap" aria-label={t(lang, 'sections')}>
+        <ul class="cards">
+          {cards.map((c) => (
+            <li>
+              <LinkCard
+                href={cardHref(c)}
+                title={c.title[lang]}
+                subtitle={c.subtitle[lang]}
+                icon={c.icon}
+                external={isExternal(c)}
+                newTabLabel={t(lang, 'opensInNewTab')}
+              />
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
+
+  {
+    posts.length > 0 && (
+      <section class="container recent" aria-labelledby="recent-title">
+        <div class="recent-head">
+          <h2 id="recent-title">{t(lang, 'recentPosts')}</h2>
+          <a class="all" href={pathFor('blog', lang)}>
+            {t(lang, 'allPosts')}
+            <Icon name="arrow" size={16} />
+          </a>
+        </div>
+        <ul class="posts">
+          {posts.map((p) => (
+            <li>
+              <PostCard post={p} lang={lang} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .recent {
+    padding-top: var(--space-7);
+  }
+
+  .recent-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .recent-head h2 {
+    margin: 0;
+  }
+
+  .all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 44px;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .all:hover {
+    text-decoration: underline;
+  }
+
+  .posts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .posts li {
+    display: flex;
+  }
+
+  .posts li > :global(*) {
+    flex: 1;
+  }
+
+  @media (min-width: 640px) {
+    .posts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .cards {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .posts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
+  }
+</style>

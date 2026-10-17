@@ -12,8 +12,10 @@ interface Props {
   meta: Meta;
   jsonLd?: object[];
   alternatePaths: { tr: string; en: string };
+  /** Keep the page out of search results (404). */
+  noindex?: boolean;
 }
-const { lang, meta, jsonLd, alternatePaths } = Astro.props;
+const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -25,6 +27,7 @@ const { lang, meta, jsonLd, alternatePaths } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex" />}
     <Seo meta={meta} jsonLd={jsonLd} />
   </head>
   <body id="top">

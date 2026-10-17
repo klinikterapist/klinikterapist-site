@@ -1,0 +1,84 @@
+---
+/** Renders `<data>/legal/<name>.<lang>.md`. The text's own `#` heading is the page h1. */
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import type { Lang } from '../lib/settings';
+import { pageMeta } from '../lib/seo';
+import { t } from '../i18n/ui';
+
+const DOCS = {
+  aydinlatma: { key: 'privacyNotice', label: 'navPrivacyNotice', desc: 'privacyNoticeDesc' },
+  gizlilik: { key: 'privacyPolicy', label: 'navPrivacyPolicy', desc: 'privacyPolicyDesc' },
+} as const;
+
+interface Props {
+  lang: Lang;
+  name: keyof typeof DOCS;
+}
+const { lang, name } = Astro.props;
+const doc = DOCS[name];
+const entry = await getEntry('legal', `${name}.${lang}`);
+if (!entry) throw new Error(`Yasal metin eksik: legal/${name}.${lang}.md`);
+const { Content, headings } = await render(entry);
+const h1 = headings.find((h) => h.depth === 1)?.text;
+const title = h1 ?? t(lang, doc.label);
+const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc));
+---
+
+<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+  <article class="container-text legal">
+    {!h1 && <h1>{title}</h1>}
+    <Content />
+  </article>
+</BaseLayout>
+
+<style>
+  .legal {
+    padding-top: var(--space-6);
+  }
+
+  .legal :global(h1) {
+    color: var(--forest);
+  }
+
+  .legal :global(h2) {
+    margin-top: var(--space-6);
+    font-size: var(--text-xl);
+  }
+
+  .legal :global(h3) {
+    margin-top: var(--space-5);
+    font-size: var(--text-lg);
+  }
+
+  .legal :global(blockquote) {
+    margin: var(--space-4) 0;
+    padding: var(--space-3) var(--space-4);
+    border-left: 3px solid var(--sage);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: var(--sage-soft);
+  }
+
+  .legal :global(blockquote p) {
+    margin: 0;
+  }
+
+  .legal :global(ul),
+  .legal :global(ol) {
+    padding-left: var(--space-5);
+  }
+
+  .legal :global(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  .legal :global(th),
+  .legal :global(td) {
+    padding: var(--space-2);
+    border: 1px solid var(--line);
+    text-align: left;
+  }
+</style>

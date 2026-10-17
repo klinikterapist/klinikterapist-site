@@ -1,6 +1,7 @@
 import type { Lang } from './settings';
 import { getSeo } from './settings';
 import { SITE } from './site';
+import { pathFor, type PageKey } from '../i18n/routes';
 
 export type Meta = {
   title: string;
@@ -56,4 +57,11 @@ export function buildMeta(input: MetaInput): Meta {
       'twitter:card': 'summary_large_image',
     },
   };
+}
+
+/** Meta and language-switch paths for a fixed page (one route key, both languages). */
+export function pageMeta(key: PageKey, lang: Lang, title: string, description: string) {
+  const alternatePaths = { tr: pathFor(key, 'tr'), en: pathFor(key, 'en') };
+  const meta = buildMeta({ lang, title, description, path: alternatePaths[lang], alternates: alternatePaths });
+  return { meta, alternatePaths };
 }

@@ -1,25 +1,5 @@
 ---
-// Temporary home page: real pages arrive in Task 5.
-import BaseLayout from '../layouts/BaseLayout.astro';
-import { getPosts } from '../lib/posts';
-import { buildMeta } from '../lib/seo';
-import { getSeo } from '../lib/settings';
-import { personLd, professionalServiceLd } from '../lib/jsonld';
-
-await getPosts('tr'); // temporary: forces pair validation on every build
-
-const alternatePaths = { tr: '/', en: '/en/' };
-const meta = buildMeta({
-  lang: 'tr',
-  title: 'Ana Sayfa',
-  description: getSeo().defaultDescription.tr,
-  path: '/',
-  alternates: alternatePaths,
-});
+import HomeView from '../views/HomeView.astro';
 ---
 
-<BaseLayout lang="tr" meta={meta} alternatePaths={alternatePaths} jsonLd={[personLd('tr'), professionalServiceLd('tr')]}>
-  <div class="container">
-    <h1>Osman Güneş Özkurt</h1>
-  </div>
-</BaseLayout>
+<HomeView lang="tr" />

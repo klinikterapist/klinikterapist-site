@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run tests/unit",
-    "test:build": "cross-env CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && vitest run tests/build --passWithNoTests"
+    "test:build": "cross-env CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && vitest run tests/build"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",

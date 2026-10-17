@@ -1,9 +1,10 @@
 ---
-import type { Lang, Link } from '../lib/settings';
+import type { Lang } from '../lib/settings';
 import { getLinks, getProfile } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
 import { t } from '../i18n/ui';
 import Leaf from './Leaf.astro';
+import Icon from './Icon.astro';
 
 interface Props {
   lang: Lang;
@@ -13,16 +14,6 @@ const profile = getProfile();
 const links = getLinks().filter((l) => l.inFooter);
 const year = new Date().getFullYear();
 
-/** 24×24 line icons (stroke) for the social links. */
-const ICONS: Record<Link['icon'], string> = {
-  instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="0.6" fill="currentColor"/>',
-  linkedin: '<rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 10.5V16M8 7.8v.1M11.5 16v-5.5M11.5 13c0-1.6 1-2.6 2.3-2.6s2.2.9 2.2 2.6V16"/>',
-  medium: '<ellipse cx="7.5" cy="12" rx="4.5" ry="5"/><ellipse cx="16" cy="12" rx="2.2" ry="4.6"/><path d="M20.5 7.8v8.4"/>',
-  substack: '<path d="M5 4.5h14M5 8.5h14M5 12.5h14v7l-7-3.8-7 3.8z"/>',
-  email: '<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
-  youtube: '<rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="M10.5 9.5v5l4-2.5z"/>',
-  x: '<path d="M4.5 4.5l15 15M19.5 4.5l-15 15"/>',
-};
 const external = (url: string) => /^https?:\/\//.test(url);
 ---
 
@@ -43,7 +34,7 @@ const external = (url: string) => /^https?:\/\//.test(url);
                 aria-label={l.label}
                 {...(external(l.url) ? { target: '_blank', rel: 'noopener noreferrer me' } : {})}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={ICONS[l.icon]} />
+                <Icon name={l.icon} />
               </a>
             </li>
           ))}

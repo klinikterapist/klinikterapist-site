@@ -11,6 +11,11 @@ export const ROUTE_KEYS = [
 ] as const;
 export type RouteKey = (typeof ROUTE_KEYS)[number];
 
+/** Route keys with one fixed page (no slug): the only pages a home card may target. */
+export const PAGE_KEYS = [
+  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy',
+] as const satisfies readonly RouteKey[];
+
 const localized = z.object({ tr: z.string(), en: z.string() });
 
 const profileSchema = z.object({
@@ -36,7 +41,7 @@ const homeSchema = z.object({
     z.object({
       id: z.string().min(1),
       target: z.union([
-        z.object({ page: z.enum(ROUTE_KEYS) }),
+        z.object({ page: z.enum(PAGE_KEYS) }),
         z.object({ url: z.string().min(1) }),
       ]),
       title: localized,

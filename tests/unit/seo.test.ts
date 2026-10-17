@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildMeta } from '../../src/lib/seo';
+import { buildMeta, pageMeta } from '../../src/lib/seo';
 import { personLd, professionalServiceLd, blogPostingLd, breadcrumbLd } from '../../src/lib/jsonld';
 import type { PostEntry } from '../../src/lib/posts';
 
@@ -91,5 +91,15 @@ describe('jsonld', () => {
         { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://example.com/blog/' },
       ],
     });
+  });
+});
+
+describe('pageMeta', () => {
+  it('builds meta and alternate paths for a fixed page from its route key', () => {
+    const { meta, alternatePaths } = pageMeta('about', 'en', 'About Me', 'd');
+    expect(alternatePaths).toEqual({ tr: '/hakkimda/', en: '/en/about/' });
+    expect(meta.canonical).toBe('https://example.com/en/about/');
+    expect(meta.title).toBe('About Me | Osman Güneş Özkurt');
+    expect(meta.description).toBe('d');
   });
 });

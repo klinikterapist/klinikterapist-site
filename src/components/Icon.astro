@@ -1,0 +1,33 @@
+---
+/** Decorative line icon (aria-hidden). Unknown names fall back to a leaf. */
+import { ICONS, isIcon } from '../lib/icons';
+
+interface Props {
+  name: string;
+  size?: number;
+  class?: string;
+}
+const { name, size = 22, class: className } = Astro.props;
+const markup = ICONS[isIcon(name) ? name : 'leaf'];
+---
+
+<svg
+  class:list={['icon', className]}
+  width={size}
+  height={size}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.6"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+  set:html={markup}
+/>
+
+<style>
+  .icon {
+    flex: none;
+  }
+</style>

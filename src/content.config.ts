@@ -1,7 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { getCategories } from './lib/settings';
+import { dataDir, getCategories } from './lib/settings';
 
 const categoryIds = () => getCategories().map((c) => c.id);
 
@@ -30,4 +30,14 @@ const posts = defineCollection({
     }),
 });
 
-export const collections = { posts };
+/** Legal texts: `<data>/legal/<name>.<lang>.md`, id `<name>.<lang>`. Body only, no frontmatter. */
+const legal = defineCollection({
+  loader: glob({
+    pattern: '*.md',
+    base: `${dataDir()}/legal`,
+    generateId: ({ entry }) => entry.replace(/\.md$/, ''),
+  }),
+  schema: z.object({}),
+});
+
+export const collections = { posts, legal };

@@ -1,0 +1,252 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ResourceCard from '../components/ResourceCard.astro';
+import Icon from '../components/Icon.astro';
+import Leaf from '../components/Leaf.astro';
+import type { Lang, Resource } from '../lib/settings';
+import { getResources } from '../lib/settings';
+import { pageMeta } from '../lib/seo';
+import { t, type UiKey } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const title = t(lang, 'navResources');
+const { meta, alternatePaths } = pageMeta('resources', lang, title, t(lang, 'resourcesLead'));
+
+const TYPES: Resource['type'][] = ['book', 'article', 'scale', 'video', 'podcast', 'guide'];
+const all = getResources();
+const featured = all.find((r) => r.featured);
+const rest = all.filter((r) => r !== featured);
+// One group per type that has resources; the featured one is shown above, not repeated.
+const groups = TYPES.map((type) => ({ type, items: rest.filter((r) => r.type === type) })).filter(
+  (g) => g.items.length > 0,
+);
+// Filter anchors: each type with any resource. Its target is its group, or the featured card.
+const filters = TYPES.filter((type) => all.some((r) => r.type === type));
+const featuredAnchor =
+  featured && !groups.some((g) => g.type === featured.type) ? featured.type : undefined;
+---
+
+<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+  <div class="container resources">
+    <header class="page-head">
+      <div>
+        <h1>{title}</h1>
+        <p class="lead">{t(lang, 'resourcesLead')}</p>
+      </div>
+      <Leaf size={140} class="head-leaf" />
+    </header>
+
+    {
+      filters.length > 0 && (
+        <nav aria-label={t(lang, 'resourceTypes')}>
+          <ul class="filters">
+            <li>
+              <a class="filter active" href="#kaynaklar-listesi">
+                {t(lang, 'filterAll')}
+              </a>
+            </li>
+            {filters.map((type) => (
+              <li>
+                <a class="filter" href={`#${type}`}>
+                  {t(lang, `types_${type}` as UiKey)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
+
+    <div id="kaynaklar-listesi" class="lists">
+      {
+        featured && (
+          <section aria-labelledby="featured-title">
+            <h2 id="featured-title">{t(lang, 'featured')}</h2>
+            <ResourceCard resource={featured} lang={lang} featured id={featuredAnchor} />
+          </section>
+        )
+      }
+
+      {
+        groups.length > 0 && (
+          <section aria-labelledby="list-title">
+            <h2 id="list-title">{t(lang, 'resourceList')}</h2>
+            <ul class="list">
+              {groups.map((g) =>
+                g.items.map((r, i) => (
+                  <li>
+                    <ResourceCard resource={r} lang={lang} id={i === 0 ? g.type : undefined} />
+                  </li>
+                )),
+              )}
+            </ul>
+          </section>
+        )
+      }
+    </div>
+
+    <aside class="note" aria-labelledby="note-title">
+      <span class="note-icon" aria-hidden="true"><Icon name="note" size={24} /></span>
+      <div>
+        <h2 id="note-title">{t(lang, 'myNote')}</h2>
+        <p>{t(lang, 'myNoteText')}</p>
+      </div>
+      <Leaf size={64} class="note-leaf" />
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .resources {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding-top: var(--space-4);
+  }
+
+  .page-head {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .page-head h1 {
+    margin-bottom: var(--space-2);
+  }
+
+  .lead {
+    max-width: 34rem;
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .page-head :global(.head-leaf) {
+    flex: none;
+    width: 96px;
+    color: var(--sage);
+    opacity: 0.8;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .filter {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--paper);
+    color: var(--ink);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .filter:hover {
+    border-color: var(--sage);
+    color: var(--forest);
+  }
+
+  .filter.active {
+    border-color: var(--forest);
+    background: var(--forest);
+    color: var(--on-forest);
+  }
+
+  .lists {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    scroll-margin-top: var(--space-5);
+  }
+
+  .lists h2,
+  .note h2 {
+    font-size: var(--text-xl);
+  }
+
+  .list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .note {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--sage-soft);
+  }
+
+  .note h2 {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-lg);
+  }
+
+  .note p {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .note-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+  }
+
+  .note :global(.note-leaf) {
+    display: none;
+    flex: none;
+    color: var(--forest);
+    opacity: 0.5;
+  }
+
+  @media (min-width: 768px) {
+    .page-head :global(.head-leaf) {
+      width: 140px;
+    }
+
+    .list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .note :global(.note-leaf) {
+      display: block;
+      margin-left: auto;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .resources {
+      gap: var(--space-6);
+      padding-top: var(--space-6);
+    }
+
+    .lists > section:first-child {
+      max-width: 44rem;
+    }
+  }
+</style>

@@ -1,0 +1,107 @@
+---
+/** Phase 1: booking is coming soon; e-mail is the way to reach out for now. */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+import Leaf from '../components/Leaf.astro';
+import type { Lang } from '../lib/settings';
+import { getContact } from '../lib/settings';
+import { pageMeta } from '../lib/seo';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const title = t(lang, 'bookSession');
+const { meta, alternatePaths } = pageMeta('appointment', lang, title, t(lang, 'appointmentSoon'));
+const { email } = getContact();
+---
+
+<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+  <div class="container-text appointment">
+    <div class="panel card">
+      <span class="icon-wrap" aria-hidden="true"><Icon name="calendar" size={30} /></span>
+      <h1>{title}</h1>
+      <p class="text">{t(lang, 'appointmentSoon')}</p>
+      <a class="btn mail" href={`mailto:${email}`}>
+        <Icon name="email" size={20} />
+        {t(lang, 'sendEmail')}
+      </a>
+      <p class="email">{email}</p>
+      <a class="to-contact" href={pathFor('contact', lang)}>
+        {t(lang, 'goToContact')}
+        <Icon name="arrow" size={16} />
+      </a>
+      <Leaf size={96} class="panel-leaf" />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .appointment {
+    padding-top: var(--space-6);
+  }
+
+  .panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-7) var(--space-5) var(--space-6);
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .icon-wrap {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin-bottom: var(--space-4);
+    border-radius: 50%;
+    background: var(--sage-soft);
+    color: var(--forest);
+  }
+
+  h1 {
+    margin-bottom: var(--space-3);
+    color: var(--forest);
+  }
+
+  .text {
+    max-width: 28rem;
+    margin-bottom: var(--space-5);
+    color: var(--muted);
+  }
+
+  .mail {
+    min-height: 52px;
+    padding-inline: var(--space-6);
+    font-size: var(--text-base);
+  }
+
+  .email {
+    margin: var(--space-2) 0 var(--space-4);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .to-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-height: 44px;
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .panel :global(.panel-leaf) {
+    position: absolute;
+    right: -12px;
+    bottom: -12px;
+    color: var(--sage);
+    opacity: 0.45;
+  }
+</style>

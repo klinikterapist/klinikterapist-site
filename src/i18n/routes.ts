@@ -1,9 +1,9 @@
-import type { Category, Lang, RouteKey } from '../lib/settings';
+import type { Category, Lang, RouteKey, PAGE_KEYS } from '../lib/settings';
 
 export type { RouteKey };
 
 /** Route keys that map to one fixed page. `category` and `post` need a slug: use `categoryPath` / `postPath`. */
-export type PageKey = Exclude<RouteKey, 'category' | 'post'>;
+export type PageKey = (typeof PAGE_KEYS)[number];
 
 const PAGES: Record<PageKey, Record<Lang, string>> = {
   home: { tr: '/', en: '/en/' },

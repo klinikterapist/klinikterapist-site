@@ -1,0 +1,251 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LinkCard from '../components/LinkCard.astro';
+import Portrait from '../components/Portrait.astro';
+import Icon from '../components/Icon.astro';
+import type { Lang } from '../lib/settings';
+import { getContact, getLinks } from '../lib/settings';
+import { pageMeta } from '../lib/seo';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const contact = getContact();
+const title = t(lang, 'navContact');
+const { meta, alternatePaths } = pageMeta('contact', lang, title, contact.intro[lang]);
+
+const links = getLinks();
+const social = (icon: 'instagram' | 'linkedin') => links.find((l) => l.icon === icon);
+const instagram = social('instagram');
+const linkedin = social('linkedin');
+
+const channels = [
+  { href: `mailto:${contact.email}`, title: t(lang, 'emailLabel'), subtitle: t(lang, 'emailHint'), icon: 'email', external: false },
+  ...(instagram ? [{ href: instagram.url, title: instagram.label, subtitle: t(lang, 'instagramHint'), icon: 'instagram', external: true }] : []),
+  ...(linkedin ? [{ href: linkedin.url, title: linkedin.label, subtitle: t(lang, 'linkedinHint'), icon: 'linkedin', external: true }] : []),
+  { href: pathFor('appointment', lang), title: t(lang, 'bookSession'), subtitle: t(lang, 'appointmentHint'), icon: 'calendar', external: false },
+];
+---
+
+<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+  <div class="container contact">
+    <header class="page-head">
+      <div>
+        <h1>{title}</h1>
+        <p class="lead">{contact.intro[lang]}</p>
+        <span class="rule" aria-hidden="true"></span>
+      </div>
+      <div class="head-photo">
+        <Portrait lang={lang} size={280} eager />
+      </div>
+    </header>
+
+    <section aria-labelledby="channels-title">
+      <h2 id="channels-title" class="visually-hidden">{t(lang, 'channels')}</h2>
+      <ul class="channels">
+        {
+          channels.map((c) => (
+            <li>
+              <LinkCard
+                href={c.href}
+                title={c.title}
+                subtitle={c.subtitle}
+                icon={c.icon}
+                external={c.external}
+                newTabLabel={t(lang, 'opensInNewTab')}
+              />
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section class="work" aria-labelledby="work-title">
+      <div class="work-head">
+        <span class="work-icon" aria-hidden="true"><Icon name="leaf" size={24} /></span>
+        <div>
+          <h2 id="work-title">{t(lang, 'workStyle')}</h2>
+          <p>{contact.workStyle[lang]}</p>
+        </div>
+      </div>
+      <ul class="facts">
+        <li>
+          <Icon name="laptop" size={24} />
+          <span class="fact-title">{t(lang, 'onlineSessions')}</span>
+        </li>
+        <li>
+          <Icon name="clock" size={24} />
+          <span class="fact-title">{contact.responseTime[lang]}</span>
+        </li>
+      </ul>
+    </section>
+
+    <aside class="emergency" aria-label={t(lang, 'emergency')}>
+      <Icon name="alert" size={22} />
+      <p>{contact.emergencyNote[lang]}</p>
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .contact {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    padding-top: var(--space-4);
+  }
+
+  .page-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
+    gap: var(--space-4);
+    align-items: center;
+  }
+
+  .page-head h1 {
+    margin-bottom: var(--space-3);
+    font-size: clamp(1.875rem, 1.2rem + 3vw, 3.25rem);
+  }
+
+  .lead {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .rule {
+    display: block;
+    width: 2.5rem;
+    height: 1px;
+    margin-top: var(--space-4);
+    background: var(--forest);
+  }
+
+  .head-photo {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .channels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .work {
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--sage-soft);
+  }
+
+  .work-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .work-head h2 {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-lg);
+  }
+
+  .work-head p {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  .work-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--forest);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: var(--space-4) 0 0;
+    padding: var(--space-3) 0 0;
+    border-top: 1px solid rgb(47 74 58 / 0.12);
+    list-style: none;
+  }
+
+  .facts li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    text-align: center;
+  }
+
+  .facts li + li {
+    border-left: 1px solid rgb(47 74 58 / 0.12);
+  }
+
+  .facts :global(.icon) {
+    color: var(--forest);
+  }
+
+  .fact-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .emergency {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: #f3e3dc;
+    color: #6b2f1f;
+  }
+
+  .emergency :global(.icon) {
+    flex: none;
+    margin-top: 2px;
+  }
+
+  .emergency p {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  @media (min-width: 768px) {
+    .lead {
+      font-size: var(--text-base);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .contact {
+      gap: var(--space-6);
+      padding-top: var(--space-6);
+    }
+
+    .page-head {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 34%);
+    }
+
+    .channels {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .work,
+    .emergency {
+      max-width: 56rem;
+    }
+  }
+</style>
