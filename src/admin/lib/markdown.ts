@@ -34,13 +34,15 @@ function escapeLineStart(line: string): string {
 const escapeHref = (href: string) => href.replace(/ /g, '%20').replace(/\(/g, '%28').replace(/\)/g, '%29');
 
 /** Opening order (outermost first). */
-const MARK_ORDER = ['link', 'bold', 'italic'];
+const MARK_ORDER = ['link', 'bold', 'italic', 'strike', 'highlight'];
 const markKey = (m: Mark) => (m.type === 'link' ? `link:${m.attrs?.href ?? ''}` : m.type);
 const sortMarks = (marks: Mark[]) =>
   marks.filter((m) => MARK_ORDER.includes(m.type)).sort((a, b) => MARK_ORDER.indexOf(a.type) - MARK_ORDER.indexOf(b.type));
 
-const openMark = (m: Mark) => (m.type === 'link' ? '[' : m.type === 'bold' ? '**' : '_');
-const closeMark = (m: Mark) => (m.type === 'link' ? `](${escapeHref(String(m.attrs?.href ?? ''))})` : m.type === 'bold' ? '**' : '_');
+const OPEN: Record<string, string> = { link: '[', bold: '**', italic: '_', strike: '~~', highlight: '<mark>' };
+const CLOSE: Record<string, string> = { bold: '**', italic: '_', strike: '~~', highlight: '</mark>' };
+const openMark = (m: Mark) => OPEN[m.type];
+const closeMark = (m: Mark) => (m.type === 'link' ? `](${escapeHref(String(m.attrs?.href ?? ''))})` : CLOSE[m.type]);
 
 function inline(nodes: JSONContent[] = []): string {
   let out = '';
@@ -168,7 +170,9 @@ function addMark(nodes: JSONContent[], mark: Mark): JSONContent[] {
 
 function inlineTokens(tokens: Token[] = []): JSONContent[] {
   const out: JSONContent[] = [];
-  for (const tok of tokens) {
+  const isHtml = (t: Token | undefined, tag: string) => t?.type === 'html' && (t as Tokens.HTML).raw === tag;
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
     switch (tok.type) {
       case 'text': {
         const t = tok as Tokens.Text;
@@ -197,8 +201,17 @@ function inlineTokens(tokens: Token[] = []): JSONContent[] {
         out.push({ type: 'text', text: decode((tok as Tokens.Codespan).text) });
         break;
       case 'del':
-        out.push(...inlineTokens((tok as Tokens.Del).tokens));
+        out.push(...addMark(inlineTokens((tok as Tokens.Del).tokens), { type: 'strike' }));
         break;
+      case 'html': {
+        // Only the exact tag pair <mark>…</mark> is the highlight mark; any other inline HTML stays text.
+        const end = isHtml(tok, '<mark>') ? tokens.findIndex((t, j) => j > i && isHtml(t, '</mark>')) : -1;
+        if (end > i) {
+          out.push(...addMark(inlineTokens(tokens.slice(i + 1, end)), { type: 'highlight' }));
+          i = end;
+        } else out.push({ type: 'text', text: tok.raw });
+        break;
+      }
       case 'image':
         out.push({ type: 'text', text: (tok as Tokens.Image).text });
         break;

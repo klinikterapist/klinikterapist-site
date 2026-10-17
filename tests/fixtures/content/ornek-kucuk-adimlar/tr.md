@@ -19,3 +19,5 @@ Bir günde her şeyi değiştirmeye çalışmak yerine, bugün yalnızca tek bir
 ## Tutarlılık, yoğunluktan önemlidir
 
 Her gün yapılan küçük bir davranış, ayda bir yapılan büyük bir çabadan daha kalıcı sonuçlar verir.
+
+Bu ~~eski~~ ve <mark>önemli</mark> bir cümle.

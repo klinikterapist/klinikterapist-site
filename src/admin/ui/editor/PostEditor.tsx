@@ -7,6 +7,7 @@ import type { JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import { BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
+import Highlight from '@tiptap/extension-highlight';
 import { Placeholder } from '@tiptap/extensions';
 import type { LangFields } from '../../api/types';
 import type { Lang } from '../../../lib/schemas';
@@ -38,12 +39,12 @@ function useTiptap(lang: Lang, doc: JSONContent, images: ImageStore, onDoc: (doc
           heading: { levels: [2, 3] },
           code: false,
           codeBlock: false,
-          strike: false,
           underline: false,
           link: { openOnClick: false, autolink: true, defaultProtocol: 'https', isAllowedUri: (url) => SAFE_LINK.test(url) },
         }),
         Placeholder.configure({ placeholder: lang === 'tr' ? 'Yazmaya başlayın…' : 'Start writing in English…' }),
         Figure.configure({ resolveUrl: (src) => images.url(src) }),
+        Highlight,
         Youtube,
         Callout,
       ],

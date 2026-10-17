@@ -28,6 +28,7 @@
   --p-err-label: #8a2c1f;
   --p-err-line: #a33a2a;
   --p-err: #b0412e;
+  --p-highlight: #f6e7c8;
   --p-placeholder: #9aa39c;
   --p-on-media: #c9d3cb;
   --p-on-status: #fff;
@@ -61,6 +62,7 @@ html[data-theme='dark'] {
   --p-err-label: #e8806f;
   --p-err-line: #e8806f;
   --p-err: #d4604d;
+  --p-highlight: #4a3d17;
   --p-placeholder: #7d837f;
   --p-on-media: #050806;
   --p-on-status: #050806;
@@ -796,6 +798,13 @@ textarea.k-input {
   font-size: 1.125rem;
   line-height: 1.75;
   outline: none;
+}
+
+.ed-body mark {
+  padding: 0 0.15em;
+  border-radius: 3px;
+  background: var(--p-highlight);
+  color: inherit;
 }
 
 .ed-body > * + * {

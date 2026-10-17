@@ -41,6 +41,12 @@ describe('blog', () => {
     );
   });
 
+  it('strikethrough and highlight render as del and mark', () => {
+    const tr = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
+    expect(tr.querySelector('.prose del')?.text).toBe('eski');
+    expect(tr.querySelector('.prose mark')?.text).toBe('önemli');
+  });
+
   it('EN post switches back to the TR translation', () => {
     const en = loadPage('/en/blog/no-cover-example/');
     expect(en.querySelector('a.lang-switch')?.getAttribute('href')).toBe('/blog/kapaksiz-ornek/');

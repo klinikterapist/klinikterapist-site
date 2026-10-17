@@ -8,6 +8,8 @@ const t = (text: string, ...marks: JSONContent['marks'] & object): JSONContent =
 const p = (...content: JSONContent[]): JSONContent => ({ type: 'paragraph', content });
 const bold = { type: 'bold' };
 const italic = { type: 'italic' };
+const strike = { type: 'strike' };
+const highlight = { type: 'highlight' };
 const link = (href: string) => ({ type: 'link', attrs: { href } });
 
 /** Comparable form: marks sorted, link attrs reduced to href, empty content dropped. */
@@ -28,6 +30,7 @@ const everything: JSONContent = {
   type: 'doc',
   content: [
     p(t('Düz metin, '), t('kalın', bold), t(' ve '), t('italik', italic), t(' ve '), t('ikisi', bold, italic), t('.')),
+    p(t('Bir '), t('çizik', strike), t(' ve '), t('vurgu', highlight), t(' ve '), t('ikisi', strike, highlight, bold), t('.')),
     { type: 'heading', attrs: { level: 2 }, content: [t('Alt başlık')] },
     { type: 'heading', attrs: { level: 3 }, content: [t('Daha küçük')] },
     p(t('Bir '), t('site içi bağlantı', link('/hakkimda/')), t(' ve '), t('kalın dış bağlantı', link('https://a.co/x?y=1'), bold), t('.')),
@@ -84,6 +87,17 @@ describe('docToMarkdown ⇄ markdownToDoc', () => {
     };
     const md = docToMarkdown(doc, 'tr');
     expect(norm(markdownToDoc(md))).toEqual(norm(doc));
+  });
+
+  it('writes strike and highlight syntax, and keeps look-alike text literal', () => {
+    const md = docToMarkdown(everything, 'tr');
+    expect(md).toContain('~~çizik~~');
+    expect(md).toContain('<mark>vurgu</mark>');
+    const doc: JSONContent = { type: 'doc', content: [p(t('a ~~b~~ <mark>c</mark>'))] };
+    const lit = docToMarkdown(doc, 'tr');
+    expect(lit).toContain('\\~\\~b\\~\\~');
+    expect(lit).toContain('\\<mark');
+    expect(norm(markdownToDoc(lit))).toEqual(norm(doc));
   });
 
   it('keeps whitespace outside emphasis markers', () => {
