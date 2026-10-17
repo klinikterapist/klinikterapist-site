@@ -84,7 +84,7 @@ describe('buildPublishChangeset — new post', () => {
   });
 
   it('a redirect sitting on the new address is removed with a notice', () => {
-    const redirects = { list: [{ from: '/blog/kaygi/', to: '/blog/' }], sha: 'r1' };
+    const redirects = { list: [{ from: '/blog/kaygi/', to: '/blog/baska-yazi/' }], sha: 'r1' };
     const cs = buildPublishChangeset({ ...base, draft: draft(), live: null, redirects });
     const r = cs.writes.find((w) => w.path === 'src/data/redirects.json')!;
     expect(r).toMatchObject({ expectSha: 'r1', content: '[]\n' });
@@ -144,6 +144,7 @@ describe('buildUnpublishChangeset', () => {
     const after = JSON.parse(buildUnpublishChangeset(live, noRedirects).writes[0].content);
     const cs = buildPublishChangeset({ ...base, draft: draft(), live: null, redirects: { list: after, sha: 'r2' } });
     expect(JSON.parse(cs.writes.find((w) => w.path.endsWith('redirects.json'))!.content)).toEqual([]);
+    expect(cs.notices).toEqual([]);
   });
 });
 

@@ -4,6 +4,8 @@
  */
 import { parseRedirects, type Redirect } from '../../lib/schemas';
 
+const BLOG_INDEXES = new Set(['/blog/', '/en/blog/']);
+
 export type PathChange = { from: string; to: string };
 
 export function applyPathChanges(
@@ -22,7 +24,8 @@ export function applyPathChanges(
   const notices: string[] = [];
   list = list.filter((r) => {
     if (!livePaths.has(r.from)) return true;
-    if (!changes.some((c) => c.to === r.to || c.from === r.to)) {
+    // Worth telling only when the old address led to other content (not a blog index).
+    if (!BLOG_INDEXES.has(r.to) && !changes.some((c) => c.to === r.to || c.from === r.to)) {
       notices.push(`"${r.from}" adresi daha önce "${r.to}" adresine yönleniyordu; artık bu sayfayı gösterecek.`);
     }
     return false;
