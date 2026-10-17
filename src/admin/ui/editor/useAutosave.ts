@@ -61,11 +61,15 @@ export function useAutosave(
   const save = useCallback(async (): Promise<boolean> => {
     clearTimer();
     if (blocked.current) return false;
-    if (inFlight.current) {
+    // One save at a time: every caller waits its turn, then sends the newest text with the
+    // revision the previous save returned (parallel saves would conflict with each other).
+    while (inFlight.current) {
       await inFlight.current;
+      if (blocked.current) return false;
       if (seq.current === savedSeq.current) return true;
     }
     const sentSeq = seq.current;
+    firstPendingAt.current = null;
     const run = (async () => {
       setStatus('kaydediliyor');
       try {

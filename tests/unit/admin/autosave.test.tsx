@@ -108,4 +108,34 @@ describe('useAutosave', () => {
     expect(saved).toBe(true);
     expect(saveDraft).toHaveBeenCalledOnce();
   });
+
+  it('a slow server and continuous typing never make this device conflict with itself (review C1)', async () => {
+    let stored = 0;
+    const sent: number[] = [];
+    const saveDraft = vi.fn(
+      (d: Draft) =>
+        new Promise<{ rev: number; updatedAt: string }>((res, rej) => {
+          sent.push(d.rev);
+          setTimeout(() => {
+            if (d.rev !== stored) rej(new ApiFailure('conflict', 'c', { ...d, rev: stored }));
+            else {
+              stored = d.rev + 1;
+              res({ rev: stored, updatedAt: 'x' });
+            }
+          }, 2500);
+        }),
+    );
+    const api = { saveDraft } as unknown as Api;
+    const start = initial();
+    const { result } = renderHook(() => useAutosave(start, api));
+    for (let i = 0; i < 80; i++) {
+      type(result, `m${i}`);
+      await tick(250);
+    }
+    await tick(20000);
+    expect(result.current.status).toBe('kaydedildi');
+    // Saves run one at a time: every revision is sent once, in order.
+    expect(sent).toEqual(sent.map((_, i) => i));
+    expect(saveDraft.mock.calls.at(-1)![0].tr.title).toBe('m79');
+  });
 });

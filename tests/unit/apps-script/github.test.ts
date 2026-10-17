@@ -84,6 +84,12 @@ describe('commit', () => {
     expect(gh.commits[1].message).toBe('Yazı yayınlandı\n\n(Yönetim paneli)');
   });
 
+  it('accepts JPEG images in a post folder (iPhone uploads)', () => {
+    const { gh, gas } = setup();
+    commit(gas, { message: 'x', writes: [{ path: 'src/content/posts/yeni/kapak.jpg', content: 'SlBH', encoding: 'base64', expectSha: null }], deletes: [] });
+    expect(gh.files.has('src/content/posts/yeni/kapak.jpg')).toBe(true);
+  });
+
   it('a stale expectSha is a conflict and the branch does not move', () => {
     const { gh, gas } = setup();
     const e = errorOf(() =>

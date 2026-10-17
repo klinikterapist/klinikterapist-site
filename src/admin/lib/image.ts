@@ -67,7 +67,9 @@ function makeCanvas(w: number, h: number): { canvas: Canvas; encode: (type: stri
   };
 }
 
-export async function resizeImage(file: File, preset: ImagePreset): Promise<{ blob: Blob; base64: string; width: number; height: number }> {
+export type ResizedImage = { blob: Blob; base64: string; width: number; height: number; type: 'image/webp' | 'image/jpeg'; ext: 'webp' | 'jpg' };
+
+export async function resizeImage(file: File, preset: ImagePreset): Promise<ResizedImage> {
   if (file.size > MAX_INPUT) throw new ImageError('Görsel çok büyük (en fazla 25 MB).');
   if (!ACCEPTED.test(file.type)) throw new ImageError('Bu dosya bir görsel değil. JPEG, PNG ya da WebP seçin.');
 
@@ -94,14 +96,20 @@ export async function resizeImage(file: File, preset: ImagePreset): Promise<{ bl
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(bitmap, src.sx, src.sy, src.sw, src.sh, 0, 0, out.w, out.h);
 
+    let type: 'image/webp' | 'image/jpeg' = preset.type;
     let quality = preset.q;
-    let blob = await encode(preset.type, quality);
+    let blob = await encode(type, quality);
+    // Safari (every browser on iPhone) cannot encode WebP and returns PNG instead: use JPEG there.
+    if (blob.type !== type && type === 'image/webp') {
+      type = 'image/jpeg';
+      blob = await encode(type, quality);
+    }
+    if (blob.type !== type) throw new ImageError('Bu tarayıcı görseli kaydedemedi. Başka bir tarayıcı deneyin.');
     while (blob.size > MAX_OUTPUT && quality > 0.5 + 1e-9) {
       quality = Math.round((quality - 0.1) * 100) / 100;
-      blob = await encode(preset.type, quality);
+      blob = await encode(type, quality);
     }
-    if (blob.type !== preset.type) throw new ImageError('Bu tarayıcı WebP kaydedemiyor. Güncel bir Chrome, Safari ya da Firefox kullanın.');
-    return { blob, base64: await toBase64(blob), width: out.w, height: out.h };
+    return { blob, base64: await toBase64(blob), width: out.w, height: out.h, type, ext: type === 'image/jpeg' ? 'jpg' : 'webp' };
   } finally {
     bitmap.close();
   }

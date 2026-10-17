@@ -10,8 +10,6 @@ import { IMAGE_PRESETS, ImageError, resizeImage } from '../../lib/image';
 import { Button, Field, Select } from '../kit';
 import type { ImageStore } from './images';
 
-export const COVER_NAME = 'cover.webp';
-
 /** Like slugify, but keeps a trailing dash so the owner can type "kaygi-ile". */
 export const typingSlug = (v: string, lang: Lang) => slugify(`${v}x`, lang).slice(0, -1);
 
@@ -48,8 +46,9 @@ export function PostSettings(props: {
     props.onError(null);
     try {
       const img = await resizeImage(file, IMAGE_PRESETS.cover);
-      await images.add(COVER_NAME, img.base64);
-      props.onShared({ cover: COVER_NAME });
+      const name = `cover.${img.ext}`;
+      await images.add(name, img.base64);
+      props.onShared({ cover: name });
       props.onCoverUploaded();
     } catch (e) {
       props.onError(e instanceof ImageError ? e.message : 'Kapak görseli yüklenemedi. Tekrar deneyin.');

@@ -112,7 +112,7 @@ export function PostEditor(props: {
     onError(null);
     try {
       const img = await resizeImage(f, IMAGE_PRESETS.body);
-      const name = fileNameFor(f.name.replace(/\.[^.]+$/, ''), images.names());
+      const name = fileNameFor(f.name.replace(/\.[^.]+$/, ''), images.names(), img.ext);
       await images.add(name, img.base64);
       editor.chain().focus().insertContent({ type: 'figure', attrs: { src: `./${name}`, alt: '', caption: '' } }).run();
     } catch (e) {

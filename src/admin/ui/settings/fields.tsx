@@ -88,9 +88,8 @@ export function ImageField(props: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [staged, setStaged] = useState<string | null>(null);
-  const ext = props.preset === 'og' ? 'jpg' : 'webp';
   const stagedData = props.value ? props.staging.data(`public${props.value}`) : undefined;
-  const src = stagedData ? `data:image/${ext === 'jpg' ? 'jpeg' : 'webp'};base64,${stagedData}` : props.value;
+  const src = stagedData ? `data:image/${props.value?.endsWith('.jpg') ? 'jpeg' : 'webp'};base64,${stagedData}` : props.value;
 
   const pick = async (file: File | undefined) => {
     if (!file) return;
@@ -99,7 +98,7 @@ export function ImageField(props: {
     try {
       const img = await resizeImage(file, IMAGE_PRESETS[props.preset]);
       const hash = await shortHash(new Uint8Array(await img.blob.arrayBuffer()));
-      const repoPath = `public/images/${props.dir ?? ''}${props.baseName}-${hash}.${ext}`;
+      const repoPath = `public/images/${props.dir ?? ''}${props.baseName}-${hash}.${img.ext}`;
       if (staged) props.staging.unstage(staged);
       else if (props.value?.startsWith('/images/')) props.staging.del(`public${props.value}`);
       props.staging.write(repoPath, img.base64);

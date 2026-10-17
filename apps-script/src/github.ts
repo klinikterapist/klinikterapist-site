@@ -8,7 +8,7 @@ import { ApiError, badRequest } from './respond';
 
 /** The only paths the panel may read or change. Anything else (workflows, pages, CNAME) is refused. */
 export const ALLOWED_PATH =
-  /^(src\/content\/posts\/[a-z0-9-]+\/[a-z0-9-]+\.(md|webp)|src\/data\/[a-z0-9-]+\.json|src\/data\/legal\/[a-z]+\.(tr|en)\.md|public\/images\/[a-z0-9-]+(\/[a-z0-9-]+)*\.(webp|jpg))$/;
+  /^(src\/content\/posts\/[a-z0-9-]+\/[a-z0-9-]+\.(md|webp|jpg)|src\/data\/[a-z0-9-]+\.json|src\/data\/legal\/[a-z]+\.(tr|en)\.md|public\/images\/[a-z0-9-]+(\/[a-z0-9-]+)*\.(webp|jpg))$/;
 const TREE_PREFIXES = ['src/content/posts/', 'src/data/', 'public/images/'];
 
 const TOKEN_MESSAGE =

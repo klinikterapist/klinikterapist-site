@@ -25,7 +25,7 @@ describe('geometry', () => {
   });
 });
 
-function stubCanvas(sizes: number[]) {
+function stubCanvas(sizes: number[], encodes: (type: string) => string = (t) => t) {
   const draws: unknown[][] = [];
   const qualities: number[] = [];
   let call = 0;
@@ -40,7 +40,7 @@ function stubCanvas(sizes: number[]) {
     async convertToBlob(opts: { type: string; quality: number }) {
       qualities.push(opts.quality);
       const size = sizes[Math.min(call++, sizes.length - 1)];
-      return new Blob([new Uint8Array(size)], { type: opts.type });
+      return new Blob([new Uint8Array(size)], { type: encodes(opts.type) });
     }
   }
   vi.stubGlobal('OffscreenCanvas', FakeCanvas);
@@ -94,6 +94,22 @@ describe('resizeImage', () => {
     await expect(resizeImage(photo('image/jpeg', 30 * 1024 * 1024), IMAGE_PRESETS.body)).rejects.toThrow('Görsel çok büyük (en fazla 25 MB).');
     await expect(resizeImage(photo('application/pdf'), IMAGE_PRESETS.body)).rejects.toThrow(ImageError);
     expect(bitmap).not.toHaveBeenCalled();
+  });
+});
+
+describe('resizeImage on browsers without WebP encoding (iPhone)', () => {
+  it('falls back to JPEG and says so in the result', async () => {
+    vi.stubGlobal('createImageBitmap', async () => ({ width: 2000, height: 1500, close() {} }));
+    // WebKit returns PNG when asked for WebP.
+    stubCanvas([300_000], (t) => (t === 'image/webp' ? 'image/png' : t));
+    const out = await resizeImage(photo(), IMAGE_PRESETS.body);
+    expect(out.blob.type).toBe('image/jpeg');
+    expect(out.ext).toBe('jpg');
+  });
+  it('reports webp when the browser can encode it', async () => {
+    vi.stubGlobal('createImageBitmap', async () => ({ width: 2000, height: 1500, close() {} }));
+    stubCanvas([300_000]);
+    expect((await resizeImage(photo(), IMAGE_PRESETS.body)).ext).toBe('webp');
   });
 });
 
