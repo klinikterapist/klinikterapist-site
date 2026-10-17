@@ -2,7 +2,7 @@
  * Writing surface for one language: a fixed toolbar, a big title, then the body.
  */
 import { createPortal } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -17,6 +17,10 @@ import { Button, Dialog, Field } from '../kit';
 import { Callout, Figure, Youtube } from './nodes';
 import type { ImageStore } from './images';
 import { Toolbar } from './Toolbar';
+import { Citation, citationAtCursor, syncCitationRefs, type CitationAttrs } from './Citation';
+import { CitationEditDialog, CitationMenu, type MenuAction } from './CitationMenu';
+import { ReferenceDialog, ReferenceEditDialog, type InsertRequest } from './ReferenceDialog';
+import type { CiteItem, Reference } from '../../../lib/apa';
 
 /** Same rule as the site's Markdown renderer: https, mailto or a site path. */
 const SAFE_LINK = /^(https:\/\/|mailto:|\/(?![\/\\]))/i;
@@ -47,6 +51,7 @@ function useTiptap(lang: Lang, doc: JSONContent, images: ImageStore, onDoc: (doc
         Highlight,
         Youtube,
         Callout,
+        Citation,
       ],
       content: doc,
       editorProps: { attributes: { class: 'ed-body prose', lang, 'aria-label': `Yazı metni (${LANG_LABEL[lang]})` } },
@@ -58,6 +63,13 @@ function useTiptap(lang: Lang, doc: JSONContent, images: ImageStore, onDoc: (doc
 
 type Ask = { kind: 'link' | 'youtube'; value: string; error: string | null };
 
+/** What the citation UI has open: the reference dialog (maybe joining a citation), one reference's form, a citation's menu or its settings. */
+type CiteUi =
+  | { kind: 'add'; join: { pos: number; attrs: CitationAttrs } | null }
+  | { kind: 'editRef'; id: string }
+  | { kind: 'menu'; pos: number; rect: DOMRect }
+  | { kind: 'locator'; pos: number };
+
 export function PostEditor(props: {
   lang: Lang;
   fields: LangFields;
@@ -66,10 +78,25 @@ export function PostEditor(props: {
   onError: (message: string | null) => void;
   /** Where the toolbar is mounted (full editor width, above the text and the settings column). */
   toolbarHost?: HTMLElement | null;
+  /** For the DOI lookup; tests pass a stub. */
+  fetchFn?: typeof fetch;
 }) {
   const { lang, fields, onChange, images, onError, toolbarHost } = props;
   const editor = useTiptap(lang, fields.doc, images, (doc) => onChange({ doc }));
   const [ask, setAsk] = useState<Ask | null>(null);
+  const [cite, setCite] = useState<CiteUi | null>(null);
+  const closeCite = useCallback(() => setCite(null), []);
+
+  useEffect(() => {
+    if (editor) syncCitationRefs(editor, fields.references, fields.doc, lang);
+  }, [editor, fields.references, fields.doc, lang]);
+  useEffect(() => {
+    if (!editor) return;
+    editor.storage.citation.onOpen = (pos, rect) => setCite({ kind: 'menu', pos, rect });
+    return () => {
+      editor.storage.citation.onOpen = null;
+    };
+  }, [editor]);
   const [uploading, setUploading] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const title = useRef<HTMLTextAreaElement>(null);
@@ -114,6 +141,46 @@ export function PostEditor(props: {
     setAsk(null);
   };
 
+  /** The citation node still at `pos`, or null when the text changed under it. */
+  const citationAt = (pos: number): CitationAttrs | null => {
+    const node = editor?.state.doc.nodeAt(pos);
+    return node?.type.name === 'citation' ? (node.attrs as CitationAttrs) : null;
+  };
+  const setCitation = (pos: number, attrs: CitationAttrs) =>
+    editor?.chain().focus().command(({ tr }) => {
+      tr.setNodeMarkup(pos, undefined, attrs);
+      return true;
+    }).run();
+
+  const insertCitation = (r: InsertRequest, join: { pos: number } | null) => {
+    if (!editor) return;
+    const references = r.isNew ? [...fields.references, r.ref] : fields.references;
+    if (r.isNew) onChange({ references });
+    const item: CiteItem = r.locator ? { id: r.ref.id, locator: r.locator } : { id: r.ref.id };
+    const existing = join ? citationAt(join.pos) : null;
+    if (join && existing) {
+      setCitation(join.pos, { items: [...existing.items.filter((i) => i.id !== item.id), item], narrative: r.narrative });
+    } else {
+      editor.chain().focus().insertContent({ type: 'citation', attrs: { items: [item], narrative: r.narrative } }).run();
+    }
+    syncCitationRefs(editor, references, editor.getJSON(), lang);
+    setCite(null);
+  };
+
+  const saveReference = (ref: Reference) => onChange({ references: fields.references.map((r) => (r.id === ref.id ? ref : r)) });
+
+  const onMenu = (pos: number, a: MenuAction) => {
+    const attrs = citationAt(pos);
+    if (!attrs || !editor) return setCite(null);
+    if (a.kind === 'locator') setCite({ kind: 'locator', pos });
+    else if (a.kind === 'edit') setCite({ kind: 'editRef', id: a.id });
+    else if (a.kind === 'add') setCite({ kind: 'add', join: { pos, attrs } });
+    else {
+      editor.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run();
+      setCite(null);
+    }
+  };
+
   const onFile = async (f: File | undefined) => {
     if (!f || !editor) return;
     setUploading(true);
@@ -139,6 +206,7 @@ export function PostEditor(props: {
           onLink={() => setAsk({ kind: 'link', value: String(editor.getAttributes('link').href ?? ''), error: null })}
           onImage={() => file.current?.click()}
           onYoutube={() => setAsk({ kind: 'youtube', value: '', error: null })}
+          onReference={() => setCite({ kind: 'add', join: citationAtCursor(editor) })}
         />,
         toolbarHost,
       )}
@@ -171,6 +239,58 @@ export function PostEditor(props: {
       <EditorContent editor={editor} />
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       {uploading && <p className="ed-muted" role="status">Görsel küçültülüp yükleniyor…</p>}
+      {cite?.kind === 'add' && (
+        <ReferenceDialog
+          lang={lang}
+          references={fields.references}
+          doc={fields.doc}
+          joining={cite.join ? { narrative: cite.join.attrs.narrative } : null}
+          fetchFn={props.fetchFn}
+          onClose={closeCite}
+          onInsert={(r) => insertCitation(r, cite.join)}
+          onSave={saveReference}
+          onDelete={(id) => onChange({ references: fields.references.filter((r) => r.id !== id) })}
+        />
+      )}
+      {cite?.kind === 'editRef' && (() => {
+        const ref = fields.references.find((r) => r.id === cite.id);
+        return ref ? (
+          <ReferenceEditDialog
+            initial={ref}
+            references={fields.references}
+            lang={lang}
+            dialogTitle="Referansı düzenle"
+            onClose={closeCite}
+            onCancel={closeCite}
+            onSave={(r) => {
+              saveReference(r);
+              setCite(null);
+            }}
+          />
+        ) : null;
+      })()}
+      {cite?.kind === 'menu' && citationAt(cite.pos) && (
+        <CitationMenu
+          rect={cite.rect}
+          attrs={citationAt(cite.pos)!}
+          references={fields.references}
+          lang={lang}
+          onAction={(a) => onMenu(cite.pos, a)}
+          onClose={closeCite}
+        />
+      )}
+      {cite?.kind === 'locator' && citationAt(cite.pos) && (
+        <CitationEditDialog
+          attrs={citationAt(cite.pos)!}
+          references={fields.references}
+          lang={lang}
+          onClose={closeCite}
+          onSave={(attrs) => {
+            if (attrs.items.length) setCitation(cite.pos, attrs);
+            setCite(null);
+          }}
+        />
+      )}
       {ask && (
         <Dialog
           title={ask.kind === 'link' ? 'Bağlantı' : 'YouTube videosu'}

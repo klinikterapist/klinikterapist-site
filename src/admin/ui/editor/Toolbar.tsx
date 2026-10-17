@@ -29,8 +29,7 @@ export type ToolbarProps = {
   onLink: () => void;
   onImage: () => void;
   onYoutube: () => void;
-  /** Disabled until the reference picker exists. */
-  onReference?: () => void;
+  onReference: () => void;
 };
 
 export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: ToolbarProps) {
@@ -121,7 +120,7 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: Too
       {btn('Alıntı', ICON.quote, () => chain().toggleBlockquote().run(), { active: s.quote })}
       {btn('Madde listesi', ICON.bullets, () => chain().toggleBulletList().run(), { active: s.bullets })}
       {btn('Numaralı liste', ICON.numbers, () => chain().toggleOrderedList().run(), { active: s.numbers })}
-      {btn('Referans ekle', ICON.book, () => onReference?.(), { disabled: !onReference })}
+      {btn('Referans ekle', ICON.book, onReference)}
       <div className="ed-more">
         <button
           ref={moreBtn}

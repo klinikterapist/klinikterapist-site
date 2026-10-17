@@ -1529,7 +1529,6 @@ textarea.k-input {
   gap: var(--space-3);
   margin-bottom: var(--space-3);
   border-bottom: 1px solid var(--p-border);
-  overflow-x: auto;
 }
 
 .tab {
@@ -1544,4 +1543,219 @@ textarea.k-input {
   border-bottom-color: var(--p-accent);
   color: var(--p-text);
   font-weight: 600;
+}
+
+/* ---------- references and citations (Task 11) ---------- */
+
+.ed-citation {
+  padding: 0 2px;
+  border-radius: 4px;
+  background: var(--p-selected);
+  color: var(--p-heading);
+  cursor: pointer;
+}
+
+.ed-citation.is-selected {
+  outline: 2px solid var(--p-accent);
+}
+
+.ed-citation.is-invalid {
+  background: var(--p-err-bg);
+  color: var(--p-err-text);
+}
+
+.ed-cite-menu {
+  max-width: calc(100vw - 16px);
+}
+
+.k-dialog:has(.ref-dialog) {
+  width: min(40rem, 100%);
+}
+
+.ref-dialog {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.ref-tabs {
+  display: flex;
+  gap: var(--space-1, 4px);
+  border-bottom: 1px solid var(--p-border);
+}
+
+.ref-tab {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--p-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ref-tab.is-active {
+  border-bottom-color: var(--p-accent);
+  color: var(--p-heading);
+}
+
+.ref-panel {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.ref-doi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.ref-doi .k-field {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.ref-form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.ref-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ref-row:empty {
+  display: none;
+}
+
+.ref-row > .k-field {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.ref-people {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: var(--radius-md, 8px);
+}
+
+.ref-people legend {
+  padding: 0 4px;
+  color: var(--p-heading);
+  font-weight: 600;
+}
+
+.ref-person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.ref-person > .k-field {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+
+.ref-person-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ref-preview {
+  padding: var(--space-3);
+  border-radius: var(--radius-md, 8px);
+  background: var(--p-bg);
+  overflow-wrap: anywhere;
+}
+
+.ref-preview-title {
+  margin: 0 0 var(--space-1, 4px);
+  color: var(--p-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.ref-preview section {
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+}
+
+.ref-saved {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ref-saved li {
+  display: grid;
+  gap: var(--space-1, 4px);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: var(--radius-md, 8px);
+  overflow-wrap: anywhere;
+}
+
+.ref-saved li.is-selected {
+  border-color: var(--p-accent);
+  background: var(--p-selected);
+}
+
+.ref-saved-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.ref-saved-choice input {
+  flex: none;
+  margin-top: 0.3em;
+}
+
+.ref-saved-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ref-cite {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--p-border);
+}
+
+.cite-locator .row {
+  flex-wrap: nowrap;
+}
+
+.cite-locator input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cite-locator select {
+  flex: 0 1 auto;
+  width: auto;
+}
+
+.cite-edit-row {
+  display: grid;
+  gap: var(--space-1, 4px);
+  margin-bottom: var(--space-3);
 }

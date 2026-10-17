@@ -118,7 +118,7 @@ describe('EditorPage', () => {
     ]);
     const select = within(bar).getByRole('combobox', { name: 'Paragraf türü' });
     expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Paragraf', 'Alt başlık', 'Küçük alt başlık']);
-    expect((within(bar).getByRole('button', { name: 'Referans ekle' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((within(bar).getByRole('button', { name: 'Referans ekle' }) as HTMLButtonElement).disabled).toBe(false);
     fireEvent.click(within(bar).getByRole('button', { name: 'Daha fazla' }));
     expect(screen.getByRole('menuitem', { name: 'Vurgu kutusu' })).toBeTruthy();
     expect(screen.getByRole('menuitem', { name: 'Ayraç' })).toBeTruthy();

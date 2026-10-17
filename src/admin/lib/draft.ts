@@ -4,6 +4,8 @@ import type { Draft, LangFields } from '../api/types';
 import type { Lang } from '../../lib/schemas';
 import { slugError } from '../../lib/schemas';
 import { slugify } from '../../lib/slug';
+import { sanitizeCiteItems } from '../../lib/citations';
+import type { CiteItem } from '../../lib/apa';
 
 export type { Draft, LangFields };
 
@@ -15,9 +17,36 @@ const emptyLang = (): LangFields => ({
   title: '', subtitle: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: emptyDoc(), references: [],
 });
 
+/** Shown in place of a stored citation that has no usable reference id. */
+export const INVALID_CITATION = '[geçersiz atıf]';
+
+/** Drafts from Drive are not shape-checked: keep each citation's valid items; one with none becomes text. */
+function repairCitations(node: JSONContent): JSONContent {
+  if (node?.type === 'citation') {
+    const raw: unknown = node.attrs?.items;
+    const items: CiteItem[] = [];
+    for (const item of Array.isArray(raw) ? raw : []) {
+      try {
+        items.push(...sanitizeCiteItems([item as CiteItem]));
+      } catch {
+        /* invalid id: leave the item out */
+      }
+    }
+    if (!items.length) return { type: 'text', text: INVALID_CITATION };
+    return { ...node, attrs: { items, narrative: node.attrs?.narrative === true } };
+  }
+  return Array.isArray(node?.content) ? { ...node, content: node.content.map(repairCitations) } : node;
+}
+
 const normalizeLang = (v: unknown): LangFields => {
   const f = (v && typeof v === 'object' ? v : {}) as Partial<LangFields>;
-  return { ...emptyLang(), ...f, subtitle: f.subtitle ?? '', references: Array.isArray(f.references) ? f.references : [] };
+  const base = { ...emptyLang(), ...f };
+  return {
+    ...base,
+    subtitle: f.subtitle ?? '',
+    references: Array.isArray(f.references) ? f.references : [],
+    doc: base.doc && typeof base.doc === 'object' ? repairCitations(base.doc) : emptyDoc(),
+  };
 };
 
 /** Fill the fields older drafts lack. Apply on every path a draft enters the editor. */
