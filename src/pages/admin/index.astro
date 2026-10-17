@@ -1,0 +1,28 @@
+---
+/**
+ * The admin panel (spec §8). A client-only React app: no site header, never indexed,
+ * and no other page loads its JavaScript.
+ */
+import '../../styles/tokens.css';
+import '../../admin/ui/admin.css';
+import AdminRoot from '../../admin/ui/AdminRoot';
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f4efe6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Yönetim paneli · klinikterapist.com</title>
+  </head>
+  <body class="admin">
+    <header class="admin-top">
+      <h1>Yönetim paneli</h1>
+    </header>
+    <noscript><p class="noscript">Yönetim paneli JavaScript gerektirir. Lütfen tarayıcınızda JavaScript'i açın.</p></noscript>
+    <AdminRoot client:only="react" />
+  </body>
+</html>

@@ -1,0 +1,66 @@
+/** The real backend: one POST endpoint on the Apps Script web app. */
+import { ACTIONS, ApiFailure, type Api, type ApiResponse } from './types';
+import type { SessionStore } from './session';
+
+const NETWORK_MESSAGE = 'İnternet bağlantısı yok gibi görünüyor. Değişiklikleriniz bu cihazda saklandı.';
+
+export function createHttpApi(
+  apiUrl: string,
+  store: SessionStore,
+  opts: { fetch?: (url: string, init: RequestInit) => Promise<Response>; onSignedOut?: () => void } = {},
+): Api {
+  const doFetch = opts.fetch ?? ((url, init) => fetch(url, init));
+
+  async function call<T>(action: string, params: Record<string, unknown> = {}, withSession = true): Promise<T> {
+    const body = JSON.stringify({ action, ...(withSession ? { session: store.get() } : {}), ...params });
+    let res: Response;
+    try {
+      // text/plain keeps this a CORS "simple request": Apps Script cannot answer a preflight.
+      res = await doFetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body, redirect: 'follow' });
+    } catch {
+      throw new ApiFailure('network', NETWORK_MESSAGE);
+    }
+    let out: ApiResponse<T>;
+    try {
+      out = (await res.json()) as ApiResponse<T>;
+    } catch {
+      throw new ApiFailure('internal', 'Sunucudan anlaşılmayan bir yanıt geldi. Biraz sonra tekrar deneyin.');
+    }
+    if (out.ok) return out.data;
+    if (out.error.code === 'unauthorized' && withSession) {
+      store.clear();
+      opts.onSignedOut?.();
+    }
+    const current = (out.data as { current?: unknown } | undefined)?.current;
+    throw new ApiFailure(out.error.code, out.error.message, current);
+  }
+
+  return {
+    async login(idToken) {
+      const s = await call<{ session: string; email: string; expiresAt: number }>(ACTIONS.login, { idToken }, false);
+      store.set(s.session, s.expiresAt);
+      return s;
+    },
+    async logout() {
+      try {
+        await call(ACTIONS.logout);
+      } finally {
+        store.clear();
+      }
+    },
+    tree: () => call(ACTIONS.tree),
+    read: (paths) => call(ACTIONS.read, { paths }),
+    commit: (input) => call(ACTIONS.commit, input),
+    status: () => call(ACTIONS.status),
+    listDrafts: () => call(ACTIONS.listDrafts),
+    getDraft: (key) => call(ACTIONS.getDraft, { key }),
+    saveDraft: (draft) => call(ACTIONS.saveDraft, { draft }),
+    deleteDraft: async (key) => {
+      await call(ACTIONS.deleteDraft, { key });
+    },
+    putImage: async (key, name, base64) => {
+      await call(ACTIONS.putImage, { key, name, base64 });
+    },
+    getImage: (key, name) => call(ACTIONS.getImage, { key, name }),
+  };
+}
