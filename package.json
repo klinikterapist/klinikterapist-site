@@ -1,0 +1,26 @@
+{
+  "name": "web-sitem",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "test": "vitest run tests/unit",
+    "test:build": "cross-env CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && vitest run tests/build --passWithNoTests"
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.4.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "node-html-parser": "^9.0.4",
+    "vitest": "^5.0.5"
+  }
+}
