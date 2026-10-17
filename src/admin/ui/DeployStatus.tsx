@@ -50,6 +50,13 @@ export function DeployProvider({ api, children, intervalMs = 15000 }: { api: Api
     };
   }, [api, tracking, intervalMs]);
 
+  // "Yayında ✓" is good news, not a state to keep on screen.
+  useEffect(() => {
+    if (tracking || status?.state !== 'success') return;
+    const t = setTimeout(() => setStatus(null), 10000);
+    return () => clearTimeout(t);
+  }, [tracking, status]);
+
   const track = useCallback((sha: string) => {
     setStatus(null);
     setTracking(sha);
