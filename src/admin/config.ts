@@ -6,7 +6,7 @@ export type AdminConfig = { apiUrl: string; googleClientId: string; ownerEmail: 
 
 export const ADMIN_CONFIG: AdminConfig = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbzwSOo-v6NnOA143gn18CcN2KtJ6SAwJcDsu5t5m1Au2OqcmF2eXLRoUZiu3A3xPPBd/exec',
-  googleClientId: '617877268772-jdl3mf9em8g59vcr0hrds5cejm3hrrvt.apps.googleusercontent.com',
+  googleClientId: '617877268772-inqev9udioeq5u2uttm1nig4fik1jv8e.apps.googleusercontent.com',
   ownerEmail: 'merhaba@klinikterapist.com',
 };
 
