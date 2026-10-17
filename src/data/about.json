@@ -53,48 +53,29 @@
     {
       "title": {
         "tr": "Lisans",
-        "en": "Bachelor's Degree"
+        "en": "Bachelor’s Degree"
       },
       "detail": {
-        "tr": "Psikoloji, [Üniversite Adı]",
-        "en": "Psychology, [University Name]"
+        "tr": "Psikoloji",
+        "en": "Psychology"
       },
-      "period": "2016–2020"
+      "period": {
+        "tr": "Tamamlandı",
+        "en": "Completed"
+      }
     },
     {
       "title": {
         "tr": "Yüksek Lisans",
-        "en": "Master's Degree"
+        "en": "Master’s Degree"
       },
       "detail": {
-        "tr": "Klinik Psikoloji, [Üniversite Adı]",
-        "en": "Clinical Psychology, [University Name]"
-      },
-      "period": "2021–2023"
-    },
-    {
-      "title": {
-        "tr": "Eğitimler",
-        "en": "Trainings"
-      },
-      "detail": {
-        "tr": "BDT, Kabul ve Kararlılık Terapisi (ACT)",
-        "en": "CBT, Acceptance and Commitment Therapy (ACT)"
-      },
-      "period": "2022–2024"
-    },
-    {
-      "title": {
-        "tr": "Süpervizyon",
-        "en": "Supervision"
-      },
-      "detail": {
-        "tr": "Bireysel ve grup süpervizyonları",
-        "en": "Individual and group supervision"
+        "tr": "Klinik Psikoloji",
+        "en": "Clinical Psychology"
       },
       "period": {
-        "tr": "Devam ediyor",
-        "en": "Ongoing"
+        "tr": "Tamamlandı",
+        "en": "Completed"
       }
     }
   ]

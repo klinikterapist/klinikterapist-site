@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildMeta, pageMeta } from '../../src/lib/seo';
 import { personLd, professionalServiceLd, blogPostingLd, breadcrumbLd } from '../../src/lib/jsonld';
 import type { PostEntry } from '../../src/lib/posts';
+import { getProfile } from '../../src/lib/settings';
 
 const about = {
   lang: 'tr' as const, title: 'Hakkımda', description: 'd', path: '/hakkimda/',
@@ -59,7 +60,7 @@ describe('jsonld', () => {
 
   it('person uses the profile title and public links', () => {
     const ld = personLd('en');
-    expect(ld).toMatchObject({ '@type': 'Person', name: 'Osman Güneş Özkurt', jobTitle: 'Psychologist', url: 'https://example.com/en/' });
+    expect(ld).toMatchObject({ '@type': 'Person', name: 'Osman Güneş Özkurt', jobTitle: getProfile().title.en, url: 'https://example.com/en/' });
     expect(ld.sameAs).toContain('https://instagram.com/klinikterapist');
     expect(JSON.stringify(ld.sameAs)).not.toContain('mailto:');
   });

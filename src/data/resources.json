@@ -13,40 +13,18 @@
         "tr": "BDT'yi öğrenmek için temel başvuru kaynaklarından biri.",
         "en": "One of the core reference books for learning CBT."
       },
-      "url": "https://example.com/beck-cbt",
+      "url": "https://www.guilford.com/books/Cognitive-Behavior-Therapy/Judith-Beck/9781462544196",
       "featured": true
-    },
-    {
-      "id": "loneliness-internet",
-      "type": "article",
-      "title": "Loneliness and Social Internet Use",
-      "note": {
-        "tr": "Yalnızlık ile dijital etkileşim arasındaki ilişkiye kısa bir bakış.",
-        "en": "A short look at the relationship between loneliness and digital interaction."
-      },
-      "url": "https://example.com/loneliness-internet",
-      "featured": false
     },
     {
       "id": "hexaco",
       "type": "scale",
-      "title": "HEXACO Kişilik Özellikleri",
+      "title": "HEXACO Kişilik Envanteri",
       "note": {
-        "tr": "Kişilik boyutlarını incelemek için kullanılan yapı.",
-        "en": "A framework used to examine personality dimensions."
+        "tr": "Kişiliği altı temel boyutta ele alan, araştırmalarda sık kullanılan bir model ve ölçek.",
+        "en": "A widely researched model and inventory describing personality in six basic dimensions."
       },
-      "url": "https://example.com/hexaco",
-      "featured": false
-    },
-    {
-      "id": "bes-kitap",
-      "type": "guide",
-      "title": "Başlangıç İçin 5 Psikoloji Kitabı",
-      "note": {
-        "tr": "Öğrenciler ve meraklılar için seçilmiş öneriler.",
-        "en": "Selected recommendations for students and the curious."
-      },
-      "url": "https://example.com/bes-kitap",
+      "url": "https://hexaco.org/",
       "featured": false
     }
   ]

@@ -4,7 +4,7 @@ Bu rehber teknik bilgi gerektirmez. Adımları sırayla izleyin; takıldığın�
 
 Kaynak (GitHub'ın resmi belgesi): https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site
 
-> `<kullanici-adiniz>` yazan her yere kendi GitHub kullanıcı adınızı yazın.
+> `klinikterapist` yazan her yere kendi GitHub kullanıcı adınızı yazın.
 
 ## 1. GitHub'da depo (repository) oluşturma
 
@@ -14,7 +14,7 @@ Kaynak (GitHub'ın resmi belgesi): https://docs.github.com/en/pages/configuring-
 4. **Public** (Herkese açık) seçeneğini işaretleyin.
 5. **Dikkat:** "Add a README file", "Add .gitignore" ve "Choose a license" kutularını **işaretlemeyin**. Depo boş olmalı.
 6. Yeşil **Create repository** düğmesine basın.
-7. Açılan sayfadaki adresi (`https://github.com/<kullanici-adiniz>/klinikterapist-site`) Claude'a gönderin. Dosyaları oradan yükleyecek (push) kişi Claude/yöneticidir; siz bir şey yüklemeyeceksiniz. Gerekirse sizden erişim izni vermeniz istenir.
+7. Açılan sayfadaki adresi (`https://github.com/klinikterapist/klinikterapist-site`) Claude'a gönderin. Dosyaları oradan yükleyecek (push) kişi Claude/yöneticidir; siz bir şey yüklemeyeceksiniz. Gerekirse sizden erişim izni vermeniz istenir.
 
 ## 2. Pages ayarları
 
@@ -63,9 +63,9 @@ DNS panelinde **Add record / Kayıt ekle** deyip şunları girin. Ana alan adı 
 | AAAA | @ | 2606:50c0:8001::153 |
 | AAAA | @ | 2606:50c0:8002::153 |
 | AAAA | @ | 2606:50c0:8003::153 |
-| CNAME | www | `<kullanici-adiniz>.github.io` |
+| CNAME | www | `klinikterapist.github.io` |
 
-CNAME değerinde depo adını yazmayın; yalnızca `<kullanici-adiniz>.github.io`. Değişikliklerin yayılması 24 saate kadar sürebilir. Bu değerler GitHub'ın yukarıdaki güncel belgesinden doğrulanmıştır.
+CNAME değerinde depo adını yazmayın; yalnızca `klinikterapist.github.io`. Değişikliklerin yayılması 24 saate kadar sürebilir. Bu değerler GitHub'ın yukarıdaki güncel belgesinden doğrulanmıştır.
 
 Ayrıca 3. adımdaki doğrulama TXT kaydını da şimdi, burada ekleyin. Mevcut TXT kayıtlarını silmeyin ya da değiştirmeyin; bu kaydı yenisi olarak EKLEYİN.
 
