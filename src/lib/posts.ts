@@ -39,6 +39,27 @@ export function validatePostPairs(ids: string[]): void {
   }
 }
 
+/**
+ * Two posts with the same slug in one language would share a URL: Astro only warns and drops
+ * one of them. Fail the build instead, naming both post folders.
+ */
+export function validateUniqueSlugs(entries: { id: string; data: { slug: string } }[]): void {
+  const seen = new Map<string, string>();
+  for (const { id, data } of entries) {
+    const slash = id.lastIndexOf('/');
+    const key = id.slice(0, slash);
+    const lang = id.slice(slash + 1);
+    const k = `${lang}:${data.slug}`;
+    const other = seen.get(k);
+    if (other !== undefined) {
+      throw new Error(
+        `"${other}" ve "${key}" yazıları aynı ${lang} slug değerini kullanıyor: "${data.slug}" — her yazının adresi o dilde benzersiz olmalı.`,
+      );
+    }
+    seen.set(k, key);
+  }
+}
+
 export function toPostEntry(entry: RawPost): PostEntry {
   const slash = entry.id.lastIndexOf('/');
   return {
@@ -62,9 +83,11 @@ export function pickRelated(post: PostEntry, all: PostEntry[], n = 3): PostEntry
 
 async function loadAll(): Promise<PostEntry[]> {
   // Imported lazily so the pure helpers above stay usable outside an Astro build (Vitest).
+  // Not memoized: in `astro dev` a module-level cache would keep serving edited posts stale.
   const { getCollection } = await import('astro:content');
   const entries = (await getCollection('posts')) as unknown as RawPost[];
   validatePostPairs(entries.map((e) => e.id));
+  validateUniqueSlugs(entries);
   return entries.map(toPostEntry);
 }
 

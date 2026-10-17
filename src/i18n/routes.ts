@@ -31,3 +31,8 @@ export function postPath(slug: string, lang: Lang): string {
 export function otherLang(lang: Lang): Lang {
   return lang === 'tr' ? 'en' : 'tr';
 }
+
+/** Every fixed page path in both languages (redirect `from` values must not hit these). */
+export function staticPagePaths(): string[] {
+  return Object.values(PAGES).flatMap((p) => [p.tr, p.en]);
+}

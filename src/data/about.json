@@ -92,7 +92,10 @@
         "tr": "Bireysel ve grup süpervizyonları",
         "en": "Individual and group supervision"
       },
-      "period": "Devam ediyor"
+      "period": {
+        "tr": "Devam ediyor",
+        "en": "Ongoing"
+      }
     }
   ]
 }

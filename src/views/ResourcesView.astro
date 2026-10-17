@@ -16,7 +16,7 @@ const title = t(lang, 'navResources');
 const { meta, alternatePaths } = pageMeta('resources', lang, title, t(lang, 'resourcesLead'));
 
 const TYPES: Resource['type'][] = ['book', 'article', 'scale', 'video', 'podcast', 'guide'];
-const all = getResources();
+const { items: all, myNote } = getResources();
 const featured = all.find((r) => r.featured);
 const rest = all.filter((r) => r !== featured);
 // One group per type that has resources; the featured one is shown above, not repeated.
@@ -92,7 +92,7 @@ const featuredAnchor =
       <span class="note-icon" aria-hidden="true"><Icon name="note" size={24} /></span>
       <div>
         <h2 id="note-title">{t(lang, 'myNote')}</h2>
-        <p>{t(lang, 'myNoteText')}</p>
+        <p>{myNote[lang]}</p>
       </div>
       <Leaf size={64} class="note-leaf" />
     </aside>

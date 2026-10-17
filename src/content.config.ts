@@ -1,7 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { dataDir, getCategories } from './lib/settings';
+import { dataDir, getCategories, slugSchema } from './lib/settings';
 
 const categoryIds = () => getCategories().map((c) => c.id);
 
@@ -18,7 +18,7 @@ const posts = defineCollection({
       title: z.string(),
       seoTitle: z.string().optional(),
       description: z.string(),
-      slug: z.string(),
+      slug: slugSchema,
       focusKeyword: z.string(),
       category: z.string().refine((c) => categoryIds().includes(c), {
         message: `Bilinmeyen kategori. categories.json içindeki bir id olmalı: ${categoryIds().join(', ')}`,

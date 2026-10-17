@@ -18,6 +18,21 @@ export const PAGE_KEYS = [
 
 const localized = z.object({ tr: z.string(), en: z.string() });
 
+/** URL slug: lowercase a-z, digits and single dashes (`kaygi-ile-yasamak`). Shared by posts and categories. */
+export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+export const slugSchema = z
+  .string()
+  .regex(SLUG_RE, 'URL kısa adı (slug) boş olamaz; yalnızca küçük harf (a-z), rakam ve tek tire içerebilir (ör. "kaygi-ile-yasamak")');
+
+/** Site-relative page path: lowercase segments, leading and trailing slash (`/`, `/blog/eski-adres/`). */
+export const SITE_PATH_RE = /^\/([a-z0-9-]+\/)*$/;
+const sitePath = z
+  .string()
+  .regex(SITE_PATH_RE, 'site içi bir yol olmalı: "/" ile başlayıp "/" ile biten, küçük harf, rakam ve tire (ör. "/blog/eski-adres/")');
+
+const httpsUrl = z.string().regex(/^https:\/\/[^\s/]+\S*$/, 'adres "https://" ile başlamalı (ör. "https://instagram.com/kullanici")');
+const mailtoUrl = z.string().regex(/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/, 'e-posta bağlantısı "mailto:" ile başlamalı (ör. "mailto:ad@alanadi.com")');
+
 const profileSchema = z.object({
   name: z.string().min(1),
   title: localized,
@@ -27,14 +42,20 @@ const profileSchema = z.object({
   photoAlt: localized,
 });
 
-const linkSchema = z.object({
-  id: z.string().min(1),
-  label: z.string(),
-  url: z.string().min(1),
-  icon: z.enum(['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x']),
-  inHero: z.boolean(),
-  inFooter: z.boolean(),
-});
+const linkSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string(),
+    url: z.string().min(1),
+    icon: z.enum(['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x']),
+    inHero: z.boolean(),
+    inFooter: z.boolean(),
+  })
+  .superRefine((link, ctx) => {
+    // E-mail links open the mail app; every other link is an https profile address.
+    const check = (link.icon === 'email' ? mailtoUrl : httpsUrl).safeParse(link.url);
+    if (!check.success) ctx.addIssue({ code: 'custom', path: ['url'], message: check.error.issues[0].message });
+  });
 
 const homeSchema = z.object({
   cards: z.array(
@@ -42,7 +63,7 @@ const homeSchema = z.object({
       id: z.string().min(1),
       target: z.union([
         z.object({ page: z.enum(PAGE_KEYS) }),
-        z.object({ url: z.string().min(1) }),
+        z.object({ url: httpsUrl }),
       ]),
       title: localized,
       subtitle: localized,
@@ -59,7 +80,8 @@ const aboutSchema = z.object({
   whoAmI: localized,
   whyThisWork: localized,
   quote: localized,
-  timeline: z.array(z.object({ title: localized, detail: localized, period: z.string() })),
+  // `period`: a plain string for language-neutral values ("2016–2020"), or { tr, en } for words ("Devam ediyor").
+  timeline: z.array(z.object({ title: localized, detail: localized, period: z.union([z.string(), localized]) })),
 });
 
 const contactSchema = z.object({
@@ -70,22 +92,46 @@ const contactSchema = z.object({
   email: z.string().min(1),
 });
 
-const resourcesSchema = z.array(
-  z.object({
-    id: z.string().min(1),
-    type: z.enum(['book', 'article', 'scale', 'video', 'podcast', 'guide']),
-    title: z.string().min(1),
-    author: z.string().optional(),
-    note: localized,
-    url: z.string().min(1),
-    cover: z.string().optional(),
-    featured: z.boolean(),
-  }),
-);
+const resourcesSchema = z.object({
+  /** The owner's note shown beside the list ("Benim Notum"). */
+  myNote: localized,
+  items: z.array(
+    z.object({
+      id: z.string().min(1),
+      type: z.enum(['book', 'article', 'scale', 'video', 'podcast', 'guide']),
+      title: z.string().min(1),
+      author: z.string().optional(),
+      note: localized,
+      url: httpsUrl,
+      cover: z.string().optional(),
+      featured: z.boolean(),
+    }),
+  ),
+});
 
-const categoriesSchema = z.array(
-  z.object({ id: z.string().min(1), slug: localized, label: localized }),
-);
+/** Adds an issue at `<index>.<field...>` for every value already used by an earlier entry. */
+function rejectDuplicates<T>(
+  list: T[],
+  value: (item: T) => string,
+  field: (string | number)[],
+  ctx: z.RefinementCtx,
+  what: string,
+): void {
+  const seen = new Map<string, number>();
+  list.forEach((item, i) => {
+    const v = value(item);
+    const first = seen.get(v);
+    if (first === undefined) seen.set(v, i);
+    else ctx.addIssue({ code: 'custom', path: [i, ...field], message: `${what} "${v}" ${first}. kayıtta zaten kullanılıyor; her kayıt farklı olmalı` });
+  });
+}
+
+const categoriesSchema = z
+  .array(z.object({ id: z.string().min(1), slug: z.object({ tr: slugSchema, en: slugSchema }), label: localized }))
+  .superRefine((cats, ctx) => {
+    rejectDuplicates(cats, (c) => c.slug.tr, ['slug', 'tr'], ctx, 'Kategori slug değeri');
+    rejectDuplicates(cats, (c) => c.slug.en, ['slug', 'en'], ctx, 'Kategori slug değeri');
+  });
 
 const seoSchema = z.object({
   siteName: localized,
@@ -94,7 +140,28 @@ const seoSchema = z.object({
   gscVerification: z.string().optional(),
 });
 
-const redirectsSchema = z.array(z.object({ from: z.string().min(1), to: z.string().min(1) }));
+const redirectsSchema = z
+  .array(
+    z.object({
+      from: sitePath.refine((p) => p !== '/', 'ana sayfa ("/") yönlendirilemez'),
+      to: sitePath,
+    }),
+  )
+  .superRefine((list, ctx) => {
+    rejectDuplicates(list, (r) => r.from, ['from'], ctx, 'Eski adres (from)');
+    const froms = new Map(list.map((r) => [r.from, r.to]));
+    list.forEach((r, i) => {
+      if (r.to === r.from) {
+        ctx.addIssue({ code: 'custom', path: [i, 'to'], message: `yönlendirme kendisine gidiyor ("${r.from}"); from ile to farklı olmalı` });
+      } else if (froms.has(r.to)) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [i, 'to'],
+          message: `zincirleme yönlendirme: "${r.to}" de başka bir adrese ("${froms.get(r.to)}") yönleniyor; to doğrudan son adresi göstermeli`,
+        });
+      }
+    });
+  });
 
 export type Profile = z.infer<typeof profileSchema>;
 export type Link = z.infer<typeof linkSchema>;
@@ -102,7 +169,9 @@ export type HomeCard = z.infer<typeof homeSchema>['cards'][number];
 export type Home = z.infer<typeof homeSchema>;
 export type About = z.infer<typeof aboutSchema>;
 export type Contact = z.infer<typeof contactSchema>;
-export type Resource = z.infer<typeof resourcesSchema>[number];
+export type Resources = z.infer<typeof resourcesSchema>;
+export type Resource = Resources['items'][number];
+export type Period = About['timeline'][number]['period'];
 export type Category = z.infer<typeof categoriesSchema>[number];
 export type Seo = z.infer<typeof seoSchema>;
 export type Redirect = z.infer<typeof redirectsSchema>[number];
@@ -134,7 +203,7 @@ export const parseLinks = (raw: unknown): Link[] => parse(z.array(linkSchema), r
 export const parseHome = (raw: unknown): Home => parse(homeSchema, raw, 'home.json');
 export const parseAbout = (raw: unknown): About => parse(aboutSchema, raw, 'about.json');
 export const parseContact = (raw: unknown): Contact => parse(contactSchema, raw, 'contact.json');
-export const parseResources = (raw: unknown): Resource[] => parse(resourcesSchema, raw, 'resources.json');
+export const parseResources = (raw: unknown): Resources => parse(resourcesSchema, raw, 'resources.json');
 export const parseCategories = (raw: unknown): Category[] => parse(categoriesSchema, raw, 'categories.json');
 export const parseSeo = (raw: unknown): Seo => parse(seoSchema, raw, 'seo.json');
 export const parseRedirects = (raw: unknown): Redirect[] => parse(redirectsSchema, raw, 'redirects.json');
@@ -148,3 +217,23 @@ export const getResources = () => parseResources(readJson('resources.json'));
 export const getCategories = () => parseCategories(readJson('categories.json'));
 export const getSeo = () => parseSeo(readJson('seo.json'));
 export const getRedirects = () => parseRedirects(readJson('redirects.json'));
+
+/** Text of a timeline period in the page language. */
+export function periodText(period: Period, lang: Lang): string {
+  return typeof period === 'string' ? period : period[lang];
+}
+
+/**
+ * A redirect stub must never replace a real page: Astro would only warn and drop the stub,
+ * and the sitemap would lose the live page. Fail the build instead.
+ */
+export function checkRedirectCollisions(redirects: Redirect[], pagePaths: Iterable<string>): void {
+  const pages = new Set(pagePaths);
+  redirects.forEach((r, i) => {
+    if (pages.has(r.from)) {
+      throw new Error(
+        `redirects.json geçersiz — ${i}.from: "${r.from}" sitede gerçek bir sayfa (yazı, kategori ya da sabit sayfa); bu yönlendirmeyi silin ya da adresi değiştirin`,
+      );
+    }
+  });
+}

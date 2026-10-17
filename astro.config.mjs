@@ -1,15 +1,12 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-const site = (process.env.SITE_URL ?? 'https://example.com').replace(/\/$/, '');
+import { SITE as site } from './src/lib/site.ts';
+import { getRedirects } from './src/lib/settings.ts';
 
 // Redirect stubs (redirects.json) are noindex pages: keep them out of the sitemap.
-/** @type {{ from: string }[]} */
-const redirects = JSON.parse(readFileSync(join(process.env.DATA_DIR ?? 'src/data', 'redirects.json'), 'utf8'));
-const redirectUrls = new Set(redirects.map((r) => new URL(r.from, `${site}/`).href));
+// Same validated list the stub pages use (paths are site-relative with a trailing slash).
+const redirectUrls = new Set(getRedirects().map((r) => new URL(r.from, `${site}/`).href));
 
 export default defineConfig({
   site,

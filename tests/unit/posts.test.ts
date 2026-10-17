@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validatePostPairs, sortNewestFirst, pickRelated, toPostEntry } from '../../src/lib/posts';
+import { validatePostPairs, validateUniqueSlugs, sortNewestFirst, pickRelated, toPostEntry } from '../../src/lib/posts';
 
 describe('validatePostPairs', () => {
   it('throws naming folder and missing language', () => {
@@ -37,5 +37,18 @@ describe('pure helpers', () => {
     ].map(toPostEntry);
     const rel = pickRelated(all[0], all, 3).map((p) => p.key);
     expect(rel).toEqual(['a-new', 'a-old', 'b-new']);
+  });
+});
+
+describe('validateUniqueSlugs (I2)', () => {
+  const e = (id: string, slug: string) => ({ id, data: { slug } });
+  it('passes when every slug is unique within its language', () => {
+    expect(() => validateUniqueSlugs([e('a/tr', 'ortak'), e('a/en', 'ortak'), e('b/tr', 'baska'), e('b/en', 'other')])).not.toThrow();
+    expect(() => validateUniqueSlugs([])).not.toThrow();
+  });
+  it('throws naming both post folders, the language and the slug', () => {
+    expect(() => validateUniqueSlugs([e('a/tr', 'ayni'), e('b/tr', 'ayni')]))
+      .toThrow('"a" ve "b" yazıları aynı tr slug değerini kullanıyor: "ayni"');
+    expect(() => validateUniqueSlugs([e('a/en', 'same'), e('a/tr', 'x'), e('b/en', 'same')])).toThrow(/"a" ve "b".*en/);
   });
 });

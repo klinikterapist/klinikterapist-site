@@ -75,10 +75,6 @@ const STRINGS = {
   resourceList: { tr: 'Kaynak Listesi', en: 'Resource List' },
   viewResource: { tr: 'Kaynağa Git', en: 'View Resource' },
   myNote: { tr: 'Benim Notum', en: 'My Note' },
-  myNoteText: {
-    tr: 'Bu bölümde yalnızca faydalı, güvenilir ve kendi yaklaşımımla uyumlu kaynaklara yer veriyorum.',
-    en: 'In this section I only include resources that are useful, trustworthy and in line with my own approach.',
-  },
   type_book: { tr: 'Kitap', en: 'Book' },
   type_article: { tr: 'Makale', en: 'Article' },
   type_scale: { tr: 'Ölçek', en: 'Scale' },

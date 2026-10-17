@@ -1,47 +1,53 @@
-[
-  {
-    "id": "beck-cbt",
-    "type": "book",
-    "title": "Cognitive Behavior Therapy: Basics and Beyond",
-    "author": "Judith S. Beck",
-    "note": {
-      "tr": "BDT'yi öğrenmek için temel başvuru kaynaklarından biri.",
-      "en": "One of the core reference books for learning CBT."
-    },
-    "url": "https://example.com/beck-cbt",
-    "featured": true
+{
+  "myNote": {
+    "tr": "Bu bölümde yalnızca faydalı, güvenilir ve kendi yaklaşımımla uyumlu kaynaklara yer veriyorum.",
+    "en": "In this section I only include resources that are useful, trustworthy and in line with my own approach."
   },
-  {
-    "id": "loneliness-internet",
-    "type": "article",
-    "title": "Loneliness and Social Internet Use",
-    "note": {
-      "tr": "Yalnızlık ile dijital etkileşim arasındaki ilişkiye kısa bir bakış.",
-      "en": "A short look at the relationship between loneliness and digital interaction."
+  "items": [
+    {
+      "id": "beck-cbt",
+      "type": "book",
+      "title": "Cognitive Behavior Therapy: Basics and Beyond",
+      "author": "Judith S. Beck",
+      "note": {
+        "tr": "BDT'yi öğrenmek için temel başvuru kaynaklarından biri.",
+        "en": "One of the core reference books for learning CBT."
+      },
+      "url": "https://example.com/beck-cbt",
+      "featured": true
     },
-    "url": "https://example.com/loneliness-internet",
-    "featured": false
-  },
-  {
-    "id": "hexaco",
-    "type": "scale",
-    "title": "HEXACO Kişilik Özellikleri",
-    "note": {
-      "tr": "Kişilik boyutlarını incelemek için kullanılan yapı.",
-      "en": "A framework used to examine personality dimensions."
+    {
+      "id": "loneliness-internet",
+      "type": "article",
+      "title": "Loneliness and Social Internet Use",
+      "note": {
+        "tr": "Yalnızlık ile dijital etkileşim arasındaki ilişkiye kısa bir bakış.",
+        "en": "A short look at the relationship between loneliness and digital interaction."
+      },
+      "url": "https://example.com/loneliness-internet",
+      "featured": false
     },
-    "url": "https://example.com/hexaco",
-    "featured": false
-  },
-  {
-    "id": "bes-kitap",
-    "type": "guide",
-    "title": "Başlangıç İçin 5 Psikoloji Kitabı",
-    "note": {
-      "tr": "Öğrenciler ve meraklılar için seçilmiş öneriler.",
-      "en": "Selected recommendations for students and the curious."
+    {
+      "id": "hexaco",
+      "type": "scale",
+      "title": "HEXACO Kişilik Özellikleri",
+      "note": {
+        "tr": "Kişilik boyutlarını incelemek için kullanılan yapı.",
+        "en": "A framework used to examine personality dimensions."
+      },
+      "url": "https://example.com/hexaco",
+      "featured": false
     },
-    "url": "https://example.com/bes-kitap",
-    "featured": false
-  }
-]
+    {
+      "id": "bes-kitap",
+      "type": "guide",
+      "title": "Başlangıç İçin 5 Psikoloji Kitabı",
+      "note": {
+        "tr": "Öğrenciler ve meraklılar için seçilmiş öneriler.",
+        "en": "Selected recommendations for students and the curious."
+      },
+      "url": "https://example.com/bes-kitap",
+      "featured": false
+    }
+  ]
+}

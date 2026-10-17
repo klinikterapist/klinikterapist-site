@@ -1,5 +1,6 @@
 ---
 import type { About, Lang } from '../lib/settings';
+import { periodText } from '../lib/settings';
 
 interface Props {
   lang: Lang;
@@ -17,7 +18,7 @@ const { lang, items } = Astro.props;
           <h3 class="title">{item.title[lang]}</h3>
           <p class="detail">{item.detail[lang]}</p>
         </div>
-        <p class="period">{item.period}</p>
+        <p class="period">{periodText(item.period, lang)}</p>
       </li>
     ))
   }

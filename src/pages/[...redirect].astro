@@ -4,15 +4,26 @@
  * `from` gets a tiny page that refreshes to `to`, is canonical to it and stays out of the index.
  */
 import type { GetStaticPaths } from 'astro';
-import { getRedirects, type Redirect } from '../lib/settings';
+import { checkRedirectCollisions, getCategories, getRedirects, type Redirect } from '../lib/settings';
 import { absoluteUrl } from '../lib/seo';
+import { getPosts } from '../lib/posts';
+import { categoryPath, postPath, staticPagePaths } from '../i18n/routes';
 
-export const getStaticPaths = (() =>
-  getRedirects().map((r) => ({
+export const getStaticPaths = (async () => {
+  const redirects = getRedirects();
+  // A `from` that is a live page would be dropped by Astro with only a warning: fail instead.
+  const posts = [...(await getPosts('tr')), ...(await getPosts('en'))];
+  checkRedirectCollisions(redirects, [
+    ...staticPagePaths(),
+    ...getCategories().flatMap((c) => [categoryPath(c, 'tr'), categoryPath(c, 'en')]),
+    ...posts.map((p) => postPath(p.data.slug, p.lang)),
+  ]);
+  return redirects.map((r) => ({
     // `/blog/eski-adres/` → `blog/eski-adres`
     params: { redirect: r.from.replace(/^\/+|\/+$/g, '') || undefined },
     props: { redirect: r },
-  }))) satisfies GetStaticPaths;
+  }));
+}) satisfies GetStaticPaths;
 
 const { redirect } = Astro.props as { redirect: Redirect };
 const target = absoluteUrl(redirect.to);
