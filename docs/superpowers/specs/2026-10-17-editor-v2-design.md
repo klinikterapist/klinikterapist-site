@@ -183,7 +183,7 @@ Veri modeli ve biçimlendirici şunları desteklemeli:
   - Asılı girinti (hanging indent).
   - Dergi adı ve cilt numarası italik, kitap adı italik.
   - DOI, `https://doi.org/...` biçiminde tıklanabilir bir bağlantı.
-  - 21 yazara kadar bütün yazarlar yazılır; daha fazlasında ilk 19 yazar, "…" ve son yazar.
+  - 20 yazara kadar bütün yazarlar yazılır; 21 ve daha fazlasında ilk 19 yazar, "…" ve son yazar (APA 7 §9.8).
 - Ham HTML kuralları gereği Kaynakça bağlantıları da `SAFE_LINK` kontrolünden geçmeli.
 
 **Saklama ve derleme**
