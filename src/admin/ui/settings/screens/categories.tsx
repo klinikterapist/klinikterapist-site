@@ -17,15 +17,19 @@ export function KategorilerScreen() {
   const { api } = usePanel();
   const file = useSettingsFile<Row[]>('src/data/categories.json', parseCategories, 'Kategoriler');
   const [used, setUsed] = useState<Set<string> | null>(null);
+  const [checkFailed, setCheckFailed] = useState(false);
+
+  const usedCategories = async () => {
+    const [site, { drafts }] = await Promise.all([loadSiteState(api), api.listDrafts()]);
+    return new Set([...site.posts.map((p) => p.tr.fm.category), ...drafts.map((d) => d.category)].filter(Boolean));
+  };
 
   useEffect(() => {
     let alive = true;
-    Promise.all([loadSiteState(api), api.listDrafts()])
-      .then(([site, { drafts }]) => {
-        if (!alive) return;
-        setUsed(new Set([...site.posts.map((p) => p.tr.fm.category), ...drafts.map((d) => d.category)].filter(Boolean)));
-      })
-      .catch(() => alive && setUsed(new Set()));
+    usedCategories()
+      .then((ids) => alive && setUsed(ids))
+      // Unknown usage must never look like "unused": deleting a used category breaks the build.
+      .catch(() => alive && setCheckFailed(true));
     return () => {
       alive = false;
     };
@@ -38,7 +42,8 @@ export function KategorilerScreen() {
         before: site.categories.list,
         after,
         sha: site.categories.sha,
-        usedIds: used ?? new Set(site.posts.map((p) => p.tr.fm.category)),
+        // Always checked again at save time, against the live posts and every draft.
+        usedIds: await usedCategories(),
         redirects: site.redirects,
       });
     });
@@ -57,7 +62,9 @@ export function KategorilerScreen() {
           itemLabel={(c) => c.label.tr || 'Yeni kategori'}
           newItem={() => ({ id: '', slug: { tr: '', en: '' }, label: { tr: '', en: '' }, _new: true })}
           addLabel="Kategori ekle"
-          canDelete={(c) => (used === null ? 'Kontrol ediliyor…' : used.has(c.id) ? 'Kullanımda' : true)}
+          canDelete={(c) =>
+            c._new ? true : checkFailed ? 'Kontrol edilemedi; sayfayı yenileyin' : used === null ? 'Kontrol ediliyor…' : used.has(c.id) ? 'Kullanımda' : true
+          }
           render={(c, update, i) => (
             <>
               <LocalizedField

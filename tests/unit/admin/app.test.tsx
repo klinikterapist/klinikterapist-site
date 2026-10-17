@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from '../../../src/admin/ui/App';
 import { createMockApi } from '../../../src/admin/api/mock';
 import { createSessionStore } from '../../../src/admin/api/session';
@@ -32,6 +32,22 @@ describe('App', () => {
     render(<App api={createMockApi()} store={createSessionStore(localStorage)} config={{ ...config, apiUrl: 'mock' }} />);
     fireEvent.click(await screen.findByRole('button', { name: /Deneme girişi/ }));
     expect(await screen.findByRole('heading', { level: 2, name: 'Yazılar' })).toBeTruthy();
+  });
+
+  it('when the session ends, sign-in appears on top and the open screen keeps its edits (review I6)', async () => {
+    const store = createSessionStore(localStorage);
+    store.set('s', Date.now() + 3600e3);
+    location.hash = '#/ayarlar/iletisim';
+    render(<App api={createMockApi()} store={store} config={{ ...config, apiUrl: 'mock' }} />);
+    const email = await screen.findByLabelText('E-posta adresi');
+    fireEvent.change(email, { target: { value: 'yeni@klinikterapist.com' } });
+    act(() => store.clear());
+    expect(await screen.findByRole('heading', { name: /giriş/i })).toBeTruthy();
+    expect((screen.getByLabelText('E-posta adresi') as HTMLInputElement).value).toBe('yeni@klinikterapist.com');
+    fireEvent.click(screen.getByRole('button', { name: /Deneme girişi/ }));
+    await screen.findByRole('heading', { level: 2, name: 'İletişim' });
+    expect(screen.queryByRole('heading', { name: /giriş/i })).toBeNull();
+    expect((screen.getByLabelText('E-posta adresi') as HTMLInputElement).value).toBe('yeni@klinikterapist.com');
   });
 
   it('an unconfigured panel says so', async () => {

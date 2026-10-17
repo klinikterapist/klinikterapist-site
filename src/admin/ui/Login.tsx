@@ -37,7 +37,7 @@ function loadGis(): Promise<Gis> {
   return gisPromise;
 }
 
-export function Login() {
+export function Login({ again = false }: { again?: boolean }) {
   const { api, config, store } = usePanel();
   const button = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -83,9 +83,13 @@ export function Login() {
   }, [mock, config.googleClientId]);
 
   return (
-    <section className="login card-panel" aria-labelledby="login-title">
-      <h2 id="login-title">Giriş</h2>
-      <p>Yazılarınızı ve site ayarlarınızı buradan yönetirsiniz. Devam etmek için {config.ownerEmail} hesabınızla giriş yapın.</p>
+    <section className={`login ${again ? '' : 'card-panel'}`} aria-labelledby="login-title">
+      <h2 id="login-title">{again ? 'Yeniden giriş' : 'Giriş'}</h2>
+      <p>
+        {again
+          ? 'Oturumunuzun süresi doldu. Ekrandaki değişiklikleriniz duruyor; giriş yaptıktan sonra kaldığınız yerden devam edin.'
+          : `Yazılarınızı ve site ayarlarınızı buradan yönetirsiniz. Devam etmek için ${config.ownerEmail} hesabınızla giriş yapın.`}
+      </p>
       {mock ? (
         <Button variant="primary" busy={busy} onClick={() => signIn('mock')}>
           Deneme girişi (geliştirme)

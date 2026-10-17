@@ -31,7 +31,7 @@ const STATUS_TEXT: Record<AutosaveStatus, string> = {
 function figureNames(d: Draft): Set<string> {
   const out = new Set<string>();
   const walk = (n: { type?: string; attrs?: Record<string, unknown>; content?: unknown[] }) => {
-    if (n.type === 'figure' && typeof n.attrs?.src === 'string') out.add(n.attrs.src.replace(/^\.\//, ''));
+    if (n.type === 'figure' && typeof n.attrs?.src === 'string' && n.attrs.src.replace(/^\.\//, '')) out.add(n.attrs.src.replace(/^\.\//, ''));
     (n.content as (typeof n)[] | undefined)?.forEach(walk);
   };
   walk(d.tr.doc);

@@ -13,8 +13,19 @@ import { SettingsPage } from './settings/SettingsPage';
 
 export function App({ api, store, config }: { api: Api; store: SessionStore; config: AdminConfig }) {
   const [signedIn, setSignedIn] = useState(() => !!store.get());
+  // Once the panel has been open, a lapsed session shows sign-in on top of it, so no open
+  // screen (and none of its unsaved text) is thrown away.
+  const [opened, setOpened] = useState(signedIn);
   const route = useRoute();
-  useEffect(() => store.subscribe(() => setSignedIn(!!store.get())), [store]);
+  useEffect(
+    () =>
+      store.subscribe(() => {
+        const now = !!store.get();
+        setSignedIn(now);
+        if (now) setOpened(true);
+      }),
+    [store],
+  );
 
   if (!config.apiUrl || !config.googleClientId) {
     return (
@@ -27,7 +38,7 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
 
   return (
     <Panel.Provider value={{ api, config, store }}>
-      {!signedIn ? (
+      {!opened ? (
         <Login />
       ) : (
         <DeployProvider api={api}>
@@ -40,6 +51,13 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <PostsList />
             )}
           </Shell>
+          {!signedIn && (
+            <div className="k-backdrop">
+              <div className="k-dialog" role="dialog" aria-modal="true" aria-label="Yeniden giriş">
+                <Login again />
+              </div>
+            </div>
+          )}
         </DeployProvider>
       )}
     </Panel.Provider>

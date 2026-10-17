@@ -56,11 +56,20 @@ export const Figure = Node.create<FigureOptions>({
   addAttributes() {
     return { src: { default: '' }, alt: { default: '' }, caption: { default: '' } };
   },
+  // Copy/paste goes through this HTML, so it must carry every attribute.
   parseHTML() {
-    return [{ tag: 'figure[data-figure]' }];
+    return [
+      {
+        tag: 'figure[data-figure]',
+        getAttrs: (el) => {
+          const d = (el as HTMLElement).dataset;
+          return { src: d.src ?? '', alt: d.alt ?? '', caption: d.caption ?? '' };
+        },
+      },
+    ];
   },
-  renderHTML({ HTMLAttributes }) {
-    return ['figure', mergeAttributes({ 'data-figure': '' }, { 'data-src': HTMLAttributes.src })];
+  renderHTML({ node }) {
+    return ['figure', mergeAttributes({ 'data-figure': '', 'data-src': node.attrs.src, 'data-alt': node.attrs.alt, 'data-caption': node.attrs.caption })];
   },
   addNodeView() {
     return ReactNodeViewRenderer(FigureView);
@@ -99,8 +108,8 @@ export const Youtube = Node.create({
   parseHTML() {
     return [{ tag: 'div[data-youtube]', getAttrs: (el) => ({ id: (el as HTMLElement).dataset.youtube }) }];
   },
-  renderHTML({ HTMLAttributes }) {
-    return ['div', { 'data-youtube': HTMLAttributes.id }];
+  renderHTML({ node }) {
+    return ['div', { 'data-youtube': node.attrs.id }];
   },
   addNodeView() {
     return ReactNodeViewRenderer(YoutubeView);

@@ -13,8 +13,9 @@ afterEach(() => {
   localStorage.clear();
 });
 
-function setup(screenId: string) {
+function setup(screenId: string, tweak: (api: ReturnType<typeof createMockApi>) => void = () => {}) {
   const api = createMockApi();
+  tweak(api);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
       <DeployProvider api={api}>
@@ -84,6 +85,15 @@ describe('settings screens', () => {
     expect(within(row).getByText(/Kullanımda/)).toBeTruthy();
     const unused = screen.getByDisplayValue('Araştırma').closest('li')!;
     expect((within(unused).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('Kategoriler: when usage cannot be checked, nothing can be deleted (review I5)', async () => {
+    setup('kategoriler', (api) => {
+      api.listDrafts = () => Promise.reject(new Error('ağ yok'));
+    });
+    const unused = (await screen.findByDisplayValue('Araştırma')).closest('li')!;
+    await waitFor(() => expect(within(unused).getByText(/Kontrol edilemedi/)).toBeTruthy());
+    expect((within(unused).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('an unknown screen says so', async () => {
