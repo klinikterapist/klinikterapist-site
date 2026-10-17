@@ -964,8 +964,8 @@ textarea.k-input {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 2px;
-  padding: 4px var(--space-3);
+  gap: 0;
+  padding: 4px var(--space-2);
   overflow-x: auto;
   border: 1px solid var(--p-border);
   border-radius: var(--radius-lg);
