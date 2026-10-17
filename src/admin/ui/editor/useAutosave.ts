@@ -54,6 +54,8 @@ export function useAutosave(
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef<Promise<boolean> | null>(null);
   const blocked = useRef(false);
+  /** The next save also keeps the stored copy as a version (used when restoring an old version). */
+  const snapshotNext = useRef(false);
 
   const clearTimer = () => {
     if (timer.current) clearTimeout(timer.current);
@@ -71,11 +73,13 @@ export function useAutosave(
       if (seq.current === savedSeq.current) return true;
     }
     const sentSeq = seq.current;
+    const snapshot = snapshotNext.current;
+    snapshotNext.current = false;
     firstPendingAt.current = null;
     const run = (async () => {
       setStatus('kaydediliyor');
       try {
-        const { rev, updatedAt } = await api.saveDraft(latest.current);
+        const { rev, updatedAt } = await api.saveDraft(latest.current, snapshot ? { snapshot: true } : undefined);
         latest.current = { ...latest.current, rev, updatedAt };
         setDraft(latest.current);
         savedSeq.current = sentSeq;
@@ -101,6 +105,7 @@ export function useAutosave(
           setStatus('silinmiş');
           return false;
         }
+        if (snapshot) snapshotNext.current = true;
         setStatus('cihazda');
         clearTimer();
         timer.current = setTimeout(() => void save(), retryMs);
@@ -181,6 +186,16 @@ export function useAutosave(
     [update],
   );
 
+  /** Replace the draft with a restored version and save it at once, keeping the replaced text as a version. */
+  const replaceAndSnapshot = useCallback(
+    (d: Draft) => {
+      snapshotNext.current = true;
+      update(() => d);
+      void save();
+    },
+    [save, update],
+  );
+
   // Leave nothing behind: save on unmount, warn before closing the tab with unsaved text.
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -211,5 +226,5 @@ export function useAutosave(
     clearBackup(latest.current.key, storage);
   }, [storage]);
 
-  return { draft, update, status, conflict, saveNow: save, keepTheirs, keepMine, keepAsNew, replace, stop };
+  return { draft, update, status, conflict, saveNow: save, keepTheirs, keepMine, keepAsNew, replace, replaceAndSnapshot, stop };
 }

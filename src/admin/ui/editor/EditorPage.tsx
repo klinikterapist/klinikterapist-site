@@ -21,6 +21,8 @@ import { PostSettings } from './PostSettings';
 import { PreviewDialog } from './PreviewDialog';
 import { clearBackup, readBackup, useAutosave, type AutosaveStatus } from './useAutosave';
 import { SeoPanel } from './SeoPanel';
+import { VersionsDialog } from './VersionsDialog';
+import { restoreLang } from '../../lib/versions';
 
 type Loaded = { draft: Draft; live: LoadedPost | null; categories: Category[]; others: LoadedPost[]; restore: Draft | null; inDrive: boolean };
 
@@ -112,6 +114,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [stale, setStale] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const closePreview = useCallback(() => setPreviewing(false), []);
+  const [versioning, setVersioning] = useState(false);
+  const closeVersions = useCallback(() => setVersioning(false), []);
   const [toolbarHost, setToolbarHost] = useState<HTMLElement | null>(null);
   const [side, setSide] = useState<'open' | 'closed'>(() => {
     try {
@@ -168,6 +172,13 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const replaceDraft = (d: Draft) => {
     auto.replace(d);
     setVersion((v) => v + 1);
+  };
+
+  /** Restoring is a normal save (rev check, conflict dialog) that also keeps the replaced text as a version. */
+  const restoreVersion = (v: Draft) => {
+    auto.replaceAndSnapshot(restoreLang(draft, v, lang));
+    setVersion((n) => n + 1);
+    setVersioning(false);
   };
 
   const publish = async (force = false) => {
@@ -404,10 +415,13 @@ function Editing({ loaded }: { loaded: Loaded }) {
       </div>
 
       <footer className="editor-footer">
-        <span className="editor-footer-left">{/* "Sürüm geçmişi" (Task 14) */}</span>
+        <span className="editor-footer-left"><Button variant="ghost" onClick={() => setVersioning(true)}>
+            Sürüm geçmişi
+          </Button></span>
         <span>{`${words} kelime · ${minutes} dk okuma`}</span>
       </footer>
 
+      {versioning && <VersionsDialog api={api} draftKey={draft.key} lang={lang} onRestore={restoreVersion} onClose={closeVersions} />}
       {previewing && <PreviewDialog draft={draft} lang={lang} images={images} onClose={closePreview} />}
       {confirm === 'publish' && (
         <Dialog
