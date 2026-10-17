@@ -1,5 +1,39 @@
 /* Admin panel: the site's tokens (tokens.css), a calm writing surface, usable at 360 px. */
 
+/* Panel colour tokens. Light values come from the site tokens; dark overrides follow. */
+:root {
+  --p-bg: var(--cream);
+  --p-surface: var(--paper);
+  --p-sidebar: var(--paper);
+  --p-field: #fff;
+  --p-border: var(--line);
+  --p-text: var(--ink);
+  --p-muted: var(--muted);
+  --p-heading: var(--forest-deep);
+  --p-accent: var(--forest);
+  --p-accent-deep: var(--forest-deep);
+  --p-accent-text: var(--on-forest);
+  --p-selected: var(--sage-soft);
+  --p-scrim: rgb(31 42 36 / 0.45);
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --p-bg: #17181a;
+  --p-surface: #1d1f22;
+  --p-sidebar: #1d1f22;
+  --p-field: #212327;
+  --p-border: #2f3236;
+  --p-text: #e9e6df;
+  --p-muted: #a5a29b;
+  --p-heading: #e9e6df;
+  --p-accent: #6f9a80;
+  --p-accent-deep: #5b8269;
+  --p-accent-text: #101512;
+  --p-selected: #2a332d;
+  --p-scrim: rgb(0 0 0 / 0.6);
+}
+
 *,
 *::before,
 *::after {
@@ -9,8 +43,8 @@
 body.admin {
   margin: 0;
   min-height: 100vh;
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--p-bg);
+  color: var(--p-text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: 1.55;
@@ -23,11 +57,11 @@ body.admin {
   font-family: var(--font-serif);
   font-weight: 600;
   line-height: var(--leading-tight);
-  color: var(--forest-deep);
+  color: var(--p-heading);
 }
 
 .admin a {
-  color: var(--forest);
+  color: var(--p-accent);
 }
 
 .admin :focus-visible {
@@ -40,8 +74,8 @@ body.admin {
   align-items: center;
   min-height: 3.5rem;
   padding: 0 var(--gutter);
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
+  border-bottom: 1px solid var(--p-border);
+  background: var(--p-surface);
 }
 
 .admin-top h1 {
@@ -71,10 +105,10 @@ body.admin {
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-pill);
-  background: var(--paper);
-  color: var(--forest-deep);
+  background: var(--p-surface);
+  color: var(--p-heading);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -92,13 +126,13 @@ body.admin {
 }
 
 .k-btn-primary {
-  border-color: var(--forest);
-  background: var(--forest);
-  color: var(--on-forest);
+  border-color: var(--p-accent);
+  background: var(--p-accent);
+  color: var(--p-accent-text);
 }
 
 .k-btn-primary:hover:not(:disabled) {
-  background: var(--forest-deep);
+  background: var(--p-accent-deep);
 }
 
 .k-btn-ghost {
@@ -131,7 +165,7 @@ body.admin {
   align-items: center;
   gap: var(--space-2);
   margin: var(--space-6) var(--gutter);
-  color: var(--muted);
+  color: var(--p-muted);
 }
 
 .k-field {
@@ -150,10 +184,10 @@ body.admin {
   width: 100%;
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-sm);
-  background: #fff;
-  color: var(--ink);
+  background: var(--p-field);
+  color: var(--p-text);
   font: inherit;
 }
 
@@ -167,7 +201,7 @@ textarea.k-input {
 
 .k-hint {
   margin: 0;
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: var(--text-xs);
   overflow-wrap: anywhere;
 }
@@ -190,7 +224,7 @@ textarea.k-input {
 .k-toggle input {
   width: 1.2rem;
   height: 1.2rem;
-  accent-color: var(--forest);
+  accent-color: var(--p-accent);
 }
 
 .k-banner {
@@ -201,8 +235,8 @@ textarea.k-input {
   gap: var(--space-2) var(--space-4);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-sm);
-  background: var(--sage-soft);
-  color: var(--forest-deep);
+  background: var(--p-selected);
+  color: var(--p-heading);
   font-size: var(--text-sm);
 }
 
@@ -231,7 +265,7 @@ textarea.k-input {
   display: grid;
   place-items: center;
   padding: var(--gutter);
-  background: rgb(31 42 36 / 0.45);
+  background: var(--p-scrim);
 }
 
 .k-dialog {
@@ -240,7 +274,7 @@ textarea.k-input {
   overflow: auto;
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  background: var(--paper);
+  background: var(--p-surface);
   box-shadow: var(--shadow-soft);
 }
 
@@ -295,7 +329,7 @@ textarea.k-input {
   padding: 0;
   border: 0;
   background: none;
-  color: var(--forest);
+  color: var(--p-accent);
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
@@ -307,9 +341,9 @@ textarea.k-input {
   max-width: 34rem;
   margin: var(--space-6) var(--gutter);
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-lg);
-  background: var(--paper);
+  background: var(--p-surface);
 }
 
 .login-button {
@@ -341,8 +375,8 @@ textarea.k-input {
 .panel-nav {
   display: none;
   padding: var(--space-3) var(--gutter);
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
+  border-bottom: 1px solid var(--p-border);
+  background: var(--p-surface);
 }
 
 .panel-nav.open {
@@ -362,20 +396,20 @@ textarea.k-input {
   min-height: 44px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
-  color: var(--ink);
+  color: var(--p-text);
   text-decoration: none;
 }
 
 .panel-nav a[aria-current='page'] {
-  background: var(--sage-soft);
-  color: var(--forest-deep);
+  background: var(--p-selected);
+  color: var(--p-heading);
   font-weight: 600;
 }
 
 .nav-group {
   margin: var(--space-4) 0 var(--space-1);
   padding: 0 var(--space-3);
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -385,7 +419,7 @@ textarea.k-input {
 .nav-end {
   margin-top: var(--space-4) !important;
   padding-top: var(--space-3) !important;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--p-border);
 }
 
 @media (min-width: 600px) {
@@ -434,7 +468,7 @@ textarea.k-input {
     top: 0;
     display: block;
     min-height: calc(100vh - 3.5rem);
-    border-right: 1px solid var(--line);
+    border-right: 1px solid var(--p-border);
     border-bottom: 0;
   }
 
@@ -472,8 +506,8 @@ textarea.k-input {
   margin: 0;
   padding: 0.15rem 0.6rem;
   border-radius: var(--radius-pill);
-  background: var(--line);
-  color: var(--ink);
+  background: var(--p-border);
+  color: var(--p-text);
   font-size: var(--text-xs);
   font-weight: 600;
 }
@@ -484,7 +518,7 @@ textarea.k-input {
 }
 
 .empty {
-  color: var(--muted);
+  color: var(--p-muted);
 }
 
 /* ---------- posts list ---------- */
@@ -513,10 +547,10 @@ textarea.k-input {
   display: grid;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-md);
-  background: var(--paper);
-  color: var(--ink) !important;
+  background: var(--p-surface);
+  color: var(--p-text) !important;
   text-decoration: none;
 }
 
@@ -536,7 +570,7 @@ textarea.k-input {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: var(--text-sm);
 }
 
@@ -552,7 +586,7 @@ textarea.k-input {
 }
 
 .save-status {
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: var(--text-sm);
 }
 
@@ -589,7 +623,7 @@ textarea.k-input {
   min-width: 0;
   padding: var(--space-4) var(--space-4) var(--space-6);
   border-radius: var(--radius-lg);
-  background: #fff;
+  background: var(--p-field);
   box-shadow: var(--shadow-soft);
 }
 
@@ -603,7 +637,7 @@ textarea.k-input {
   display: flex;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--p-border);
 }
 
 .lang-tab {
@@ -612,15 +646,15 @@ textarea.k-input {
   border: 0;
   border-bottom: 3px solid transparent;
   background: none;
-  color: var(--muted);
+  color: var(--p-muted);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
 
 .lang-tab.is-active {
-  border-bottom-color: var(--forest);
-  color: var(--forest-deep);
+  border-bottom-color: var(--p-accent);
+  color: var(--p-heading);
 }
 
 .dot {
@@ -647,7 +681,7 @@ textarea.k-input {
   overflow: hidden;
   border: 0;
   background: none;
-  color: var(--forest-deep);
+  color: var(--p-heading);
   font-family: var(--font-serif);
   font-size: var(--text-2xl);
   font-weight: 600;
@@ -689,7 +723,7 @@ textarea.k-input {
   margin: 0;
   padding-left: 1.1em;
   border-left: 3px solid var(--sage);
-  color: var(--forest);
+  color: var(--p-accent);
   font-family: var(--font-serif);
   font-style: italic;
 }
@@ -698,7 +732,7 @@ textarea.k-input {
   width: 6rem;
   margin: 2em auto;
   border: 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--p-border);
 }
 
 .ed-body .is-editor-empty:first-child::before,
@@ -714,7 +748,7 @@ textarea.k-input {
   display: block;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-md);
-  background: var(--sage-soft);
+  background: var(--p-selected);
 }
 
 .ed-figure {
@@ -739,8 +773,8 @@ textarea.k-input {
   place-items: center;
   min-height: 8rem;
   border-radius: var(--radius-md);
-  background: var(--sage-soft);
-  color: var(--muted);
+  background: var(--p-selected);
+  color: var(--p-muted);
 }
 
 .ed-figure-fields {
@@ -752,7 +786,7 @@ textarea.k-input {
 .ed-figure-fields input {
   width: 100%;
   padding: var(--space-1) var(--space-2);
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--p-border);
   border-radius: var(--radius-sm);
   background: none;
   font: inherit;
@@ -766,8 +800,8 @@ textarea.k-input {
 .ed-youtube {
   padding: var(--space-4);
   border-radius: var(--radius-md);
-  background: var(--forest-deep);
-  color: var(--on-forest);
+  background: var(--p-accent-deep);
+  color: var(--p-accent-text);
 }
 
 .ed-youtube p {
@@ -776,11 +810,11 @@ textarea.k-input {
 
 .ed-youtube a,
 .ed-youtube .linklike {
-  color: var(--on-forest);
+  color: var(--p-accent-text);
 }
 
 .ed-muted {
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: var(--text-sm);
 }
 
@@ -793,7 +827,7 @@ textarea.k-input {
   gap: 2px;
   padding: 4px;
   border-radius: var(--radius-pill);
-  background: var(--forest-deep);
+  background: var(--p-accent-deep);
   box-shadow: var(--shadow-soft);
 }
 
@@ -803,7 +837,7 @@ textarea.k-input {
   border: 0;
   border-radius: var(--radius-pill);
   background: none;
-  color: var(--on-forest);
+  color: var(--p-accent-text);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -823,10 +857,10 @@ textarea.k-input {
 .ed-plus-toggle {
   width: 36px;
   height: 36px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: 50%;
-  background: #fff;
-  color: var(--muted);
+  background: var(--p-field);
+  color: var(--p-muted);
   font-size: 1.3rem;
   line-height: 1;
   cursor: pointer;
@@ -837,9 +871,9 @@ textarea.k-input {
   flex-wrap: wrap;
   gap: 4px;
   padding: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-pill);
-  background: #fff;
+  background: var(--p-field);
   box-shadow: var(--shadow-soft);
 }
 
@@ -849,7 +883,7 @@ textarea.k-input {
   border: 0;
   border-radius: var(--radius-pill);
   background: none;
-  color: var(--forest-deep);
+  color: var(--p-heading);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -857,7 +891,7 @@ textarea.k-input {
 }
 
 .ed-plus-menu button:hover {
-  background: var(--sage-soft);
+  background: var(--p-selected);
 }
 
 .editor-side {
@@ -868,9 +902,9 @@ textarea.k-input {
 
 .side-card {
   padding: var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-md);
-  background: var(--paper);
+  background: var(--p-surface);
 }
 
 .side-card h3 {
@@ -935,7 +969,7 @@ textarea.k-input {
   width: 4rem;
   height: 4rem;
   border-radius: 50%;
-  background: conic-gradient(var(--c) calc(var(--score) * 1%), var(--line) 0);
+  background: conic-gradient(var(--c) calc(var(--score) * 1%), var(--p-border) 0);
 }
 
 .score-ring span {
@@ -944,7 +978,7 @@ textarea.k-input {
   width: 3.1rem;
   height: 3.1rem;
   border-radius: 50%;
-  background: var(--paper);
+  background: var(--p-surface);
   font-weight: 700;
 }
 
@@ -981,7 +1015,7 @@ textarea.k-input {
 }
 
 .seo-tip {
-  color: var(--muted);
+  color: var(--p-muted);
 }
 
 .serp,
@@ -1007,25 +1041,25 @@ textarea.k-input {
 .chip {
   min-height: 36px;
   padding: 0 var(--space-3);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-pill);
-  background: #fff;
+  background: var(--p-field);
   font: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
 }
 
 .chip.is-active {
-  border-color: var(--forest);
-  background: var(--forest);
-  color: var(--on-forest);
+  border-color: var(--p-accent);
+  background: var(--p-accent);
+  color: var(--p-accent-text);
 }
 
 .serp-card {
   padding: var(--space-3);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--p-field);
   font-family: Arial, sans-serif;
 }
 
@@ -1058,9 +1092,9 @@ textarea.k-input {
 
 .social-card {
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--p-field);
   margin-top: var(--space-2);
 }
 
@@ -1075,8 +1109,8 @@ textarea.k-input {
 .social-noimg {
   display: grid;
   place-items: center;
-  background: var(--sage-soft);
-  color: var(--muted);
+  background: var(--p-selected);
+  color: var(--p-muted);
   font-size: var(--text-sm);
 }
 
@@ -1090,7 +1124,7 @@ textarea.k-input {
 }
 
 .social-site {
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: 11px;
 }
 
@@ -1099,7 +1133,7 @@ textarea.k-input {
 }
 
 .social-desc {
-  color: var(--muted);
+  color: var(--p-muted);
   font-size: var(--text-sm);
 }
 
@@ -1116,7 +1150,7 @@ textarea.k-input {
 
 .settings-intro {
   margin-top: 0;
-  color: var(--muted);
+  color: var(--p-muted);
 }
 
 .settings-form {
@@ -1144,9 +1178,9 @@ textarea.k-input {
 }
 
 .list-item {
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-md);
-  background: var(--paper);
+  background: var(--p-surface);
 }
 
 .list-item-head {
@@ -1156,7 +1190,7 @@ textarea.k-input {
   justify-content: space-between;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--p-border);
 }
 
 .list-item-title {
@@ -1189,8 +1223,8 @@ textarea.k-input {
   width: 10rem;
   height: 6rem;
   border-radius: var(--radius-sm);
-  background: var(--sage-soft);
-  color: var(--muted);
+  background: var(--p-selected);
+  color: var(--p-muted);
   font-size: var(--text-sm);
 }
 
@@ -1200,9 +1234,9 @@ textarea.k-input {
 
 .md-preview {
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--p-border);
   border-radius: var(--radius-sm);
-  background: #fff;
+  background: var(--p-field);
 }
 
 .mono {
@@ -1220,8 +1254,8 @@ textarea.k-input {
   gap: var(--space-3);
   margin: 0 calc(-1 * var(--gutter));
   padding: var(--space-3) var(--gutter);
-  border-top: 1px solid var(--line);
-  background: var(--cream);
+  border-top: 1px solid var(--p-border);
+  background: var(--p-bg);
 }
 
 .save-bar .k-banner {

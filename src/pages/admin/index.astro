@@ -14,7 +14,18 @@ import AdminRoot from '../../admin/ui/AdminRoot';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
-    <meta name="theme-color" content="#f4efe6" />
+    <meta name="theme-color" content="#f4efe6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#17181a" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // Same logic as resolveTheme() in src/admin/ui/theme.ts, run before first paint.
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem('panel.theme'); } catch (e) {}
+        var dark = false;
+        try { dark = window.matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
+        document.documentElement.dataset.theme = stored === 'light' || stored === 'dark' ? stored : dark ? 'dark' : 'light';
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Yönetim paneli · klinikterapist.com</title>
   </head>
