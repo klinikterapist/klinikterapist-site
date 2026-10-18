@@ -144,3 +144,19 @@ describe('final-review fixes', () => {
     expect(navBlog('/en/blog/category/mental-health/', '/en/blog/')).toEqual(['true', 'true']);
   });
 });
+
+describe('panel v3 final review', () => {
+  /** Every stylesheet the page loads, linked and inline. */
+  const pageCss = (path: string) => {
+    const d = loadPage(path);
+    const linked = d.querySelectorAll('link[rel=stylesheet]').map((l) => readFileSync(join('dist-test', l.getAttribute('href')!.replace(/^\//, '')), 'utf8'));
+    return [...linked, ...d.querySelectorAll('style').map((s) => s.textContent)].join('\n');
+  };
+
+  it('the hero links wrap onto more rows instead of squeezing into one (I1)', () => {
+    const blocks = [...pageCss('/').matchAll(/([^{}]*\.hero-links[^{}]*)\{([^{}]*)\}/g)].map((m) => m[2]);
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const b of blocks) expect(b).not.toMatch(/grid-auto-flow:\s*column/);
+    expect(blocks.some((b) => /auto-fit/.test(b))).toBe(true);
+  });
+});
