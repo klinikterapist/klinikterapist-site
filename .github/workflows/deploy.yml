@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Daily rebuild at 06:00 Istanbul, so the post read counts on the site stay fresh.
+  schedule:
+    - cron: '0 3 * * *'
 
 permissions:
   contents: read
@@ -31,6 +34,8 @@ jobs:
       - name: Launch check - fails while placeholders remain (yer tutucu kontrolu)
         run: npm run check:launch
       - uses: actions/configure-pages@v6
+      - name: Read counts (never fails the build)
+        run: node scripts/fetch-read-counts.mjs
       - name: Build site
         run: npm run build
         env:

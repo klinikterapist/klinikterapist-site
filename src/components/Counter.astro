@@ -1,0 +1,20 @@
+---
+/**
+ * The anonymous page counter (Panel v3 Plan C, Task C6). After `load` it sends one beacon for the
+ * page view (path, the referrer's host only, phone/tablet/desktop, page language); on a post page one
+ * more when the reader reaches the end (`[data-read-end]`); and one per click on "Randevu Al", an
+ * e-mail link or a social link. No cookie, no storage identifier, no IP address kept, no full
+ * referrer URL. Skipped for bots and for the owner's own browser (`kt.noTrack`, set by the panel).
+ */
+import { ADMIN_CONFIG } from '../admin/config';
+
+const url = ADMIN_CONFIG.apiUrl;
+---
+
+{
+  /^https:\/\//.test(url) && (
+    <script is:inline define:vars={{ u: url }}>
+      try{if(navigator.webdriver||/bot|crawl|spider|preview|lighthouse/i.test(navigator.userAgent)||localStorage.getItem('kt.noTrack')==='1')throw 0;var s=function(o){o.action='stats.hit';try{navigator.sendBeacon(u,new Blob([JSON.stringify(o)],{type:'text/plain'}))}catch(e){}};addEventListener('load',function(){var w=innerWidth,o={t:'view',p:location.pathname,d:w<768?'m':w<1100?'t':'d',l:document.documentElement.lang=='en'?'en':'tr'};try{var h=new URL(document.referrer).hostname;if(h&&h!=location.hostname)o.r=h.toLowerCase()}catch(e){}s(o);var e=document.querySelector('[data-read-end]');if(e&&window.IntersectionObserver){var i=new IntersectionObserver(function(x){if(x[0].isIntersecting){i.disconnect();s({t:'read',k:e.getAttribute('data-read-end')})}});i.observe(e)}});document.addEventListener('click',function(v){var a=v.target.closest&&v.target.closest('a[href]');if(!a)return;var k=a.getAttribute('data-track');if(!k){if(a.protocol=='mailto:')k='email';else if(a.host==location.host)k=/\/(randevu|appointment)\/$/.test(a.pathname)?'randevu':'';else{var n=a.hostname.split('.');k=n[n.length-2];if(k=='wa')k='whatsapp';if(!/^(instagram|linkedin|medium|substack|youtube|tiktok|threads|whatsapp|x)$/.test(k))k=''}}if(k)s({t:'click',k:k})},true)}catch(e){}
+    </script>
+  )
+}

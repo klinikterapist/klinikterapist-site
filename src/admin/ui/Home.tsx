@@ -1,4 +1,7 @@
-/** Home: four cards - last published post, drafts, this month, and what is missing. */
+/**
+ * Home: the site statistics (period switch, stat cards, chart, top lists), then the workspace: last
+ * published post, drafts, this month, and what is missing.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type DraftSummary } from '../api/types';
 import { dashboard } from '../lib/dashboard';
@@ -7,6 +10,7 @@ import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
 import { CheckCircle2, FileText, Inbox } from './icons';
 import { Banner, Button, EmptyState, Spinner } from './kit';
+import { StatsPanel } from './home/StatsPanel';
 
 const SITE_LABEL = { ok: 'Sitede yayında', updating: 'Site güncelleniyor…', failed: 'Yayın başarısız oldu' } as const;
 
@@ -42,6 +46,8 @@ export function Home() {
         </Banner>
       )}
       {!d && !error && <Spinner label="Özet yükleniyor…" />}
+      {d && data && <StatsPanel posts={data.site.posts} />}
+      {d && <h3 className="home-section-title">Çalışma alanı</h3>}
       {d && (
         <div className="home-grid">
           <article className="home-card" aria-labelledby="hc-last">

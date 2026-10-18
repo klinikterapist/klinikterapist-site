@@ -31,3 +31,6 @@ apps-script/dist/
 apps-script/.clasp.json
 apps-script/.deployment-id
 .clasprc.json
+
+# read counts fetched at build time (scripts/fetch-read-counts.mjs)
+src/generated/

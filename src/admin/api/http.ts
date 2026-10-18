@@ -64,5 +64,6 @@ export function createHttpApi(
       await call(ACTIONS.putImage, { key, name, base64 });
     },
     getImage: (key, name) => call(ACTIONS.getImage, { key, name }),
+    statsSummary: (range) => call(ACTIONS.statsSummary, range),
   };
 }

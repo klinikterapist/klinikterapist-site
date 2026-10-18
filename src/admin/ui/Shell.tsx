@@ -3,17 +3,39 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { go, usePanel, type Route } from './context';
 import { startNewPost } from '../lib/new-post';
 import { useTheme } from './theme';
-import { Button } from './kit';
+import { Button, Toggle } from './kit';
 import { ExternalLink, FileText, House, Icon, LogOut, Menu, Moon, Plus, Sun, type LucideIcon } from './icons';
 import { SETTINGS_SCREENS } from './settings/screens';
 
 export { SETTINGS_SCREENS };
+
+/** The site's counter skips this browser while `kt.noTrack` is '1' (Counter.astro). '0' = count me. */
+const NO_TRACK = 'kt.noTrack';
+
+function useNoTrack(): [boolean, (v: boolean) => void] {
+  const [on, setOn] = useState(() => {
+    try {
+      return localStorage.getItem(NO_TRACK) !== '0';
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(NO_TRACK, on ? '1' : '0');
+    } catch {
+      /* private mode: nothing to remember */
+    }
+  }, [on]);
+  return [on, setOn];
+}
 
 
 export function Shell({ route, children }: { route: Route; children: ReactNode }) {
   const { api, store } = usePanel();
   const [open, setOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
+  const [noTrack, setNoTrack] = useNoTrack();
   useEffect(() => setOpen(false), [route]);
   const current =
     route.name === 'settings' ? `#/ayarlar/${route.screen}` : route.name === 'home' ? '#/' : route.name === 'posts' ? '#/yazilar' : '';
@@ -53,6 +75,9 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
         <p className="nav-group">Site ayarları</p>
         <ul>{SETTINGS_SCREENS.map((s) => link(`#/ayarlar/${s.id}`, s.label, s.icon))}</ul>
         <ul className="nav-end">
+          <li className="nav-switch">
+            <Toggle label="Kendi ziyaretlerimi sayma" checked={noTrack} onChange={setNoTrack} />
+          </li>
           <li>
             <button type="button" className="linklike" onClick={toggleTheme}>
               <Icon as={theme === 'dark' ? Sun : Moon} />

@@ -1,13 +1,13 @@
 # Gizlilik Politikası
 
-_Son güncelleme: 18 Ekim 2026_
+_Son güncelleme: 19 Ekim 2026_
 
 Gizliliğiniz, terapi ilişkisinin temelidir. Bu sayfa, klinikterapist.com sitesinin ziyaretçi bilgilerini nasıl ele aldığını sade bir dille açıklar.
 
 ## Kısaca
 
 - **Çerez yok.** Site, çerez ya da benzeri izleme teknolojileri kullanmaz. Bu yüzden çerez onay penceresi göremezsiniz.
-- **Takip yok.** Reklam ya da ziyaretçi davranışını izleyen analiz araçları kullanılmaz.
+- **Takip yok, yalnızca anonim sayım.** Reklam ya da ziyaretçi davranışını izleyen analiz araçları kullanılmaz. Ziyaret edilen sayfaların anonim, toplam sayıları tutulur: hangi sayfanın kaç kez açıldığı, bir yazının sonuna kadar okunup okunmadığı, siteye hangi siteden gelindiği (yalnızca alan adı, ör. instagram.com), cihaz türü (telefon, tablet ya da bilgisayar), sayfa dili ve randevu, e-posta ya da sosyal medya bağlantılarına kaç kez tıklandığı. Çerez kullanılmaz; IP adresi ve kişiyi tanımlayan hiçbir bilgi kaydedilmez. Sayılar Google altyapısında (Google Apps Script ve Google Drive) yalnızca toplamlar hâlinde saklanır.
 - **Dış bağlantılar yok.** Yazı tipleri ve görseller bu sitenin kendi sunucusundan yüklenir. Siteyi açtığınızda Google Fonts gibi üçüncü taraf servislere istek gönderilmez.
 - **Yalnızca iletişim formu.** Sitedeki tek form İletişim sayfasındaki formdur. Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır ve yalnızca size yanıt vermek için kullanılır. Mesajınız sitede saklanmaz; yalnızca kötüye kullanımı önlemek için e-posta adresinize bağlı bir sayaç Google tarafında en fazla 24 saat tutulur.
 

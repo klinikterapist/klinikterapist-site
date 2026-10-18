@@ -305,15 +305,16 @@ describe('inner pages redesign (spec §5.9)', () => {
     loadPage(path).querySelectorAll('main details.acc > summary .title').map((t) => t.text.trim());
   const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
 
-  it('about: photo, heading, name · title, membership line and lead', () => {
+  it('about: heading on top, then photo, name · title, membership line and lead', () => {
     const d = loadPage('/hakkimda/');
-    const head = d.querySelector('main .page-head')!;
+    // Owner's review 2026-10-19: the page title is first, centred at the top.
+    expect(d.querySelector('main .about > header.about-top h1')?.text).toBe('Hakkımda');
+    const head = d.querySelector('main .side-head')!;
     expect(head.querySelector('.portrait img')).toBeTruthy();
-    expect(head.querySelector('h1')?.text).toBe('Hakkımda');
     expect(squash(head.querySelector('.who-line')?.text)).toBe('Osman Güneş Özkurt · Psikolog');
     expect(squash(head.querySelector('.tpd')?.text)).toBe('Türk Psikologlar Derneği üyesi');
     expect(squash(head.querySelector('.lead')?.text)).toBe(fixture('about.json').lead.tr);
-    expect(squash(loadPage('/en/about/').querySelector('.page-head .tpd')?.text)).toBe(
+    expect(squash(loadPage('/en/about/').querySelector('.side-head .tpd')?.text)).toBe(
       'Member of the Turkish Psychological Association',
     );
   });
@@ -322,7 +323,8 @@ describe('inner pages redesign (spec §5.9)', () => {
     for (const [path, appt] of [['/hakkimda/', '/randevu/'], ['/en/about/', '/en/appointment/']] as const) {
       const d = loadPage(path);
       const about = d.querySelector('main .about')!;
-      const [side, main, cv] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
+      const [top, side, main, cv] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
+      expect(top.classList.contains('about-top'), path).toBe(true);
       expect(side.classList.contains('about-side'), path).toBe(true);
       expect(main.classList.contains('about-main'), path).toBe(true);
       expect(cv.classList.contains('about-cv'), path).toBe(true);
@@ -332,9 +334,9 @@ describe('inner pages redesign (spec §5.9)', () => {
       expect(cv.querySelector('.cv-areas li')).toBeTruthy();
       expect(cv.querySelectorAll('.timeline li')).toHaveLength(4);
       expect(cv.querySelector('blockquote')).toBeTruthy();
-      expect(side.querySelector('.page-head h1')).toBeTruthy();
-      expect(side.querySelector('.page-head .who-line')).toBeTruthy();
-      expect(side.querySelector('.page-head .tpd')).toBeTruthy();
+      expect(top.querySelector('h1')).toBeTruthy();
+      expect(side.querySelector('.side-head .who-line')).toBeTruthy();
+      expect(side.querySelector('.side-head .tpd')).toBeTruthy();
       expect(side.querySelector('a.side-cta')?.getAttribute('href')).toBe(appt);
       // Desktop: a large framed portrait (phones fetch nothing for it) in place of the small round one.
       const big = side.querySelector('picture.cv-photo')!;

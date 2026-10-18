@@ -1,6 +1,6 @@
 # Privacy Notice
 
-_Last updated: 18 October 2026_
+_Last updated: 19 October 2026_
 
 This notice is provided under Article 10 of the Turkish Personal Data Protection Law No. 6698 ("KVKK") to inform visitors of klinikterapist.com and people who contact me.
 
@@ -11,7 +11,7 @@ E-mail: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
 
 ## What data do I process?
 
-- **When you visit the site:** This site uses no cookies and no analytics tools that track visitors. The hosting provider (GitHub Pages) may keep technical connection records such as IP addresses for security and service operation, under its own policy.
+- **When you visit the site:** This site uses no cookies and no analytics tools that track visitors. Anonymous, aggregate counts of visited pages are kept (the page address, whether a post was read to the end, the domain of the referring site only, the device type, the page language and link clicks). No IP address or anything that identifies a person is recorded; these counts are not personal data and are used only to improve the site's content. The hosting provider (GitHub Pages) may keep technical connection records such as IP addresses for security and service operation, under its own policy.
 - **When you e-mail me:** your name, e-mail address and whatever you share in your message.
 - **When you use the contact form:** the name, e-mail address, topic and message you enter reach me as an e-mail through Google's infrastructure (Google Apps Script) and are used only to reply to you. Your message is not stored on the site; only to prevent abuse, a counter linked to your e-mail address is kept by Google for at most 24 hours.
 

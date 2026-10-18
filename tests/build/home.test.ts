@@ -136,10 +136,14 @@ describe('home (phone)', () => {
 });
 
 describe('home (desktop)', () => {
-  it('hero: tagline as the one h1, intro, booking and first-session buttons, TPD and response line', () => {
+  it('hero: the greeting as the one h1, the tagline, intro, booking and first-session buttons', () => {
     const hero = tr().querySelector('.home-desk .desktop-hero')!;
     expect(tr().querySelectorAll('h1')).toHaveLength(1);
-    expect(hero.querySelector('h1')?.text).toBe('Daha iyi bir yaşam mümkün.');
+    // Owner's review 2026-10-19: a personal welcome is the headline; the tagline follows it.
+    expect(hero.querySelector('p.welcome')?.text.trim()).toBe('Hoş geldiniz');
+    expect(hero.querySelector('h1.greeting')?.text).toBe('Merhaba, ben Psikolog Osman Güneş Özkurt.');
+    expect(en().querySelector('.home-desk .desktop-hero h1.greeting')?.text).toBe("Hello, I'm Psychologist Osman Güneş Özkurt.");
+    expect(hero.querySelector('p.tagline')?.text).toBe('Daha iyi bir yaşam mümkün.');
     expect(hero.text).toContain('Kendini anlamak');
     expect(hero.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();
     expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')?.text).toContain('İlk görüşme nasıl geçer?');
@@ -148,8 +152,6 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('.trust')).toBeNull();
     // The text stays first in the markup (reading order); CSS puts the photo on the left.
     expect(readFileSync('src/components/home/DesktopHero.astro', 'utf8')).toMatch(/\.art \{\s*order: -1;/);
-    expect(hero.querySelector('p.greeting')?.text).toBe('Merhaba, ben Psikolog Osman Güneş Özkurt.');
-    expect(en().querySelector('.home-desk .desktop-hero p.greeting')?.text).toBe("Hello, I'm Psychologist Osman Güneş Özkurt.");
     expect(hero.text).not.toContain('Dönüş süresi');
   });
 

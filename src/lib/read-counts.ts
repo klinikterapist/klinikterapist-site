@@ -1,12 +1,31 @@
 /**
- * Read counts per post. Stub until Panel v3 Plan C replaces readCount with the real counter data:
- * no data yet, so every count is unknown and nothing is shown. readsLabel is the display rule
- * (spec §5.8) and stays as it is.
+ * Read counts per post from the anonymous counter (Panel v3 Plan C). The live build fetches them
+ * into src/generated/read-counts.json (scripts/fetch-read-counts.mjs, daily); without that file every
+ * count is unknown and nothing is shown. readsLabel is the display rule (spec §5.8).
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Lang } from './settings';
 
-export function readCount(_postKey: string): number | null {
-  return null;
+function load(): Record<string, number> {
+  if (process.env.READ_COUNTS === '0') return {};
+  const file = join(process.cwd(), 'src/generated/read-counts.json');
+  try {
+    if (!existsSync(file)) return {};
+    const counts = (JSON.parse(readFileSync(file, 'utf8')) as { counts?: Record<string, number> }).counts;
+    return counts && typeof counts === 'object' ? counts : {};
+  } catch {
+    return {};
+  }
+}
+
+let cache: Record<string, number> | null = null;
+
+/** Reads of a post (both languages together), or null when unknown. */
+export function readCount(postKey: string): number | null {
+  cache ??= load();
+  const n = cache[postKey];
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
 }
 
 /** Below this many reads no number is shown. */

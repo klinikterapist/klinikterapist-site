@@ -140,6 +140,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="prose">
         <Content />
       </div>
+      <div data-read-end={post.key} aria-hidden="true"></div>
       <div class="post-end">
         <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
         <ShareButtons lang={lang} title={data.title} url={absoluteUrl(path)} />

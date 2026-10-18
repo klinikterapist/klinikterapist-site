@@ -39,7 +39,7 @@ export interface DriveLike {
 
 export interface Gas {
   fetch(url: string, opts?: FetchOpts): FetchResult;
-  props: { get(key: string): string | null; set(key: string, value: string): void };
+  props: { get(key: string): string | null; set(key: string, value: string): void; del(key: string): void };
   cache: { get(key: string): string | null; put(key: string, value: string, ttlSec: number): void };
   withLock<T>(fn: () => T): T;
   drive: DriveLike;
@@ -138,7 +138,7 @@ export function realGas(): Gas {
       for (const [k, v] of Object.entries(res.getAllHeaders() as Record<string, unknown>)) headers[k.toLowerCase()] = String(v);
       return { code: res.getResponseCode(), text: res.getContentText(), headers };
     },
-    props: { get: (k) => props.getProperty(k), set: (k, v) => void props.setProperty(k, v) },
+    props: { get: (k) => props.getProperty(k), set: (k, v) => void props.setProperty(k, v), del: (k) => void props.deleteProperty(k) },
     cache: { get: (k) => cache.get(k), put: (k, v, ttl) => cache.put(k, v, ttl) },
     withLock(fn) {
       const lock = LockService.getScriptLock();

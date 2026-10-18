@@ -3,6 +3,7 @@
  * `{ action, session?, ...params }` and always answers HTTP 200 with an `ApiResponse`.
  * Both sides import this file (Apps Script only for types).
  */
+import type { StatsSummary } from '../../lib/stats-wire';
 import type { JSONContent } from '@tiptap/core';
 import type { Reference } from '../../lib/apa/types';
 
@@ -108,6 +109,8 @@ export interface Api {
   deleteDraft(key: string): Promise<void>;
   putImage(key: string, name: string, base64: string): Promise<void>;
   getImage(key: string, name: string): Promise<{ base64: string }>;
+  /** The page counter's day counts for [from, to] (Istanbul days, `YYYY-MM-DD`). */
+  statsSummary(range: { from: string; to: string }): Promise<StatsSummary>;
 }
 
 export class ApiFailure extends Error {
@@ -138,4 +141,5 @@ export const ACTIONS = {
   deleteDraft: 'drafts.delete',
   putImage: 'images.put',
   getImage: 'images.get',
+  statsSummary: 'stats.summary',
 } as const satisfies Record<keyof Api, string>;
