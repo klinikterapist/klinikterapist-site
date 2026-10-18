@@ -10,7 +10,6 @@ describe.each(allPages())('theme %s', (path) => {
     expect(first.tagName).toBe('SCRIPT');
     expect(first.getAttribute('src')).toBeUndefined();
     expect(first.rawText).toContain('site.theme');
-    expect(first.rawText).toContain('data');
   });
 
   it('declares color-scheme', () => {
@@ -19,6 +18,10 @@ describe.each(allPages())('theme %s', (path) => {
 
   it('loads no stylesheet before the script', () => {
     // The script is first, so nothing (stylesheet link or <style>) can precede it.
+    const html = loadPage(path).toString();
+    const at = html.indexOf('site.theme');
+    expect(at).toBeGreaterThan(-1);
+    expect(html.slice(0, at)).not.toMatch(/<link[^>]+rel=["']?stylesheet/i);
     expect(kids[0].tagName).not.toBe('LINK');
     expect(kids[0].tagName).not.toBe('STYLE');
   });

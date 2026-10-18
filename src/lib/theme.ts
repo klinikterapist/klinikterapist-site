@@ -44,6 +44,7 @@ export function initThemeToggles(win: Window = window): () => void {
   let pressTimer: number | undefined;
   let flashTimer: number | undefined;
   let longPressed = false;
+  let keyHandled = false;
 
   const current = (): 'light' | 'dark' => (doc.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
@@ -52,30 +53,23 @@ export function initThemeToggles(win: Window = window): () => void {
     doc.querySelectorAll<HTMLElement>('[data-theme-set]').forEach((el) => {
       const value = el.dataset.themeSet;
       if (value === 'toggle') {
-        // The chip's three labels are swapped by CSS from html[data-theme]; only the flash needs state.
+        // Visible labels are swapped by CSS from html[data-theme]; the accessible name is kept in step here
+        // so it always contains the visible mode word (WCAG 2.5.3).
+        const mode = flashSystem ? 'system' : current();
         if (flashSystem) el.dataset.flash = 'system';
         else delete el.dataset.flash;
+        const name = el.dataset[`aria${mode[0].toUpperCase()}${mode.slice(1)}`];
+        if (name) el.setAttribute('aria-label', name);
       } else {
         el.setAttribute('aria-pressed', String(value === choice));
       }
     });
   };
 
-  const onClick = (e: Event): void => {
-    const el = (e.target as Element).closest<HTMLElement>('[data-theme-set]');
-    if (!el) return;
-    if (longPressed) {
-      longPressed = false; // the click that ends a long-press is not a tap
-      return;
-    }
-    const value = el.dataset.themeSet;
-    setTheme(value === 'toggle' ? (current() === 'dark' ? 'light' : 'dark') : (value as ThemeChoice), win);
-    sync();
-  };
+  const toggleEl = (target: EventTarget | null): HTMLElement | null =>
+    (target as Element | null)?.closest?.<HTMLElement>('[data-theme-set="toggle"]') ?? null;
 
-  const onDown = (e: Event): void => {
-    const el = (e.target as Element).closest<HTMLElement>('[data-theme-set="toggle"]');
-    if (!el) return;
+  const startPress = (): void => {
     win.clearTimeout(pressTimer);
     pressTimer = win.setTimeout(() => {
       longPressed = true;
@@ -88,11 +82,65 @@ export function initThemeToggles(win: Window = window): () => void {
 
   const cancel = (): void => win.clearTimeout(pressTimer);
 
+  const onClick = (e: Event): void => {
+    const el = (e.target as Element).closest<HTMLElement>('[data-theme-set]');
+    if (!el) return;
+    if (longPressed || keyHandled) {
+      // The click that ends a long-press (or follows a handled key) is not a tap.
+      longPressed = false;
+      keyHandled = false;
+      return;
+    }
+    const value = el.dataset.themeSet;
+    setTheme(value === 'toggle' ? (current() === 'dark' ? 'light' : 'dark') : (value as ThemeChoice), win);
+    sync();
+  };
+
+  const onDown = (e: Event): void => {
+    if (toggleEl(e.target)) startPress();
+  };
+  // Released anywhere (even off the button): stop the timer and drop the long-press flag after the click phase.
+  const onPointerEnd = (): void => {
+    cancel();
+    win.setTimeout(() => {
+      longPressed = false;
+    }, 0);
+  };
+  // Capture-phase leave fires for children too; only the chip itself ends the press.
+  const onLeave = (e: Event): void => {
+    if (e.target === toggleEl(e.target)) onPointerEnd();
+  };
+
+  // Keyboard: Enter/Space is handled here (not as a synthetic click) so a hold can mean "system".
+  const isActivationKey = (e: KeyboardEvent): boolean => e.key === 'Enter' || e.key === ' ';
+  const onKeyDown = (e: KeyboardEvent): void => {
+    if (!toggleEl(e.target) || !isActivationKey(e)) return;
+    e.preventDefault();
+    if (!e.repeat) startPress();
+  };
+  const onKeyUp = (e: KeyboardEvent): void => {
+    if (!toggleEl(e.target) || !isActivationKey(e)) return;
+    e.preventDefault();
+    cancel();
+    if (longPressed) {
+      longPressed = false;
+      return;
+    }
+    keyHandled = true;
+    win.setTimeout(() => {
+      keyHandled = false;
+    }, 0);
+    setTheme(current() === 'dark' ? 'light' : 'dark', win);
+    sync();
+  };
+
   doc.addEventListener('click', onClick);
   doc.addEventListener('pointerdown', onDown);
-  doc.addEventListener('pointerup', cancel);
-  doc.addEventListener('pointercancel', cancel);
-  doc.addEventListener('pointerleave', cancel, true);
+  doc.addEventListener('pointerup', onPointerEnd);
+  doc.addEventListener('pointercancel', onPointerEnd);
+  doc.addEventListener('pointerleave', onLeave, true);
+  doc.addEventListener('keydown', onKeyDown);
+  doc.addEventListener('keyup', onKeyUp);
 
   const mq = win.matchMedia?.('(prefers-color-scheme: dark)');
   const onSystemChange = (): void => sync();
@@ -102,9 +150,11 @@ export function initThemeToggles(win: Window = window): () => void {
   return () => {
     doc.removeEventListener('click', onClick);
     doc.removeEventListener('pointerdown', onDown);
-    doc.removeEventListener('pointerup', cancel);
-    doc.removeEventListener('pointercancel', cancel);
-    doc.removeEventListener('pointerleave', cancel, true);
+    doc.removeEventListener('pointerup', onPointerEnd);
+    doc.removeEventListener('pointercancel', onPointerEnd);
+    doc.removeEventListener('pointerleave', onLeave, true);
+    doc.removeEventListener('keydown', onKeyDown);
+    doc.removeEventListener('keyup', onKeyUp);
     mq?.removeEventListener?.('change', onSystemChange);
     cancel();
     win.clearTimeout(flashTimer);

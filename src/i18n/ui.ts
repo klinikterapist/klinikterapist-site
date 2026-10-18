@@ -129,7 +129,10 @@ export const STRINGS = {
   themeSystem: { tr: 'Sistem', en: 'System' },
   themeLight: { tr: 'Gündüz', en: 'Day' },
   themeDark: { tr: 'Gece', en: 'Night' },
-  themeChipHint: { tr: 'Görünümü değiştir. Sisteme dönmek için basılı tutun.', en: 'Switch appearance. Press and hold to return to system.' },
+  themeChipName: {
+    tr: 'Görünüm: {mode}. Değiştirmek için dokunun, sisteme dönmek için basılı tutun.',
+    en: 'Appearance: {mode}. Tap to switch, press and hold to return to system.',
+  },
 
   // 404
   notFoundTitle: { tr: 'Sayfa bulunamadı', en: 'Page not found' },
