@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { handle } from '../../../apps-script/src/main';
-import { CONTACT_RATE } from '../../../apps-script/src/contact';
+import { CONTACT_RATE, normaliseEmail } from '../../../apps-script/src/contact';
 import { CONTACT_TOPICS, validateContact } from '../../../src/lib/contact-form';
 import { fakeGas } from './fake-gas';
 
@@ -79,10 +79,13 @@ describe('contact.send', () => {
     expect(send(edge, { message: '0123456789' }).ok).toBe(true);
   });
 
-  it('a filled honeypot is answered like a success but sends nothing', () => {
+  it('a filled honeypot (hp_field) is answered like a success but sends nothing', () => {
     const gas = fakeGas({ props });
-    expect(send(gas, { website: 'http://spam.example' })).toEqual({ ok: true, data: { sent: true } });
+    expect(send(gas, { hp_field: 'http://spam.example' })).toEqual({ ok: true, data: { sent: true } });
     expect(gas.mails).toHaveLength(0);
+    // The old, autofill-prone name is just an unknown field now.
+    expect(send(gas, { website: 'https://example.com' }).ok).toBe(true);
+    expect(gas.mails).toHaveLength(1);
   });
 
   it('newlines in the name never reach the subject line', () => {
@@ -92,24 +95,91 @@ describe('contact.send', () => {
     expect(gas.mails[0].subject).not.toMatch(/[\r\n]/);
   });
 
-  it(`limits one address to ${CONTACT_RATE.perEmail} an hour, then frees it`, () => {
-    const gas = fakeGas({ props });
-    for (let i = 0; i < CONTACT_RATE.perEmail; i++) expect(send(gas).ok).toBe(true);
+  const HOUR = 3600 * 1000;
+  /** 10:15 UTC: a quarter past a clock hour, so the window boundary is 45 minutes ahead. */
+  const quarterPast = Date.UTC(2026, 9, 17, 10, 15);
+
+  it(`limits one address to ${CONTACT_RATE.perEmail} per clock hour (fixed window), then frees it`, () => {
+    const gas = fakeGas({ props, now: quarterPast });
+    for (let i = 0; i < CONTACT_RATE.perEmail; i++) {
+      expect(send(gas).ok).toBe(true);
+      gas.clock.now += 5 * 60 * 1000; // spread over the hour: a refreshed TTL would not matter
+    }
     const res = send(gas, { email: 'AYSE@example.com' });
     expect(res).toMatchObject({ ok: false, error: { code: 'bad_request' } });
     if (!res.ok) expect(res.error.message).toContain('daha sonra');
     expect(gas.mails).toHaveLength(CONTACT_RATE.perEmail);
     // Another visitor still gets through.
     expect(send(gas, { email: 'baska@example.com' }).ok).toBe(true);
-    gas.clock.now += CONTACT_RATE.windowSec * 1000 + 1;
+    // 10:59: still the same window.
+    gas.clock.now = Date.UTC(2026, 9, 17, 10, 59);
+    expect(send(gas).ok).toBe(false);
+    // 11:00: a new window, although the last send was a minute ago.
+    gas.clock.now = Date.UTC(2026, 9, 17, 11, 0);
     expect(send(gas).ok).toBe(true);
   });
 
-  it(`caps the whole site at ${CONTACT_RATE.global} an hour`, () => {
-    const gas = fakeGas({ props });
-    for (let i = 0; i < CONTACT_RATE.global; i++) expect(send(gas, { email: `k${i}@example.com` }).ok).toBe(true);
+  it('one mailbox written differently shares the per-address limit', () => {
+    const gas = fakeGas({ props, now: quarterPast });
+    const forms = ['ayse.yilmaz@gmail.com', 'AyseYilmaz@gmail.com', 'ayse.yilmaz+form@gmail.com', 'a.y.s.e.yilmaz@googlemail.com', 'ayseyilmaz+x@GMAIL.com'];
+    for (const email of forms) expect(send(gas, { email }).ok, email).toBe(true);
+    expect(send(gas, { email: 'ayseyilmaz@gmail.com' }).ok).toBe(false);
+    // Dots matter outside Gmail.
+    expect(send(gas, { email: 'a.b@example.com' }).ok).toBe(true);
+    expect(normaliseEmail('A.B+tag@Example.com')).toBe('a.b@example.com');
+    expect(normaliseEmail('a.b+tag@googlemail.com')).toBe('ab@gmail.com');
+  });
+
+  it('a very long address works: the cache key is a short hash, never the address', () => {
+    const gas = fakeGas({ props, now: quarterPast });
+    const keys: string[] = [];
+    const put = gas.cache.put;
+    gas.cache.put = (k, v, ttl) => {
+      keys.push(k);
+      put(k, v, ttl);
+    };
+    const long = `${'a'.repeat(64)}@${'b'.repeat(180)}.com`;
+    expect(long.length).toBeGreaterThan(240);
+    expect(send(gas, { email: long }).ok).toBe(true);
+    expect(keys.length).toBeGreaterThan(0);
+    for (const k of keys) {
+      expect(k.length).toBeLessThanOrEqual(250);
+      expect(k).not.toContain('@');
+    }
+  });
+
+  it(`caps the whole site at ${CONTACT_RATE.globalHour} per clock hour`, () => {
+    const gas = fakeGas({ props, now: quarterPast });
+    for (let i = 0; i < CONTACT_RATE.globalHour; i++) expect(send(gas, { email: `k${i}@example.com` }).ok).toBe(true);
     expect(send(gas, { email: 'yeni@example.com' }).ok).toBe(false);
-    expect(gas.mails).toHaveLength(CONTACT_RATE.global);
+    expect(gas.mails).toHaveLength(CONTACT_RATE.globalHour);
+    gas.clock.now = Date.UTC(2026, 9, 17, 11, 0);
+    expect(send(gas, { email: 'yeni@example.com' }).ok).toBe(true);
+  });
+
+  it(`caps the whole site at ${CONTACT_RATE.globalDay} per UTC day`, () => {
+    const gas = fakeGas({ props, now: Date.UTC(2026, 9, 17, 0, 5) });
+    let sent = 0;
+    for (let h = 0; sent < CONTACT_RATE.globalDay; h++) {
+      gas.clock.now = Date.UTC(2026, 9, 17, h, 5);
+      for (let i = 0; i < 40 && sent < CONTACT_RATE.globalDay; i++, sent++) {
+        expect(send(gas, { email: `d${sent}@example.com` }).ok).toBe(true);
+      }
+    }
+    gas.clock.now = Date.UTC(2026, 9, 17, 23, 30);
+    expect(send(gas, { email: 'gec@example.com' }).ok).toBe(false);
+    expect(gas.mails).toHaveLength(CONTACT_RATE.globalDay);
+    gas.clock.now = Date.UTC(2026, 9, 18, 0, 1);
+    expect(send(gas, { email: 'gec@example.com' }).ok).toBe(true);
+  });
+
+  it('a blocked address does not use up the site-wide allowance', () => {
+    const gas = fakeGas({ props, now: quarterPast });
+    for (let i = 0; i < CONTACT_RATE.perEmail; i++) send(gas);
+    for (let i = 0; i < 100; i++) expect(send(gas).ok).toBe(false);
+    for (let i = 0; i < CONTACT_RATE.globalHour - CONTACT_RATE.perEmail; i++) {
+      expect(send(gas, { email: `k${i}@example.com` }).ok).toBe(true);
+    }
   });
 
   it('a refused send does not use up the allowance (validation runs first)', () => {
