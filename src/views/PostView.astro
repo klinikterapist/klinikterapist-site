@@ -169,8 +169,8 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     margin-top: var(--space-5);
     padding: 0 var(--space-3);
     border-radius: var(--radius-pill);
-    background: var(--sage-soft);
-    color: var(--forest);
+    background: var(--surface-2);
+    color: var(--link);
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -179,7 +179,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
   }
 
   .category:hover {
-    background: #d6dfcf;
+    background: color-mix(in srgb, var(--surface-2), var(--text) 8%);
   }
 
   h1 {

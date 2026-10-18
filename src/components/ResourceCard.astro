@@ -92,7 +92,7 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
 
   .author {
     margin: 0 0 var(--space-2);
-    color: var(--forest);
+    color: var(--link);
     font-family: var(--font-serif);
     font-size: var(--text-sm);
   }
@@ -141,14 +141,14 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
     justify-content: space-between;
     padding: var(--space-3);
     overflow: hidden;
-    background: linear-gradient(150deg, #efeadf 0%, var(--sage-soft) 100%);
-    box-shadow: inset 6px 0 0 rgb(47 74 58 / 0.12), var(--shadow-soft);
+    background: linear-gradient(150deg, var(--surface) 0%, var(--surface-2) 100%);
+    box-shadow: inset 6px 0 0 var(--line), var(--shadow-soft);
   }
 
   .book-title {
     display: -webkit-box;
     overflow: hidden;
-    color: var(--forest);
+    color: var(--link);
     font-family: var(--font-serif);
     font-size: 0.75rem;
     line-height: 1.3;
@@ -161,7 +161,7 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
     align-self: flex-end;
     width: 55%;
     height: auto;
-    color: var(--forest);
+    color: var(--link);
     opacity: 0.6;
   }
 
@@ -180,7 +180,7 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
   }
 
   .row:hover {
-    border-color: var(--sage);
+    border-color: var(--link);
   }
 
   .thumb {
@@ -190,8 +190,8 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
     width: 56px;
     height: 56px;
     border-radius: var(--radius-md);
-    background: var(--sage-soft);
-    color: var(--forest);
+    background: var(--surface-2);
+    color: var(--link);
   }
 
   .row .body {
@@ -200,7 +200,7 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
   }
 
   .row .title a {
-    color: var(--ink);
+    color: var(--text);
     text-decoration: none;
   }
 
@@ -212,7 +212,7 @@ const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : 
   }
 
   .row .title a:hover {
-    color: var(--forest);
+    color: var(--link);
   }
 
   .row:has(a:focus-visible) {

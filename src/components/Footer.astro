@@ -80,14 +80,14 @@ const external = (url: string) => /^https?:\/\//.test(url);
     align-items: center;
     gap: var(--space-2);
     margin: 0;
-    color: var(--forest);
+    color: var(--link);
     font-size: 1.75rem;
     line-height: 1.2;
   }
 
   .slogan :global(.slogan-leaf) {
     flex: none;
-    color: var(--sage);
+    color: var(--muted);
   }
 
   .social {
@@ -107,11 +107,11 @@ const external = (url: string) => /^https?:\/\//.test(url);
     width: 44px;
     height: 44px;
     border-radius: var(--radius-pill);
-    color: var(--forest);
+    color: var(--link);
   }
 
   .social a:hover {
-    background: var(--sage-soft);
+    background: var(--surface-2);
   }
 
   .bottom {
@@ -146,7 +146,7 @@ const external = (url: string) => /^https?:\/\//.test(url);
 
   .legal a:hover,
   .to-top:hover {
-    color: var(--forest);
+    color: var(--link);
     text-decoration: underline;
   }
 

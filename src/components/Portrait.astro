@@ -46,7 +46,7 @@ const profile = getProfile();
   .blob {
     position: absolute;
     inset: 4% -4% -2% 8%;
-    background: var(--sage-soft);
+    background: var(--surface-2);
     border-radius: 62% 38% 54% 46% / 48% 58% 42% 52%;
   }
 
@@ -63,9 +63,9 @@ const profile = getProfile();
     display: grid;
     place-items: center;
     background:
-      radial-gradient(120% 90% at 30% 20%, #eef1e8 0%, transparent 60%),
-      linear-gradient(160deg, #c9d4c2 0%, var(--sage) 100%);
-    color: var(--forest);
+      radial-gradient(120% 90% at 30% 20%, var(--bg) 0%, transparent 60%),
+      linear-gradient(160deg, var(--surface-2) 0%, var(--surface) 100%);
+    color: var(--link);
   }
 
   .placeholder :global(.placeholder-leaf) {
@@ -80,6 +80,6 @@ const profile = getProfile();
     bottom: 2%;
     width: 24%;
     height: auto;
-    color: var(--sage);
+    color: var(--muted);
   }
 </style>

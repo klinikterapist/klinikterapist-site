@@ -13,18 +13,18 @@
   --k-radius-sm: 8px; /* inputs, buttons, nav items */
   --k-shadow-1: 0 1px 2px rgb(31 42 36 / 0.05);
   --k-shadow-2: 0 2px 4px rgb(31 42 36 / 0.05), 0 8px 24px rgb(31 42 36 / 0.1);
-  --p-bg: var(--cream);
-  --p-surface: var(--paper);
-  --p-sidebar: var(--paper);
+  --p-bg: var(--panel-cream);
+  --p-surface: var(--panel-paper);
+  --p-sidebar: var(--panel-paper);
   --p-field: #fff;
-  --p-border: var(--line);
-  --p-text: var(--ink);
-  --p-muted: var(--muted);
-  --p-heading: var(--forest-deep);
-  --p-accent: var(--forest);
-  --p-accent-deep: var(--forest-deep);
-  --p-accent-text: var(--on-forest);
-  --p-selected: var(--sage-soft);
+  --p-border: var(--panel-line);
+  --p-text: var(--panel-ink);
+  --p-muted: var(--panel-muted);
+  --p-heading: var(--panel-forest-deep);
+  --p-accent: var(--panel-forest);
+  --p-accent-deep: var(--panel-forest-deep);
+  --p-accent-text: var(--panel-on-forest);
+  --p-selected: var(--panel-sage-soft);
   --p-scrim: rgb(31 42 36 / 0.45);
   --p-ok-bg: #dcebd8;
   --p-ok-text: #23502f;
@@ -112,7 +112,7 @@ body.admin {
 }
 
 .admin :focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 3px solid var(--panel-focus);
   outline-offset: 2px;
 }
 
@@ -1250,7 +1250,7 @@ textarea.k-input {
 .ed-body.prose blockquote {
   margin: 0;
   padding-left: 1.1em;
-  border-left: 3px solid var(--sage);
+  border-left: 3px solid var(--panel-sage);
   color: var(--p-accent);
   font-family: var(--font-serif);
   font-style: italic;
@@ -1294,7 +1294,7 @@ textarea.k-input {
 
 .ed-figure.is-selected img,
 .ed-youtube.is-selected {
-  outline: 3px solid var(--sage);
+  outline: 3px solid var(--panel-sage);
 }
 
 .ed-figure-missing {
@@ -2128,9 +2128,9 @@ textarea.k-input {
 /* Önizle: full screen, always the site's light look (the panel's dark theme is ignored). */
 .preview-root {
   color-scheme: light;
-  --p-text: var(--ink);
-  --p-heading: var(--forest);
-  --p-accent: var(--forest);
+  --p-text: var(--text);
+  --p-heading: var(--link);
+  --p-accent: var(--link);
   --p-muted: var(--muted);
   --p-border: var(--line);
   position: fixed;
@@ -2138,8 +2138,8 @@ textarea.k-input {
   z-index: 60;
   display: flex;
   flex-direction: column;
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans);
   line-height: var(--leading);
 }
@@ -2147,14 +2147,14 @@ textarea.k-input {
 .preview-root h1,
 .preview-root h2,
 .preview-root h3 {
-  color: var(--ink);
+  color: var(--text);
   font-weight: 500;
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 
 .preview-root a {
-  color: var(--forest);
+  color: var(--link);
 }
 
 .preview-bar {
@@ -2165,14 +2165,14 @@ textarea.k-input {
   gap: var(--space-2);
   padding: var(--space-2) var(--gutter);
   border-bottom: 1px solid var(--line);
-  background: var(--paper);
+  background: var(--surface);
   font-size: var(--text-sm);
 }
 
 .preview-bar .k-btn {
-  background: var(--paper);
+  background: var(--surface);
   border-color: var(--line);
-  color: var(--forest-deep);
+  color: var(--link-hover);
 }
 
 .preview-scroll {
@@ -2225,11 +2225,11 @@ textarea.k-input {
 }
 
 :where(.preview-root) a:hover {
-  color: var(--forest-deep);
+  color: var(--link-hover);
 }
 
 :where(.preview-root) ::selection {
-  background: var(--sage-soft);
+  background: var(--surface-2);
 }
 
 .preview-head {
@@ -2254,7 +2254,7 @@ textarea.k-input {
   display: inline-block;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  background: var(--sage-soft);
+  background: var(--surface-2);
   color: var(--muted);
   font-size: var(--text-sm);
 }
@@ -2307,20 +2307,20 @@ textarea.k-input {
 /* A version is shown as the site shows the post: always light, like Önizle (.preview-root). */
 .versions-view {
   color-scheme: light;
-  --p-text: var(--ink);
-  --p-heading: var(--forest);
-  --p-accent: var(--forest);
+  --p-text: var(--text);
+  --p-heading: var(--link);
+  --p-accent: var(--link);
   --p-muted: var(--muted);
   --p-border: var(--line);
-  --p-highlight: var(--highlight);
-  --p-selected: var(--sage-soft);
+  --p-highlight: var(--mark-bg);
+  --p-selected: var(--surface-2);
   max-height: 40vh;
   padding: var(--space-3);
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans);
   overflow-wrap: anywhere;
 }
@@ -2328,11 +2328,11 @@ textarea.k-input {
 .versions-view h1,
 .versions-view h2,
 .versions-view h3 {
-  color: var(--ink);
+  color: var(--text);
 }
 
 .versions-view a {
-  color: var(--forest);
+  color: var(--link);
 }
 
 .versions-view h1 {

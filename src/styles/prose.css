@@ -59,14 +59,14 @@
 }
 
 .prose li::marker {
-  color: var(--sage);
+  color: var(--muted);
 }
 
 .prose blockquote {
   margin-inline: 0;
   padding: 0.2em 0 0.2em 1.2em;
-  border-left: 3px solid var(--sage);
-  color: var(--forest);
+  border-left: 3px solid var(--quote-rule);
+  color: var(--link);
   font-family: var(--font-serif);
   font-size: 1.2rem;
   font-style: italic;
@@ -83,8 +83,8 @@
 .prose mark {
   padding: 0 0.15em;
   border-radius: 3px;
-  background: var(--highlight);
-  color: inherit;
+  background: var(--mark-bg);
+  color: var(--mark-text);
 }
 
 /* A citation reads as ordinary text. */
@@ -119,8 +119,8 @@
 .prose .callout {
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius-md);
-  background: var(--sage-soft);
-  color: var(--forest-deep);
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .prose .callout > :first-child {
@@ -133,7 +133,7 @@
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background: var(--forest-deep);
+  background: #141f33;
 }
 
 .prose .youtube a {

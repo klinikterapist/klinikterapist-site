@@ -66,7 +66,7 @@ const items = NAV.map(([key, label]) => {
   .site-header {
     position: relative;
     z-index: 10;
-    background: var(--cream);
+    background: var(--bg);
   }
 
   .bar {
@@ -83,13 +83,13 @@ const items = NAV.map(([key, label]) => {
     gap: var(--space-2);
     min-width: 0;
     margin-right: auto;
-    color: var(--ink);
+    color: var(--text);
     text-decoration: none;
   }
 
   .brand :global(.brand-leaf) {
     flex: none;
-    color: var(--forest);
+    color: var(--link);
   }
 
   .brand-text {
@@ -143,7 +143,7 @@ const items = NAV.map(([key, label]) => {
     width: 44px;
     height: 44px;
     border-radius: var(--radius-pill);
-    color: var(--ink);
+    color: var(--text);
     cursor: pointer;
     list-style: none;
   }
@@ -153,7 +153,7 @@ const items = NAV.map(([key, label]) => {
   }
 
   .nav-menu summary:hover {
-    background: var(--sage-soft);
+    background: var(--surface-2);
   }
 
   .nav-menu .icon-close,
@@ -173,7 +173,7 @@ const items = NAV.map(([key, label]) => {
     margin: 0;
     padding: var(--space-2);
     list-style: none;
-    background: var(--paper);
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-soft);
@@ -183,15 +183,15 @@ const items = NAV.map(([key, label]) => {
     display: block;
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md);
-    color: var(--ink);
+    color: var(--text);
     font-size: var(--text-base);
     text-decoration: none;
   }
 
   .nav-panel a:hover,
   .nav-panel a[aria-current] {
-    background: var(--sage-soft);
-    color: var(--forest);
+    background: var(--surface-2);
+    color: var(--link);
   }
 
   /* Very narrow phones: the name may wrap to two lines, the actions never do. */
@@ -261,19 +261,19 @@ const items = NAV.map(([key, label]) => {
       min-height: 44px;
       padding: 0 var(--space-3);
       border-radius: var(--radius-pill);
-      color: var(--ink);
+      color: var(--text);
       font-size: var(--text-sm);
       font-weight: 500;
       text-decoration: none;
     }
 
     .nav-inline a:hover {
-      color: var(--forest);
-      background: var(--sage-soft);
+      color: var(--link);
+      background: var(--surface-2);
     }
 
     .nav-inline a[aria-current] {
-      color: var(--forest);
+      color: var(--link);
       text-decoration: underline;
       text-decoration-thickness: 2px;
       text-underline-offset: 0.45em;

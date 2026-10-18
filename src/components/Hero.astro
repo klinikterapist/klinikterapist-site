@@ -88,14 +88,14 @@ const label = (l: (typeof links)[number]) => (l.icon === 'email' ? t(lang, 'emai
 
   .role {
     margin: 0;
-    color: var(--forest);
+    color: var(--link);
     font-family: var(--font-serif);
     font-size: var(--text-lg);
   }
 
   .name {
     margin: 0 0 var(--space-3);
-    color: var(--forest);
+    color: var(--link);
     font-size: clamp(1.75rem, 1rem + 4vw, 3.75rem);
     line-height: 1.05;
     text-wrap: balance;
@@ -103,7 +103,7 @@ const label = (l: (typeof links)[number]) => (l.icon === 'email' ? t(lang, 'emai
 
   .slogan {
     margin: 0;
-    color: var(--forest);
+    color: var(--link);
     font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.25rem);
     line-height: 1.1;
   }
@@ -113,7 +113,7 @@ const label = (l: (typeof links)[number]) => (l.icon === 'email' ? t(lang, 'emai
     width: 2.5rem;
     height: 1px;
     margin: var(--space-3) 0;
-    background: var(--forest);
+    background: var(--btn-bg);
   }
 
   .lead {
@@ -154,8 +154,8 @@ const label = (l: (typeof links)[number]) => (l.icon === 'email' ? t(lang, 'emai
     min-height: 44px;
     padding: 0 var(--space-3);
     border-radius: var(--radius-md);
-    background: var(--sage-soft);
-    color: var(--forest);
+    background: var(--surface-2);
+    color: var(--link);
     font-size: var(--text-sm);
     font-weight: 500;
     white-space: nowrap;
@@ -170,7 +170,7 @@ const label = (l: (typeof links)[number]) => (l.icon === 'email' ? t(lang, 'emai
   }
 
   .hero-links a:hover {
-    background: #d6dece;
+    background: color-mix(in srgb, var(--surface-2), var(--text) 8%);
   }
 
   @media (min-width: 768px) {

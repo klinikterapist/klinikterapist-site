@@ -22,8 +22,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--cream);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-sans);
   font-size: var(--text-base);
   line-height: var(--leading);
@@ -43,7 +43,7 @@ h4 {
   font-family: var(--font-serif);
   font-weight: 500;
   line-height: var(--leading-tight);
-  color: var(--ink);
+  color: var(--text);
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
@@ -76,13 +76,13 @@ img {
 }
 
 a {
-  color: var(--forest);
+  color: var(--link);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
 }
 
 a:hover {
-  color: var(--forest-deep);
+  color: var(--link-hover);
 }
 
 :focus-visible {
@@ -92,7 +92,7 @@ a:hover {
 }
 
 ::selection {
-  background: var(--sage-soft);
+  background: var(--surface-2);
 }
 
 /* Layout helpers */
@@ -128,14 +128,14 @@ a:hover {
   top: -100px;
   z-index: 100;
   padding: var(--space-2) var(--space-4);
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--btn-bg);
+  color: var(--btn-text);
   border-radius: var(--radius-sm);
 }
 
 .skip-link:focus {
   top: var(--space-2);
-  color: var(--on-forest);
+  color: var(--btn-text);
 }
 
 /* Primary pill button (Randevu Al etc.) */
@@ -147,8 +147,8 @@ a:hover {
   min-height: 44px;
   padding: 0 var(--space-5);
   border-radius: var(--radius-pill);
-  background: var(--forest);
-  color: var(--on-forest);
+  background: var(--btn-bg);
+  color: var(--btn-text);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -158,12 +158,12 @@ a:hover {
 }
 
 .btn:hover {
-  background: var(--forest-deep);
-  color: var(--on-forest);
+  background: var(--btn-bg-hover);
+  color: var(--btn-text);
 }
 
 .card {
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);

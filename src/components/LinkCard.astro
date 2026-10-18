@@ -36,14 +36,14 @@ const { href, title, subtitle, icon, external = false, newTabLabel } = Astro.pro
     height: 100%;
     min-height: 64px;
     padding: var(--space-3);
-    color: var(--ink);
+    color: var(--text);
     text-decoration: none;
     transition: border-color 0.15s ease, transform 0.15s ease;
   }
 
   .link-card:hover {
-    border-color: var(--sage);
-    color: var(--ink);
+    border-color: var(--link);
+    color: var(--text);
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -59,8 +59,8 @@ const { href, title, subtitle, icon, external = false, newTabLabel } = Astro.pro
     width: 40px;
     height: 40px;
     border-radius: var(--radius-pill);
-    background: var(--sage-soft);
-    color: var(--forest);
+    background: var(--surface-2);
+    color: var(--link);
   }
 
   .text {

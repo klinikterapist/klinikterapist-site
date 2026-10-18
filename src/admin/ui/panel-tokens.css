@@ -1,0 +1,46 @@
+/*
+ * Panel-only colour tokens. The visitor site moved to the "Gün & Gece" palette (src/styles/tokens.css);
+ * the admin panel keeps its own forest-and-cream look, so the old values live here under panel names.
+ * The panel's dark theme is unchanged: it overrides the --p-* aliases in admin.css.
+ */
+:root {
+  --panel-cream: #f4efe6;
+  --panel-paper: #fbf8f2;
+  --panel-forest: #2f4a3a;
+  --panel-forest-deep: #22382b;
+  --panel-sage: #8fa58f;
+  --panel-sage-soft: #e3e8dc;
+  --panel-ink: #1f2a24;
+  --panel-muted: #5b675f;
+  --panel-line: #ddd6c8;
+  --panel-on-forest: #fbf8f2;
+  --panel-highlight: #f6e7c8;
+  --panel-focus: #b5651d;
+}
+
+/*
+ * Site content shown inside the panel (the editor body, Önizle, the version view) is styled by the
+ * site's prose.css. It always looks like the site by day, whatever the panel's own theme is.
+ */
+body.admin {
+  --bg: #FBF3E4;
+  --surface: #F4E9D4;
+  --surface-2: #EBDDC0;
+  --text: #2A2420;
+  --muted: #5C5348;
+  --line: rgb(42 36 32 / 0.12);
+  --btn-bg: #1F2E4A;
+  --btn-text: #FBF3E4;
+  --btn-bg-hover: #141F33;
+  --link: #1F2E4A;
+  --link-hover: #141F33;
+  --sun-halo: #FCD873;
+  --sun-disc: #F6B92B;
+  --sun-face: #2A2420;
+  --dropcap: #1F2E4A;
+  --quote-rule: #F6B92B;
+  --focus: #1F2E4A;
+  --mark-bg: #FCD873;
+  --mark-text: #2A2420;
+  --shadow-soft: 0 1px 2px rgb(42 36 32 / 0.04), 0 4px 16px rgb(42 36 32 / 0.06);
+}

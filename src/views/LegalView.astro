@@ -38,7 +38,7 @@ const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc
   }
 
   .legal :global(h1) {
-    color: var(--forest);
+    color: var(--link);
   }
 
   .legal :global(h2) {
@@ -54,9 +54,9 @@ const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc
   .legal :global(blockquote) {
     margin: var(--space-4) 0;
     padding: var(--space-3) var(--space-4);
-    border-left: 3px solid var(--sage);
+    border-left: 3px solid var(--quote-rule);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    background: var(--sage-soft);
+    background: var(--surface-2);
   }
 
   .legal :global(blockquote p) {

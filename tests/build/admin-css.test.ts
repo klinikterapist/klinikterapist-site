@@ -71,9 +71,9 @@ describe('/admin/ styles', () => {
   it('the read-only version view always uses the site light colours (like Önizle)', () => {
     const view = find('.versions-view');
     expect(view.some((r) => /color-scheme:\s*light/.test(r.body))).toBe(true);
-    expect(view.some((r) => /background:\s*var\(--cream\)/.test(r.body))).toBe(true);
-    expect(view.some((r) => /(^|;)\s*color:\s*var\(--ink\)/.test(r.body))).toBe(true);
+    expect(view.some((r) => /background:\s*var\(--bg\)/.test(r.body))).toBe(true);
+    expect(view.some((r) => /(^|;)\s*color:\s*var\(--text\)/.test(r.body))).toBe(true);
     // Panel tokens used by the content are pinned to light values inside it.
-    expect(view.some((r) => /--p-highlight:\s*var\(--highlight\)/.test(r.body))).toBe(true);
+    expect(view.some((r) => /--p-highlight:\s*var\(--mark-bg\)/.test(r.body))).toBe(true);
   });
 });

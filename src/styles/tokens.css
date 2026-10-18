@@ -1,25 +1,33 @@
-/* Design tokens: cream, forest and sage, light theme only. */
+/* Design tokens: "Gün & Gece" (day and night). */
 @import '@fontsource-variable/fraunces/wght.css';
 @import '@fontsource-variable/dm-sans/wght.css';
 @import '@fontsource/caveat/latin-400.css';
 @import '@fontsource/caveat/latin-ext-400.css';
 
-:root {
+:root,
+html[data-theme="light"] {
   color-scheme: light;
 
-  /* Colours */
-  --cream: #f4efe6;        /* page background */
-  --paper: #fbf8f2;        /* cards, raised surfaces */
-  --forest: #2f4a3a;       /* primary: buttons, headings, links */
-  --forest-deep: #22382b;  /* hover / pressed */
-  --sage: #8fa58f;         /* line drawings, accents */
-  --sage-soft: #e3e8dc;    /* soft surfaces, chips, placeholders */
-  --ink: #1f2a24;          /* body text */
-  --muted: #5b675f;        /* secondary text (≥ 4.5:1 on cream) */
-  --line: #ddd6c8;         /* hairlines, card borders */
-  --on-forest: #fbf8f2;    /* text on forest */
-  --highlight: #f6e7c8;    /* <mark> in post text */
-  --focus: #b5651d;        /* focus ring, distinct from the greens */
+  /* Colours: "Gün & Gece". Day values here; src/lib/palette.ts mirrors them (tested). */
+  --bg: #FBF3E4;           /* page background */
+  --surface: #F4E9D4;      /* cards, raised surfaces */
+  --surface-2: #EBDDC0;    /* chips, placeholders, nested surfaces */
+  --text: #2A2420;         /* body text */
+  --muted: #5C5348;        /* secondary text */
+  --line: rgb(42 36 32 / 0.12); /* hairlines, card borders */
+  --btn-bg: #1F2E4A;       /* primary button */
+  --btn-text: #FBF3E4;
+  --btn-bg-hover: #141F33;
+  --link: #1F2E4A;
+  --link-hover: #141F33;
+  --sun-halo: #FCD873;
+  --sun-disc: #F6B92B;
+  --sun-face: #2A2420;
+  --dropcap: #1F2E4A;
+  --quote-rule: #F6B92B;
+  --focus: #1F2E4A;
+  --mark-bg: #FCD873;      /* <mark> in post text */
+  --mark-text: #2A2420;
 
   /* Type */
   --font-serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
@@ -56,11 +64,62 @@
   --radius-md: 0.875rem;
   --radius-lg: 1.25rem;
   --radius-pill: 999px;
-  --shadow-soft: 0 1px 2px rgb(31 42 36 / 0.04), 0 4px 16px rgb(31 42 36 / 0.06);
+  --shadow-soft: 0 1px 2px rgb(42 36 32 / 0.04), 0 4px 16px rgb(42 36 32 / 0.06);
 }
 
 @media (min-width: 768px) {
   :root {
     --gutter: 2rem;
   }
+}
+
+/* Night. Without JS (or before the theme script) the OS preference decides; an explicit choice wins. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #1F2E4A;
+    --surface: #26385A;
+    --surface-2: #2F4570;
+    --text: #F4EBDD;
+    --muted: #B9C4D6;
+    --line: rgb(244 235 221 / 0.13);
+    --btn-bg: #F6B92B;
+    --btn-text: #1F2E4A;
+    --btn-bg-hover: #FCD873;
+    --link: #FCD873;
+    --link-hover: #FFE9A8;
+    --sun-halo: #FCD873;
+    --sun-disc: #F6B92B;
+    --sun-face: #1F2E4A;
+    --dropcap: #F6B92B;
+    --quote-rule: #F6B92B;
+    --focus: #FCD873;
+    --mark-bg: #FCD873;
+    --mark-text: #1F2E4A;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 4px 16px rgb(0 0 0 / 0.3);
+  }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1F2E4A;
+  --surface: #26385A;
+  --surface-2: #2F4570;
+  --text: #F4EBDD;
+  --muted: #B9C4D6;
+  --line: rgb(244 235 221 / 0.13);
+  --btn-bg: #F6B92B;
+  --btn-text: #1F2E4A;
+  --btn-bg-hover: #FCD873;
+  --link: #FCD873;
+  --link-hover: #FFE9A8;
+  --sun-halo: #FCD873;
+  --sun-disc: #F6B92B;
+  --sun-face: #1F2E4A;
+  --dropcap: #F6B92B;
+  --quote-rule: #F6B92B;
+  --focus: #FCD873;
+  --mark-bg: #FCD873;
+  --mark-text: #1F2E4A;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 4px 16px rgb(0 0 0 / 0.3);
 }
