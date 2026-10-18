@@ -5,6 +5,7 @@ export {
   BookOpen,
   BookOpenText,
   Bold,
+  CircleCheck as CheckCircle2, // Lucide 1.x renamed it
   Ellipsis,
   ExternalLink,
   FileText,
@@ -12,6 +13,7 @@ export {
   House,
   IdCard,
   Image,
+  Inbox,
   Italic,
   LayoutTemplate,
   Link,

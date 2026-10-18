@@ -1,5 +1,6 @@
 /** Small UI building blocks shared by the panel screens. */
 import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { Icon, type LucideIcon } from '../icons';
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; busy?: boolean };
 
@@ -122,6 +123,19 @@ export function Dialog({ title, children, actions, onClose }: { title: string; c
         <div className="k-dialog-body">{children}</div>
         <div className="k-dialog-actions">{actions}</div>
       </div>
+    </div>
+  );
+}
+
+/** Empty list or card: an icon, one calm sentence and an optional next step. */
+export function EmptyState({ icon, children, action }: { icon: LucideIcon; children: ReactNode; action?: ReactNode }) {
+  return (
+    <div className="k-empty">
+      <span className="k-empty-icon">
+        <Icon as={icon} size={28} />
+      </span>
+      <p>{children}</p>
+      {action}
     </div>
   );
 }

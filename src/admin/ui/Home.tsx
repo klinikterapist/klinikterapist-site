@@ -5,7 +5,8 @@ import { dashboard } from '../lib/dashboard';
 import { loadSiteState, type SiteState } from '../lib/posts-repo';
 import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
-import { Banner, Button, Spinner } from './kit';
+import { CheckCircle2, FileText, Inbox } from './icons';
+import { Banner, Button, EmptyState, Spinner } from './kit';
 
 const SITE_LABEL = { ok: 'Sitede yayında', updating: 'Site güncelleniyor…', failed: 'Yayın başarısız oldu' } as const;
 
@@ -54,7 +55,7 @@ export function Home() {
                 <p className={`home-site home-site-${phase}`}>{SITE_LABEL[phase]}</p>
               </>
             ) : (
-              <p className="empty">Henüz yayınlanmış yazı yok.</p>
+              <EmptyState icon={Inbox}>Henüz yayınlanmış yazı yok.</EmptyState>
             )}
           </article>
           <article className="home-card" aria-labelledby="hc-drafts">
@@ -63,7 +64,7 @@ export function Home() {
               <a href="#/yazilar/taslaklar">Tümü</a>
             </div>
             {d.recentDrafts.length === 0 ? (
-              <p className="empty">Taslak yok.</p>
+              <EmptyState icon={FileText}>Taslak yok.</EmptyState>
             ) : (
               <ul className="home-list">
                 {d.recentDrafts.map((x) => (
@@ -81,7 +82,7 @@ export function Home() {
           <article className="home-card" aria-labelledby="hc-missing">
             <h3 id="hc-missing">Eksikler</h3>
             {d.incomplete.length === 0 ? (
-              <p className="empty">Eksik yok.</p>
+              <EmptyState icon={CheckCircle2}>Eksik yok.</EmptyState>
             ) : (
               <ul className="home-list">
                 {d.incomplete.map((x) => (

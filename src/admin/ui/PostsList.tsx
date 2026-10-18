@@ -5,7 +5,8 @@ import type { Category } from '../../lib/schemas';
 import { startNewPost } from '../lib/new-post';
 import { STATUS_LABEL, loadSiteState, mergeList, type PostRow } from '../lib/posts-repo';
 import { go, usePanel } from './context';
-import { Banner, Button, Field, Select, Spinner } from './kit';
+import { FileText, Search } from './icons';
+import { Banner, Button, EmptyState, Field, Select, Spinner } from './kit';
 
 const fold = (s: string) => s.toLocaleLowerCase('tr-TR').replace(/i̇/g, 'i');
 
@@ -98,9 +99,22 @@ export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
         </Banner>
       )}
       {!rows && !error && <Spinner label="Yazılar yükleniyor…" />}
-      {rows && rows.length === 0 && <p className="empty">Henüz yazı yok. İlk yazınızı “Yeni yazı” ile başlatın.</p>}
+      {rows && rows.length === 0 && (
+        <EmptyState
+          icon={FileText}
+          action={
+            <Button variant="primary" onClick={create}>
+              Yeni yazı
+            </Button>
+          }
+        >
+          Henüz yazı yok. İlk yazınızı “Yeni yazı” ile başlatın.
+        </EmptyState>
+      )}
       {rows && rows.length > 0 && shown.length === 0 && (
-        <p className="empty">{query || category ? 'Aramanıza uyan yazı yok.' : tab === 'drafts' ? 'Taslak yok.' : 'Yayında yazı yok.'}</p>
+        <EmptyState icon={query || category ? Search : FileText}>
+          {query || category ? 'Aramanıza uyan yazı yok.' : tab === 'drafts' ? 'Taslak yok.' : 'Yayında yazı yok.'}
+        </EmptyState>
       )}
       {shown.length > 0 && (
         <ul className="post-rows">

@@ -2,6 +2,17 @@
 
 /* Panel colour tokens. Light values come from the site tokens; dark overrides follow. */
 :root {
+  /* Panel scale: spacing, radii and shadows (4 px grid). */
+  --k-space-1: 4px;
+  --k-space-2: 8px;
+  --k-space-3: 12px;
+  --k-space-4: 16px;
+  --k-space-5: 24px;
+  --k-space-6: 32px;
+  --k-radius: 12px; /* cards, dialogs */
+  --k-radius-sm: 8px; /* inputs, buttons, nav items */
+  --k-shadow-1: 0 1px 2px rgb(31 42 36 / 0.05);
+  --k-shadow-2: 0 2px 4px rgb(31 42 36 / 0.05), 0 8px 24px rgb(31 42 36 / 0.1);
   --p-bg: var(--cream);
   --p-surface: var(--paper);
   --p-sidebar: var(--paper);
@@ -36,6 +47,8 @@
 
 html[data-theme='dark'] {
   color-scheme: dark;
+  --k-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --k-shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.5);
   --p-bg: #17181a;
   --p-surface: #1d1f22;
   --p-sidebar: #1d1f22;
@@ -122,13 +135,13 @@ body.admin {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
+  gap: var(--k-space-2);
   min-height: 44px;
-  padding: 0 var(--space-4);
-  border: 1px solid var(--p-border);
-  border-radius: var(--radius-pill);
-  background: var(--p-surface);
-  color: var(--p-heading);
+  padding: 0 var(--k-space-4);
+  border: 1px solid var(--p-accent);
+  border-radius: var(--k-radius-sm);
+  background: transparent;
+  color: var(--p-accent-deep);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -136,8 +149,9 @@ body.admin {
   cursor: pointer;
 }
 
+/* Three levels: primary (filled), secondary (outlined, the default), ghost (text only). */
 .k-btn:hover:not(:disabled) {
-  border-color: var(--sage);
+  background: var(--p-selected);
 }
 
 .k-btn:disabled {
@@ -146,9 +160,9 @@ body.admin {
 }
 
 .k-btn-primary {
-  border-color: var(--p-accent);
   background: var(--p-accent);
   color: var(--p-accent-text);
+  box-shadow: var(--k-shadow-1);
 }
 
 .k-btn-primary:hover:not(:disabled) {
@@ -157,12 +171,16 @@ body.admin {
 
 .k-btn-ghost {
   border-color: transparent;
-  background: transparent;
+  color: var(--p-heading);
 }
 
 .k-btn-danger {
   border-color: var(--p-err-line);
   color: var(--p-err-label);
+}
+
+.k-btn-danger:hover:not(:disabled) {
+  background: var(--p-err-bg);
 }
 
 .k-spinner {
@@ -205,7 +223,7 @@ body.admin {
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--p-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--k-radius-sm);
   background: var(--p-field);
   color: var(--p-text);
   font: inherit;
@@ -293,10 +311,10 @@ textarea.k-input {
   width: min(32rem, 100%);
   max-height: 90vh;
   overflow: auto;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
+  padding: var(--k-space-5);
+  border-radius: var(--k-radius);
   background: var(--p-surface);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--k-shadow-2);
 }
 
 .k-dialog h2 {
@@ -395,7 +413,7 @@ textarea.k-input {
 
 .panel-nav {
   display: none;
-  padding: var(--space-3) var(--gutter);
+  padding: var(--k-space-3) var(--gutter);
   border-bottom: 1px solid var(--p-border);
   background: var(--p-sidebar);
 }
@@ -415,16 +433,34 @@ textarea.k-input {
   display: flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  padding: 0 var(--k-space-3);
+  border-radius: var(--k-radius-sm);
   color: var(--p-text);
   text-decoration: none;
+}
+
+.panel-nav a:hover,
+.panel-nav .linklike:hover {
+  background: var(--p-bg);
 }
 
 .panel-nav a[aria-current='page'] {
   background: var(--p-selected);
   color: var(--p-heading);
   font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--p-accent);
+}
+
+/* Theme toggle and logout sit in ul.nav-end: full-width rows like the links above. */
+.panel-nav .nav-end .linklike {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--p-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
 }
 
 .nav-logo {
@@ -502,15 +538,20 @@ textarea.k-input {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
+  gap: var(--k-space-3);
+  margin-bottom: var(--k-space-4);
 }
 
 .screen-head h2 {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--k-space-2);
+  min-width: 0;
   margin: 0;
+}
+
+.screen-head h2 .nav-icon {
+  color: var(--p-accent);
 }
 
 @media (min-width: 900px) {
@@ -585,6 +626,32 @@ textarea.k-input {
   color: var(--p-muted);
 }
 
+/* EmptyState: icon, one calm sentence, optional action. */
+.k-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--k-space-2);
+  padding: var(--k-space-5) var(--k-space-4);
+  color: var(--p-muted);
+  text-align: center;
+}
+
+.k-empty-icon {
+  color: var(--p-accent);
+  opacity: 0.8;
+}
+
+.k-empty p {
+  margin: 0;
+}
+
+/* Inside a small card the empty state stays compact and left-aligned. */
+.home-card .k-empty {
+  justify-items: start;
+  padding: var(--k-space-2) 0;
+  text-align: left;
+}
+
 /* ---------- posts list ---------- */
 
 .filters {
@@ -628,14 +695,16 @@ textarea.k-input {
   gap: var(--space-1);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--p-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--k-radius);
+  box-shadow: var(--k-shadow-1);
   background: var(--p-surface);
   color: var(--p-text) !important;
   text-decoration: none;
 }
 
 .post-row:hover {
-  border-color: var(--sage);
+  border-color: var(--p-accent);
+  box-shadow: var(--k-shadow-2);
 }
 
 .post-row-title {
@@ -1450,9 +1519,10 @@ textarea.k-input {
   display: grid;
   align-content: start;
   gap: var(--space-2);
-  padding: var(--space-4);
+  padding: var(--k-space-4);
   border: 1px solid var(--p-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--k-radius);
+  box-shadow: var(--k-shadow-1);
   background: var(--p-surface);
   color: var(--p-text);
 }
