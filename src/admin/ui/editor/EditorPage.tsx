@@ -122,9 +122,9 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [versioning, setVersioning] = useState(false);
   const closeVersions = useCallback(() => setVersioning(false), []);
   const [toolbarHost, setToolbarHost] = useState<HTMLElement | null>(null);
-  const [rail, setRail] = useRailPanel();
-  const closeRail = useCallback(() => setRail(null), [setRail]);
   const narrow = useNarrow(SHEET_BELOW);
+  const [rail, setRail] = useRailPanel(narrow);
+  const closeRail = useCallback(() => setRail(null), [setRail]);
   /** Yayınla was pressed with something missing: the checklist marks the missing required items. */
   const [flagMissing, setFlagMissing] = useState(false);
   /** A `data-field` to scroll to and focus once the panel or language it lives in has rendered. */

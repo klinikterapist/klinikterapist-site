@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, describe, it, expect } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { EditorPage } from '../../../src/admin/ui/editor/EditorPage';
 import { Panel } from '../../../src/admin/ui/context';
 import { DeployProvider } from '../../../src/admin/ui/DeployStatus';
@@ -293,6 +293,28 @@ describe('EditorPage', () => {
       setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
       expect((await screen.findByRole('button', { name: 'Ayarlar' })).getAttribute('aria-pressed')).toBe('false');
       expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
+    }
+  });
+
+  it('a panel open on a wide screen closes, without becoming a sheet, when the window turns narrow', async () => {
+    const orig = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
+    try {
+      localStorage.setItem('panel.rail', 'settings');
+      setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+      expect(await screen.findByRole('region', { name: 'Ayarlar' })).toBeTruthy();
+      const entries = history.length;
+      Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+      act(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Ayarlar' }).getAttribute('aria-pressed')).toBe('false');
+      expect(localStorage.getItem('panel.rail')).toBe('settings');
+      expect(history.length).toBe(entries);
     } finally {
       Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
     }

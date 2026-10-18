@@ -29,8 +29,11 @@ export function useNarrow(px: number): boolean {
   return narrow;
 }
 
-/** The open panel (or null) and a setter that remembers it. */
-export function useRailPanel(): [RailPanel | null, (next: RailPanel | null) => void] {
+/**
+ * The open panel (or null) and a setter that remembers it. When the window becomes narrow (a phone
+ * turned to portrait), an open panel closes instead of turning into a sheet; the stored choice stays.
+ */
+export function useRailPanel(narrow: boolean): [RailPanel | null, (next: RailPanel | null) => void] {
   const [open, setOpen] = useState<RailPanel | null>(() => {
     if (window.innerWidth < SHEET_BELOW) return null;
     try {
@@ -42,6 +45,12 @@ export function useRailPanel(): [RailPanel | null, (next: RailPanel | null) => v
     }
     return 'settings';
   });
+  // Adjusted during render, so the sheet (and its history entry) never mounts for this change.
+  const [wasNarrow, setWasNarrow] = useState(narrow);
+  if (narrow !== wasNarrow) {
+    setWasNarrow(narrow);
+    if (narrow) setOpen(null);
+  }
   const set = useCallback((next: RailPanel | null) => {
     setOpen(next);
     try {
