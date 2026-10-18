@@ -13,9 +13,9 @@ E-mail: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
 
 - **When you visit the site:** This site uses no cookies and no analytics tools that track visitors. The hosting provider (GitHub Pages) may keep technical connection records such as IP addresses for security and service operation, under its own policy.
 - **When you e-mail me:** your name, e-mail address and whatever you share in your message.
-- **When you use the contact form:** the name, e-mail address, topic and message you enter reach me as an e-mail through Google's infrastructure (Google Apps Script); they are not stored on the site and are kept only to reply to you.
+- **When you use the contact form:** the name, e-mail address, topic and message you enter reach me as an e-mail through Google's infrastructure (Google Apps Script) and are used only to reply to you. Your message is not stored on the site; only to prevent abuse, a counter linked to your e-mail address is kept by Google for at most 24 hours.
 
-Please do not share detailed information about your health in e-mails. Such matters are discussed during sessions, under appropriate conditions.
+Please do not share detailed information about your health in e-mails or form messages. Such matters are discussed during sessions, under appropriate conditions.
 
 ## Purpose and legal basis
 

@@ -9,7 +9,7 @@ Gizliliğiniz, terapi ilişkisinin temelidir. Bu sayfa, klinikterapist.com sites
 - **Çerez yok.** Site, çerez ya da benzeri izleme teknolojileri kullanmaz. Bu yüzden çerez onay penceresi göremezsiniz.
 - **Takip yok.** Reklam ya da ziyaretçi davranışını izleyen analiz araçları kullanılmaz.
 - **Dış bağlantılar yok.** Yazı tipleri ve görseller bu sitenin kendi sunucusundan yüklenir. Siteyi açtığınızda Google Fonts gibi üçüncü taraf servislere istek gönderilmez.
-- **Yalnızca iletişim formu.** Sitedeki tek form İletişim sayfasındaki formdur. Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır; sitede ayrıca saklanmaz ve yalnızca size yanıt vermek için tutulur.
+- **Yalnızca iletişim formu.** Sitedeki tek form İletişim sayfasındaki formdur. Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır ve yalnızca size yanıt vermek için kullanılır. Mesajınız sitede saklanmaz; yalnızca kötüye kullanımı önlemek için e-posta adresinize bağlı bir sayaç Google tarafında en fazla 24 saat tutulur.
 
 ## Görünüm tercihi
 
@@ -25,7 +25,7 @@ Instagram gibi sosyal medya hesaplarıma ya da önerdiğim kaynaklara verilen ba
 
 ## E-posta
 
-Bana gönderdiğiniz e-postalar ve iletişim formu mesajları yalnızca size yanıt vermek ve randevu sürecini yürütmek için kullanılır. Ayrıntılar için [Aydınlatma Metni](/aydinlatma-metni/) sayfasına bakabilirsiniz.
+Bana gönderdiğiniz e-postalar yalnızca size yanıt vermek ve randevu sürecini yürütmek için, iletişim formu mesajları ise yalnızca size yanıt vermek için kullanılır. Ayrıntılar için [Aydınlatma Metni](/aydinlatma-metni/) sayfasına bakabilirsiniz.
 
 ## Değişiklikler
 

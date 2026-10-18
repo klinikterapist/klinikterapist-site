@@ -13,9 +13,9 @@ E-posta: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
 
 - **Siteyi ziyaret ettiğinizde:** Bu sitede çerez ya da ziyaretçi takibi yapan bir analiz aracı kullanılmaz. Siteyi barındıran hizmet sağlayıcı (GitHub Pages), güvenlik ve hizmetin işletilmesi amacıyla IP adresi gibi teknik bağlantı kayıtlarını kendi politikası çerçevesinde tutabilir.
 - **Bana e-posta gönderdiğinizde:** Adınız, e-posta adresiniz ve mesajınızda paylaştığınız bilgiler.
-- **İletişim formunu kullandığınızda:** Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır; sitede ayrıca saklanmaz ve yalnızca size yanıt vermek için tutulur.
+- **İletişim formunu kullandığınızda:** Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır ve yalnızca size yanıt vermek için kullanılır. Mesajınız sitede saklanmaz; yalnızca kötüye kullanımı önlemek için e-posta adresinize bağlı bir sayaç Google tarafında en fazla 24 saat tutulur.
 
-Lütfen e-postalarınızda sağlık durumunuza ilişkin ayrıntılı bilgi paylaşmayın. Bu tür bilgiler, görüşme sürecinde ve uygun koşullarda ele alınır.
+Lütfen e-postalarınızda ve form mesajlarınızda sağlık durumunuza ilişkin ayrıntılı bilgi paylaşmayın. Bu tür bilgiler, görüşme sürecinde ve uygun koşullarda ele alınır.
 
 ## Hangi amaçla ve hangi hukuki sebeple?
 
