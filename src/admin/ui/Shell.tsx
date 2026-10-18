@@ -4,7 +4,7 @@ import { go, usePanel, type Route } from './context';
 import { startNewPost } from '../lib/new-post';
 import { useTheme } from './theme';
 import { Button } from './kit';
-import { ExternalLink, FileText, House, Icon, LogOut, Moon, Plus, Sun, type LucideIcon } from './icons';
+import { ExternalLink, FileText, House, Icon, LogOut, Menu, Moon, Plus, Sun, type LucideIcon } from './icons';
 import { SETTINGS_SCREENS } from './settings/screens';
 
 export { SETTINGS_SCREENS };
@@ -28,7 +28,8 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
   return (
     <div className="shell">
       <Button variant="ghost" className="menu-toggle" aria-expanded={open} aria-controls="panel-nav" onClick={() => setOpen(!open)}>
-        ☰ Menü
+        <Icon as={Menu} size={20} />
+        Menü
       </Button>
       <nav id="panel-nav" className={`panel-nav ${open ? 'open' : ''}`} aria-label="Panel menüsü">
         <a className="nav-logo" href="#/">

@@ -21,6 +21,7 @@ export {
   ListOrdered,
   LogOut,
   Mail,
+  Menu,
   Moon,
   Plus,
   Quote,

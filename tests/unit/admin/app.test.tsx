@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from '../../../src/admin/ui/App';
 import { createMockApi } from '../../../src/admin/api/mock';
 import { createSessionStore } from '../../../src/admin/api/session';
@@ -46,7 +46,8 @@ describe('App', () => {
     expect((screen.getByLabelText('E-posta adresi') as HTMLInputElement).value).toBe('yeni@klinikterapist.com');
     fireEvent.click(screen.getByRole('button', { name: /Deneme girişi/ }));
     await screen.findByRole('heading', { level: 2, name: 'İletişim' });
-    expect(screen.queryByRole('heading', { name: /giriş/i })).toBeNull();
+    // The screen underneath was there all along; wait for the sign-in on top to go.
+    await waitFor(() => expect(screen.queryByRole('heading', { name: /giriş/i })).toBeNull());
     expect((screen.getByLabelText('E-posta adresi') as HTMLInputElement).value).toBe('yeni@klinikterapist.com');
   });
 
@@ -63,6 +64,15 @@ describe('App', () => {
     expect(within(nav).getByRole('button', { name: 'Yeni yazı' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Karanlık mod' }));
     expect(screen.getByRole('button', { name: 'Açık mod' })).toBeTruthy();
+  });
+
+  it('the phone menu toggle is a Lucide icon and "Menü", no text glyph', async () => {
+    const store = createSessionStore(localStorage);
+    store.set('s', Date.now() + 3600e3);
+    render(<App api={createMockApi()} store={store} config={config} />);
+    const toggle = await screen.findByRole('button', { name: 'Menü' });
+    expect(toggle.querySelector('svg.lucide')).toBeTruthy();
+    expect(toggle.textContent).not.toContain('☰');
   });
 
   it('the theme switch sits at the bottom of the menu', async () => {
