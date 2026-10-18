@@ -59,6 +59,18 @@ describe.each(themes)('%s theme contrast (WCAG AA)', (theme) => {
   });
 });
 
+describe.each(themes)('%s theme contact form fields', (theme) => {
+  const p = PALETTE[theme];
+  it('draw their edge in --muted, which reaches 3:1 on both the form surface and the field background', () => {
+    const form = readFileSync('src/components/contact/ContactForm.astro', 'utf8');
+    const rule = /input\[type='text'\][^{]*\{([^}]*)\}/.exec(form)![1];
+    // --line is decorative (about 1.3:1); a control's edge must reach 3:1 (WCAG 1.4.11).
+    expect(rule).toMatch(/border:\s*1px solid var\(--muted\)/);
+    expect(contrastRatio(p.muted, p.surface)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(p.muted, p.bg)).toBeGreaterThanOrEqual(3);
+  });
+});
+
 describe('sunflower', () => {
   it('is below 4.5:1 on the day background, so it is never text there', () => {
     expect(contrastRatio('#F6B92B', PALETTE.day.bg)).toBeLessThan(4.5);

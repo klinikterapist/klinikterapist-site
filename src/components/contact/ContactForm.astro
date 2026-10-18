@@ -177,7 +177,8 @@ const id = (name: string) => `cf-${name}`;
     width: 100%;
     min-height: 48px;
     padding: 12px 14px;
-    border: 1px solid var(--line);
+    /* --line is decorative (about 1.3:1); a form control's edge must reach 3:1 (WCAG 1.4.11), so --muted. */
+    border: 1px solid var(--muted);
     border-radius: var(--radius-sm);
     background: var(--bg);
     color: var(--text);
