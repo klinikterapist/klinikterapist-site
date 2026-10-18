@@ -372,14 +372,14 @@ describe('inner pages redesign (spec §5.9)', () => {
  */
 describe('sample content (real posts and data)', () => {
   const sample = (path: string) => loadPage(path, DIST_SAMPLES);
-  type Meta = { slug: string; featured: boolean; cover: boolean };
+  type Meta = { slug: string; featured: boolean; cover: boolean; at: number };
   const metas = (lang: 'tr' | 'en'): Meta[] =>
     readdirSync('src/content/posts')
       .filter((k) => existsSync(join('src/content/posts', k, `${lang}.md`)))
       .map((k) => {
         const raw = readFileSync(join('src/content/posts', k, `${lang}.md`), 'utf8').replace(/\r\n/g, '\n');
         const fm = parseYaml(/^---\n([\s\S]*?)\n---/.exec(raw)![1]);
-        return { slug: fm.slug as string, featured: fm.featured === true, cover: Boolean(fm.cover) };
+        return { slug: fm.slug as string, featured: fm.featured === true, cover: Boolean(fm.cover), at: new Date(fm.publishedAt).getTime() };
       });
   const prefix = { tr: '/blog/', en: '/en/blog/' } as const;
   const hrefs = (lang: 'tr' | 'en', pick: (m: Meta) => boolean = () => true) =>
@@ -394,30 +394,31 @@ describe('sample content (real posts and data)', () => {
     expect(postLinks('/en/blog/', 'en')).toEqual(hrefs('en'));
   });
 
-  it('the popular tile and #popular list exactly the featured posts, or are absent when none is featured', () => {
+  // pickPopular: featured posts, newest first, at most four (read counts are stubbed to none).
+  const popular = (lang: 'tr' | 'en') =>
+    metas(lang).filter((m) => m.featured).sort((x, y) => y.at - x.at).slice(0, 4).map((m) => `${prefix[lang]}${m.slug}/`).sort();
+
+  it('the popular tile and #popular follow the featured posts, and are absent when none is featured', () => {
     for (const [path, lang] of [['/', 'tr'], ['/en/', 'en']] as const) {
-      const featured = hrefs(lang, (m) => m.featured);
-      const tiles = sample(path).querySelectorAll('.home-phone .tile-pair a.tile');
-      if (featured.length === 0) expect(tiles, path).toHaveLength(1);
-      else expect(tiles, path).toHaveLength(2);
+      const tile = sample(path).querySelectorAll('.home-phone .tile-pair a.tile').filter((a) => (a.getAttribute('href') ?? '').endsWith('#popular'));
+      expect(tile.length > 0, path).toBe(popular(lang).length > 0);
     }
     for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
-      const featured = hrefs(lang, (m) => m.featured);
       const listed = sample(path).querySelectorAll('section#popular a.list-item').map((a) => a.getAttribute('href') ?? '').sort();
-      expect(listed, path).toEqual(featured);
+      expect(listed, path).toEqual(popular(lang));
     }
   });
 
-  it('a post with a cover renders it (optimised, with alt text) and a post without one renders none', () => {
+  it('a post with a cover renders it (optimised) and a post without one renders none', () => {
     for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
       const d = sample(path);
       const imgs = d.querySelectorAll('img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
-      // Each post's own page carries its cover (with alt text) when it has one, and no optimised image when not.
+      // Each post's own page carries its cover when it has one, and no optimised image when not.
       for (const m of metas(lang)) {
         const post = sample(`${prefix[lang]}${m.slug}/`);
         const covers = post.querySelectorAll('figure.cover-wrap img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
         expect(covers.length > 0, `${prefix[lang]}${m.slug}/`).toBe(m.cover);
-        for (const i of covers) expect((i.getAttribute('alt') ?? '').length, `${prefix[lang]}${m.slug}/`).toBeGreaterThan(10);
+        for (const i of covers) expect(i.hasAttribute('alt'), `${prefix[lang]}${m.slug}/`).toBe(true);
       }
       // The list shows optimised covers exactly when some post has one.
       expect(imgs.length > 0, path).toBe(metas(lang).some((m) => m.cover));

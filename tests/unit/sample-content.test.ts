@@ -5,13 +5,15 @@ import { parse as parseYaml } from 'yaml';
 import { postFrontmatterSchema } from '../../src/lib/schemas';
 import { keywordCount } from '../../src/admin/lib/seo-check';
 import { slugify } from '../../src/lib/slug';
-import { getCategories, getFaq, getHome, type Lang } from '../../src/lib/settings';
+import { getCategories, type Lang } from '../../src/lib/settings';
 
 /**
  * The owner's sample content (real files under src/content/posts and src/data). Build tests run on
  * fixtures, so this unit test is where the real content is held to the copy rules and the publish checklist.
- * The owner edits and deletes these samples in the panel, so nothing here pins a count or a text: every
- * `ornek-*` post that exists must pass the per-post rules, and any that is gone is simply not checked.
+ * The owner edits and deletes these samples in the panel, and deploy.yml runs this suite before every deploy, so
+ * a test here must hold for ANY valid panel state. The copy rules only apply to an untouched sample (an `ornek-*`
+ * post whose body still starts with the sample note); a post whose note was removed is the owner's own and is not
+ * checked. Nothing pins a count, a text or a FAQ/process state.
  */
 const POSTS = 'src/content/posts';
 const NOTE: Record<Lang, string> = {
@@ -33,44 +35,46 @@ function load(): Post[] {
   return out;
 }
 const posts = load();
+/** Untouched samples: the copy rules below hold only for these. */
+const samples = posts.filter((p) => p.body.split(/\n/)[0] === NOTE[p.lang]);
 const words = (s: string) => s.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 const firstParagraph = (body: string) =>
   body.split(/\n\s*\n/).map((p) => p.trim()).find((p) => p && !p.startsWith('_') && !p.startsWith('#'))!;
 
 describe('sample posts', () => {
-  const keys = [...new Set(posts.map((p) => p.key))];
   const ids = getCategories().map((c) => c.id);
+  const sampleKeys = (lang: Lang) => new Set(samples.filter((p) => p.lang === lang).map((p) => p.key));
 
   it('frontmatter passes the post schema', () => {
     for (const p of posts) expect(() => postFrontmatterSchema(ids).parse(p.data), `${p.key}/${p.lang}`).not.toThrow();
   });
 
-  it('a cover is declared exactly when the cover file exists, and has real alt text', () => {
-    for (const p of posts) {
-      const has = existsSync(join(POSTS, p.key, 'cover.webp'));
-      expect(p.data.cover !== undefined, `${p.key}/${p.lang}`).toBe(has);
-      if (has) {
-        expect(p.data.cover).toBe('./cover.webp');
-        expect(String(p.data.coverAlt ?? '').trim().length).toBeGreaterThan(10);
-      }
+  it('a declared cover points at a file that exists', () => {
+    for (const p of posts) if (p.data.cover) expect(existsSync(join(POSTS, p.key, String(p.data.cover))), `${p.key}/${p.lang}`).toBe(true);
+  });
+
+  it('untouched samples: a cover is declared as ./cover.webp with real alt text', () => {
+    for (const p of samples.filter((x) => x.data.cover)) {
+      expect(p.data.cover).toBe('./cover.webp');
+      expect(String(p.data.coverAlt ?? '').trim().length).toBeGreaterThan(10);
     }
   });
 
-  it('both languages of a post (when both exist) share category, date, featured and cover', () => {
-    for (const k of keys) {
-      const tr = posts.find((p) => p.key === k && p.lang === 'tr');
-      const en = posts.find((p) => p.key === k && p.lang === 'en');
-      if (!tr || !en) continue;
+  it('untouched samples: both languages share category, date, featured and cover', () => {
+    for (const k of sampleKeys('tr')) {
+      if (!sampleKeys('en').has(k)) continue;
+      const tr = samples.find((p) => p.key === k && p.lang === 'tr')!;
+      const en = samples.find((p) => p.key === k && p.lang === 'en')!;
       for (const f of ['category', 'featured', 'cover']) expect(en.data[f], `${k}.${f}`).toEqual(tr.data[f]);
       expect(new Date(en.data.publishedAt).getTime()).toBe(new Date(tr.data.publishedAt).getTime());
     }
   });
 
-  it('every post has a publish date with a time', () => {
-    for (const p of posts) expect(readFileSync(join(POSTS, p.key, `${p.lang}.md`), 'utf8')).toMatch(/publishedAt: "?\d{4}-\d\d-\d\dT\d\d:\d\d/);
+  it('untouched samples carry a publish date with a time', () => {
+    for (const p of samples) expect(readFileSync(join(POSTS, p.key, `${p.lang}.md`), 'utf8')).toMatch(/publishedAt: "?\d{4}-\d\d-\d\dT\d\d:\d\d/);
   });
 
-  it.each(posts.map((p) => [`${p.key}/${p.lang}`, p] as const))(
+  it.each(samples.map((p) => [`${p.key}/${p.lang}`, p] as const))(
     '%s: sample note, 300-500 words, subheadings, checklist keyword rules',
     (_n, p) => {
       expect(p.body.split('\n')[0]).toBe(NOTE[p.lang]);
@@ -90,40 +94,23 @@ describe('sample posts', () => {
     },
   );
 
-  it('no focus keyword is reused across posts of one language', () => {
+  it('untouched samples: no focus keyword is reused across posts of one language', () => {
     for (const lang of ['tr', 'en'] as const) {
-      const kws = posts.filter((p) => p.lang === lang).map((p) => String(p.data.focusKeyword).toLowerCase());
+      const kws = samples.filter((p) => p.lang === lang).map((p) => String(p.data.focusKeyword).toLowerCase());
       expect(new Set(kws).size).toBe(kws.length);
     }
   });
 
-  it('every listed reference is cited in the text', () => {
-    for (const p of posts) {
+  it('untouched samples: every listed reference is cited in the text', () => {
+    for (const p of samples) {
       for (const r of p.data.references ?? []) expect(p.body, `${p.key}/${p.lang} ${r.id}`).toContain(r.id);
     }
   });
 
-  it('no diagnosis or promise wording, no testimonials', () => {
-    for (const p of posts) {
+  it('untouched samples: no diagnosis or promise wording, no testimonials', () => {
+    for (const p of samples) {
       expect(p.body).not.toMatch(/garanti|kesin (çözüm|iyileş)|tedavi eder|iyileştirir|guarantee|cure[sd]?|will heal/i);
       expect(p.body).not.toMatch(/danışanım|hastam|my client|my patient/i);
-    }
-  });
-});
-
-describe('sample site texts', () => {
-  it('a FAQ answer is never half-filled: both languages or neither', () => {
-    const faq = JSON.parse(readFileSync('src/data/faq.json', 'utf8')) as { id: string; a: { tr: string; en: string } }[];
-    for (const f of faq) expect(f.a.tr.trim() !== '', f.id).toBe(f.a.en.trim() !== '');
-    expect(getFaq('tr').length).toBe(getFaq('en').length);
-  });
-
-  it('every home process step has a title and text in both languages', () => {
-    for (const s of getHome().process ?? []) {
-      for (const lang of ['tr', 'en'] as const) {
-        expect(s.title[lang].trim()).not.toBe('');
-        expect(s.text[lang].trim()).not.toBe('');
-      }
     }
   });
 });
