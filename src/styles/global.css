@@ -173,3 +173,16 @@ a:hover {
   font-family: var(--font-hand);
   font-weight: 400;
 }
+
+/* Day/night: colours ease over 0.3 s; none for people who ask for less motion. */
+body,
+body * {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  body * {
+    transition: none;
+  }
+}

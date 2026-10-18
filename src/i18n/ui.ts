@@ -124,6 +124,13 @@ export const STRINGS = {
     en: 'The privacy policy of this site: which data is processed and how.',
   },
 
+  // Theme
+  themeLabel: { tr: 'Görünüm', en: 'Appearance' },
+  themeSystem: { tr: 'Sistem', en: 'System' },
+  themeLight: { tr: 'Gündüz', en: 'Day' },
+  themeDark: { tr: 'Gece', en: 'Night' },
+  themeChipHint: { tr: 'Görünümü değiştir. Sisteme dönmek için basılı tutun.', en: 'Switch appearance. Press and hold to return to system.' },
+
   // 404
   notFoundTitle: { tr: 'Sayfa bulunamadı', en: 'Page not found' },
   notFoundText: {

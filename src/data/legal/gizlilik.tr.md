@@ -11,6 +11,10 @@ Gizliliğiniz, terapi ilişkisinin temelidir. Bu sayfa, klinikterapist.com sites
 - **Dış bağlantılar yok.** Yazı tipleri ve görseller bu sitenin kendi sunucusundan yüklenir. Siteyi açtığınızda Google Fonts gibi üçüncü taraf servislere istek gönderilmez.
 - **Form yok.** Bu aşamada sitede veri toplayan bir form bulunmaz. Benimle yalnızca e-posta ya da sosyal medya üzerinden iletişime geçebilirsiniz.
 
+## Görünüm tercihi
+
+Tercih ettiğiniz görünüm (gündüz/gece) yalnızca kendi tarayıcınızda saklanır, bize gönderilmez.
+
 ## Barındırma
 
 Site, GitHub Pages üzerinde yayınlanır. GitHub, hizmetin güvenliği ve işletilmesi için IP adresi gibi teknik kayıtları kendi [gizlilik bildirimi](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) çerçevesinde işleyebilir.

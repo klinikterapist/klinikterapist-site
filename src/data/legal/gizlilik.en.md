@@ -11,6 +11,10 @@ Privacy is the foundation of the therapeutic relationship. This page explains in
 - **No third-party requests.** Fonts and images are served from this site itself. Opening the site sends no requests to third-party services such as Google Fonts.
 - **No forms.** At this stage the site has no form that collects data. You can reach me only by e-mail or social media.
 
+## Appearance preference
+
+The appearance you choose (day/night) is stored only in your own browser and is not sent to us.
+
 ## Hosting
 
 The site is published on GitHub Pages. GitHub may process technical records such as IP addresses for security and service operation under its own [privacy statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
