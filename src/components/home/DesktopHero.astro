@@ -1,12 +1,11 @@
 ---
 /**
- * Desktop home intro (spec §5.7; owner's review 2026-10-18): on the left the portrait inside the
- * site column (its left edge on the header's), softly rounded on every corner, with the whole brand
- * sun at its bottom-right corner; on the right a warm greeting ("Merhaba, ben Klinik Psikolog Osman
- * Güneş Özkurt."), the tagline as the page's h1, intro, "Randevu Al" and "İlk görüşme nasıl geçer?",
- * and the wordmark under them. The profile's heroStyle only picks the phone header (PortraitHero);
- * every desktop with a photo gets this layout. Without a photo the big sun with a soft halo stands in
- * the same place.
+ * Desktop home intro (spec §5.7; owner's reviews 2026-10-18 and 2026-10-19): on the left the portrait
+ * inside the site column, softly rounded on every corner, with the whole brand sun at its
+ * bottom-right corner. On the right a personal welcome: a small "Hoş geldiniz", then the greeting
+ * "Merhaba, ben Klinik Psikolog Osman Güneş Özkurt." as the page's h1 in the large serif and the text
+ * colour, the tagline under it, intro, "Randevu Al", the free intro call badge and the wordmark in
+ * the logo's own black/white. Without a photo the big sun with a soft halo stands in the same place.
  */
 import type { Lang } from '../../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../../lib/portrait-image';
@@ -27,8 +26,10 @@ interface Props {
   name: string;
   /** The "first session" link points at the FAQ item `ilk-gorusme`; hidden when that item has no answer. */
   showFirstSession: boolean;
+  /** The free intro call badge links to the FAQ item `on-gorusme`; hidden when that item has no answer. */
+  showFreeIntro: boolean;
 }
-const { lang, photo, alt, heading, intro, title, name, showFirstSession } = Astro.props;
+const { lang, photo, alt, heading, intro, title, name, showFirstSession, showFreeIntro } = Astro.props;
 const greeting = t(lang, 'heroGreeting').replace('{who}', [title, name].filter(Boolean).join(' '));
 // The photo box is at most 30rem (480 px) wide, about 40vw on smaller desktops; 2x screens take the
 // 800 or 1080 px variant.
@@ -41,8 +42,12 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
 <section class:list={['desktop-hero', img ? 'desktop-hero--photo' : 'desktop-hero--none']}>
   <div class="inner container">
     <div class="text">
-      <p class="greeting">{greeting}</p>
-      <h1>{heading}</h1>
+      <p class="welcome">
+        <span class="welcome-rule" aria-hidden="true"></span>
+        {t(lang, 'heroWelcome')}
+      </p>
+      <h1 class="greeting">{greeting}</h1>
+      {heading && <p class="tagline">{heading}</p>}
       {intro && <p class="lead">{intro}</p>}
       <div class="actions">
         <a class="btn big" href={pathFor('appointment', lang)}>
@@ -51,8 +56,18 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
         </a>
         {showFirstSession && <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>}
       </div>
+      {
+        showFreeIntro && (
+          <a class="free-intro" href={`${pathFor('faq', lang)}#on-gorusme`}>
+            <span class="free-dot" aria-hidden="true" />
+            <b>{t(lang, 'freeIntroBadge')}</b>
+            <span class="free-hint">{t(lang, 'freeIntroBadgeHint')}</span>
+            <Icon name="arrow" size={14} />
+          </a>
+        )
+      }
       <span class="hero-wordmark">
-        <Wordmark height={40} decorative />
+        <Wordmark height={56} decorative />
       </span>
     </div>
 
@@ -104,18 +119,75 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     order: -1;
   }
 
-  .greeting {
-    margin: 0 0 var(--space-3);
+  /* A small "Hoş geldiniz" in the accent colour, led by a short rule. */
+  .welcome {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
     color: var(--link);
-    font-size: 1.125rem;
-    font-weight: 500;
-    line-height: 1.4;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.04em;
   }
 
-  h1 {
+  .welcome-rule {
+    width: 2.25rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--sun-disc);
+  }
+
+  /* The greeting is the page's headline: the large serif in the text colour (cream at night). */
+  .greeting {
     margin: 0 0 var(--space-4);
-    font-size: clamp(2.5rem, 1.5rem + 2.4vw, 3.25rem);
-    line-height: 1.05;
+    color: var(--text);
+    font-size: clamp(2.25rem, 1.2rem + 2.3vw, 3.125rem);
+    line-height: 1.08;
+    text-wrap: balance;
+  }
+
+  .tagline {
+    margin: 0 0 var(--space-3);
+    color: var(--link);
+    font-family: var(--font-serif);
+    font-size: clamp(1.375rem, 1rem + 0.8vw, 1.75rem);
+    font-style: italic;
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  /* "Ücretsiz ön görüşme · 25 dakika · online": a soft pill under the buttons. */
+  .free-intro {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding: 0.5rem 0.95rem;
+    border: 1px solid color-mix(in srgb, var(--sun-disc) 55%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--sun-halo) 18%, transparent);
+    color: var(--text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .free-intro:hover {
+    background: color-mix(in srgb, var(--sun-halo) 30%, transparent);
+    color: var(--text);
+  }
+
+  .free-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--sun-disc);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun-disc) 30%, transparent);
+  }
+
+  .free-hint {
+    color: var(--muted);
   }
 
   .lead {
@@ -157,17 +229,17 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     color: var(--text);
   }
 
-  /* The klinikterapist wordmark under the buttons, in the theme's accent colour. */
+  /* The klinikterapist wordmark under the buttons, in the logo's own black/white (the text colour). */
   .hero-wordmark {
     display: block;
     margin-top: var(--space-7);
-    color: var(--link);
+    color: var(--text);
     line-height: 0;
   }
 
   .hero-wordmark :global(.wordmark) {
     width: auto;
-    height: clamp(32px, 3vw, 40px);
+    height: clamp(44px, 4vw, 56px);
   }
 
   .art {

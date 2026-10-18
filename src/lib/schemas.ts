@@ -111,6 +111,17 @@ const aboutSchema = z.object({
   quote: localized,
   // `period`: a plain string for language-neutral values ("2016–2020"), or { tr, en } for words ("Devam ediyor").
   timeline: z.array(z.object({ title: localized, detail: localized, period: z.union([z.string(), localized]) })),
+  /** Certificates and trainings ("Sertifikalarım"): name, issuing body, year and an optional link to verify it. */
+  certificates: z
+    .array(
+      z.object({
+        title: localized,
+        issuer: z.string(),
+        year: z.string(),
+        url: z.union([z.literal(''), httpsUrl]).optional(),
+      }),
+    )
+    .default([]),
 });
 
 const contactSchema = z.object({

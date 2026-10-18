@@ -39,6 +39,7 @@ export const ICONS = {
   eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
   tag: '<path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1L21 11.9l-9.1 9.1z"/><circle cx="8.2" cy="8.2" r="1.4"/>',
   help: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4M12 16.6v.1"/>',
+  award: '<circle cx="12" cy="8.5" r="5.5"/><path d="M15.2 13L16.5 21 12 18.5 7.5 21 8.8 13"/>',
   shield: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
   chat: '<path d="M4 5h16v11H9l-5 4z"/>',
   target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',

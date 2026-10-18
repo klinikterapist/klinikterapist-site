@@ -1,4 +1,4 @@
-/** Hakkımda: texts, working areas, the two Markdown sections and the timeline. */
+/** Hakkımda: texts, working areas, the two Markdown sections, the timeline and the certificates. */
 import { parseAbout, type About, type Period } from '../../../../lib/schemas';
 import { ICONS } from '../../../../lib/icons';
 import { Field, Select } from '../../kit';
@@ -7,6 +7,7 @@ import { useSettingsFile } from '../useSettingsFile';
 
 type Area = About['areas'][number];
 type Step = About['timeline'][number];
+type Cert = About['certificates'][number];
 const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
 
 function PeriodField({ value, onChange }: { value: Period; onChange: (p: Period) => void }) {
@@ -76,6 +77,22 @@ export function HakkimdaScreen() {
                 <LocalizedField label="Başlık" value={x.title} onChange={(title) => update({ title })} />
                 <LocalizedField label="Ayrıntı" value={x.detail} onChange={(detail) => update({ detail })} />
                 <PeriodField value={x.period} onChange={(period) => update({ period })} />
+              </>
+            )}
+          />
+          <h3>Sertifikalarım</h3>
+          <ListEditor<Cert>
+            items={a.certificates}
+            onChange={set('certificates')}
+            itemLabel={(x) => x.title.tr || 'Yeni sertifika'}
+            newItem={() => ({ title: { tr: '', en: '' }, issuer: '', year: '', url: '' })}
+            addLabel="Sertifika ekle"
+            render={(x, update) => (
+              <>
+                <LocalizedField label="Sertifika / eğitim adı" value={x.title} onChange={(title) => update({ title })} />
+                <Field label="Veren kurum" value={x.issuer} onChange={(issuer) => update({ issuer })} />
+                <Field label="Yıl" value={x.year} onChange={(year) => update({ year })} />
+                <Field label="Belge bağlantısı (isteğe bağlı, https://…)" value={x.url ?? ''} onChange={(url) => update({ url })} />
               </>
             )}
           />

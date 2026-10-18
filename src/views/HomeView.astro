@@ -69,6 +69,7 @@ const tilePair: [Tile] | [Tile, Tile] | null = tiles.length === 2 ? [tiles[0], t
 
 const faq = getFaq(lang);
 const hasFirstSession = faq.some((f) => f.id === 'ilk-gorusme');
+const hasFreeIntro = faq.some((f) => f.id === 'on-gorusme');
 const firstName = profile.name.split(/\s+/)[0];
 const helloText = profile.shortIntro?.[lang].trim() || intro;
 const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
@@ -97,6 +98,15 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
         <Icon name="calendar" size={18} />
         {t(lang, 'bookSession')}
       </a>
+      {
+        hasFreeIntro && (
+          <a class="free-intro" href={`${pathFor('faq', lang)}#on-gorusme`}>
+            <span class="free-dot" aria-hidden="true" />
+            <b>{t(lang, 'freeIntroBadge')}</b>
+            <span class="free-hint">· {t(lang, 'freeIntroBadgeHint')}</span>
+          </a>
+        )
+      }
 
       <div class="stack">
         <SocialAccordion lang={lang} />
@@ -146,6 +156,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       title={profile.title[lang].trim()}
       name={profile.name}
       showFirstSession={hasFirstSession}
+      showFreeIntro={hasFreeIntro}
     />
 
     <section class="latest container" aria-label={t(lang, 'recentPosts')}>
@@ -247,12 +258,12 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     font-size: var(--text-xs);
   }
 
-  /* The wordmark under the membership line, as on the desktop hero. */
+  /* The wordmark under the membership line in the logo's own black/white (the text colour). */
   .hero-wordmark {
     display: flex;
     justify-content: center;
     margin-top: 10px;
-    color: var(--link);
+    color: var(--text);
   }
 
   .intro {
@@ -280,6 +291,34 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
   .top-cta:hover {
     background: var(--btn-bg-hover);
     color: var(--btn-text);
+  }
+
+  /* "Ücretsiz ön görüşme · 25 dakika · online" under the button. */
+  .free-intro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--sun-disc) 55%, transparent);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--sun-halo) 18%, transparent);
+    color: var(--text);
+    font-size: var(--text-xs);
+    text-decoration: none;
+  }
+
+  .free-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--sun-disc);
+  }
+
+  .free-hint {
+    color: var(--muted);
   }
 
   .stack,

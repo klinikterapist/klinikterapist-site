@@ -1,17 +1,17 @@
 ---
 /**
- * About (spec §5.9): photo (or the sun), "Hakkımda", name and title, membership, the lead sentence;
+ * About (spec §5.9): "Hakkımda" first, centred at the top of the page (owner's review 2026-10-19), then
+ * the photo (or the sun), name and title, membership, the lead sentence;
  * accordions "Ben kimim?" (open), "Bu işi neden yapıyorum?", the work areas as tile pairs,
  * "Eğitim ve deneyim" (timeline) and a row to the contact page. Empty texts render nothing.
  * Desktop (from 768 px): a biography / CV page (owner's review 2026-10-18, second round). A sticky side
  * column holds a large framed portrait, the heading, name and title, memberships, the lead and "Randevu
  * Al"; beside it `.about-cv` lays every section out open, CV style (a label on the left, the content on
  * the right): who I am with the quote, why I do this work, the work areas as a tile grid, and education
- * and experience as a timeline. Phones keep the single centred column with its accordions
+ * and experience as a timeline, and the certificates ("Sertifikalarım") as cards. Phones keep the single centred column with its accordions
  * (`.about-main`); CSS shows one of the two.
  */
 import PageShell from '../layouts/PageShell.astro';
-import PageHead from '../components/ui/PageHead.astro';
 import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import TilePair from '../components/ui/TilePair.astro';
@@ -50,13 +50,21 @@ for (let i = 0; i < areas.length; i += 2) {
 // The desktop CV portrait, about 320 px wide. Phones never fetch it (the <source> matches from 768 px
 // and the <img> itself is an empty inline GIF); they keep the small round photo.
 const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) : null;
+const certificates = about.certificates
+  .map((c) => ({ title: c.title[lang].trim(), issuer: c.issuer.trim(), year: c.year.trim(), url: c.url?.trim() ?? '' }))
+  .filter((c) => c.title);
+const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter(Boolean).join(' · ');
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container-text inner-page about">
+    <header class="about-top">
+      <h1>{about.heading[lang]}</h1>
+    </header>
+
     <div class="about-side">
-      <PageHead title={about.heading[lang]}>
-        <div slot="media" class="media-wrap">
+      <div class="side-head">
+        <div class="media">
           <RoundPortrait class={cvPhoto ? 'phone-only' : undefined} photo={profile.photo} alt={profile.photoAlt[lang]} size={96} eager />
           {
             cvPhoto && (
@@ -77,7 +85,7 @@ const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) :
           ))
         }
         {lead && <p class="lead">{lead}</p>}
-      </PageHead>
+      </div>
       <a class="big-cta side-cta" href={pathFor('appointment', lang)}>
         <Icon name="calendar" size={18} />
         {t(lang, 'bookSession')}
@@ -123,6 +131,32 @@ const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) :
         about.timeline.length > 0 && (
           <Accordion class="edu" title={t(lang, 'education')} subtitle={t(lang, 'timelineHint')}>
             <Timeline lang={lang} items={about.timeline} />
+          </Accordion>
+        )
+      }
+
+      {
+        certificates.length > 0 && (
+          <Accordion class="certs" title={t(lang, 'certificates')} subtitle={t(lang, 'certificatesHint')}>
+            <ul class="cert-list">
+              {certificates.map((c) => (
+                <li class="cert">
+                  <span class="cert-ic">
+                    <Icon name="award" size={18} />
+                  </span>
+                  <span class="cert-text">
+                    <b>{c.title}</b>
+                    {certMeta(c) && <small>{certMeta(c)}</small>}
+                    {c.url && (
+                      <a href={c.url} target="_blank" rel="noopener noreferrer">
+                        {t(lang, 'viewCertificate')}
+                        <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+                      </a>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </Accordion>
         )
       }
@@ -183,6 +217,33 @@ const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) :
         )
       }
 
+      {
+        certificates.length > 0 && (
+          <section class="cv-row" aria-labelledby="cv-certs">
+            <h2 id="cv-certs" class="cv-label">{t(lang, 'certificates')}</h2>
+            <ul class="cv-body cert-list cert-list--cv">
+              {certificates.map((c) => (
+                <li class="cert">
+                  <span class="cert-ic">
+                    <Icon name="award" size={20} />
+                  </span>
+                  <span class="cert-text">
+                    <b>{c.title}</b>
+                    {certMeta(c) && <small>{certMeta(c)}</small>}
+                    {c.url && (
+                      <a href={c.url} target="_blank" rel="noopener noreferrer">
+                        {t(lang, 'viewCertificate')}
+                        <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+                      </a>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
       <div class="cv-row cv-row--end">
         <span class="cv-label" aria-hidden="true"></span>
         <ListItem class="cv-body" icon="chat" title={t(lang, 'contactMe')} subtitle={t(lang, 'contactMeHint')} href={pathFor('contact', lang)} />
@@ -200,11 +261,105 @@ const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) :
     display: none;
   }
 
-  .media-wrap {
-    display: contents;
+  /* The page title, centred at the very top on every screen. */
+  .about-top {
+    text-align: center;
+  }
+
+  .about-top h1 {
+    margin: 4px 0 var(--space-4);
+    font-size: 1.875rem;
+    font-variation-settings: 'SOFT' 100;
+    line-height: 1.12;
+  }
+
+  /* Phones: photo, name and title, membership and the lead, centred under the title. */
+  .side-head {
+    text-align: center;
+  }
+
+  .side-head .media {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .who-line {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .tpd {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  .side-head .lead {
+    margin: 14px 6px 4px;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .cert-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+  }
+
+  .cert-ic {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--sun-halo) 25%, transparent);
+    color: var(--link);
+  }
+
+  .cert-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--text-sm);
+    line-height: 1.4;
+  }
+
+  .cert-text small {
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  .cert-text a {
+    font-size: var(--text-xs);
+    font-weight: 600;
   }
 
   @media (min-width: 768px) {
+    .about-top {
+      grid-column: 1 / -1;
+    }
+
+    .about-top h1 {
+      margin: 0 0 var(--space-3);
+      font-size: var(--text-2xl);
+    }
+
     .about {
       display: grid;
       grid-template-columns: minmax(220px, 320px) minmax(0, 46rem);
@@ -222,22 +377,28 @@ const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) :
       }
     }
 
-    .about-side :global(.page-head) {
+    .side-head {
       text-align: left;
     }
 
-    .about-side :global(.page-head .media) {
+    .side-head .media {
       display: block;
       margin-bottom: var(--space-5);
     }
 
-    .about-side :global(.page-head .lead) {
+    .who-line {
+      color: var(--text);
+      font-family: var(--font-serif);
+      font-size: var(--text-lg);
+    }
+
+    .side-head .lead {
       margin: var(--space-4) 0 0;
       color: var(--muted);
       font-size: var(--text-sm);
     }
 
-    .about-side :global(.page-head .tpd) {
+    .tpd {
       display: flex;
     }
 
@@ -333,6 +494,17 @@ const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) :
       background: var(--surface);
       font-size: var(--text-sm);
       font-weight: 600;
+    }
+
+    .cert-list--cv {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    }
+
+    .cert-list--cv .cert {
+      padding: var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--surface);
     }
 
     .cv-areas li :global(svg) {

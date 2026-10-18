@@ -1,5 +1,9 @@
 ---
-/** FAQ page (spec §10): the answered questions as Accordions. The home page links to `#ilk-gorusme`. */
+/**
+ * FAQ page (spec §10): the answered questions as Accordions, each with its id as the anchor. The home
+ * page links to `#ilk-gorusme` (open by default) and `#on-gorusme`; a tiny script opens the box the
+ * address points at, so a linked answer is never closed.
+ */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
 import Accordion from '../components/ui/Accordion.astro';
@@ -31,7 +35,7 @@ const ld = faqPageLd(lang);
       faq.length > 0 ? (
         <div class="page-stack">
           {faq.map((f) => (
-            <Accordion title={f.q} id={f.id === 'ilk-gorusme' ? f.id : undefined} open={f.id === 'ilk-gorusme'}>
+            <Accordion title={f.q} id={f.id} open={f.id === 'ilk-gorusme'}>
               <p class="answer">{f.a}</p>
             </Accordion>
           ))}
@@ -45,6 +49,18 @@ const ld = faqPageLd(lang);
     }
   </div>
 </PageShell>
+
+<script is:inline>
+  (function () {
+    function openTarget() {
+      var id = decodeURIComponent(location.hash.slice(1));
+      var el = id && document.getElementById(id);
+      if (el && el.tagName === 'DETAILS') el.open = true;
+    }
+    openTarget();
+    addEventListener('hashchange', openTarget);
+  })();
+</script>
 
 <style>
   .answer,
