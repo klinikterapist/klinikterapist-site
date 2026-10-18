@@ -1,5 +1,5 @@
 /** Form pieces shared by the settings screens. */
-import { useRef, useState, type ReactNode } from 'react';
+import { Children, Fragment, isValidElement, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import type { Localized } from '../../../lib/schemas';
 import { renderMarkdown } from '../../../lib/markdown';
 import { IMAGE_PRESETS, ImageError, resizeImage } from '../../lib/image';
@@ -206,7 +206,38 @@ export function ListEditor<T>(props: {
   );
 }
 
-/** Screen frame: title, intro, loading/error, the form, and a save bar. */
+/**
+ * Apple-style grouped form (owner's review 2026-10-19): the screen's fields are split at each <h3>
+ * into inset cards, the heading becoming the small title above its card. Fields before the first
+ * heading form an untitled card. Screens keep writing a flat list of fields and headings.
+ */
+export function groupSettings(content: ReactNode): ReactNode {
+  const flat: ReactNode[] = [];
+  const walk = (node: ReactNode) => {
+    for (const child of Children.toArray(node)) {
+      if (isValidElement(child) && child.type === Fragment) walk((child as ReactElement<{ children?: ReactNode }>).props.children);
+      else flat.push(child);
+    }
+  };
+  walk(content);
+  const groups: { title: ReactNode; items: ReactNode[] }[] = [];
+  for (const child of flat) {
+    if (isValidElement(child) && child.type === 'h3') {
+      groups.push({ title: (child as ReactElement<{ children?: ReactNode }>).props.children, items: [] });
+    } else {
+      if (!groups.length) groups.push({ title: null, items: [] });
+      groups[groups.length - 1].items.push(child);
+    }
+  }
+  return groups.map((g, i) => (
+    <div className="k-group" key={i}>
+      {g.title !== null && <h3 className="k-group-title">{g.title}</h3>}
+      {g.items.length > 0 && <div className="k-group-card">{g.items}</div>}
+    </div>
+  ));
+}
+
+/** Screen frame: title, intro, loading/error, the grouped form, and a save bar. */
 export function SettingsForm<T>(props: {
   title: string;
   /** Id from SETTINGS_SCREENS: supplies the header icon and the default intro. */
@@ -244,7 +275,7 @@ export function SettingsForm<T>(props: {
             (props.onSave ?? (() => file.save()))();
           }}
         >
-          {props.children(file.value)}
+          {groupSettings(props.children(file.value))}
           <div className="save-bar">
             {file.message && <Banner tone={file.message.tone}>{file.message.text}</Banner>}
             {file.message?.tone === 'error' && general.length > 0 && (

@@ -1,6 +1,7 @@
 /**
- * "Önizle": the selected language as the site's post page shows it, full screen. It always uses
- * the site's light look, whatever the panel theme is, and never saves or publishes anything.
+ * "Önizle": the selected language as the site's post page shows it, full screen, under a copy of
+ * the site's header. It starts in the panel's theme; "Gündüz" / "Gece" switch it to the site's day or
+ * night look. It never saves or publishes anything.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Lang } from '../../../lib/schemas';
@@ -9,6 +10,7 @@ import { renderPreviewHtml } from '../../lib/preview';
 import { Button, Spinner } from '../kit';
 import { useHistoryLayer } from '../history-layer';
 import type { ImageStore } from './images';
+import profile from '../../../data/profile.json';
 
 type Node = { type?: string; attrs?: Record<string, unknown>; content?: Node[] };
 
@@ -26,6 +28,7 @@ export function previewImageNames(draft: Draft, lang: Lang): string[] {
 
 export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; lang: Lang; images: Pick<ImageStore, 'url'>; onClose: () => void }) {
   const [urls, setUrls] = useState<Map<string, string> | null>(null);
+  const [look, setLook] = useState<'light' | 'dark'>(() => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'));
   const rootRef = useRef<HTMLDivElement>(null);
   const names = useMemo(() => previewImageNames(draft, lang), [draft, lang]);
   const close = useHistoryLayer(onClose);
@@ -77,14 +80,34 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
   const html = useMemo(() => (urls ? renderPreviewHtml(draft, lang, (n) => urls.get(n) ?? null) : ''), [urls, draft, lang]);
 
   return (
-    <div className="preview-root" ref={rootRef} role="dialog" aria-modal="true" aria-label="Önizleme">
+    <div className="preview-root" data-look={look} ref={rootRef} role="dialog" aria-modal="true" aria-label="Önizleme">
       <div className="preview-bar">
         <span>{`Önizleme · ${lang === 'tr' ? 'Türkçe' : 'İngilizce'} · Henüz yayınlanmadı`}</span>
-        <Button onClick={close}>
-          ← Düzenlemeye dön
-        </Button>
+        <span className="preview-tools">
+          <span className="preview-look" role="group" aria-label="Site görünümü">
+            <button type="button" aria-pressed={look === 'light'} onClick={() => setLook('light')}>
+              Gündüz
+            </button>
+            <button type="button" aria-pressed={look === 'dark'} onClick={() => setLook('dark')}>
+              Gece
+            </button>
+          </span>
+          <Button onClick={close}>← Düzenlemeye dön</Button>
+        </span>
       </div>
       <div className="preview-scroll">
+        <div className="pv-site-head" aria-hidden="true">
+          <div className="pv-site-head-inner">
+            <span className="pv-brand">
+              <img src="/favicon.svg" alt="" width="34" height="34" />
+              <span>
+                <b>{profile.name}</b>
+                <small>{profile.title[lang]}</small>
+              </span>
+            </span>
+            <span className="pv-site-cta">{lang === 'tr' ? 'Randevu Al' : 'Book a Session'}</span>
+          </div>
+        </div>
         <article className="preview-page">{urls ? <div dangerouslySetInnerHTML={{ __html: html }} /> : <Spinner label="Önizleme hazırlanıyor…" />}</article>
       </div>
     </div>

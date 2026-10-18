@@ -1,6 +1,10 @@
 /* Admin panel: the site's tokens (tokens.css), a calm writing surface, usable at 360 px. */
 
-/* Panel colour tokens. Light values come from the site tokens; dark overrides follow. */
+/*
+ * Panel colour tokens: the site's "Gün & Gece" palette (src/styles/tokens.css), so the panel looks like
+ * the site in both themes (owner's review 2026-10-19). Day: cream surfaces with navy accents. Night:
+ * navy surfaces with the sun's yellow as the accent. Grouped settings sit on --p-bg as lighter cards.
+ */
 :root {
   /* Panel scale: spacing, radii and shadows (4 px grid). */
   --k-space-1: 4px;
@@ -9,23 +13,24 @@
   --k-space-4: 16px;
   --k-space-5: 24px;
   --k-space-6: 32px;
-  --k-radius: 12px; /* cards, dialogs */
-  --k-radius-sm: 8px; /* inputs, buttons, nav items */
-  --k-shadow-1: 0 1px 2px rgb(31 42 36 / 0.05);
-  --k-shadow-2: 0 2px 4px rgb(31 42 36 / 0.05), 0 8px 24px rgb(31 42 36 / 0.1);
-  --p-bg: var(--panel-cream);
-  --p-surface: var(--panel-paper);
-  --p-sidebar: var(--panel-paper);
-  --p-field: #fff;
-  --p-border: var(--panel-line);
-  --p-text: var(--panel-ink);
-  --p-muted: var(--panel-muted);
-  --p-heading: var(--panel-forest-deep);
-  --p-accent: var(--panel-forest);
-  --p-accent-deep: var(--panel-forest-deep);
-  --p-accent-text: var(--panel-on-forest);
-  --p-selected: var(--panel-sage-soft);
-  --p-scrim: rgb(31 42 36 / 0.45);
+  --k-radius: 14px; /* cards, dialogs */
+  --k-radius-sm: 10px; /* inputs, buttons, nav items */
+  --k-shadow-1: 0 1px 2px rgb(42 36 32 / 0.05);
+  --k-shadow-2: 0 2px 4px rgb(42 36 32 / 0.05), 0 8px 24px rgb(42 36 32 / 0.1);
+  --p-bg: #F4E9D4;
+  --p-surface: #FFFBF3;
+  --p-sidebar: #FBF3E4;
+  --p-field: #FFFDF9;
+  --p-border: #E2D3B6;
+  --p-text: #2A2420;
+  --p-muted: #5C5348;
+  --p-heading: #1F2E4A;
+  --p-accent: #1F2E4A;
+  --p-accent-deep: #141F33;
+  --p-accent-text: #FBF3E4;
+  --p-selected: #EBDDC0;
+  --p-focus: #1F2E4A;
+  --p-scrim: rgb(31 46 74 / 0.45);
   --p-ok-bg: #dcebd8;
   --p-ok-text: #23502f;
   --p-ok: #3f7a4f;
@@ -39,46 +44,49 @@
   --p-err-label: #8a2c1f;
   --p-err-line: #a33a2a;
   --p-err: #b0412e;
-  --p-highlight: #f6e7c8;
-  --p-placeholder: #9aa39c;
-  --p-on-media: #c9d3cb;
+  --p-highlight: #FCE7A6;
+  --p-placeholder: #8E8577;
+  --p-on-media: #EBDDC0;
   --p-on-status: #fff;
+  --p-sun: #F6B92B;
 }
 
 html[data-theme='dark'] {
   color-scheme: dark;
-  --k-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
-  --k-shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.5);
-  --p-bg: #17181a;
-  --p-surface: #1d1f22;
-  --p-sidebar: #1d1f22;
-  --p-field: #212327;
-  --p-border: #2f3236;
-  --p-text: #e9e6df;
-  --p-muted: #a5a29b;
-  --p-heading: #e9e6df;
-  --p-accent: #6f9a80;
-  --p-accent-deep: #5b8269;
-  --p-accent-text: #101512;
-  --p-selected: #2a332d;
-  --p-scrim: rgb(0 0 0 / 0.6);
-  --p-ok-bg: #223a2a;
-  --p-ok-text: #b4dcbd;
-  --p-ok: #5fb078;
-  --p-warn-bg: #3d3115;
-  --p-warn-text: #f0d79a;
-  --p-warn-label: #e5b95c;
-  --p-warn-note: #e5b95c;
-  --p-warn: #d9a43a;
-  --p-err-bg: #43211c;
-  --p-err-text: #f4b8ad;
-  --p-err-label: #e8806f;
-  --p-err-line: #e8806f;
-  --p-err: #d4604d;
-  --p-highlight: #4a3d17;
-  --p-placeholder: #7d837f;
-  --p-on-media: #050806;
-  --p-on-status: #050806;
+  --k-shadow-1: 0 1px 2px rgb(0 0 0 / 0.3);
+  --k-shadow-2: 0 2px 4px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+  --p-bg: #1A2740;
+  --p-surface: #22324F;
+  --p-sidebar: #1F2E4A;
+  --p-field: #283B5E;
+  --p-border: #34496F;
+  --p-text: #F4EBDD;
+  --p-muted: #B9C4D6;
+  --p-heading: #F4EBDD;
+  --p-accent: #F6B92B;
+  --p-accent-deep: #FCD873;
+  --p-accent-text: #1F2E4A;
+  --p-selected: #2F4570;
+  --p-focus: #FCD873;
+  --p-scrim: rgb(8 14 26 / 0.65);
+  --p-ok-bg: #213D35;
+  --p-ok-text: #B4DCBD;
+  --p-ok: #5FB078;
+  --p-warn-bg: #3F3618;
+  --p-warn-text: #F0D79A;
+  --p-warn-label: #E5B95C;
+  --p-warn-note: #E5B95C;
+  --p-warn: #D9A43A;
+  --p-err-bg: #46262A;
+  --p-err-text: #F4B8AD;
+  --p-err-label: #E8806F;
+  --p-err-line: #E8806F;
+  --p-err: #D4604D;
+  --p-highlight: #4A4220;
+  --p-placeholder: #8796B0;
+  --p-on-media: #0F1828;
+  --p-on-status: #1F2E4A;
+  --p-sun: #F6B92B;
 }
 
 *,
@@ -112,7 +120,7 @@ body.admin {
 }
 
 .admin :focus-visible {
-  outline: 3px solid var(--panel-focus);
+  outline: 3px solid var(--p-focus);
   outline-offset: 2px;
 }
 
@@ -1230,7 +1238,7 @@ textarea.k-input {
 }
 
 .ed-body.prose li::marker {
-  color: var(--panel-sage);
+  color: var(--p-sun);
 }
 
 .ed-body.prose figcaption {
@@ -1258,7 +1266,7 @@ textarea.k-input {
 .ed-body.prose blockquote {
   margin: 0;
   padding-left: 1.1em;
-  border-left: 3px solid var(--panel-sage);
+  border-left: 3px solid var(--p-sun);
   color: var(--p-accent);
   font-family: var(--font-serif);
   font-style: italic;
@@ -1302,7 +1310,7 @@ textarea.k-input {
 
 .ed-figure.is-selected img,
 .ed-youtube.is-selected {
-  outline: 3px solid var(--panel-sage);
+  outline: 3px solid var(--p-sun);
 }
 
 .ed-figure-missing {
@@ -1574,7 +1582,7 @@ textarea.k-input {
 
 .serp-card {
   padding: var(--space-3);
-  border: 1px solid #ddd6c8;
+  border: 1px solid #E2D3B6;
   border-radius: var(--radius-sm);
   background: #fff;
   font-family: Arial, sans-serif;
@@ -1609,10 +1617,10 @@ textarea.k-input {
 
 .social-card {
   overflow: hidden;
-  border: 1px solid #ddd6c8;
+  border: 1px solid #E2D3B6;
   border-radius: var(--radius-sm);
   background: #fff;
-  color: #1f2a24;
+  color: #2A2420;
   margin-top: var(--space-2);
 }
 
@@ -1627,8 +1635,8 @@ textarea.k-input {
 .social-noimg {
   display: grid;
   place-items: center;
-  background: #e3e8dc;
-  color: #5b675f;
+  background: #EBDDC0;
+  color: #5C5348;
   font-size: var(--text-sm);
 }
 
@@ -1642,12 +1650,12 @@ textarea.k-input {
 }
 
 .social-site {
-  color: #5b675f;
+  color: #5C5348;
   font-size: 11px;
 }
 
 .social-name {
-  color: #5b675f;
+  color: #5C5348;
   font-size: 11px;
 }
 
@@ -1656,7 +1664,7 @@ textarea.k-input {
 }
 
 .social-desc {
-  color: #5b675f;
+  color: #5C5348;
   font-size: var(--text-sm);
 }
 
@@ -2134,7 +2142,7 @@ textarea.k-input {
   color: var(--p-text);
 }
 
-/* Önizle: full screen, always the site's light look (the panel's dark theme is ignored). */
+/* Önizle: full screen, in the site's day look; data-look="dark" switches it to the night look. */
 .preview-root {
   color-scheme: light;
   --p-text: var(--text);
@@ -2178,10 +2186,9 @@ textarea.k-input {
   font-size: var(--text-sm);
 }
 
-.preview-bar .k-btn {
-  background: var(--surface);
-  border-color: var(--line);
-  color: var(--link-hover);
+.preview-root .preview-bar .k-btn {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
 }
 
 .preview-scroll {
@@ -2192,6 +2199,272 @@ textarea.k-input {
 
 .preview-page {
   padding-top: var(--space-6);
+}
+
+/* The site's night palette (tokens.css), for the preview only. */
+.preview-root[data-look='dark'] {
+  color-scheme: dark;
+  --bg: #1F2E4A;
+  --surface: #26385A;
+  --surface-2: #2F4570;
+  --text: #F4EBDD;
+  --muted: #B9C4D6;
+  --line: rgb(244 235 221 / 0.13);
+  --btn-bg: #F6B92B;
+  --btn-text: #1F2E4A;
+  --btn-bg-hover: #FCD873;
+  --link: #FCD873;
+  --link-hover: #FFE9A8;
+  --sun-face: #1F2E4A;
+  --dropcap: #F6B92B;
+  --focus: #FCD873;
+  --mark-text: #1F2E4A;
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 4px 16px rgb(0 0 0 / 0.3);
+}
+
+.preview-tools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Gündüz / Gece: a small segmented control. */
+.preview-look {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.preview-look button {
+  min-height: 34px;
+  padding: 0 0.9rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preview-look button[aria-pressed='true'] {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
+}
+
+/* A copy of the site header: sun, name and title, "Randevu Al". */
+.pv-site-head {
+  border-bottom: 1px solid var(--line);
+}
+
+.pv-site-head-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  max-width: calc(var(--max-wide) + 2 * var(--gutter));
+  min-height: 64px;
+  margin-inline: auto;
+  padding: var(--space-2) var(--gutter);
+}
+
+.pv-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pv-brand > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.pv-brand b {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.pv-brand small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.pv-site-cta,
+.pv-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* Post head as on the site: centred topic, title and subtitle; the byline under a hairline. */
+.preview-root .preview-head {
+  align-items: center;
+  text-align: center;
+}
+
+.pv-category {
+  color: var(--link);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pv-byline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: stretch;
+  margin-top: var(--space-5);
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  text-align: left;
+}
+
+.pv-byline p {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.pv-byline-meta {
+  color: var(--muted);
+}
+
+.pv-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface) center 20% / cover no-repeat;
+}
+
+.pv-avatar--sun {
+  background: var(--sun-disc);
+}
+
+.preview-root .cover-wrap {
+  max-width: 880px;
+  margin: var(--space-5) auto var(--space-6);
+  padding-inline: var(--gutter);
+}
+
+.preview-root .cover-wrap img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  object-fit: cover;
+}
+
+.pv-end {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--space-5);
+}
+
+.pv-acc {
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.pv-acc summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.pv-acc summary::-webkit-details-marker {
+  display: none;
+}
+
+.pv-acc-ic,
+.pv-acc-chv {
+  display: grid;
+  place-items: center;
+}
+
+.pv-acc-ic {
+  color: var(--link);
+}
+
+.pv-acc-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.pv-acc-text small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.pv-acc-chv {
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.pv-acc[open] .pv-acc-chv {
+  transform: rotate(90deg);
+}
+
+.pv-acc .references-list {
+  margin: 0;
+  padding: 0 14px 14px 2.2rem;
+  font-size: var(--text-sm);
+}
+
+.pv-share ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pv-share-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 72px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: center;
+}
+
+.pv-cta {
+  min-height: 52px;
+  border-radius: 16px;
+  font-size: var(--text-base);
 }
 
 /* Base rules of the site stylesheet (global.css) that the post page relies on, scoped to the preview. */
@@ -2350,4 +2623,313 @@ textarea.k-input {
 
 .versions-view img {
   max-width: 100%;
+}
+
+/* ---------- Apple-style look (owner's review 2026-10-19) ----------
+ * Grouped inset cards, tinted fields, capsule buttons, a real switch, a frosted save bar and a
+ * System Settings sidebar. Built on the --p-* tokens, so both themes follow the site's palette.
+ */
+
+.k-btn {
+  min-height: 40px;
+  padding: 0 1.1rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--p-accent) 12%, transparent);
+  color: var(--p-heading);
+  letter-spacing: -0.005em;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.k-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--p-accent) 20%, transparent);
+}
+
+.k-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.k-btn-primary {
+  background: var(--p-accent);
+  color: var(--p-accent-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 12px color-mix(in srgb, var(--p-accent) 28%, transparent);
+}
+
+.k-btn-primary:hover:not(:disabled) {
+  background: var(--p-accent-deep);
+}
+
+.k-btn-ghost {
+  background: transparent;
+  color: var(--p-accent);
+}
+
+.k-btn-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--p-accent) 10%, transparent);
+}
+
+.k-btn-danger {
+  background: var(--p-err-bg);
+  color: var(--p-err-label);
+}
+
+.k-btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--p-err) 22%, var(--p-err-bg));
+}
+
+/* Tinted, borderless fields; the accent ring shows focus. */
+.k-input {
+  min-height: 42px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--p-text) 6%, var(--p-field));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.k-input:hover {
+  background: color-mix(in srgb, var(--p-text) 8%, var(--p-field));
+}
+
+.k-input:focus {
+  border-color: var(--p-accent);
+  outline: none;
+  background: var(--p-field);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-accent) 22%, transparent);
+}
+
+.k-input::placeholder {
+  color: var(--p-placeholder);
+}
+
+select.k-input {
+  padding-right: 2.2rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--p-muted) 50%), linear-gradient(135deg, var(--p-muted) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) 52%, calc(100% - 0.7rem) 52%;
+  background-size: 0.35rem 0.35rem;
+  background-repeat: no-repeat;
+  appearance: none;
+  cursor: pointer;
+}
+
+.k-field > label,
+.k-label-row > label,
+.k-label {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* The switch: label on the left, the capsule on the right, like a Settings row. */
+.k-toggle {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  cursor: pointer;
+}
+
+.k-toggle input {
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  margin: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-text) 18%, transparent);
+  transition: background-color 0.2s ease;
+  appearance: none;
+  cursor: pointer;
+}
+
+.k-toggle input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.2), 0 0 1px rgb(0 0 0 / 0.2);
+  transition: transform 0.2s cubic-bezier(0.3, 0.7, 0.4, 1.2);
+}
+
+.k-toggle input:checked {
+  background: var(--p-ok);
+}
+
+.k-toggle input:checked::before {
+  transform: translateX(20px);
+}
+
+.k-toggle input:focus-visible {
+  outline: 3px solid var(--p-focus);
+  outline-offset: 2px;
+}
+
+/* Settings screens: large title, grouped inset cards. */
+.settings {
+  max-width: 50rem;
+}
+
+.settings .screen-head h2 {
+  font-size: clamp(1.75rem, 1.4rem + 1vw, 2.125rem);
+  letter-spacing: -0.015em;
+}
+
+.settings .screen-head h2 .nav-icon {
+  box-sizing: content-box;
+  padding: 7px;
+  border-radius: 10px;
+  background: var(--p-accent);
+  color: var(--p-accent-text);
+}
+
+.settings-intro {
+  max-width: 40rem;
+  margin: calc(-1 * var(--k-space-2)) 0 var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.settings-form {
+  gap: var(--space-6);
+}
+
+.k-group {
+  display: grid;
+  gap: var(--k-space-2);
+}
+
+.settings h3.k-group-title {
+  margin: 0;
+  padding: 0 var(--k-space-4);
+  color: var(--p-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.k-group-card {
+  display: grid;
+  padding: 0 var(--k-space-4);
+  border: 1px solid color-mix(in srgb, var(--p-border) 70%, transparent);
+  border-radius: var(--k-radius);
+  background: var(--p-surface);
+  box-shadow: var(--k-shadow-1);
+}
+
+/* One row per field, hairlines between rows. */
+.k-group-card > * {
+  padding-block: var(--k-space-4);
+}
+
+.k-group-card > * + * {
+  border-top: 1px solid color-mix(in srgb, var(--p-border) 80%, transparent);
+}
+
+.k-group-card > .k-btn {
+  justify-self: start;
+  margin-block: var(--k-space-3);
+  padding-block: 0;
+}
+
+.k-group-card > .k-btn + *,
+.k-group-card > * + .k-btn {
+  border-top: 0;
+}
+
+.k-group-card > .k-hint {
+  padding-block: var(--k-space-3);
+}
+
+/* List editors inside a card: each item is a soft inset tile. */
+.k-group-card .list-editor ol {
+  gap: var(--k-space-3);
+}
+
+.k-group-card .list-item {
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--p-text) 4%, var(--p-surface));
+}
+
+.k-group-card .list-item-head {
+  border-bottom: 1px solid color-mix(in srgb, var(--p-border) 70%, transparent);
+}
+
+.k-group-card .list-item .k-input {
+  background: var(--p-field);
+}
+
+/* Frosted save bar floating over the form. */
+.save-bar {
+  margin: var(--space-2) calc(-1 * var(--gutter)) 0;
+  border-top: 1px solid color-mix(in srgb, var(--p-border) 60%, transparent);
+  background: color-mix(in srgb, var(--p-bg) 78%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
+}
+
+.save-bar .k-btn-primary {
+  min-width: 8rem;
+}
+
+.chip {
+  border-radius: var(--radius-pill);
+}
+
+/* System Settings sidebar: rounded rows, the current one filled with the accent. */
+.panel-nav a,
+.panel-nav .linklike {
+  min-height: 38px;
+  margin-block: 1px;
+  padding: 0 var(--k-space-2);
+  border-radius: 9px;
+  font-size: var(--text-sm);
+}
+
+.panel-nav a .nav-icon,
+.panel-nav .linklike .nav-icon {
+  box-sizing: content-box;
+  padding: 4px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--p-accent) 13%, transparent);
+  color: var(--p-heading);
+}
+
+.panel-nav a:hover,
+.panel-nav .linklike:hover {
+  background: color-mix(in srgb, var(--p-text) 6%, transparent);
+}
+
+.panel-nav a[aria-current='page'] {
+  background: var(--p-accent);
+  color: var(--p-accent-text);
+  box-shadow: none;
+}
+
+.panel-nav a[aria-current='page'] .nav-icon {
+  background: color-mix(in srgb, var(--p-accent-text) 16%, transparent);
+  color: var(--p-accent-text);
+}
+
+.panel-nav .nav-new {
+  min-height: 40px;
+  justify-content: center;
+}
+
+.nav-group {
+  margin-top: var(--space-5);
+  font-size: 0.6875rem;
+}
+
+.k-dialog {
+  border-radius: 18px;
+}
+
+.k-banner {
+  border-radius: 12px;
 }

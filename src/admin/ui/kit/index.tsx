@@ -116,8 +116,8 @@ export function HelpTip({ label, children }: { label: string; children: ReactNod
 export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="k-toggle">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span>{label}</span>
+      <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} />
     </label>
   );
 }

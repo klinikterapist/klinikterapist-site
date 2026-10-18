@@ -23,6 +23,14 @@ describe('renderPreviewHtml', () => {
     expect(renderPreviewHtml(draftOf({}), 'tr', urls)).toContain('<p class="standfirst">Açıklama</p>');
   });
 
+  it('shows the site byline (author, date, reading time), the share row and Randevu Al', () => {
+    const html = renderPreviewHtml(draftOf({}), 'tr', urls);
+    expect(html).toContain('Osman Güneş Özkurt');
+    expect(html).toContain('dk okuma');
+    expect(html).toContain('Bağlantıyı kopyala');
+    expect(html).toContain('Randevu Al');
+  });
+
   it('shows the selected language', () => {
     expect(renderPreviewHtml(draftOf({}), 'en', urls)).toContain('<h1>Title</h1>');
   });
@@ -48,7 +56,8 @@ describe('renderPreviewHtml', () => {
     const cite: JSONContent = { type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: false } };
     const html = renderPreviewHtml(draftOf({ references: [ray, other], doc: doc(p(t('Metin '), cite)) }), 'tr', urls);
     expect(html).toContain('<cite data-refs="ray2004">(Ray, 2004)</cite>');
-    expect(html).toContain('class="references"');
+    expect(html).toContain('class="references');
+    expect(html).toMatch(/<details class="pv-acc">/);
     expect(html).toContain('Kaynakça');
     expect(html).toContain('Why we need positive psychology');
     expect(html).not.toContain('Uncited book');
