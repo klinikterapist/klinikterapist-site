@@ -1,0 +1,153 @@
+---
+/**
+ * Share a post (owner's review 2026-10-18): three buttons side by side, wrapping on narrow phones.
+ * - "Instagram hikâyesinde paylaş": draws a 1080×1920 story image in the browser and opens the share
+ *   sheet with it, or downloads it with a hint (src/lib/share.ts);
+ * - "Bağlantıyı kopyala": copies the address and announces "Kopyalandı";
+ * - "WhatsApp'ta paylaş": a plain wa.me link (works without JavaScript).
+ * The first two stay hidden until the script finds what they need, so no button ever does nothing.
+ */
+import type { Lang } from '../../lib/settings';
+import { whatsappUrl } from '../../lib/share';
+import { t } from '../../i18n/ui';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  /** Absolute URL of the post. */
+  url: string;
+}
+const { lang, title, url } = Astro.props;
+const host = new URL(url).host.replace(/^www\./, '');
+const texts = { copied: t(lang, 'copied'), downloaded: t(lang, 'storyDownloaded') };
+---
+
+<div
+  class="share"
+  role="group"
+  aria-label={t(lang, 'sharePost')}
+  data-share
+  data-title={title}
+  data-url={url}
+  data-host={host}
+  data-file={lang === 'tr' ? 'klinikterapist-hikaye.png' : 'klinikterapist-story.png'}
+  data-texts={JSON.stringify(texts)}
+>
+  <ul class="share-row">
+    <li data-share-item hidden>
+      <button class="share-btn" type="button" data-share-story>
+        <Icon name="instagram" size={20} />
+        <span class="label">{t(lang, 'shareStory')}</span>
+      </button>
+    </li>
+    <li data-share-item hidden>
+      <button class="share-btn" type="button" data-share-copy>
+        <Icon name="link" size={20} />
+        <span class="label">{t(lang, 'copyLink')}</span>
+      </button>
+    </li>
+    <li>
+      <a class="share-btn" href={whatsappUrl(title, url)} target="_blank" rel="noopener noreferrer">
+        <Icon name="whatsapp" size={20} />
+        <span class="label">{t(lang, 'shareWhatsapp')}</span>
+        <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+      </a>
+    </li>
+  </ul>
+  <p class="status" role="status" aria-live="polite" data-share-status></p>
+</div>
+
+<script>
+  import sunSource from '../../assets/brand/sun.svg?raw';
+  import { parseSun } from '../../lib/sun-paths';
+  import { initShare } from '../../lib/share';
+
+  const sun = parseSun(sunSource);
+  for (const box of document.querySelectorAll<HTMLElement>('[data-share]')) {
+    initShare(box, {
+      navigator,
+      document,
+      sun,
+      createCanvas: () => document.createElement('canvas'),
+      path: (d) => new Path2D(d),
+      fontsReady: () => Promise.all([document.fonts.load("500 96px 'Fraunces Variable'"), document.fonts.load("600 44px 'DM Sans Variable'")]),
+      download: (blob, name) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      },
+    });
+  }
+</script>
+
+<style>
+  .share-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .share-row > li {
+    display: flex;
+    flex: 1 1 160px;
+  }
+
+  .share-row > li[hidden] {
+    display: none;
+  }
+
+  .share-btn {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .share-btn:hover {
+    background: color-mix(in srgb, var(--surface), var(--text) 6%);
+    color: var(--text);
+  }
+
+  .share-btn:disabled {
+    cursor: progress;
+    opacity: 0.7;
+  }
+
+  .share-btn :global(.icon) {
+    flex: none;
+    color: var(--link);
+  }
+
+  .status {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    text-align: center;
+  }
+
+  .status:not(:empty) {
+    margin-top: var(--space-2);
+  }
+</style>

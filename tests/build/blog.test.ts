@@ -306,16 +306,36 @@ describe('post page redesign (spec §5.8)', () => {
     expect(loadPage(EN_POST).querySelector('section.references summary .subtitle')?.text.trim()).toBe('2 references');
   });
 
-  it('share button: hidden until the script runs, with a live status region', () => {
-    const d = loadPage(POST);
-    const btn = d.querySelector('button.share-btn')!;
-    expect(btn.text).toContain('Yazıyı paylaş');
-    expect(btn.hasAttribute('hidden')).toBe(true);
-    expect(btn.getAttribute('type')).toBe('button');
-    const status = d.querySelector('.share [aria-live="polite"]')!;
-    expect(status).toBeTruthy();
-    expect(status.getAttribute('data-copied')).toBe('Bağlantı kopyalandı');
-    expect(loadPage(EN_POST).querySelector('button.share-btn')?.text).toContain('Share this post');
+  it('share: Instagram story, copy link and WhatsApp side by side, with a live status region', () => {
+    const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+    for (const [path, lang] of [[POST, 'tr'], [EN_POST, 'en']] as const) {
+      const d = loadPage(path);
+      const box = d.querySelector('.share[data-share]')!;
+      expect(box.getAttribute('role')).toBe('group');
+      expect(box.getAttribute('aria-label')).toBe(lang === 'tr' ? 'Yazıyı paylaş' : 'Share this post');
+      const items = box.querySelectorAll('.share-row > li');
+      expect(items.map((li) => squash(li.querySelector('.label')?.text))).toEqual(
+        lang === 'tr'
+          ? ['Instagram hikâyesinde paylaş', 'Bağlantıyı kopyala', "WhatsApp'ta paylaş"]
+          : ['Share to Instagram story', 'Copy link', 'Share on WhatsApp'],
+      );
+      // The two script buttons wait (hidden) for the script; WhatsApp is a plain link.
+      expect(items.slice(0, 2).every((li) => li.hasAttribute('hidden'))).toBe(true);
+      expect(items[0].querySelector('button[type=button][data-share-story]')).toBeTruthy();
+      expect(items[1].querySelector('button[type=button][data-share-copy]')).toBeTruthy();
+      const wa = items[2].querySelector('a')!;
+      const url = box.getAttribute('data-url')!;
+      expect(url).toBe(`https://example.com${path}`);
+      expect(wa.getAttribute('href')).toBe(`https://wa.me/?text=${encodeURIComponent(`${box.getAttribute('data-title')} ${url}`)}`);
+      expect(wa.getAttribute('target')).toBe('_blank');
+      expect(wa.getAttribute('rel')).toContain('noopener');
+      expect(JSON.parse(box.getAttribute('data-texts')!)).toEqual(
+        lang === 'tr'
+          ? { copied: 'Kopyalandı', downloaded: "Görsel indirildi; Instagram'da hikâyene ekleyebilirsin." }
+          : { copied: 'Copied', downloaded: 'Image downloaded; you can add it to your Instagram story.' },
+      );
+      expect(box.querySelector('[data-share-status][role=status][aria-live="polite"]')).toBeTruthy();
+    }
   });
 
   it('author line on every post: small optimised photo, "Yazar: title name", linking to About; then one Randevu Al', () => {

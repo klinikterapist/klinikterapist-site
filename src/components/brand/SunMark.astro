@@ -5,6 +5,7 @@
  * (dark brown by day, night blue by night, so the face looks carved out of the sun).
  */
 import source from '../../assets/brand/sun.svg?raw';
+import { parseSun } from '../../lib/sun-paths';
 
 interface Props {
   /** Width and height in px. */
@@ -14,10 +15,7 @@ interface Props {
 }
 const { size = 48, label } = Astro.props;
 
-const pathD = (cls: string) => source.match(new RegExp(`<path class="${cls}" d="([^"]+)"`))![1];
-const halo = pathD('halo');
-const disc = pathD('disc');
-const face = [...source.match(/<g class="face"[^>]*>([\s\S]*?)<\/g>/)![1].matchAll(/<path d="([^"]+)"/g)].map((m) => m[1]);
+const { halo, disc, face } = parseSun(source);
 ---
 
 <svg

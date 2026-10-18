@@ -44,6 +44,8 @@ export const ICONS = {
   target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
   wave: '<path d="M5 19c4 0 4-6 7-6s3 6 7 6M5 5c4 0 4 6 7 6s3-6 7-6"/>',
   share: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+  link: '<path d="M10.5 13.5a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M13.5 10.5a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/>',
+  whatsapp: '<path d="M4 20l1.3-4.2a8.5 8.5 0 1 1 3.2 3z"/><path d="M9 8.3c-.2 2.9 3.1 6.5 6.5 6.6l1-1.6-2.1-1-1 .9c-1.1-.5-2.2-1.6-2.7-2.7l.9-1-1-2.1z"/>',
   list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
 } as const;
 

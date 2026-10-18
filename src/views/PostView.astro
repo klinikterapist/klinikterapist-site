@@ -13,7 +13,7 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
 import SunMark from '../components/brand/SunMark.astro';
-import ShareButton from '../components/post/ShareButton.astro';
+import ShareButtons from '../components/post/ShareButtons.astro';
 import AuthorLine from '../components/post/AuthorLine.astro';
 import '../styles/prose.css';
 import References from '../components/References.astro';
@@ -142,7 +142,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       </div>
       <div class="post-end">
         <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
-        <ShareButton lang={lang} title={data.title} url={absoluteUrl(path)} />
+        <ShareButtons lang={lang} title={data.title} url={absoluteUrl(path)} />
         <AuthorLine lang={lang} />
         <a class="big-cta post-cta" href={pathFor('appointment', lang)}>
           <Icon name="calendar" size={18} />
