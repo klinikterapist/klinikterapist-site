@@ -45,6 +45,7 @@ export function initThemeToggles(win: Window = window): () => void {
   let flashTimer: number | undefined;
   let longPressed = false;
   let keyHandled = false;
+  let keyDownOnChip = false;
 
   const current = (): 'light' | 'dark' => (doc.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
@@ -116,11 +117,15 @@ export function initThemeToggles(win: Window = window): () => void {
   const onKeyDown = (e: KeyboardEvent): void => {
     if (!toggleEl(e.target) || !isActivationKey(e)) return;
     e.preventDefault();
+    keyDownOnChip = true;
     if (!e.repeat) startPress();
   };
   const onKeyUp = (e: KeyboardEvent): void => {
     if (!toggleEl(e.target) || !isActivationKey(e)) return;
     e.preventDefault();
+    // A keyup without a keydown on the chip (focus arrived mid-press) is not a tap.
+    if (!keyDownOnChip) return;
+    keyDownOnChip = false;
     cancel();
     if (longPressed) {
       longPressed = false;
@@ -134,6 +139,14 @@ export function initThemeToggles(win: Window = window): () => void {
     sync();
   };
 
+  // Focus leaving the chip mid-press abandons the press: no timer, no pending key release.
+  const onFocusOut = (e: Event): void => {
+    if (!toggleEl(e.target) || !keyDownOnChip) return;
+    keyDownOnChip = false;
+    longPressed = false;
+    cancel();
+  };
+
   doc.addEventListener('click', onClick);
   doc.addEventListener('pointerdown', onDown);
   doc.addEventListener('pointerup', onPointerEnd);
@@ -141,6 +154,7 @@ export function initThemeToggles(win: Window = window): () => void {
   doc.addEventListener('pointerleave', onLeave, true);
   doc.addEventListener('keydown', onKeyDown);
   doc.addEventListener('keyup', onKeyUp);
+  doc.addEventListener('focusout', onFocusOut);
 
   const mq = win.matchMedia?.('(prefers-color-scheme: dark)');
   const onSystemChange = (): void => sync();
@@ -155,6 +169,7 @@ export function initThemeToggles(win: Window = window): () => void {
     doc.removeEventListener('pointerleave', onLeave, true);
     doc.removeEventListener('keydown', onKeyDown);
     doc.removeEventListener('keyup', onKeyUp);
+    doc.removeEventListener('focusout', onFocusOut);
     mq?.removeEventListener?.('change', onSystemChange);
     cancel();
     win.clearTimeout(flashTimer);

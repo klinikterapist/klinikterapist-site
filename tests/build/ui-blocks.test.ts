@@ -41,8 +41,11 @@ describe('ui blocks', () => {
     expect(trSwitch.text.trim()).toBe('ENG');
     expect(trSwitch.querySelector('svg')).toBeTruthy();
     expect(trSwitch.getAttribute('href')).toBe('/ui-kit/en/');
+    // WCAG 2.5.3: the accessible name starts with the visible text.
+    expect(trSwitch.getAttribute('aria-label')).toBe('ENG, English version');
     const enSwitch = en().querySelector('a.lang-switch')!;
     expect(enSwitch.text.trim()).toBe('TR');
+    expect(enSwitch.getAttribute('aria-label')).toMatch(/^TR,/);
     expect(enSwitch.querySelector('svg')).toBeTruthy();
     for (const page of [tr(), en()]) {
       expect(page.toString()).not.toMatch(/[\u{1F1E6}-\u{1F1FF}]/u);

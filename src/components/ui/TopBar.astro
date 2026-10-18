@@ -11,15 +11,14 @@ import ThemeToggle from '../ThemeToggle.astro';
 import LangSwitch from '../LangSwitch.astro';
 import Icon from '../Icon.astro';
 
-interface Props {
+interface Common {
   lang: Lang;
   alternatePaths: { tr: string; en: string };
-  /** Left slot: the klinikterapist wordmark linking home, a back link, or nothing. */
-  left?: 'logo' | 'back' | 'none';
-  /** Required when `left` is `back`. */
-  backHref?: string;
-  backLabel?: string;
 }
+/** Left slot: the klinikterapist wordmark linking home, a back link (needs a target and a name), or nothing. */
+type Props =
+  | (Common & { left?: 'logo' | 'none'; backHref?: never; backLabel?: never })
+  | (Common & { left: 'back'; backHref: string; backLabel: string });
 const { lang, alternatePaths, left = 'logo', backHref, backLabel } = Astro.props;
 ---
 
@@ -29,7 +28,7 @@ const { lang, alternatePaths, left = 'logo', backHref, backLabel } = Astro.props
       <a class="left logo" href={pathFor('home', lang)} aria-label={t(lang, 'homeLink')}>
         <Wordmark height={20} />
       </a>
-    ) : left === 'back' && backHref ? (
+    ) : left === 'back' ? (
       <a class="left back" href={backHref}>
         <Icon name="chevron" size={18} class="back-arrow" />
         <span>{backLabel}</span>

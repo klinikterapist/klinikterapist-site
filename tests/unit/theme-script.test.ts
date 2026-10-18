@@ -200,6 +200,22 @@ describe('toggle controls', () => {
     expect(theme()).toBe('light');
   });
 
+  it('a keyup without a keydown on the chip does not toggle', () => {
+    key('keyup', 'Enter');
+    expect(localStorage.getItem(THEME_KEY)).toBeNull();
+    expect(theme()).toBe('light');
+  });
+
+  it('losing focus mid-hold cancels the long press and the pending release', () => {
+    setTheme('dark');
+    key('keydown', 'Enter');
+    chip().dispatchEvent(new Event('focusout', { bubbles: true }));
+    vi.advanceTimersByTime(600);
+    expect(localStorage.getItem(THEME_KEY)).toBe('dark'); // no reset to system
+    key('keyup', 'Enter');
+    expect(theme()).toBe('dark'); // stray release is ignored
+  });
+
   it('holding Enter or Space for 600 ms resets to system; auto-repeat does not toggle', () => {
     setTheme('dark');
     key('keydown', 'Enter');

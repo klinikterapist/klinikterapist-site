@@ -163,7 +163,9 @@ const categoriesSchema = z
   });
 
 /** Frequently asked questions. An item with an empty answer in a language is not shown in it. */
-const faqSchema = z.array(z.object({ id: slugSchema, q: localized, a: localized }));
+const faqSchema = z
+  .array(z.object({ id: slugSchema, q: localized, a: localized }))
+  .superRefine((items, ctx) => rejectDuplicates(items, (f) => f.id, ['id'], ctx, 'Soru kimliği (id)'));
 
 const seoSchema = z.object({
   siteName: localized,

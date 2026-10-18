@@ -26,3 +26,13 @@ describe.each(allPages())('theme %s', (path) => {
     expect(kids[0].tagName).not.toBe('STYLE');
   });
 });
+
+describe.each(['/blog/eski-adres/', '/en/blog/old-address/'])('theme redirect stub %s', (path) => {
+  const head = loadPage(path).querySelector('head')!;
+  it('starts <head> with the inline theme script and declares color-scheme', () => {
+    const kids = head.childNodes.filter((n) => n.nodeType === 1) as import('node-html-parser').HTMLElement[];
+    expect(kids[0].tagName).toBe('SCRIPT');
+    expect(kids[0].rawText).toContain('site.theme');
+    expect(head.querySelector('meta[name="color-scheme"]')?.getAttribute('content')).toBe('light dark');
+  });
+});

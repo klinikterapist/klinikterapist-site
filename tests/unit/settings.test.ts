@@ -218,6 +218,11 @@ describe('Plan E content fields', () => {
     expect(getFaq('tr')).toEqual([]);
     expect(getFaq('en')).toEqual([]);
   });
+  it('faq: ids must be unique', () => {
+    const item = (id: string) => ({ id, q: { tr: 'a', en: 'a' }, a: { tr: '', en: '' } });
+    expect(() => parseFaq([item('ucret'), item('ucret')])).toThrow(/faq\.json.*1\.id.*"ucret"/);
+    expect(() => parseFaq([item('ucret'), item('sure')])).not.toThrow();
+  });
   it('faq: only items answered in the language are returned', () => {
     const dir = mkdtempSync(join(tmpdir(), 'faq-'));
     const prev = process.env.DATA_DIR;
