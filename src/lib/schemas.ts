@@ -61,6 +61,10 @@ const profileSchema = z.object({
   shortIntro: localized.optional(),
   photo: z.string().nullable(),
   photoAlt: localized,
+  /** Home page look: photo as sticky background (default) or a round photo with a sun badge. */
+  heroStyle: z.enum(['background', 'round']).optional(),
+  /** Professional memberships; the number is optional. */
+  memberships: z.array(z.object({ org: localized, number: z.string().optional() })).optional(),
 });
 
 const linkSchema = z
@@ -71,6 +75,8 @@ const linkSchema = z
     icon: z.enum(['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x', 'tiktok', 'threads']),
     inHero: z.boolean(),
     inFooter: z.boolean(),
+    /** Short note beside the account, e.g. the language of the posts. */
+    note: localized.optional(),
   })
   .superRefine((link, ctx) => {
     // E-mail links open the mail app; every other link is an https profile address.
@@ -92,6 +98,8 @@ const homeSchema = z.object({
       visible: z.boolean(),
     }),
   ),
+  /** Up to three "how it works" steps for the desktop home page. */
+  process: z.array(z.object({ title: localized, text: localized })).max(3).optional(),
 });
 
 const aboutSchema = z.object({
@@ -154,6 +162,9 @@ const categoriesSchema = z
     rejectDuplicates(cats, (c) => c.slug.en, ['slug', 'en'], ctx, 'Kategori slug değeri');
   });
 
+/** Frequently asked questions. An item with an empty answer in a language is not shown in it. */
+const faqSchema = z.array(z.object({ id: slugSchema, q: localized, a: localized }));
+
 const seoSchema = z.object({
   siteName: localized,
   defaultDescription: localized,
@@ -204,6 +215,7 @@ export function postFrontmatterSchema(categoryIds: string[]) {
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
     references: z.array(referenceSchema).optional(),
+    featured: z.boolean().optional(),
   });
 }
 
@@ -217,6 +229,8 @@ export type Resources = z.infer<typeof resourcesSchema>;
 export type Resource = Resources['items'][number];
 export type Period = About['timeline'][number]['period'];
 export type Category = z.infer<typeof categoriesSchema>[number];
+export type Faq = z.infer<typeof faqSchema>;
+export type FaqItem = Faq[number];
 export type Seo = z.infer<typeof seoSchema>;
 export type Redirect = z.infer<typeof redirectsSchema>[number];
 
@@ -236,6 +250,7 @@ export const parseAbout = (raw: unknown): About => parse(aboutSchema, raw, 'abou
 export const parseContact = (raw: unknown): Contact => parse(contactSchema, raw, 'contact.json');
 export const parseResources = (raw: unknown): Resources => parse(resourcesSchema, raw, 'resources.json');
 export const parseCategories = (raw: unknown): Category[] => parse(categoriesSchema, raw, 'categories.json');
+export const parseFaq = (raw: unknown): Faq => parse(faqSchema, raw, 'faq.json');
 export const parseSeo = (raw: unknown): Seo => parse(seoSchema, raw, 'seo.json');
 export const parseRedirects = (raw: unknown): Redirect[] => parse(redirectsSchema, raw, 'redirects.json');
 
@@ -257,4 +272,11 @@ export function checkRedirectCollisions(redirects: Redirect[], pagePaths: Iterab
       );
     }
   });
+}
+
+/** The FAQ items that have both a question and an answer in `lang`, as plain strings. */
+export function answeredFaq(faq: Faq, lang: Lang): { id: string; q: string; a: string }[] {
+  return faq
+    .filter((f) => f.q[lang].trim() && f.a[lang].trim())
+    .map((f) => ({ id: f.id, q: f.q[lang].trim(), a: f.a[lang].trim() }));
 }

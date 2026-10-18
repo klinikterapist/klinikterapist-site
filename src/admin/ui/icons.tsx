@@ -19,6 +19,7 @@ export {
   LayoutTemplate,
   Link,
   List,
+  MessageCircleQuestion,
   ListOrdered,
   LogOut,
   Mail,

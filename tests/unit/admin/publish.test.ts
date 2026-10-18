@@ -237,3 +237,16 @@ describe('shortHash', () => {
     expect(await shortHash(new TextEncoder().encode('abc'))).toBe('ba7816bf');
   });
 });
+
+describe('buildPublishChangeset — featured', () => {
+  it('writes featured: true to both languages, and nothing when false or unset', () => {
+    const on = buildPublishChangeset({ ...base, draft: draft({ featured: true }), live: null });
+    for (const l of ['tr', 'en']) {
+      expect(parsePost(on.writes.find((w) => w.path.endsWith(`${l}.md`))!.content).fm.featured).toBe(true);
+    }
+    const off = buildPublishChangeset({ ...base, draft: draft({ featured: false }), live: null });
+    expect(off.writes.find((w) => w.path.endsWith('tr.md'))!.content).not.toContain('featured');
+    const none = buildPublishChangeset({ ...base, draft: draft(), live: null });
+    expect(none.writes.find((w) => w.path.endsWith('en.md'))!.content).not.toContain('featured');
+  });
+});

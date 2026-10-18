@@ -1,8 +1,10 @@
 /** Profil, İletişim and SEO genel: flat forms over one JSON file each. */
 import { parseContact, parseProfile, parseSeo, type Contact, type Profile, type Seo } from '../../../../lib/schemas';
-import { Field } from '../../kit';
-import { ImageField, LocalizedField, SettingsForm } from '../fields';
+import { Field, Select } from '../../kit';
+import { ImageField, ListEditor, LocalizedField, SettingsForm } from '../fields';
 import { useSettingsFile } from '../useSettingsFile';
+
+type Membership = NonNullable<Profile['memberships']>[number];
 
 export function ProfilScreen() {
   const file = useSettingsFile<Profile>('src/data/profile.json', parseProfile, 'Profil');
@@ -29,9 +31,34 @@ export function ProfilScreen() {
             baseName="profil"
             staging={file.staging}
             allowRemove
-            hint="Fotoğraf çerçeveye uygun kırpılır (800 × 880) ve küçültülür."
+            hint="Fotoğraf en fazla 1600 piksele küçültülür; kırpma ana sayfada otomatik yapılır, bu yüzden yüzünüzü kadrajın ortasında tutun."
+          />
+          <Select
+            label="Ana sayfa görünümü"
+            value={p.heroStyle ?? 'background'}
+            options={[
+              { value: 'background', label: 'Arka planda fotoğraf' },
+              { value: 'round', label: 'Yuvarlak fotoğraf' },
+            ]}
+            onChange={(v) => set('heroStyle')(v)}
+            help="Arka planda fotoğraf: fotoğraf sayfanın arkasında sabit durur, kart üzerinden kayar. Yuvarlak fotoğraf: üstte küçük yuvarlak bir portre ve köşesinde güneş rozeti görünür. Fotoğraf yoksa ikisi de güneşli düzene döner."
           />
           <LocalizedField label="Fotoğrafın alt metni" value={p.photoAlt} onChange={set('photoAlt')} issues={file.issues} path="photoAlt" />
+          <h3>Mesleki üyelikler</h3>
+          <p className="k-hint">Örneğin Türk Psikologlar Derneği. Liste boşsa sitede hiçbir yerde görünmez; üye numarası isteğe bağlıdır.</p>
+          <ListEditor<Membership>
+            items={p.memberships ?? []}
+            onChange={(next) => set('memberships')(next.length ? next : undefined)}
+            itemLabel={(m) => m.org.tr || 'Yeni üyelik'}
+            newItem={() => ({ org: { tr: '', en: '' } })}
+            addLabel="Üyelik ekle"
+            render={(m, update, i) => (
+              <>
+                <LocalizedField label="Kurum" value={m.org} onChange={(org) => update({ org })} issues={file.issues} path={`memberships.${i}.org`} />
+                <Field label="Üye numarası (isteğe bağlı)" value={m.number ?? ''} onChange={(n) => update({ number: n.trim() ? n : undefined })} />
+              </>
+            )}
+          />
         </>
       )}
     </SettingsForm>

@@ -12,9 +12,17 @@
     "tr": "Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.",
     "en": "Understanding yourself is the first step of change. I am by your side on this journey."
   },
-  "photo": null,
+  "photo": "/images/profil-451757c8.webp",
   "photoAlt": {
     "tr": "Osman Güneş Özkurt'un portresi",
     "en": "Portrait of Osman Güneş Özkurt"
-  }
+  },
+  "memberships": [
+    {
+      "org": {
+        "tr": "Türk Psikologlar Derneği",
+        "en": "Turkish Psychological Association"
+      }
+    }
+  ]
 }

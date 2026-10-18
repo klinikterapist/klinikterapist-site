@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  parseAbout, parseCategories, parseContact, parseHome, parseLinks, parseProfile, parseRedirects, parseResources, parseSeo,
+  answeredFaq, type Lang,
+  parseAbout, parseCategories, parseContact, parseFaq, parseHome, parseLinks, parseProfile, parseRedirects, parseResources, parseSeo,
 } from './schemas';
 
 export * from './schemas';
@@ -26,6 +27,7 @@ export const getAbout = () => parseAbout(readJson('about.json'));
 export const getContact = () => parseContact(readJson('contact.json'));
 export const getResources = () => parseResources(readJson('resources.json'));
 export const getCategories = () => parseCategories(readJson('categories.json'));
+export const getFaq = (lang: Lang) => answeredFaq(parseFaq(readJson('faq.json')), lang);
 export const getSeo = () => parseSeo(readJson('seo.json'));
 export const getRedirects = () => parseRedirects(readJson('redirects.json'));
 

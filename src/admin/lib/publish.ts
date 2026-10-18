@@ -104,6 +104,7 @@ export function buildPublishChangeset(input: {
       publishedAt: draft.publishedAt,
       ...(live ? { updatedAt: input.today } : {}),
       ...(f.references.length ? { references: f.references } : {}),
+      ...(draft.featured ? { featured: true } : {}),
     };
     const valid = schema.safeParse(fm);
     if (!valid.success) throw new PublishError(`${LANG_NAME[lang]}: ${valid.error.issues.map((i) => i.message).join('; ')}`);

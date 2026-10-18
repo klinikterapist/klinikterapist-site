@@ -68,6 +68,8 @@ export type Draft = {
   cover: string | null;
   /** `YYYY-MM-DD`, shared by both languages. */
   publishedAt: string;
+  /** Shown as a featured post on the site; omitted (not false) when off. */
+  featured?: boolean;
   tr: LangFields;
   en: LangFields;
   /** For an edit of a live post: the blob shas of tr.md / en.md it started from. */

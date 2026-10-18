@@ -21,7 +21,11 @@
     "url": "https://medium.com/@oguneso",
     "icon": "medium",
     "inHero": true,
-    "inFooter": true
+    "inFooter": true,
+    "note": {
+      "tr": "İngilizce",
+      "en": "In English"
+    }
   },
   {
     "id": "email",

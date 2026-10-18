@@ -19,8 +19,8 @@ describe('geometry', () => {
     expect(tall.sx).toBe(0);
     expect(tall.sh).toBe(1100);
   });
-  it('the profile crop matches the portrait frame (1 : 1.1)', () => {
-    expect(IMAGE_PRESETS.profile.crop).toEqual([800, 880]);
+  it('the profile preset is a plain fit (no forced crop); og still crops', () => {
+    expect(IMAGE_PRESETS.profile).toEqual({ maxW: 1600, maxH: 1600, type: 'image/webp', q: 0.85 });
     expect(IMAGE_PRESETS.og).toMatchObject({ crop: [1200, 630], type: 'image/jpeg' });
   });
 });
@@ -70,12 +70,12 @@ describe('resizeImage', () => {
     expect(out.blob.size).toBe(400_000);
   });
 
-  it('crops for the profile preset', async () => {
+  it('fits the profile photo within 1600 without cropping', async () => {
     vi.stubGlobal('createImageBitmap', async () => ({ width: 3000, height: 4000, close() {} }));
     const { draws } = stubCanvas([1000]);
     const out = await resizeImage(photo(), IMAGE_PRESETS.profile);
-    expect(out).toMatchObject({ width: 800, height: 880 });
-    expect(draws[0].slice(-4)).toEqual([0, 0, 800, 880]);
+    expect(out).toMatchObject({ width: 1200, height: 1600 });
+    expect(draws[0].slice(1, 5)).toEqual([0, 0, 3000, 4000]);
   });
 
   it('an undecodable image gives the Turkish JPEG/PNG message', async () => {

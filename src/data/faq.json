@@ -1,0 +1,7 @@
+[
+  { "id": "ilk-gorusme", "q": { "tr": "İlk görüşme nasıl geçer?", "en": "What is the first session like?" }, "a": { "tr": "", "en": "" } },
+  { "id": "ucret", "q": { "tr": "Ücret ne kadar, nasıl ödenir?", "en": "How much does it cost, and how do I pay?" }, "a": { "tr": "", "en": "" } },
+  { "id": "online-gorusme", "q": { "tr": "Online görüşme nasıl yapılır?", "en": "How do online sessions work?" }, "a": { "tr": "", "en": "" } },
+  { "id": "gizlilik", "q": { "tr": "Konuştuklarım gizli kalır mı?", "en": "Will what I share stay confidential?" }, "a": { "tr": "", "en": "" } },
+  { "id": "iptal", "q": { "tr": "Randevuyu iptal edebilir miyim?", "en": "Can I cancel an appointment?" }, "a": { "tr": "", "en": "" } }
+]

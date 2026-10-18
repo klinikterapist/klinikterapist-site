@@ -20,9 +20,10 @@ export type PostFrontmatter = {
   publishedAt: string;
   updatedAt?: string;
   references?: Reference[];
+  featured?: boolean;
 };
 
-const ORDER = ['title', 'subtitle', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'publishedAt', 'updatedAt', 'references'] as const;
+const ORDER = ['title', 'subtitle', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'publishedAt', 'updatedAt', 'references', 'featured'] as const;
 const DATES = new Set(['publishedAt', 'updatedAt']);
 
 export function serializePost(fm: PostFrontmatter, body: string): string {
@@ -59,6 +60,7 @@ export function parsePost(text: string): { fm: PostFrontmatter; body: string } {
   if (raw.coverAlt) fm.coverAlt = String(raw.coverAlt);
   const updated = day(raw.updatedAt);
   if (updated) fm.updatedAt = updated;
+  if (raw.featured === true) fm.featured = true;
   if (Array.isArray(raw.references) && raw.references.length) fm.references = raw.references as Reference[];
   // Keep the object's key order equal to ORDER, so equal frontmatter compares equal.
   const ordered = Object.fromEntries(ORDER.filter((k) => fm[k] !== undefined).map((k) => [k, fm[k]])) as PostFrontmatter;

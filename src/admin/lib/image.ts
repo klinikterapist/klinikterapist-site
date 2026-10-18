@@ -11,8 +11,8 @@ export type ImagePreset = Fit | Crop;
 export const IMAGE_PRESETS = {
   body: { maxW: 1600, maxH: 1600, type: 'image/webp', q: 0.82 },
   cover: { maxW: 1600, maxH: 1600, type: 'image/webp', q: 0.82 },
-  /** Same 1 : 1.1 ratio as the portrait frame. */
-  profile: { crop: [800, 880], type: 'image/webp', q: 0.85 },
+  /** Not cropped: both home page styles crop the portrait with CSS. */
+  profile: { maxW: 1600, maxH: 1600, type: 'image/webp', q: 0.85 },
   resource: { maxW: 400, maxH: 600, type: 'image/webp', q: 0.82 },
   og: { crop: [1200, 630], type: 'image/jpeg', q: 0.85 },
 } as const satisfies Record<string, ImagePreset>;

@@ -66,3 +66,14 @@ describe('subtitle and references', () => {
     expect(postFrontmatterSchema(['duygular']).safeParse(full).success).toBe(true);
   });
 });
+
+describe('featured', () => {
+  it('is written only when true, and parsed back', () => {
+    const text = serializePost({ ...fm, featured: true }, 'x\n');
+    expect(text).toContain('\nfeatured: true\n');
+    expect(parsePost(text).fm.featured).toBe(true);
+    expect(serializePost(fm, 'x\n')).not.toContain('featured');
+    expect(parsePost(serializePost({ ...fm, featured: false }, 'x\n')).fm.featured).toBeUndefined();
+    expect(postFrontmatterSchema(['duygular']).safeParse({ ...fm, featured: true }).success).toBe(true);
+  });
+});

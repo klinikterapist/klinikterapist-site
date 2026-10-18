@@ -2,6 +2,7 @@
 import type { ComponentType } from 'react';
 import { HakkimdaScreen } from './screens/about';
 import { KategorilerScreen } from './screens/categories';
+import { SssScreen } from './screens/faq';
 import { YasalScreen } from './screens/legal';
 import { AnaSayfaScreen, KaynaklarScreen, LinklerScreen } from './screens/lists';
 import { IletisimScreen, ProfilScreen, SeoScreen } from './screens/simple';
@@ -11,6 +12,7 @@ const SCREENS: Record<string, ComponentType> = {
   'ana-sayfa': AnaSayfaScreen,
   linkler: LinklerScreen,
   hakkimda: HakkimdaScreen,
+  sss: SssScreen,
   kaynaklar: KaynaklarScreen,
   iletisim: IletisimScreen,
   kategoriler: KategorilerScreen,

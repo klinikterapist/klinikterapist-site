@@ -1736,8 +1736,9 @@ textarea.k-input {
 }
 
 .image-preview.preset-profile {
-  width: 10rem;
-  aspect-ratio: 800 / 880;
+  width: auto;
+  max-width: 10rem;
+  max-height: 10rem;
 }
 
 .image-empty {

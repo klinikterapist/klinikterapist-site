@@ -8,10 +8,10 @@ import type { Category, Lang } from '../../../lib/schemas';
 import { LANG_LABEL } from '../../lib/draft';
 import { HELP } from '../../lib/help-texts';
 import { IMAGE_PRESETS, ImageError, resizeImage } from '../../lib/image';
-import { Button, Field, Select } from '../kit';
+import { Button, Field, Select, Toggle } from '../kit';
 import type { ImageStore } from './images';
 
-export type SharedPatch = Partial<Pick<Draft, 'category' | 'cover' | 'publishedAt'>>;
+export type SharedPatch = Partial<Pick<Draft, 'category' | 'cover' | 'publishedAt' | 'featured'>>;
 
 export function SettingsPanel(props: {
   draft: Draft;
@@ -81,6 +81,7 @@ export function SettingsPanel(props: {
           onChange={(publishedAt) => publishedAt && props.onShared({ publishedAt })}
           hint="Yazıda görünen tarih. Yazı, Yayınla'ya bastığınızda yayınlanır."
         />
+        <Toggle label="Öne çıkan yazı" checked={!!draft.featured} onChange={(featured) => props.onShared({ featured: featured || undefined })} />
         <div className="k-field">
           <span className="k-label">Kapak görseli</span>
           {cover && <img className="cover-preview" src={cover} alt="" />}

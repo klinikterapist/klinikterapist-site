@@ -7,6 +7,8 @@ import { Field, Select, Toggle } from '../../kit';
 import { ImageField, ListEditor, LocalizedField, SettingsForm } from '../fields';
 import { useSettingsFile } from '../useSettingsFile';
 
+type ProcessStep = NonNullable<Home['process']>[number];
+
 const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}`;
 
 const PAGE_LABEL: Record<(typeof PAGE_KEYS)[number], string> = {
@@ -54,6 +56,7 @@ export function AnaSayfaScreen() {
   return (
     <SettingsForm title="Ana sayfa" screen="ana-sayfa" file={file}>
       {(h) => (
+        <>
         <ListEditor<HomeCard>
           items={h.cards}
           onChange={(cards) => file.setValue((v) => ({ ...v, cards }))}
@@ -86,6 +89,22 @@ export function AnaSayfaScreen() {
             );
           }}
         />
+        <h3>Süreç adımları</h3>
+        <p className="k-hint">Bilgisayarda ana sayfada görünen en fazla üç adım: görüşmelerin nasıl ilerlediğini kısaca anlatın.</p>
+        <ListEditor<ProcessStep>
+          items={h.process ?? []}
+          onChange={(next) => file.setValue((v) => ({ ...v, process: next.length ? next : undefined }))}
+          itemLabel={(s) => s.title.tr || 'Yeni adım'}
+          newItem={(h.process ?? []).length < 3 ? () => ({ title: { tr: '', en: '' }, text: { tr: '', en: '' } }) : undefined}
+          addLabel="Adım ekle"
+          render={(s, update, i) => (
+            <>
+              <LocalizedField label="Adım başlığı" value={s.title} onChange={(title) => update({ title })} issues={file.issues} path={`process.${i}.title`} />
+              <LocalizedField label="Adım metni" value={s.text} onChange={(text) => update({ text })} multiline issues={file.issues} path={`process.${i}.text`} />
+            </>
+          )}
+        />
+        </>
       )}
     </SettingsForm>
   );
@@ -129,6 +148,12 @@ export function LinklerScreen() {
                 <Toggle label="Ana sayfada" checked={l.inHero} onChange={(inHero) => update({ inHero })} />
                 <Toggle label="Alt bilgide" checked={l.inFooter} onChange={(inFooter) => update({ inFooter })} />
               </div>
+              <LocalizedField
+                label="Not"
+                value={l.note ?? { tr: '', en: '' }}
+                onChange={(v) => update({ note: v.tr.trim() || v.en.trim() ? v : undefined })}
+                hint="İsteğe bağlı. Hesabın yanında görünen kısa not, örneğin “İngilizce”."
+              />
             </>
           )}
         />

@@ -162,6 +162,18 @@ describe('EditorPage', () => {
     expect(screen.queryByLabelText(/Kapak görselinin alt metni/)).toBeNull();
   });
 
+  it('Ayarlar has an "Öne çıkan yazı" toggle that sets featured', async () => {
+    localStorage.setItem('panel.rail', 'settings');
+    const initial = { ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') };
+    const api = setup(initial);
+    const settings = await screen.findByRole('region', { name: 'Ayarlar' });
+    const toggle = within(settings).getByLabelText('Öne çıkan yazı') as HTMLInputElement;
+    expect(toggle.checked).toBe(false);
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(true);
+    await waitFor(() => expect([...api.state.drafts.values()].some((d) => d.featured === true)).toBe(true), { timeout: 4000 });
+  });
+
   it('the checklist item for the cover alt text opens Ayarlar and focuses the field', async () => {
     localStorage.setItem('panel.rail', 'checklist');
     setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });

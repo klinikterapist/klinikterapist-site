@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
+  parseFaq, getFaq,
   getProfile, getLinks, getHome, getAbout, getContact, getResources,
   getCategories, getSeo, getRedirects, parseProfile, parseLinks, parseHome,
   parseRedirects, parseCategories, parseResources, parseAbout, checkRedirectCollisions, slugSchema, periodText, parseContact, slugError,
@@ -183,5 +187,54 @@ describe('Phase 2 hardening', () => {
     expect(() => parseProfile({ ...p, shortIntro: { tr: 'Kısa.', en: 'Short.' } })).not.toThrow();
     const { shortIntro: _omit, ...rest } = { ...p, shortIntro: undefined };
     expect(() => parseProfile(rest)).not.toThrow();
+  });
+});
+
+describe('Plan E content fields', () => {
+  it('current data still parses and the new optional fields are accepted', () => {
+    const p = getProfile();
+    expect(p.heroStyle).toBeUndefined();
+    expect(p.memberships?.[0].org.tr).toBe('Türk Psikologlar Derneği');
+    expect(p.photo).toMatch(/^\/images\/profil-[0-9a-f]{8}\.webp$/);
+    expect(() => parseProfile({ ...p, heroStyle: 'round', memberships: [{ org: { tr: 'a', en: 'b' }, number: '12' }] })).not.toThrow();
+    expect(() => parseProfile({ ...p, heroStyle: 'background' })).not.toThrow();
+  });
+  it('rejects an unknown heroStyle', () => {
+    expect(() => parseProfile({ ...getProfile(), heroStyle: 'x' })).toThrow(/profile\.json.*heroStyle/);
+  });
+  it('links accept a note; Medium has one', () => {
+    expect(getLinks().find((l) => l.id === 'medium')?.note).toEqual({ tr: 'İngilizce', en: 'In English' });
+    const l = getLinks()[0];
+    expect(() => parseLinks([{ ...l, note: { tr: 'n', en: 'n' } }])).not.toThrow();
+  });
+  it('home accepts up to three process steps', () => {
+    const h = getHome();
+    const step = { title: { tr: 'a', en: 'a' }, text: { tr: 'b', en: 'b' } };
+    expect(() => parseHome({ ...h, process: [step, step, step] })).not.toThrow();
+    expect(() => parseHome({ ...h, process: [step, step, step, step] })).toThrow(/home\.json.*process/);
+  });
+  it('faq: the seed has five unanswered questions, so nothing is shown yet', () => {
+    expect(parseFaq(JSON.parse(readFileSync('src/data/faq.json', 'utf8')))).toHaveLength(5);
+    expect(getFaq('tr')).toEqual([]);
+    expect(getFaq('en')).toEqual([]);
+  });
+  it('faq: only items answered in the language are returned', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'faq-'));
+    const prev = process.env.DATA_DIR;
+    try {
+      const faq = JSON.parse(readFileSync('src/data/faq.json', 'utf8'));
+      faq[1].a.tr = 'Ücret görüşmede paylaşılır.';
+      writeFileSync(join(dir, 'faq.json'), JSON.stringify(faq));
+      process.env.DATA_DIR = dir;
+      expect(getFaq('tr')).toEqual([{ id: 'ucret', q: 'Ücret ne kadar, nasıl ödenir?', a: 'Ücret görüşmede paylaşılır.' }]);
+      expect(getFaq('en')).toEqual([]);
+    } finally {
+      if (prev === undefined) delete process.env.DATA_DIR;
+      else process.env.DATA_DIR = prev;
+      rmSync(dir, { recursive: true });
+    }
+  });
+  it('faq ids must be slug-like', () => {
+    expect(() => parseFaq([{ id: 'Not Slug', q: { tr: 'a', en: 'a' }, a: { tr: '', en: '' } }])).toThrow(/faq\.json/);
   });
 });

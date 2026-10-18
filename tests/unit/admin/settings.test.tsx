@@ -29,6 +29,72 @@ function setup(screenId: string, tweak: (api: ReturnType<typeof createMockApi>) 
 const json = (api: ReturnType<typeof createMockApi>, path: string) => JSON.parse(api.state.files.get(path)!.content);
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Kaydet' }));
 
+describe('settings screens: Plan E fields', () => {
+  it('Profil: Ana sayfa görünümü offers both styles and saves heroStyle', async () => {
+    const api = setup('profil');
+    const select = (await screen.findByLabelText('Ana sayfa görünümü')) as HTMLSelectElement;
+    expect([...select.options].map((o) => o.text)).toEqual(['Arka planda fotoğraf', 'Yuvarlak fotoğraf']);
+    expect(select.value).toBe('background');
+    fireEvent.change(select, { target: { value: 'round' } });
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    expect(json(api, 'src/data/profile.json').heroStyle).toBe('round');
+  });
+
+  it('Profil: Mesleki üyelikler lists TPD and a number can be added', async () => {
+    const api = setup('profil');
+    expect(await screen.findByDisplayValue('Türk Psikologlar Derneği')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Üye numarası (isteğe bağlı)'), { target: { value: '1234' } });
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    expect(json(api, 'src/data/profile.json').memberships[0].number).toBe('1234');
+  });
+
+  it('Sık sorulan sorular: lists five questions; add, reorder and delete', async () => {
+    const api = setup('sss');
+    expect(await screen.findByRole('heading', { name: 'Sık sorulan sorular' })).toBeTruthy();
+    expect(screen.getByText('Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.')).toBeTruthy();
+    expect(screen.getAllByLabelText('Soru (Türkçe)')).toHaveLength(5);
+    fireEvent.click(screen.getByRole('button', { name: 'Soru ekle' }));
+    expect(screen.getAllByLabelText('Soru (Türkçe)')).toHaveLength(6);
+    fireEvent.change(screen.getAllByLabelText('Soru (Türkçe)')[5], { target: { value: 'Yeni soru?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Yeni soru?: yukarı taşı' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sil: İlk görüşme nasıl geçer?' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Evet, sil' }));
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    const saved = json(api, 'src/data/faq.json') as { id: string; q: { tr: string } }[];
+    expect(saved.map((f) => f.q.tr)).toEqual([
+      'Ücret ne kadar, nasıl ödenir?', 'Online görüşme nasıl yapılır?', 'Konuştuklarım gizli kalır mı?', 'Yeni soru?', 'Randevuyu iptal edebilir miyim?',
+    ]);
+    expect(new Set(saved.map((f) => f.id)).size).toBe(5);
+  });
+
+  it('Sosyal ve linkler: Not is shown and saved', async () => {
+    const api = setup('linkler');
+    const notes = await screen.findAllByLabelText('Not (Türkçe)');
+    expect(notes).toHaveLength(8);
+    expect((notes[2] as HTMLInputElement).value).toBe('İngilizce');
+    fireEvent.change(notes[0], { target: { value: 'Günlük paylaşımlar' } });
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    expect(json(api, 'src/data/links.json')[0].note.tr).toBe('Günlük paylaşımlar');
+  });
+
+  it('Site ana sayfası: Süreç adımları allows at most three', async () => {
+    const api = setup('ana-sayfa');
+    fireEvent.click(await screen.findByRole('button', { name: 'Adım ekle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adım ekle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adım ekle' }));
+    expect(screen.queryByRole('button', { name: 'Adım ekle' })).toBeNull();
+    expect(screen.getAllByLabelText('Adım başlığı (Türkçe)')).toHaveLength(3);
+    fireEvent.change(screen.getAllByLabelText('Adım başlığı (Türkçe)')[0], { target: { value: 'Tanışma' } });
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    expect(json(api, 'src/data/home.json').process).toHaveLength(3);
+  });
+});
+
 describe('settings screens', () => {
   it('Sosyal ve linkler: the header has an icon and a one-line intro', async () => {
     setup('linkler');
