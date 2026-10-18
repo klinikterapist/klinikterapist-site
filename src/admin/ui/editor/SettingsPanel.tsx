@@ -1,43 +1,17 @@
 /**
  * Ayarlar panel: publish status, the shared settings (category, date, cover; one for both languages)
- * and the publish checklist (spec §5.4.1).
+ * (the publish checklist has its own panel).
  */
 import { useEffect, useRef, useState } from 'react';
-import type { Draft } from '../../api/types';
-import type { Category } from '../../../lib/schemas';
-import type { ChecklistItem } from '../../lib/checklist';
+import type { Draft, LangFields } from '../../api/types';
+import type { Category, Lang } from '../../../lib/schemas';
+import { LANG_LABEL } from '../../lib/draft';
+import { HELP } from '../../lib/help-texts';
 import { IMAGE_PRESETS, ImageError, resizeImage } from '../../lib/image';
 import { Button, Field, Select } from '../kit';
 import type { ImageStore } from './images';
 
 export type SharedPatch = Partial<Pick<Draft, 'category' | 'cover' | 'publishedAt'>>;
-
-function Checklist({ items, flagMissing, onGo }: { items: ChecklistItem[]; flagMissing: boolean; onGo: (item: ChecklistItem) => void }) {
-  const required = items.filter((i) => i.required);
-  const recommended = items.filter((i) => !i.required);
-  const row = (i: ChecklistItem) => (
-    <li key={i.id} data-done={i.done} className={`checklist-item ${i.done ? 'is-done' : ''} ${flagMissing && i.required && !i.done ? 'is-flagged' : ''}`}>
-      <button type="button" onClick={() => onGo(i)}>
-        <span className="checklist-mark" aria-hidden="true">
-          {i.done ? '✓' : '○'}
-        </span>
-        <span>{i.label}</span>
-        <span className="k-visually-hidden">{i.done ? ' (tamam)' : ' (eksik)'}</span>
-      </button>
-    </li>
-  );
-  return (
-    <div className="checklist" data-field="checklist">
-      <h4>Yayın kontrol listesi</h4>
-      <ul aria-label="Yayın kontrol listesi">
-        <li className="checklist-group">Zorunlu</li>
-        {required.map(row)}
-        <li className="checklist-group">Önerilen (yayını engellemez)</li>
-        {recommended.map(row)}
-      </ul>
-    </div>
-  );
-}
 
 export function SettingsPanel(props: {
   draft: Draft;
@@ -48,10 +22,9 @@ export function SettingsPanel(props: {
   onShared: (patch: SharedPatch) => void;
   onCoverUploaded: () => void;
   onError: (message: string | null) => void;
-  checklist: ChecklistItem[];
-  /** After Yayınla was pressed with something missing: the missing required items stand out. */
-  flagMissing: boolean;
-  onGo: (item: ChecklistItem) => void;
+  /** The active language: the cover's alt text is written per language. */
+  lang: Lang;
+  onLang: (patch: Partial<LangFields>) => void;
 }) {
   const { draft, categories, images } = props;
   const [cover, setCover] = useState<string | null>(null);
@@ -123,8 +96,18 @@ export function SettingsPanel(props: {
           </div>
           <input ref={input} type="file" accept="image/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
         </div>
+        {draft.cover && (
+          <Field
+            label={`Kapak görselinin alt metni (${LANG_LABEL[props.lang]})`}
+            field="coverAlt"
+            help={HELP.coverAlt}
+            value={draft[props.lang].coverAlt}
+            onChange={(coverAlt) => props.onLang({ coverAlt })}
+            hint="Görselde ne var? Kısa bir cümle."
+            lang={props.lang}
+          />
+        )}
       </div>
-      <Checklist items={props.checklist} flagMissing={props.flagMissing} onGo={props.onGo} />
     </div>
   );
 }

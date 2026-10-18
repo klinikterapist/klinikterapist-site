@@ -1,6 +1,6 @@
 /**
  * Meta panel for the active language: what search engines and share cards show (URL, SEO title,
- * description, cover alt text) with the Google and social previews next to the fields.
+ * description) with the Google and social previews next to the fields.
  */
 import { useEffect, useState } from 'react';
 import type { Draft, LangFields } from '../../api/types';
@@ -122,17 +122,6 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
           hint={`${f.description.trim().length} karakter · Google'da başlığın altında görünür (120–158 ideal).`}
           lang={lang}
         />
-        {draft.cover && (
-          <Field
-            label="Kapak görselinin alt metni"
-            field="coverAlt"
-            help={HELP.coverAlt}
-            value={f.coverAlt}
-            onChange={(coverAlt) => props.onLang({ coverAlt })}
-            hint="Görselde ne var? Kısa bir cümle."
-            lang={lang}
-          />
-        )}
       </div>
       <SerpPreview lang={lang} title={title} slug={f.slug} description={f.description.trim()} />
       <SocialPreview title={title} description={f.description.trim()} image={cover} />

@@ -42,6 +42,7 @@ describe('publishChecklist', () => {
       ['Türkçe: Kapak görselinin alt metni', true, true],
       ['İngilizce: Kapak görselinin alt metni', false, true],
     ]);
+    expect(alt.every((i) => i.panel === 'settings')).toBe(true);
   });
 
   it('each item names the panel that holds its field', () => {

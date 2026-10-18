@@ -1,19 +1,19 @@
 /**
- * The editor's icon strip on the right edge (spec §5.4): Ayarlar, SEO and Meta. One panel is open at
+ * The editor's icon strip on the right edge (spec §5.4): Ayarlar, SEO, Meta and Kontrol listesi. One panel is open at
  * a time; clicking the open one closes it. The choice is kept on this device (`panel.rail`). Under
  * 768 px the panel opens as a bottom sheet that the phone's "back" closes; it starts closed there.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { RailPanel } from '../../lib/checklist';
 import { useHistoryLayer } from '../history-layer';
-import { Icon, SearchCheck, Settings, Tag, type LucideIcon } from '../icons';
+import { CircleCheck, FileText, Icon, SearchCheck, Settings, type LucideIcon } from '../icons';
 import { Button } from '../kit';
 
 export type { RailPanel };
 
-export const RAIL_LABEL: Record<RailPanel, string> = { settings: 'Ayarlar', seo: 'SEO', meta: 'Meta' };
-const RAIL_ICON: Record<RailPanel, LucideIcon> = { settings: Settings, seo: SearchCheck, meta: Tag };
-const PANELS: RailPanel[] = ['settings', 'seo', 'meta'];
+export const RAIL_LABEL: Record<RailPanel, string> = { settings: 'Ayarlar', seo: 'SEO', meta: 'Meta', checklist: 'Kontrol listesi' };
+const RAIL_ICON: Record<RailPanel, LucideIcon> = { settings: Settings, seo: SearchCheck, meta: FileText, checklist: CircleCheck };
+const PANELS: RailPanel[] = ['settings', 'seo', 'meta', 'checklist'];
 const KEY = 'panel.rail';
 export const SHEET_BELOW = 768;
 
@@ -62,13 +62,14 @@ export function useRailPanel(narrow: boolean): [RailPanel | null, (next: RailPan
   return [open, set];
 }
 
-export type RailDots = { seo: 'good' | 'ok' | 'bad'; seoScore: number; settingsMissing: boolean };
+export type RailDots = { seo: 'good' | 'ok' | 'bad'; seoScore: number; checklistMissing: boolean };
 
 export function SideRail({ open, onToggle, dots }: { open: RailPanel | null; onToggle: (p: RailPanel) => void; dots: RailDots }) {
   const title: Record<RailPanel, string> = {
-    settings: dots.settingsMissing ? 'Ayarlar (eksik madde var)' : 'Ayarlar',
+    settings: 'Ayarlar',
     seo: `SEO (puan ${dots.seoScore})`,
     meta: 'Meta',
+    checklist: dots.checklistMissing ? 'Kontrol listesi (eksik madde var)' : 'Kontrol listesi',
   };
   return (
     <nav className="side-rail" aria-label="Yazı panelleri">
@@ -84,7 +85,7 @@ export function SideRail({ open, onToggle, dots }: { open: RailPanel | null; onT
         >
           <Icon as={RAIL_ICON[p]} size={20} />
           {p === 'seo' && <span className={`rail-dot rail-dot-${dots.seo}`} aria-hidden="true" />}
-          {p === 'settings' && dots.settingsMissing && <span className="rail-dot rail-dot-ok" aria-hidden="true" />}
+          {p === 'checklist' && dots.checklistMissing && <span className="rail-dot rail-dot-ok" aria-hidden="true" />}
         </button>
       ))}
     </nav>

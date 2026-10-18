@@ -1,5 +1,5 @@
 /**
- * The publish checklist in the Ayarlar panel (spec §5.4.1): everything a post needs before it can be
+ * The publish checklist in the Kontrol listesi panel (spec §5.4.1): everything a post needs before it can be
  * published (the same rules as `canPublish`, plus registered references) and what is recommended.
  * Each item names the language and the panel field it is about, so clicking it can go there.
  */
@@ -11,7 +11,7 @@ import { UnknownReferenceError } from '../../lib/citations';
 import { hasText, LANG_LABEL } from './draft';
 import { docToMarkdown } from './markdown';
 
-export type RailPanel = 'settings' | 'seo' | 'meta';
+export type RailPanel = 'settings' | 'seo' | 'meta' | 'checklist';
 
 export type ChecklistItem = { id: string; label: string; done: boolean; required: boolean; lang: Lang | null; panel: RailPanel; field: string };
 
@@ -56,7 +56,7 @@ export function publishChecklist(d: Draft, seoScore: Record<Lang, number>): Chec
       item('focusKeyword', 'Odak kelime', !!f.focusKeyword.trim(), 'seo'),
       item('body', body ? 'Yazı metni' : 'Yazı metni boş', body, 'settings'),
     );
-    if (hasCover) required.push(item('coverAlt', 'Kapak görselinin alt metni', !!f.coverAlt.trim(), 'meta'));
+    if (hasCover) required.push(item('coverAlt', 'Kapak görselinin alt metni', !!f.coverAlt.trim(), 'settings'));
     required.push(item('references', 'atıfların referansları kayıtlı', referencesKnown(f, lang), 'settings'));
   }
 

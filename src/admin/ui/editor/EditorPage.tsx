@@ -22,6 +22,7 @@ import { PostEditor } from './PostEditor';
 import { EditorTopBar, type MoreAction } from './EditorTopBar';
 import { MetaPanel } from './MetaPanel';
 import { SettingsPanel } from './SettingsPanel';
+import { ChecklistPanel } from './ChecklistPanel';
 import { RailPanelFrame, SHEET_BELOW, SideRail, useNarrow, useRailPanel } from './SideRail';
 import { PreviewDialog } from './PreviewDialog';
 import { clearBackup, readBackup, useAutosave, type AutosaveStatus } from './useAutosave';
@@ -199,7 +200,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const onPublish = () => {
     if (!blocked) return setConfirm('publish');
     setFlagMissing(true);
-    setRail('settings');
+    setRail('checklist');
     setFocusField('checklist');
   };
 
@@ -409,11 +410,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
                 onShared={(patch) => update((d) => ({ ...d, ...patch }))}
                 onCoverUploaded={() => setCoverVersion((v) => v + 1)}
                 onError={setMessage}
-                checklist={checklist}
-                flagMissing={flagMissing}
-                onGo={goTo}
+                lang={lang}
+                onLang={onLang}
               />
             )}
+            {rail === 'checklist' && <ChecklistPanel items={checklist} flagMissing={flagMissing} onGo={goTo} />}
             {rail === 'seo' && <SeoPanel lang={lang} draft={draft} otherKeywords={otherKeywords} onLang={onLang} />}
             {rail === 'meta' && <MetaPanel draft={draft} lang={lang} images={images} onLang={onLang} />}
           </RailPanelFrame>
@@ -421,7 +422,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
         <SideRail
           open={rail}
           onToggle={(p) => setRail(rail === p ? null : p)}
-          dots={{ seo: scoreTone(seoScore[lang]), seoScore: seoScore[lang], settingsMissing: blocked }}
+          dots={{ seo: scoreTone(seoScore[lang]), seoScore: seoScore[lang], checklistMissing: blocked }}
         />
       </div>
 

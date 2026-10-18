@@ -6,6 +6,7 @@ export {
   BookOpenText,
   Bold,
   CircleCheck as CheckCircle2, // Lucide 1.x renamed it
+  CircleCheck,
   Ellipsis,
   ExternalLink,
   FileText,

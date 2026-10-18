@@ -59,11 +59,11 @@ describe('MetaPanel', () => {
     expect(screen.getByRole('region', { name: 'Paylaşım önizlemesi' })).toBeTruthy();
   });
 
-  it('holds the URL slug, SEO title, description and (with a cover) the cover alt text, each with its data-field', () => {
+  it('holds the URL slug, SEO title, description, each with its data-field', () => {
     const { rerender } = render(<MetaPanel lang="tr" draft={draft()} images={images} onLang={() => {}} />);
     const fieldsOf = () => Array.from(document.querySelectorAll('[data-field]')).map((el) => el.getAttribute('data-field'));
     expect(fieldsOf()).toEqual(['slug', 'seoTitle', 'description']);
     rerender(<MetaPanel lang="tr" draft={{ ...draft(), cover: 'cover.jpg' }} images={images} onLang={() => {}} />);
-    expect(fieldsOf()).toEqual(['slug', 'seoTitle', 'description', 'coverAlt']);
+    expect(fieldsOf()).toEqual(['slug', 'seoTitle', 'description']); // the cover alt text lives in Ayarlar
   });
 });

@@ -77,16 +77,16 @@ describe('EditorPage', () => {
     expect(window.location.hash).toBe('#/yazilar');
   });
 
-  it('Yayınla with missing fields opens Ayarlar and the checklist', async () => {
+  it('Yayınla with missing fields opens the Kontrol listesi panel', async () => {
     localStorage.setItem('panel.rail', 'closed');
     setup({ ...base(), tr: filled('Kaygı', 'kaygi') }); // the English side is empty
     const publish = await screen.findByRole('button', { name: 'Yayınla' });
     expect((publish as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Kontrol listesi' })).toBeNull();
     fireEvent.click(publish);
     expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull();
-    expect(screen.getByRole('region', { name: 'Ayarlar' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Ayarlar' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('region', { name: 'Kontrol listesi' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Kontrol listesi' }).getAttribute('aria-pressed')).toBe('true');
     const list = screen.getByRole('list', { name: 'Yayın kontrol listesi' });
     const item = within(list).getByRole('button', { name: /İngilizce: Meta açıklama/ });
     expect(item.closest('li')!.getAttribute('data-done')).toBe('false');
@@ -101,18 +101,83 @@ describe('EditorPage', () => {
     // A body text is still missing in English.
     fireEvent.click(screen.getByRole('button', { name: 'Yayınla' }));
     expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull();
+    expect(screen.getAllByRole('region')).toHaveLength(1);
     expect(within(screen.getByRole('list', { name: 'Yayın kontrol listesi' })).getByRole('button', { name: /İngilizce: Yazı metni boş/ })).toBeTruthy();
   });
 
   it('clicking a checklist item switches language and opens the right panel', async () => {
+    localStorage.setItem('panel.rail', 'checklist');
     setup({ ...base(), tr: filled('Kaygı', 'kaygi') });
     const list = await screen.findByRole('list', { name: 'Yayın kontrol listesi' });
     fireEvent.click(within(list).getByRole('button', { name: /İngilizce: Meta açıklama/ }));
     expect(screen.getByRole('button', { name: /English Page/ }).getAttribute('aria-pressed')).toBe('true');
     const meta = screen.getByRole('region', { name: 'Meta' });
-    expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Kontrol listesi' })).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(within(meta).getByLabelText('Meta açıklama')));
     expect(document.activeElement!.tagName).toBe('TEXTAREA');
+  });
+
+  it('the rail has Ayarlar, SEO, Meta and Kontrol listesi in that order', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const rail = await screen.findByRole('navigation', { name: 'Yazı panelleri' });
+    expect(within(rail).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual(['Ayarlar', 'SEO', 'Meta', 'Kontrol listesi']);
+  });
+
+  it('the missing dot sits on Kontrol listesi, not on Ayarlar', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi') }); // the English side is empty
+    const check = await screen.findByRole('button', { name: 'Kontrol listesi' });
+    expect(check.querySelector('.rail-dot')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ayarlar' }).querySelector('.rail-dot')).toBeNull();
+  });
+
+  it('a blocked Yayınla while another panel is open switches to the checklist, one panel only', async () => {
+    localStorage.setItem('panel.rail', 'meta');
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi') });
+    expect(await screen.findByRole('region', { name: 'Meta' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Yayınla' }));
+    expect(screen.queryByRole('region', { name: 'Meta' })).toBeNull();
+    expect(screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))).toEqual(['Kontrol listesi']);
+    expect(localStorage.getItem('panel.rail')).toBe('checklist');
+  });
+
+  it('the cover alt field is in Ayarlar right after the cover controls, and not in Meta', async () => {
+    localStorage.setItem('panel.rail', 'settings');
+    setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const settings = await screen.findByRole('region', { name: 'Ayarlar' });
+    const alt = within(settings).getByLabelText('Kapak görselinin alt metni (Türkçe)');
+    const remove = within(settings).getByRole('button', { name: 'Kapağı kaldır' });
+    expect(remove.compareDocumentPosition(alt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(settings).getByRole('button', { name: 'Kapak görselinin alt metni (Türkçe) hakkında bilgi' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Meta' }));
+    expect(screen.queryByLabelText(/Kapak görselinin alt metni/)).toBeNull();
+  });
+
+  it('the checklist item for the cover alt text opens Ayarlar and focuses the field', async () => {
+    localStorage.setItem('panel.rail', 'checklist');
+    setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const list = await screen.findByRole('list', { name: 'Yayın kontrol listesi' });
+    fireEvent.click(within(list).getByRole('button', { name: /Türkçe: Kapak görselinin alt metni/ }));
+    const settings = screen.getByRole('region', { name: 'Ayarlar' });
+    await waitFor(() => expect(document.activeElement).toBe(within(settings).getByLabelText('Kapak görselinin alt metni (Türkçe)')));
+  });
+
+  it('removing the cover hides the alt field and its checklist item', async () => {
+    localStorage.setItem('panel.rail', 'settings');
+    setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const settings = await screen.findByRole('region', { name: 'Ayarlar' });
+    fireEvent.change(within(settings).getByLabelText('Kapak görselinin alt metni (Türkçe)'), { target: { value: 'Bir fincan çay' } });
+    fireEvent.click(within(settings).getByRole('button', { name: 'Kapağı kaldır' }));
+    expect(screen.queryByLabelText(/Kapak görselinin alt metni/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Kontrol listesi' }));
+    const list = screen.getByRole('list', { name: 'Yayın kontrol listesi' });
+    expect(within(list).queryByRole('button', { name: /Kapak görselinin alt metni/ })).toBeNull();
+  });
+
+  it('the Kontrol listesi heading has a help tip', async () => {
+    localStorage.setItem('panel.rail', 'checklist');
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const panel = await screen.findByRole('region', { name: 'Kontrol listesi' });
+    expect(within(panel).getByRole('button', { name: 'Yayın kontrol listesi hakkında bilgi' })).toBeTruthy();
   });
 
   it('the URL slug follows the title until it is edited by hand', async () => {
@@ -303,26 +368,26 @@ describe('EditorPage', () => {
     Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
     try {
       setup({ ...base(), tr: filled('', 'kaygi'), en: filled('Anxiety', 'anxiety') });
-      fireEvent.click(await screen.findByRole('button', { name: 'Ayarlar' }));
-      const sheet = screen.getByRole('dialog', { name: 'Ayarlar' });
+      fireEvent.click(await screen.findByRole('button', { name: 'Kontrol listesi' }));
+      const sheet = screen.getByRole('dialog', { name: 'Kontrol listesi' });
       const list = within(sheet).getByRole('list', { name: 'Yayın kontrol listesi' });
       fireEvent.click(within(list).getByRole('button', { name: /Türkçe: Başlık/ }));
-      expect(screen.queryByRole('dialog', { name: 'Ayarlar' })).toBeNull();
+      expect(screen.queryByRole('dialog', { name: 'Kontrol listesi' })).toBeNull();
       await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Başlık (Türkçe)')));
     } finally {
       Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
     }
   });
 
-  it('on a narrow screen a blocked Yayınla opens the Ayarlar sheet with the checklist', async () => {
+  it('on a narrow screen a blocked Yayınla opens the Kontrol listesi sheet', async () => {
     const orig = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
     try {
       setup({ ...base(), tr: filled('Kaygı', 'kaygi') }); // the English side is empty
       fireEvent.click(await screen.findByRole('button', { name: 'Yayınla' }));
       expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull();
-      const sheet = screen.getByRole('dialog', { name: 'Ayarlar' });
-      expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+      const sheet = screen.getByRole('dialog', { name: 'Kontrol listesi' });
+      expect(screen.queryByRole('region', { name: 'Kontrol listesi' })).toBeNull();
       const list = within(sheet).getByRole('list', { name: 'Yayın kontrol listesi' });
       expect(within(list).getByRole('button', { name: /İngilizce: Meta açıklama/ }).textContent).toContain('eksik');
     } finally {
