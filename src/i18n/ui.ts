@@ -1,7 +1,7 @@
 import type { Lang } from '../lib/settings';
 
 /** Every fixed interface string of the site, in both languages. */
-const STRINGS = {
+export const STRINGS = {
   navHome: { tr: 'Ana Sayfa', en: 'Home' },
   navAbout: { tr: 'Hakkımda', en: 'About' },
   navBlog: { tr: 'Blog', en: 'Blog' },
@@ -94,7 +94,13 @@ const STRINGS = {
   emailLabel: { tr: 'E-posta', en: 'E-mail' },
   emailHint: { tr: 'Sorularınızı iletin', en: 'Send your questions' },
   instagramHint: { tr: 'Güncel paylaşımlar', en: 'Latest posts' },
-  linkedinHint: { tr: 'Profesyonel bağlantı', en: 'Professional network' },
+  linkedinHint: { tr: 'Mesleki geçmiş', en: 'Professional background' },
+  tiktokHint: { tr: 'Kısa videolar', en: 'Short videos' },
+  xHint: { tr: 'Kısa notlar', en: 'Short notes' },
+  threadsHint: { tr: 'Sohbetler', en: 'Conversations' },
+  mediumHint: { tr: 'Uzun yazılar', en: 'Long reads' },
+  substackHint: { tr: 'Bülten', en: 'Newsletter' },
+  youtubeHint: { tr: 'Videolar', en: 'Videos' },
   appointmentHint: { tr: 'Online görüşme', en: 'Online sessions' },
   workStyle: { tr: 'Çalışma Biçimi', en: 'How I Work' },
   onlineSessions: { tr: 'Online görüşme', en: 'Online sessions' },

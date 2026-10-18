@@ -63,7 +63,13 @@ export function AnaSayfaScreen() {
   );
 }
 
-const LINK_ICONS: Link['icon'][] = ['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x'];
+const LINK_ICONS: Link['icon'][] = ['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x', 'tiktok', 'threads'];
+
+// Readable names for the Simge select (the stored value stays the lower-case id).
+const ICON_NAMES: Record<Link['icon'], string> = {
+  instagram: 'Instagram', linkedin: 'LinkedIn', medium: 'Medium', substack: 'Substack',
+  email: 'E-posta', youtube: 'YouTube', x: 'X', tiktok: 'TikTok', threads: 'Threads',
+};
 
 export function LinklerScreen() {
   const file = useSettingsFile<Link[]>('src/data/links.json', parseLinks, 'Sosyal ve linkler');
@@ -79,7 +85,7 @@ export function LinklerScreen() {
           render={(l, update, i) => (
             <>
               <Field label="Görünen ad" value={l.label} onChange={(label) => update({ label })} />
-              <Select label="Simge" value={l.icon} options={LINK_ICONS.map((v) => ({ value: v, label: v }))} onChange={(icon) => update({ icon })} />
+              <Select label="Simge" value={l.icon} options={LINK_ICONS.map((v) => ({ value: v, label: ICON_NAMES[v] }))} onChange={(icon) => update({ icon })} />
               <Field
                 label="Adres"
                 value={l.url}

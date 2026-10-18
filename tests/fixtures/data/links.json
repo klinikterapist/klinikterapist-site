@@ -32,6 +32,30 @@
     "inFooter": true
   },
   {
+    "id": "tiktok",
+    "label": "TikTok",
+    "url": "https://www.tiktok.com/@klinikterapist",
+    "icon": "tiktok",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
+    "id": "x",
+    "label": "X",
+    "url": "https://x.com/klinikterapist",
+    "icon": "x",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
+    "id": "threads",
+    "label": "Threads",
+    "url": "https://www.threads.com/@klinikterapist",
+    "icon": "threads",
+    "inHero": true,
+    "inFooter": true
+  },
+  {
     "id": "email",
     "label": "E-posta",
     "url": "mailto:iletisim@example.com",

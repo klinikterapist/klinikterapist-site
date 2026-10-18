@@ -68,7 +68,7 @@ const linkSchema = z
     id: z.string().min(1),
     label: z.string(),
     url: z.string().min(1),
-    icon: z.enum(['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x']),
+    icon: z.enum(['instagram', 'linkedin', 'medium', 'substack', 'email', 'youtube', 'x', 'tiktok', 'threads']),
     inHero: z.boolean(),
     inFooter: z.boolean(),
   })

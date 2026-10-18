@@ -62,6 +62,7 @@ describe('jsonld', () => {
     const ld = personLd('en');
     expect(ld).toMatchObject({ '@type': 'Person', name: 'Osman Güneş Özkurt', jobTitle: getProfile().title.en, url: 'https://example.com/en/' });
     expect(ld.sameAs).toContain('https://instagram.com/klinikterapist');
+    expect(ld.sameAs).toContain('https://www.tiktok.com/@klinikterapist');
     expect(JSON.stringify(ld.sameAs)).not.toContain('mailto:');
   });
 

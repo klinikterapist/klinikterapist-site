@@ -76,6 +76,15 @@ describe('static pages', () => {
     expect(d.querySelector('main a[href="/randevu/"]')).not.toBeNull();
   });
 
+  it('contact page lists e-mail, every social link in file order, then Randevu', () => {
+    const links = JSON.parse(readFileSync('tests/fixtures/data/links.json', 'utf8')) as { label: string; icon: string }[];
+    const titles = loadPage('/iletisim/').querySelectorAll('ul.channels li').map((li) => li.querySelector('.title')?.text.trim() ?? '');
+    const social = links.filter((l) => l.icon !== 'email').map((l) => l.label);
+    expect(titles.length).toBe(social.length + 2);
+    expect(titles.slice(1, -1)).toEqual(social);
+    expect(social).toEqual(expect.arrayContaining(['TikTok', 'X', 'Threads']));
+  });
+
   it('resources page has type filter anchors and the owner note', () => {
     const d = loadPage('/kaynaklar/');
     expect(d.querySelector('a[href="#book"]')).not.toBeNull();

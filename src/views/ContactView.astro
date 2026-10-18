@@ -7,7 +7,7 @@ import type { Lang } from '../lib/settings';
 import { getContact, getLinks } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { pathFor } from '../i18n/routes';
-import { t } from '../i18n/ui';
+import { STRINGS, t, type UiKey } from '../i18n/ui';
 
 interface Props {
   lang: Lang;
@@ -18,14 +18,17 @@ const title = t(lang, 'navContact');
 const { meta, alternatePaths } = pageMeta('contact', lang, title, contact.intro[lang]);
 
 const links = getLinks();
-const social = (icon: 'instagram' | 'linkedin') => links.find((l) => l.icon === icon);
-const instagram = social('instagram');
-const linkedin = social('linkedin');
+// Every social account gets a card; its hint is `<icon>Hint` when the string exists.
+const hintFor = (l: { icon: string; label: string }) => {
+  const key = `${l.icon}Hint`;
+  return key in STRINGS ? t(lang, key as UiKey) : l.label;
+};
 
 const channels = [
   { href: `mailto:${contact.email}`, title: t(lang, 'emailLabel'), subtitle: t(lang, 'emailHint'), icon: 'email', external: false },
-  ...(instagram ? [{ href: instagram.url, title: instagram.label, subtitle: t(lang, 'instagramHint'), icon: 'instagram', external: true }] : []),
-  ...(linkedin ? [{ href: linkedin.url, title: linkedin.label, subtitle: t(lang, 'linkedinHint'), icon: 'linkedin', external: true }] : []),
+  ...links
+    .filter((l) => l.icon !== 'email')
+    .map((l) => ({ href: l.url, title: l.label, subtitle: hintFor(l), icon: l.icon, external: true })),
   { href: pathFor('appointment', lang), title: t(lang, 'bookSession'), subtitle: t(lang, 'appointmentHint'), icon: 'calendar', external: false },
 ];
 ---
