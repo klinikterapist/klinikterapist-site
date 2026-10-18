@@ -47,8 +47,14 @@ export const STRINGS = {
   hello: { tr: 'Merhaba, ben {name}.', en: "Hi, I'm {name}." },
 
   // Blog
-  blogTitle: { tr: 'Blog Yazılarım', en: 'My Blog Posts' },
+  blogTitle: { tr: 'Blog', en: 'Blog' },
+  // Spec §5.8: "Blog" and a short description (wording from the blog mockups).
   blogLead: {
+    tr: 'Kaygı, ilişkiler ve kendini anlamak üzerine yazılar.',
+    en: 'Writing on anxiety, relationships and understanding yourself.',
+  },
+  // The longer text stays as the page's meta description for search results.
+  blogMetaDescription: {
     tr: 'Psikoloji, zihinsel sağlık ve daha iyi bir yaşam üzerine notlar, düşünceler ve bilimsel içerikler.',
     en: 'Notes, reflections and science-based writing on psychology, mental health and a better life.',
   },

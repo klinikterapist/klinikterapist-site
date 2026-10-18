@@ -159,6 +159,20 @@ describe('blog list redesign (spec §5.8)', () => {
   const tr = () => loadPage('/blog/');
   const en = () => loadPage('/en/blog/');
 
+  it('heading is "Blog" with a short description in both languages (also with no posts)', () => {
+    for (const d of [tr(), loadPage('/blog/', DIST_NO_POSTS)]) {
+      expect(d.querySelector('h1')?.text.trim()).toBe('Blog');
+      expect(d.querySelector('.page-head .lead')?.text.trim()).toBe('Kaygı, ilişkiler ve kendini anlamak üzerine yazılar.');
+    }
+    for (const d of [en(), loadPage('/en/blog/', DIST_NO_POSTS)]) {
+      expect(d.querySelector('h1')?.text.trim()).toBe('Blog');
+      expect(d.querySelector('.page-head .lead')?.text.trim()).toBe('Writing on anxiety, relationships and understanding yourself.');
+    }
+    expect(tr().querySelector('title')?.text).toMatch(/^Blog \|/);
+    // The longer text stays the meta description.
+    expect(tr().querySelector('meta[name=description]')?.getAttribute('content')).toMatch(/^Psikoloji, zihinsel sağlık/);
+  });
+
   it('phone: big newest-post card with cover, label, title and reading time', () => {
     const card = tr().querySelector('.blog-phone a.newest')!;
     expect(card.getAttribute('href')).toBe('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
