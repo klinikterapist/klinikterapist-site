@@ -31,6 +31,21 @@ describe('loadSiteState', () => {
   });
 });
 
+describe('loadSiteState site name', () => {
+  const seo = '{"siteName":{"tr":"Psikolog Osman","en":"Psychologist Osman"},"defaultDescription":{"tr":"a","en":"b"},"ogImage":"/og.png"}';
+  it('reads the site name from seo.json', async () => {
+    const s = await loadSiteState(createMockApi({ seed: { ...seed, 'src/data/seo.json': seo } }));
+    expect(s.siteName).toEqual({ tr: 'Psikolog Osman', en: 'Psychologist Osman' });
+  });
+  it('is null when seo.json is missing or invalid', async () => {
+    expect((await loadSiteState(createMockApi({ seed }))).siteName).toBeNull();
+    const bad = await loadSiteState(createMockApi({ seed: { ...seed, 'src/data/seo.json': '{"siteName":1}' } }));
+    expect(bad.siteName).toBeNull();
+    const broken = await loadSiteState(createMockApi({ seed: { ...seed, 'src/data/seo.json': 'not json' } }));
+    expect(broken.siteName).toBeNull();
+  });
+});
+
 describe('liveToDraft', () => {
   it('turns a live post into an editable, published draft', async () => {
     const [p] = (await loadSiteState(createMockApi({ seed }))).posts;

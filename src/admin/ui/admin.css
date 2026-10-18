@@ -225,6 +225,15 @@ body.admin {
   gap: var(--k-space-2);
 }
 
+.k-label-row > h3 {
+  margin: 0;
+}
+
+.rail-panel-body > .k-label-row,
+.checklist > .k-label-row {
+  margin-bottom: var(--k-space-2);
+}
+
 .k-help-btn {
   display: inline-flex;
   align-items: center;
@@ -968,16 +977,6 @@ textarea.k-input {
 }
 
 /* Publish checklist (Ayarlar). */
-.checklist {
-  margin-top: var(--k-space-5);
-}
-
-.checklist h4 {
-  margin: 0 0 var(--k-space-2);
-  color: var(--p-heading);
-  font-size: var(--text-base);
-}
-
 .checklist ul {
   display: grid;
   gap: 2px;
@@ -1641,7 +1640,7 @@ textarea.k-input {
 
 .social-name {
   color: #5b675f;
-  font-size: var(--text-sm);
+  font-size: 11px;
 }
 
 .social-title {

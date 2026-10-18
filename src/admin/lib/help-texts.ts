@@ -7,7 +7,7 @@ export const HELP = {
     "Google'da mavi başlık olarak görünen metindir. Boş bırakırsanız yazının başlığı kullanılır. Daha kısa ya da daha çekici bir başlık istiyorsanız burada yazabilirsiniz; yaklaşık 60 karakteri geçmemesi iyi olur.",
   description:
     "Google'da başlığın altında görünen kısa özettir. Okurun yazıyı açıp açmayacağına çoğu zaman bu iki cümle karar verir. 120 ile 158 karakter arası idealdir; daha uzun olursa Google sonunu keser.",
-  slug: "Yazının internet adresinin son bölümüdür. Kısa, anlaşılır ve Türkçe karakter içermeyen bir ad seçin. Yayından sonra değiştirirseniz eski adres yeni adrese otomatik yönlendirilir, yine de mümkünse yayından sonra değiştirmeyin.",
+  slug: "Yazının internet adresinin son bölümüdür. Kısa, anlaşılır ve Türkçe karakter içermeyen bir ad seçin. Yayındaki bir yazının adresini değiştirirseniz eski adres yeni adrese otomatik yönlendirilir; yine de mümkünse değiştirmeyin.",
   coverAlt:
     "Kapak görselini göremeyen okuyucular için görselin kısa bir tarifidir. Ekran okuyucular bunu sesli okur; görsel yüklenmezse yerinde bu metin görünür. Görselde ne olduğunu tek cümleyle anlatın.",
   checklist:

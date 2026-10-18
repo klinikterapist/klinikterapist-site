@@ -1,6 +1,6 @@
 /**
- * Ayarlar panel: publish status, the shared settings (category, date, cover; one for both languages)
- * (the publish checklist has its own panel).
+ * Ayarlar panel: publish status and the settings shared by both languages (category, date, cover).
+ * The publish checklist has its own panel.
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Draft, LangFields } from '../../api/types';

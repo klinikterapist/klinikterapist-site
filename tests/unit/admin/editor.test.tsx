@@ -140,6 +140,16 @@ describe('EditorPage', () => {
     expect(localStorage.getItem('panel.rail')).toBe('checklist');
   });
 
+  it('the Meta share preview shows the site name of the page language, read from seo.json', async () => {
+    const seo = '{"siteName":{"tr":"Psikolog Osman Güneş Özkurt","en":"Psychologist Osman Güneş Özkurt"},"defaultDescription":{"tr":"a","en":"b"},"ogImage":"/og.png"}';
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') }, { 'src/data/seo.json': seo });
+    fireEvent.click(await screen.findByRole('button', { name: 'Meta' }));
+    const meta = screen.getByRole('region', { name: 'Meta' });
+    await waitFor(() => expect(meta.querySelector('.social-name')?.textContent).toBe('Psikolog Osman Güneş Özkurt'));
+    fireEvent.click(screen.getByRole('button', { name: /English Page/ }));
+    await waitFor(() => expect(meta.querySelector('.social-name')?.textContent).toBe('Psychologist Osman Güneş Özkurt'));
+  });
+
   it('the cover alt field is in Ayarlar right after the cover controls, and not in Meta', async () => {
     localStorage.setItem('panel.rail', 'settings');
     setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
