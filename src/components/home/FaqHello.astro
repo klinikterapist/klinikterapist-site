@@ -1,0 +1,139 @@
+---
+/**
+ * Desktop home: the answered questions beside the "Merhaba, ben Osman." card (spec §5.7).
+ * The card always shows; with no answered question it spans the row on its own.
+ */
+import type { Lang } from '../../lib/settings';
+import { pathFor } from '../../i18n/routes';
+import { t } from '../../i18n/ui';
+import Icon from '../Icon.astro';
+import SunMark from '../brand/SunMark.astro';
+
+interface Props {
+  lang: Lang;
+  /** Answered questions in `lang` (getFaq). */
+  faq: { id: string; q: string; a: string }[];
+  firstName: string;
+  /** Short line under the greeting; empty renders nothing. */
+  text: string;
+}
+const { lang, faq, firstName, text } = Astro.props;
+---
+
+<section class:list={['faq-block container', { 'no-faq': faq.length === 0 }]} aria-labelledby={faq.length > 0 ? 'faq-title' : undefined}>
+  {
+    faq.length > 0 && (
+      <div class="faq-list">
+        <h2 id="faq-title">{t(lang, 'faqTitle')}</h2>
+        {faq.map((f) => (
+          <details class="faq-item">
+            <summary>
+              {f.q}
+              <Icon name="chevron" size={16} class="faq-chv" />
+            </summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    )
+  }
+  <div class="hello">
+    <SunMark size={64} />
+    <h3>{t(lang, 'hello').replace('{name}', firstName)}</h3>
+    {text && <p>{text}</p>}
+    <a href={pathFor('about', lang)}>
+      {t(lang, 'navAbout')}
+      <Icon name="arrow" size={16} />
+    </a>
+  </div>
+</section>
+
+<style>
+  .faq-block {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 28px;
+    align-items: start;
+    padding-block: var(--space-6);
+  }
+
+  .faq-block.no-faq {
+    grid-template-columns: 1fr;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+  }
+
+  .faq-item {
+    padding: 6px 4px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .faq-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding-bottom: 10px;
+    font-size: var(--text-base);
+    font-weight: 500;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item :global(.faq-chv) {
+    flex: none;
+    color: var(--muted);
+    transform: rotate(90deg);
+    transition: transform 0.25s;
+  }
+
+  .faq-item[open] > summary :global(.faq-chv) {
+    transform: rotate(-90deg);
+  }
+
+  .faq-item p {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .hello {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  .hello h3 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .hello p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .hello a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+  }
+</style>

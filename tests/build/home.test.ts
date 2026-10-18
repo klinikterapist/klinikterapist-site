@@ -192,3 +192,19 @@ describe('desktop header and footer', () => {
     expect(tr().querySelectorAll('.page-end')).toHaveLength(1);
   });
 });
+
+describe('hello card without answered questions', () => {
+  it('the hello card shows alone and spans the row when no question is answered', () => {
+    const block = loadPage('/ui-kit/tr/').querySelector('section.faq-block')!;
+    expect(block.classList.contains('no-faq')).toBe(true);
+    expect(block.querySelector('.faq-list')).toBeNull();
+    expect(block.querySelector('.hello')?.text).toContain('Merhaba, ben Osman.');
+    expect(block.querySelector('.hello a[href="/hakkimda/"]')).toBeTruthy();
+  });
+
+  it('with answered questions the home shows both columns', () => {
+    const block = tr().querySelector('.home-desk section.faq-block')!;
+    expect(block.classList.contains('no-faq')).toBe(false);
+    expect(block.querySelector('.faq-list')).toBeTruthy();
+  });
+});

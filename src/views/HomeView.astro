@@ -10,6 +10,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PortraitHero from '../components/home/PortraitHero.astro';
 import DesktopHero from '../components/home/DesktopHero.astro';
 import ProcessSteps from '../components/home/ProcessSteps.astro';
+import FaqHello from '../components/home/FaqHello.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import TilePair from '../components/ui/TilePair.astro';
@@ -17,7 +18,6 @@ import StickyCta from '../components/ui/StickyCta.astro';
 import Flag from '../components/ui/Flag.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
-import SunMark from '../components/brand/SunMark.astro';
 import type { HomeCard, Lang } from '../lib/settings';
 import { getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
 import { getPosts } from '../lib/posts';
@@ -77,7 +77,6 @@ const tilePair: [Tile] | [Tile, Tile] | null = tiles.length === 2 ? [tiles[0], t
 const faq = getFaq(lang);
 const firstName = profile.name.split(/\s+/)[0];
 const helloText = profile.shortIntro?.[lang].trim() || intro;
-const aboutHref = pathFor('about', lang);
 const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
 ---
 
@@ -201,33 +200,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
 
     <ProcessSteps lang={lang} steps={getHome().process} />
 
-    {
-      faq.length > 0 && (
-        <section class="faq-block container" aria-labelledby="faq-title">
-          <div class="faq-list">
-            <h2 id="faq-title">{t(lang, 'faqTitle')}</h2>
-            {faq.map((f) => (
-              <details class="faq-item">
-                <summary>
-                  {f.q}
-                  <Icon name="chevron" size={16} class="faq-chv" />
-                </summary>
-                <p>{f.a}</p>
-              </details>
-            ))}
-          </div>
-          <div class="hello">
-            <SunMark size={64} />
-            <h3>{t(lang, 'hello').replace('{name}', firstName)}</h3>
-            {helloText && <p>{helloText}</p>}
-            <a href={aboutHref}>
-              {t(lang, 'navAbout')}
-              <Icon name="arrow" size={16} />
-            </a>
-          </div>
-        </section>
-      )
-    }
+    <FaqHello lang={lang} faq={faq} firstName={firstName} text={helloText} />
 
     {
       substack && (
@@ -429,8 +402,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
   }
 
   /* Desktop */
-  .latest,
-  .faq-block {
+  .latest {
     padding-block: var(--space-6);
   }
 
@@ -445,8 +417,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     font-size: 1.875rem;
   }
 
-  .more,
-  .hello a {
+  .more {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -471,43 +442,6 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
 
   .posts li > :global(*) {
     flex: 1;
-  }
-
-  .faq-block {
-    display: grid;
-    grid-template-columns: 1.3fr 1fr;
-    gap: 28px;
-    align-items: start;
-  }
-
-  .faq-list .faq-item {
-    padding: 6px 4px 0;
-  }
-
-  .faq-list .faq-item summary {
-    font-size: var(--text-base);
-  }
-
-  .hello {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-2);
-    padding: var(--space-5);
-    border-radius: 18px;
-    background: var(--surface);
-  }
-
-  .hello h3 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-
-  .hello p {
-    margin: 0;
-    color: var(--muted);
-    font-size: var(--text-sm);
-    line-height: 1.55;
   }
 
   /* Inverted band: navy by day, sunflower by night (the button colours swap with the theme). */

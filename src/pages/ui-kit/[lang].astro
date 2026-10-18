@@ -15,6 +15,7 @@ import Accordion from '../../components/ui/Accordion.astro';
 import TilePair from '../../components/ui/TilePair.astro';
 import StickyCta from '../../components/ui/StickyCta.astro';
 import PageEnd from '../../components/ui/PageEnd.astro';
+import FaqHello from '../../components/home/FaqHello.astro';
 
 export const getStaticPaths = (() => {
   const enabled = import.meta.env.DEV || process.env.UI_KIT === '1';
@@ -67,6 +68,8 @@ const isTr = lang === 'tr';
           ]}
         />
         <TilePair tiles={[{ icon: 'calendar', title: isTr ? 'Tek kutu' : 'Single tile', subtitle: isTr ? 'Tam genişlik' : 'Full width', href: '/randevu/' }]} />
+        {/* Desktop home block with no answered question: the hello card stands alone. */}
+        <FaqHello lang={lang} faq={[]} firstName="Osman" text={isTr ? 'Kısa bir tanıtım.' : 'A short intro.'} />
         <div class="spacer"></div>
         <PageEnd lang={lang} />
       </main>

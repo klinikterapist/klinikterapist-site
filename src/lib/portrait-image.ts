@@ -6,6 +6,7 @@
 import { getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import type { Profile } from './settings';
+import { variantWidths } from './portrait-widths';
 
 const PUBLIC_IMAGES = import.meta.glob<{ default: ImageMetadata }>('/public/images/**/*.{webp,jpg,jpeg,png,avif}', {
   eager: true,
@@ -33,7 +34,7 @@ export async function portraitImage(photo: string, widths: number[]): Promise<Po
   const meta = PUBLIC_IMAGES[`/public${photo}`]?.default;
   const largest = Math.max(...widths);
   if (!meta) return { src: photo, width: largest, height: largest };
-  const useWidths = [...new Set([...widths.filter((w) => w < meta.width), Math.min(largest, meta.width)])];
+  const useWidths = variantWidths(widths, meta.width);
   const width = Math.max(...useWidths);
   const img = await getImage({ src: meta, widths: useWidths, width, format: 'webp' });
   return {
