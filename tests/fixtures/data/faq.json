@@ -1,0 +1,6 @@
+[
+  { "id": "ilk-gorusme", "q": { "tr": "İlk görüşme nasıl geçer?", "en": "What is the first session like?" }, "a": { "tr": "İlk görüşme 50 dakika sürer.", "en": "The first session lasts 50 minutes." } },
+  { "id": "gizlilik", "q": { "tr": "Konuştuklarım gizli kalır mı?", "en": "Will what I share stay confidential?" }, "a": { "tr": "Evet, gizli tutulur.", "en": "Yes, it stays confidential." } },
+  { "id": "ucret", "q": { "tr": "Ücret ne kadar, nasıl ödenir?", "en": "How much does it cost?" }, "a": { "tr": "Ücret bilgisi burada.", "en": "" } },
+  { "id": "iptal", "q": { "tr": "Randevuyu iptal edebilir miyim?", "en": "Can I cancel an appointment?" }, "a": { "tr": "", "en": "" } }
+]

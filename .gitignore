@@ -23,6 +23,7 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 dist-test/
+dist-test-empty/
 
 # Apps Script build output and local clasp config
 apps-script/dist/

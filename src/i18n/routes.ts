@@ -20,6 +20,14 @@ export function pathFor(key: PageKey, lang: Lang): string {
   return PAGES[key][lang];
 }
 
+/**
+ * The FAQ page (spec §10). Its page and route key arrive with Plan F Task 6; until then the home page
+ * and the header link to it from here, and Task 6 turns this into `pathFor('faq', lang)`.
+ */
+export function faqPath(lang: Lang): string {
+  return lang === 'tr' ? '/sik-sorulan-sorular/' : '/en/faq/';
+}
+
 export function categoryPath(cat: Category, lang: Lang): string {
   return lang === 'tr' ? `/blog/kategori/${cat.slug.tr}/` : `/en/blog/category/${cat.slug.en}/`;
 }

@@ -5,14 +5,17 @@ import { parse, type HTMLElement } from 'node-html-parser';
 /** All build tests read the fixture build (`npm run test:build` writes it). */
 export const DIST = 'dist-test';
 
+/** The same fixture data built with an empty posts folder (`npm run test:build` writes it too). */
+export const DIST_NO_POSTS = 'dist-test-empty';
+
 /** `/x/` → `dist-test/x/index.html`; a path ending in `.html` is read as is. */
-export function distFile(path: string): string {
+export function distFile(path: string, dist = DIST): string {
   const clean = path.replace(/^\/+/, '');
-  return clean.endsWith('.html') ? join(DIST, clean) : join(DIST, clean, 'index.html');
+  return clean.endsWith('.html') ? join(dist, clean) : join(dist, clean, 'index.html');
 }
 
-export function loadPage(path: string): HTMLElement {
-  const file = distFile(path);
+export function loadPage(path: string, dist = DIST): HTMLElement {
+  const file = distFile(path, dist);
   if (!existsSync(file)) throw new Error(`Built page not found: ${file}`);
   return parse(readFileSync(file, 'utf8'));
 }

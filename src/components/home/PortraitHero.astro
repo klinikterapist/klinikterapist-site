@@ -1,0 +1,192 @@
+---
+/**
+ * Top of the phone home page (spec §5.6, §5.10) wrapping the page's content card (default slot).
+ * - background: sticky photo with a fade into the page colour, the top bar chips on it, and the card
+ *   sliding up over it with the sun in a page-coloured circle on its edge;
+ * - round: plain top bar, a 112 px round photo with a sun badge;
+ * - none (no photo): plain top bar, the sun in a 96 px surface circle.
+ */
+import type { Lang } from '../../lib/settings';
+import { portraitImage, type PortraitStyle } from '../../lib/portrait-image';
+import TopBar from '../ui/TopBar.astro';
+import SunMark from '../brand/SunMark.astro';
+
+interface Props {
+  style: PortraitStyle;
+  lang: Lang;
+  alternatePaths: { tr: string; en: string };
+  /** Profile photo path; ignored for `none`. */
+  photo?: string | null;
+  alt: string;
+}
+const { style, lang, alternatePaths, photo, alt } = Astro.props;
+const withPhoto = style !== 'none' && !!photo;
+const kind: PortraitStyle = withPhoto ? style : 'none';
+// The phone column is at most 440 px wide; on desktop this block is hidden, so the smallest file is enough.
+const img = withPhoto
+  ? kind === 'background'
+    ? await portraitImage(photo!, [480, 720, 1080])
+    : await portraitImage(photo!, [112, 224, 336])
+  : null;
+const sizes = kind === 'background' ? '(min-width: 768px) 1px, min(100vw, 440px)' : '(min-width: 768px) 1px, 112px';
+---
+
+<div class:list={['portrait-hero', `portrait-hero--${kind}`]}>
+  {
+    kind === 'background' && img ? (
+      <div class="photo">
+        <img src={img.src} srcset={img.srcset} sizes={img.srcset ? sizes : undefined} width={img.width} height={img.height} alt={alt} loading="eager" fetchpriority="high" decoding="async" />
+        <span class="fade" aria-hidden="true" />
+        <div class="chips">
+          <TopBar lang={lang} alternatePaths={alternatePaths} left="none" />
+        </div>
+      </div>
+    ) : (
+      <TopBar lang={lang} alternatePaths={alternatePaths} left="none" />
+    )
+  }
+  <div class="sheet">
+    {
+      kind === 'background' && (
+        <span class="sun-ring">
+          <SunMark size={66} />
+        </span>
+      )
+    }
+    {
+      kind === 'round' && img && (
+        <span class="avatar">
+          <img src={img.src} srcset={img.srcset} sizes={img.srcset ? sizes : undefined} width="112" height="112" alt={alt} loading="eager" decoding="async" />
+          <span class="sun-badge">
+            <SunMark size={34} />
+          </span>
+        </span>
+      )
+    }
+    {
+      kind === 'none' && (
+        <span class="sun-circle">
+          <SunMark size={78} />
+        </span>
+      )
+    }
+    <slot />
+  </div>
+</div>
+
+<style>
+  .portrait-hero {
+    position: relative;
+  }
+
+  /* No logo on the home page: day/night chip top left, language switch top right (spec §5.4, references). */
+  .portrait-hero :global(.top-bar > .left:empty) {
+    display: none;
+  }
+
+  .portrait-hero :global(.top-bar > .right) {
+    flex: 1;
+    justify-content: space-between;
+  }
+
+  /* Background style: the photo stays put while the card scrolls over it. */
+  .photo {
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    height: min(64vh, 430px);
+    overflow: hidden;
+  }
+
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 25%;
+  }
+
+  .fade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 50%, var(--bg) 100%);
+  }
+
+  .chips {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+  }
+
+  /* Chips on the photo: translucent white in both themes, so they read on any photo. */
+  .chips :global(.theme-chip),
+  .chips :global(.lang-switch) {
+    border-color: transparent;
+    background: rgb(255 255 255 / 0.85);
+    color: #2a2420;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  .sheet {
+    position: relative;
+    z-index: 1;
+    padding: 0 18px;
+    background: var(--bg);
+  }
+
+  .portrait-hero--background .sheet {
+    margin-top: -64px;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -12px 30px rgb(0 0 0 / 0.1);
+  }
+
+  .sun-ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 88px;
+    height: 88px;
+    margin: 0 auto -36px;
+    border-radius: 50%;
+    background: var(--bg);
+    transform: translateY(-44px);
+  }
+
+  .avatar {
+    position: relative;
+    display: block;
+    width: 112px;
+    height: 112px;
+    margin: var(--space-2) auto 0;
+  }
+
+  .avatar img {
+    width: 112px;
+    height: 112px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 25%;
+    box-shadow: 0 0 0 4px var(--surface);
+  }
+
+  .sun-badge {
+    position: absolute;
+    right: -6px;
+    bottom: -4px;
+    display: flex;
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+
+  .sun-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    margin: var(--space-2) auto 0;
+    border-radius: 50%;
+    background: var(--surface);
+  }
+</style>

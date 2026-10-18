@@ -8,11 +8,12 @@ interface Props {
   icon?: string;
   name?: string;
   open?: boolean;
+  class?: string;
 }
-const { title, subtitle, icon, name, open = false } = Astro.props;
+const { title, subtitle, icon, name, open = false, class: className } = Astro.props;
 ---
 
-<details class="acc" name={name} open={open}>
+<details class:list={['acc', className]} name={name} open={open}>
   <summary>
     {
       icon && (

@@ -64,5 +64,37 @@
       "icon": "mail",
       "visible": true
     }
+  ],
+  "process": [
+    {
+      "title": {
+        "tr": "Tanışma",
+        "en": "Getting to know each other"
+      },
+      "text": {
+        "tr": "İlk görüşmede neden geldiğini konuşuruz.",
+        "en": "In the first session we talk about why you came."
+      }
+    },
+    {
+      "title": {
+        "tr": "Birlikte bir yön",
+        "en": "A direction together"
+      },
+      "text": {
+        "tr": "Neye ihtiyacın olduğunu birlikte netleştiririz.",
+        "en": "Together we clarify what you need."
+      }
+    },
+    {
+      "title": {
+        "tr": "Kendi hızında",
+        "en": "At your own pace"
+      },
+      "text": {
+        "tr": "Acele etmeden ilerleriz.",
+        "en": ""
+      }
+    }
   ]
 }

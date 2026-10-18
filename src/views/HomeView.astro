@@ -1,15 +1,31 @@
 ---
+/**
+ * Home page. Phones (< 768 px): the bio-link column (spec §5.6) under the portrait header in the
+ * profile's style. Desktop: the wide layout (spec §5.7) under the site header. Both are in the markup
+ * and CSS shows one, so the page needs no script to switch.
+ */
+import type { ImageMetadata } from 'astro';
+import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Hero from '../components/Hero.astro';
-import LinkCard from '../components/LinkCard.astro';
+import PortraitHero from '../components/home/PortraitHero.astro';
+import DesktopHero from '../components/home/DesktopHero.astro';
+import ProcessSteps from '../components/home/ProcessSteps.astro';
+import Accordion from '../components/ui/Accordion.astro';
+import ListItem from '../components/ui/ListItem.astro';
+import TilePair from '../components/ui/TilePair.astro';
+import StickyCta from '../components/ui/StickyCta.astro';
+import Flag from '../components/ui/Flag.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
+import SunMark from '../components/brand/SunMark.astro';
 import type { HomeCard, Lang } from '../lib/settings';
-import { getHome, getProfile, getSeo } from '../lib/settings';
+import { getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
 import { getPosts } from '../lib/posts';
+import { readCount } from '../lib/read-counts';
+import { portraitStyle } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { personLd, professionalServiceLd } from '../lib/jsonld';
-import { pathFor } from '../i18n/routes';
+import { pathFor, postPath } from '../i18n/routes';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -17,105 +33,434 @@ interface Props {
 }
 const { lang } = Astro.props;
 const { meta, alternatePaths } = pageMeta('home', lang, getProfile().name, getSeo().defaultDescription[lang]);
-const cards = getHome().cards.filter((c) => c.visible);
-const posts = (await getPosts(lang)).slice(0, 3);
 
+const profile = getProfile();
+const style = portraitStyle(profile);
+const alt = profile.photoAlt[lang];
+const role = `${profile.title[lang]} · ${t(lang, 'onlineSessions')}`;
+const intro = profile.intro[lang].trim();
+const memberships = (profile.memberships ?? []).map((m) => m.org[lang].trim()).filter(Boolean);
+
+const allLinks = getLinks();
+const socials = allLinks
+  .filter((l) => l.icon !== 'email')
+  .map((l) => ({ ...l, note: l.note?.[lang].trim() ?? '' }));
+const substack = allLinks.find((l) => l.icon === 'substack');
+const labels = socials.map((l) => l.label);
+const socialHint = labels.length > 3 ? t(lang, 'andMore').replace('{list}', labels.slice(0, 3).join(', ')) : labels.join(', ');
+
+const cards = getHome().cards.filter((c) => c.visible);
+const blogCard = cards.find((c) => c.id === 'blog');
+const listCards = cards.filter((c) => c.id !== 'blog' && c.id !== 'contact');
 const cardHref = (c: HomeCard) => ('page' in c.target ? pathFor(c.target.page, lang) : c.target.url);
-const isExternal = (c: HomeCard) => 'url' in c.target && /^https?:\/\//.test(c.target.url);
+
+const posts = await getPosts(lang);
+const newest = posts[0];
+const newestCover = newest?.data.cover
+  ? (await getImage({ src: newest.data.cover as ImageMetadata, width: 96, height: 96, fit: 'cover', format: 'webp' })).src
+  : undefined;
+const newestReads = newest ? readCount(newest.key) : null;
+const newestMeta = newest
+  ? [`${newest.readingMinutes} ${t(lang, 'minRead')}`, newestReads !== null ? `${newestReads} ${t(lang, 'reads')}` : '']
+      .filter(Boolean)
+      .join(' · ')
+  : '';
+// "Popüler yazılar" needs something to show: posts marked featured, or read counts (Plan F Task 4).
+const hasPopular = posts.some((p) => p.data.featured || readCount(p.key) !== null);
+const blogHref = pathFor('blog', lang);
+type Tile = { icon: string; title: string; subtitle: string; href: string };
+const tiles: Tile[] = [];
+if (blogCard) tiles.push({ icon: 'book', title: blogCard.title[lang], subtitle: blogCard.subtitle[lang], href: blogHref });
+if (hasPopular) tiles.push({ icon: 'flame', title: t(lang, 'popularPosts'), subtitle: t(lang, 'popularHint'), href: `${blogHref}#popular` });
+const tilePair: [Tile] | [Tile, Tile] | null = tiles.length === 2 ? [tiles[0], tiles[1]] : tiles.length === 1 ? [tiles[0]] : null;
+
+const faq = getFaq(lang);
+const firstName = profile.name.split(/\s+/)[0];
+const helloText = profile.shortIntro?.[lang].trim() || intro;
+const aboutHref = pathFor('about', lang);
+const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
 ---
 
 <BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths} jsonLd={[personLd(lang), professionalServiceLd(lang)]}>
-  <Hero lang={lang} />
+  <div class="home-phone">
+    <PortraitHero style={style} lang={lang} alternatePaths={alternatePaths} photo={profile.photo} alt={alt}>
+      <div class="profile">
+        <p class="name" role="heading" aria-level="1">{profile.name}</p>
+        <p class="role">{role}</p>
+        {
+          memberships.map((org) => (
+            <p class="tpd">
+              <Icon name="shield" size={14} />
+              {t(lang, 'memberOf').replace('{org}', org)}
+            </p>
+          ))
+        }
+      </div>
+      {intro && <p class="intro">{intro}</p>}
+      <a id="top-cta" class="top-cta" href={pathFor('appointment', lang)}>
+        <Icon name="calendar" size={18} />
+        {t(lang, 'bookSession')}
+      </a>
 
-  {
-    cards.length > 0 && (
-      <nav class="container cards-wrap" aria-label={t(lang, 'sections')}>
-        <ul class="cards">
-          {cards.map((c) => (
-            <li>
-              <LinkCard
-                href={cardHref(c)}
-                title={c.title[lang]}
-                subtitle={c.subtitle[lang]}
-                icon={c.icon}
-                external={isExternal(c)}
-                newTabLabel={t(lang, 'opensInNewTab')}
-              />
-            </li>
-          ))}
-        </ul>
-      </nav>
-    )
-  }
+      <div class="stack">
+        {
+          socials.length > 0 && (
+            <Accordion class="social" icon="heart" title={t(lang, 'followSocial')} subtitle={socialHint}>
+              {socials.map((l) => (
+                <a class="soc" href={l.url} {...newTab}>
+                  <span class="soc-ic">
+                    <Icon name={l.icon} size={26} />
+                  </span>
+                  <span class="soc-text">
+                    <span class="soc-name">{l.label}</span>
+                    {l.note && (
+                      <em class="note">
+                        <Flag flag="gb" width={18} />
+                        {l.note}
+                      </em>
+                    )}
+                    <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+                  </span>
+                  <Icon name="chevron" size={14} class="soc-chv" />
+                </a>
+              ))}
+            </Accordion>
+          )
+        }
 
-  {
-    posts.length > 0 && (
-      <section class="container recent" aria-labelledby="recent-title">
-        <div class="recent-head">
-          <h2 id="recent-title">{t(lang, 'recentPosts')}</h2>
-          <a class="all" href={pathFor('blog', lang)}>
-            {t(lang, 'allPosts')}
-            <Icon name="arrow" size={16} />
-          </a>
+        {
+          newest && (
+            <ListItem class="new-post" title={newest.data.title} subtitle={newestMeta} href={postPath(newest.data.slug, lang)} thumb={newestCover} icon="article">
+              <small slot="meta" class="new-label">{t(lang, 'newPost')}</small>
+            </ListItem>
+          )
+        }
+
+        {tilePair && <TilePair tiles={tilePair} />}
+
+        {
+          faq.length > 0 && (
+            <Accordion class="faq" icon="help" title={t(lang, 'faqTitle')}>
+              {faq.map((f) => (
+                <details class="faq-item">
+                  <summary>
+                    {f.q}
+                    <Icon name="chevron" size={14} class="faq-chv" />
+                  </summary>
+                  <p>{f.a}</p>
+                </details>
+              ))}
+            </Accordion>
+          )
+        }
+
+        <div class="cards">
+          {listCards.map((c) => <ListItem icon={c.icon} title={c.title[lang]} subtitle={c.subtitle[lang]} href={cardHref(c)} />)}
         </div>
-        <ul class="posts">
-          {posts.map((p) => (
-            <li>
-              <PostCard post={p} lang={lang} />
-            </li>
-          ))}
-        </ul>
-      </section>
-    )
-  }
+
+        {substack && <ListItem class="newsletter" icon="mail" title={t(lang, 'newsletterItem')} subtitle={t(lang, 'newsletterItemHint')} href={substack.url} />}
+      </div>
+    </PortraitHero>
+  </div>
+
+  <div class="home-desk">
+    <DesktopHero
+      style={style}
+      lang={lang}
+      photo={profile.photo}
+      alt={alt}
+      eyebrow={role}
+      heading={profile.tagline[lang]}
+      intro={intro}
+      memberships={memberships}
+    />
+
+    <section class="latest container" aria-label={t(lang, 'recentPosts')}>
+      {
+        posts.length > 0 && (
+          <>
+            <div class="section-head">
+              <h2>{t(lang, 'recentPosts')}</h2>
+              <a class="more" href={blogHref}>
+                {t(lang, 'allPosts')}
+                <Icon name="arrow" size={16} />
+              </a>
+            </div>
+            <ul class="posts">
+              {posts.slice(0, 3).map((p) => (
+                <li>
+                  <PostCard post={p} lang={lang} />
+                </li>
+              ))}
+            </ul>
+          </>
+        )
+      }
+      {tilePair && <TilePair tiles={tilePair} />}
+    </section>
+
+    <ProcessSteps lang={lang} steps={getHome().process} />
+
+    {
+      faq.length > 0 && (
+        <section class="faq-block container" aria-labelledby="faq-title">
+          <div class="faq-list">
+            <h2 id="faq-title">{t(lang, 'faqTitle')}</h2>
+            {faq.map((f) => (
+              <details class="faq-item">
+                <summary>
+                  {f.q}
+                  <Icon name="chevron" size={16} class="faq-chv" />
+                </summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
+          <div class="hello">
+            <SunMark size={64} />
+            <h3>{t(lang, 'hello').replace('{name}', firstName)}</h3>
+            {helloText && <p>{helloText}</p>}
+            <a href={aboutHref}>
+              {t(lang, 'navAbout')}
+              <Icon name="arrow" size={16} />
+            </a>
+          </div>
+        </section>
+      )
+    }
+
+    {
+      substack && (
+        <section class="newsletter-band container" aria-labelledby="nl-title">
+          <div class="band">
+            <Icon name="mail" size={26} />
+            <div class="band-text">
+              <b id="nl-title">{t(lang, 'newsletterBandTitle')}</b>
+              <small>{t(lang, 'newsletterBandText')}</small>
+            </div>
+            <a class="band-btn" href={substack.url} {...newTab}>
+              {t(lang, 'newsletterItem')}
+              <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+            </a>
+          </div>
+        </section>
+      )
+    }
+  </div>
+
+  <StickyCta mode="afterTopCta" href={pathFor('appointment', lang)} label={t(lang, 'bookSession')} />
 </BaseLayout>
 
 <style>
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
+  /* Phone column; the desktop layout takes over at 768 px. */
+  .home-phone {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .home-desk {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .home-phone {
+      display: none;
+    }
+
+    .home-desk {
+      display: block;
+    }
+  }
+
+  .profile {
+    text-align: center;
+  }
+
+  .name {
+    margin: 4px 0 2px;
+    font-family: var(--font-serif);
+    font-size: 1.8125rem;
+    font-weight: 500;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .role {
     margin: 0;
-    padding: 0;
-    list-style: none;
+    color: var(--muted);
+    font-size: 0.90625rem;
   }
 
-  .recent {
-    padding-top: var(--space-7);
-  }
-
-  .recent-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-2) var(--space-4);
-    margin-bottom: var(--space-4);
-  }
-
-  .recent-head h2 {
-    margin: 0;
-  }
-
-  .all {
+  .tpd {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 5px;
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  .intro {
+    margin: 14px 6px 16px;
+    font-size: 0.96875rem;
+    line-height: 1.55;
+    text-align: center;
+  }
+
+  .top-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 16px;
+    border-radius: 16px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    font-size: 1.03125rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .top-cta:hover {
+    background: var(--btn-bg-hover);
+    color: var(--btn-text);
+  }
+
+  .stack,
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stack {
+    margin-top: 14px;
+  }
+
+  /* Social rows inside the accordion: big logos, names only. */
+  .soc {
+    display: flex;
+    align-items: center;
+    gap: 14px;
     min-height: 44px;
-    font-size: var(--text-sm);
+    padding: 12px 6px;
+    border-top: 1px solid var(--line);
+    color: var(--text);
+    font-size: 0.96875rem;
     font-weight: 500;
     text-decoration: none;
   }
 
-  .all:hover {
-    text-decoration: underline;
+  .soc-ic {
+    display: flex;
+    color: var(--link);
+  }
+
+  .soc-text {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .note {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--sun-disc) 20%, transparent);
+    font-size: 0.75rem;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .soc :global(.soc-chv),
+  .faq-item :global(.faq-chv) {
+    flex: none;
+    color: var(--muted);
+  }
+
+  .new-label {
+    color: var(--link);
+    font-weight: 600;
+  }
+
+  /* One question per nested box. */
+  .faq-item {
+    border-top: 1px solid var(--line);
+    padding: 10px 4px 0;
+  }
+
+  .faq-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding-bottom: 10px;
+    font-size: 0.90625rem;
+    font-weight: 500;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item :global(.faq-chv) {
+    transform: rotate(90deg);
+    transition: transform 0.25s;
+  }
+
+  .faq-item[open] > summary :global(.faq-chv) {
+    transform: rotate(-90deg);
+  }
+
+  .faq-item p {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 0.84375rem;
+    line-height: 1.55;
+  }
+
+  /* Desktop */
+  .latest,
+  .faq-block {
+    padding-block: var(--space-6);
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .home-desk h2 {
+    font-size: 1.875rem;
+  }
+
+  .more,
+  .hello a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    text-decoration: none;
   }
 
   .posts {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
-    margin: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin: 0 0 18px;
     padding: 0;
     list-style: none;
   }
@@ -128,21 +473,95 @@ const isExternal = (c: HomeCard) => 'url' in c.target && /^https?:\/\//.test(c.t
     flex: 1;
   }
 
-  @media (min-width: 640px) {
-    .posts {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .faq-block {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 28px;
+    align-items: start;
   }
 
-  @media (min-width: 1024px) {
-    .cards {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--space-4);
-    }
+  .faq-list .faq-item {
+    padding: 6px 4px 0;
+  }
 
+  .faq-list .faq-item summary {
+    font-size: var(--text-base);
+  }
+
+  .hello {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  .hello h3 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .hello p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  /* Inverted band: navy by day, sunflower by night (the button colours swap with the theme). */
+  .newsletter-band {
+    padding-block: var(--space-5);
+  }
+
+  .band {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: 22px 26px;
+    border-radius: 18px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+  }
+
+  .band-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .band-text b {
+    font-size: 1.0625rem;
+  }
+
+  .band-text small {
+    font-size: var(--text-sm);
+  }
+
+  .band-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .band-btn:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  @media (max-width: 1023px) {
     .posts {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-5);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>

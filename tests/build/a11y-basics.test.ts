@@ -28,7 +28,7 @@ describe.each(pages)('a11y/perf basics %s', (path) => {
     // Above the fold by design: the portrait on home/about/contact and the post cover must exist and be eager.
     const portraitPages = ['/', '/en/', '/hakkimda/', '/en/about/', '/iletisim/', '/en/contact/'];
     if (portraitPages.includes(path)) {
-      const portrait = root.querySelector('main .portrait img');
+      const portrait = root.querySelector(path === '/' || path === '/en/' ? 'main .portrait-hero img' : 'main .portrait img');
       expect(portrait, 'portrait <img> must render (fixture profile has a photo)').toBeTruthy();
       expect(portrait!.getAttribute('loading')).not.toBe('lazy');
     }

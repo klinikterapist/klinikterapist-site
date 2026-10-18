@@ -17,6 +17,7 @@ export type PostData = {
   publishedAt: Date;
   updatedAt?: Date;
   references?: Reference[];
+  featured?: boolean;
 };
 
 /** Minimal shape of an `astro:content` entry that the helpers need. */

@@ -1,29 +1,26 @@
 ---
+/**
+ * Site footer. Every screen: the page end (112 line and copyright, spec §5.5). Desktop only: the
+ * social icons and the legal links (spec §5.7); on phones the accounts live in the home page's
+ * "Sosyal medyada takip et" box.
+ */
 import type { Lang } from '../lib/settings';
-import { getLinks, getProfile } from '../lib/settings';
+import { getLinks } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
 import { t } from '../i18n/ui';
-import Leaf from './Leaf.astro';
 import Icon from './Icon.astro';
+import PageEnd from './ui/PageEnd.astro';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const profile = getProfile();
 const links = getLinks().filter((l) => l.inFooter);
-const year = new Date().getFullYear();
-
 const external = (url: string) => /^https?:\/\//.test(url);
 ---
 
 <footer class="site-footer">
-  <div class="container inner">
-    <p class="slogan hand" lang={lang}>
-      <Leaf size={22} class="slogan-leaf" />
-      {t(lang, 'slogan')}
-    </p>
-
+  <div class="container desk">
     {
       links.length > 0 && (
         <ul class="social" aria-label={t(lang, 'socialLinks')}>
@@ -34,67 +31,50 @@ const external = (url: string) => /^https?:\/\//.test(url);
                 aria-label={l.icon === 'email' ? t(lang, 'emailLabel') : l.label}
                 {...(external(l.url) ? { target: '_blank', rel: 'noopener noreferrer me' } : {})}
               >
-                <Icon name={l.icon} />
+                <Icon name={l.icon} size={20} />
               </a>
             </li>
           ))}
         </ul>
       )
     }
-
-    <div class="bottom">
-      <nav aria-label={t(lang, 'legalNav')}>
-        <ul class="legal">
-          <li><a href={pathFor('privacyNotice', lang)}>{t(lang, 'navPrivacyNotice')}</a></li>
-          <li><a href={pathFor('privacyPolicy', lang)}>{t(lang, 'navPrivacyPolicy')}</a></li>
-        </ul>
-      </nav>
-      <p class="copy">© {year} {profile.name}</p>
-      <a class="to-top" href="#top">
-        {t(lang, 'backToTop')}
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
-      </a>
-    </div>
+    <nav aria-label={t(lang, 'legalNav')}>
+      <ul class="legal">
+        <li><a href={pathFor('privacyNotice', lang)}>{t(lang, 'navPrivacyNotice')}</a></li>
+        <li><a href={pathFor('privacyPolicy', lang)}>{t(lang, 'navPrivacyPolicy')}</a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="container">
+    <PageEnd lang={lang} />
   </div>
 </footer>
 
 <style>
-  .site-footer {
-    margin-top: var(--space-8);
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: var(--text-sm);
+  .desk {
+    display: none;
   }
 
-  .inner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding-block: var(--space-6) var(--space-5);
-    text-align: center;
+  @media (min-width: 768px) {
+    .site-footer {
+      margin-top: var(--space-6);
+      border-top: 1px solid var(--line);
+    }
+
+    .desk {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2) var(--space-4);
+      padding-top: var(--space-3);
+    }
   }
 
-  .slogan {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: 0;
-    color: var(--link);
-    font-size: 1.75rem;
-    line-height: 1.2;
-  }
-
-  .slogan :global(.slogan-leaf) {
-    flex: none;
-    color: var(--muted);
-  }
-
-  .social {
+  .social,
+  .legal {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-1);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -111,57 +91,24 @@ const external = (url: string) => /^https?:\/\//.test(url);
   }
 
   .social a:hover {
-    background: var(--surface-2);
-  }
-
-  .bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    width: 100%;
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--line);
+    background: var(--surface);
   }
 
   .legal {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 0 var(--space-4);
-    margin: 0;
-    padding: 0;
-    list-style: none;
   }
 
-  .legal a,
-  .to-top {
+  .legal a {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
     min-height: 44px;
     color: var(--muted);
+    font-size: var(--text-xs);
     text-decoration: none;
   }
 
-  .legal a:hover,
-  .to-top:hover {
+  .legal a:hover {
     color: var(--link);
     text-decoration: underline;
-  }
-
-  .copy {
-    margin: 0;
-  }
-
-  @media (min-width: 1024px) {
-    .bottom {
-      flex-direction: row;
-      justify-content: space-between;
-    }
-
-    .copy {
-      order: -1;
-    }
   }
 </style>

@@ -1,9 +1,15 @@
 ---
+/**
+ * Desktop site header (spec §5.7): sun with name and title, the main menu, the three-way theme
+ * switch, the language switch and "Randevu Al". Phones (< 768 px) use the TopBar instead, so this
+ * header is hidden there and there is no menu button.
+ */
 import type { Lang } from '../lib/settings';
 import { getProfile } from '../lib/settings';
-import { pathFor, type PageKey } from '../i18n/routes';
+import { faqPath, pathFor } from '../i18n/routes';
 import { t, type UiKey } from '../i18n/ui';
-import Leaf from './Leaf.astro';
+import SunMark from './brand/SunMark.astro';
+import ThemeToggle from './ThemeToggle.astro';
 import LangSwitch from './LangSwitch.astro';
 
 interface Props {
@@ -13,18 +19,19 @@ interface Props {
 const { lang, alternatePaths } = Astro.props;
 const profile = getProfile();
 const home = pathFor('home', lang);
+const blog = pathFor('blog', lang);
 
-const NAV: [PageKey, UiKey][] = [
-  ['about', 'navAbout'],
-  ['blog', 'navBlog'],
-  ['resources', 'navResources'],
-  ['contact', 'navContact'],
+const NAV: [string, UiKey][] = [
+  [pathFor('about', lang), 'navAbout'],
+  [blog, 'navBlog'],
+  [pathFor('resources', lang), 'navResources'],
+  [faqPath(lang), 'navFaq'],
+  [pathFor('contact', lang), 'navContact'],
 ];
 const current = Astro.url.pathname;
-const items = NAV.map(([key, label]) => {
-  const href = pathFor(key, lang);
+const items = NAV.map(([href, label]) => {
   // `page` only on the exact page; inside the blog (posts, categories) Blog is marked as the current section.
-  const ariaCurrent = current === href ? 'page' : key === 'blog' && current.startsWith(href) ? 'true' : undefined;
+  const ariaCurrent: 'page' | 'true' | undefined = current === href ? 'page' : href === blog && current.startsWith(href) ? 'true' : undefined;
   return { href, label: t(lang, label), ariaCurrent };
 });
 ---
@@ -32,7 +39,7 @@ const items = NAV.map(([key, label]) => {
 <header class="site-header">
   <div class="container bar">
     <a class="brand" href={home}>
-      <Leaf size={28} class="brand-leaf" />
+      <SunMark size={40} />
       <span class="brand-text">
         <span class="brand-name">{profile.name}</span>
         <span class="brand-title">{profile.title[lang]}</span>
@@ -40,22 +47,13 @@ const items = NAV.map(([key, label]) => {
     </a>
 
     <nav class="nav" aria-label={t(lang, 'mainNav')}>
-      <ul class="nav-inline">
+      <ul>
         {items.map((i) => <li><a href={i.href} aria-current={i.ariaCurrent}>{i.label}</a></li>)}
       </ul>
-      <details class="nav-menu">
-        <summary aria-label={t(lang, 'menu')}>
-          <svg class="icon-open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-          <svg class="icon-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-        </summary>
-        <ul class="nav-panel">
-          <li><a href={home} aria-current={current === home ? 'page' : undefined}>{t(lang, 'navHome')}</a></li>
-          {items.map((i) => <li><a href={i.href} aria-current={i.ariaCurrent}>{i.label}</a></li>)}
-        </ul>
-      </details>
     </nav>
 
-    <div class="actions">
+    <div class="tools">
+      <ThemeToggle lang={lang} variant="segmented" />
       <LangSwitch lang={lang} alternatePaths={alternatePaths} />
       <a class="btn book" href={pathFor('appointment', lang)}>{t(lang, 'bookSession')}</a>
     </div>
@@ -64,15 +62,24 @@ const items = NAV.map(([key, label]) => {
 
 <style>
   .site-header {
+    display: none;
     position: relative;
     z-index: 10;
+    border-bottom: 1px solid var(--line);
     background: var(--bg);
+  }
+
+  @media (min-width: 768px) {
+    .site-header {
+      display: block;
+    }
   }
 
   .bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-1);
+    gap: var(--space-2) var(--space-5);
     min-height: 72px;
     padding-block: var(--space-3);
   }
@@ -80,203 +87,100 @@ const items = NAV.map(([key, label]) => {
   .brand {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    min-width: 0;
-    margin-right: auto;
+    gap: 10px;
     color: var(--text);
     text-decoration: none;
-  }
-
-  .brand :global(.brand-leaf) {
-    flex: none;
-    color: var(--link);
   }
 
   .brand-text {
     display: flex;
     flex-direction: column;
-    min-width: 0;
   }
 
   .brand-name {
     font-family: var(--font-serif);
-    font-size: 1rem;
+    font-size: 1.0625rem;
     font-weight: 500;
-    line-height: 1.15;
+    line-height: 1.1;
   }
 
   .brand-title {
-    margin-top: 2px;
+    margin-top: 3px;
     color: var(--muted);
     font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.2em;
-    line-height: 1.2;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
 
-  .actions {
+  .nav ul {
     display: flex;
-    align-items: center;
     gap: var(--space-1);
-    order: 2;
-  }
-
-  .book {
-    padding-inline: var(--space-4);
-    font-size: 0.875rem;
-  }
-
-  .nav {
-    order: 3;
-  }
-
-  /* Phones and tablets: disclosure menu (works without JavaScript). */
-  .nav-inline {
-    display: none;
-  }
-
-  .nav-menu summary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-pill);
-    color: var(--text);
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .nav-menu summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .nav-menu summary:hover {
-    background: var(--surface-2);
-  }
-
-  .nav-menu .icon-close,
-  .nav-menu[open] .icon-open {
-    display: none;
-  }
-
-  .nav-menu[open] .icon-close {
-    display: block;
-  }
-
-  .nav-panel {
-    position: absolute;
-    top: 100%;
-    left: var(--gutter);
-    right: var(--gutter);
     margin: 0;
-    padding: var(--space-2);
+    padding: 0;
     list-style: none;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-soft);
   }
 
-  .nav-panel a {
-    display: block;
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--radius-md);
-    color: var(--text);
-    font-size: var(--text-base);
+  .nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-2);
+    color: var(--muted);
+    font-size: var(--text-sm);
     text-decoration: none;
   }
 
-  .nav-panel a:hover,
-  .nav-panel a[aria-current] {
-    background: var(--surface-2);
+  .nav a:hover {
     color: var(--link);
   }
 
-  /* Very narrow phones: the name may wrap to two lines, the actions never do. */
-  @media (max-width: 400px) {
-    .bar {
-      gap: 2px;
-    }
+  .nav a[aria-current] {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.45em;
+  }
 
-    .brand {
-      gap: var(--space-1);
-    }
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
 
-    .brand :global(.brand-leaf) {
-      width: 22px;
-      height: 22px;
-    }
+  /* Icons only in the bar; the words stay as the buttons' accessible names. */
+  .tools :global(.theme-segmented button) {
+    padding: 0 10px;
+  }
 
-    .brand-name {
-      font-size: 0.875rem;
-    }
+  .tools :global(.theme-segmented button span) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 
-    .brand-title {
-      font-size: 0.625rem;
-      letter-spacing: 0.12em;
-    }
+  .book {
+    padding-inline: 18px;
+  }
 
-    .book {
-      padding-inline: var(--space-3);
-      font-size: 0.8125rem;
+  /* Tablets: the menu takes its own row under the brand and tools. */
+  @media (max-width: 1099px) {
+    .nav {
+      order: 3;
+      width: 100%;
     }
   }
 
-  /* Desktop: inline navigation, no menu button. */
-  @media (min-width: 1024px) {
-    .bar {
-      gap: var(--space-4);
-      min-height: 88px;
-    }
-
-    .brand-text {
-      margin-left: var(--space-1);
-    }
-
-    .brand-name {
-      font-size: 1.25rem;
-    }
-
+  @media (min-width: 1100px) {
     .nav {
-      order: 1;
+      margin-left: auto;
     }
 
-    .nav-menu {
-      display: none;
-    }
-
-    .nav-inline {
-      display: flex;
-      gap: var(--space-1);
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .nav-inline a {
-      display: inline-flex;
-      align-items: center;
-      min-height: 44px;
-      padding: 0 var(--space-3);
-      border-radius: var(--radius-pill);
-      color: var(--text);
-      font-size: var(--text-sm);
-      font-weight: 500;
-      text-decoration: none;
-    }
-
-    .nav-inline a:hover {
-      color: var(--link);
-      background: var(--surface-2);
-    }
-
-    .nav-inline a[aria-current] {
-      color: var(--link);
-      text-decoration: underline;
-      text-decoration-thickness: 2px;
-      text-underline-offset: 0.45em;
+    .tools {
+      margin-left: 0;
     }
   }
 </style>

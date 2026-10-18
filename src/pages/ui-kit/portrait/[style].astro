@@ -1,0 +1,72 @@
+---
+/**
+ * Hidden fixture page: the home portrait header and desktop hero in one style each
+ * (/ui-kit/portrait/background/, /round/, /none/), whatever profile.json says. Built only for the dev
+ * server and the fixture build (`UI_KIT=1`), like ../[lang].astro; noindex.
+ */
+import '../../../styles/global.css';
+import type { GetStaticPaths } from 'astro';
+import { getProfile } from '../../../lib/settings';
+import type { PortraitStyle } from '../../../lib/portrait-image';
+import ThemeScript from '../../../components/ThemeScript.astro';
+import PortraitHero from '../../../components/home/PortraitHero.astro';
+import DesktopHero from '../../../components/home/DesktopHero.astro';
+
+export const getStaticPaths = (() => {
+  const enabled = import.meta.env.DEV || process.env.UI_KIT === '1';
+  return enabled ? (['background', 'round', 'none'] as const).map((style) => ({ params: { style } })) : [];
+}) satisfies GetStaticPaths;
+
+const style = Astro.params.style as PortraitStyle;
+const profile = getProfile();
+const photo = style === 'none' ? null : profile.photo;
+const alternatePaths = { tr: `/ui-kit/portrait/${style}/`, en: `/ui-kit/portrait/${style}/` };
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <ThemeScript />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex" />
+    <title>Portre: {style}</title>
+  </head>
+  <body>
+    <div class="phone">
+      <PortraitHero style={style} lang="tr" alternatePaths={alternatePaths} photo={photo} alt={profile.photoAlt.tr}>
+        <p class="name">{profile.name}</p>
+        <div class="filler"></div>
+      </PortraitHero>
+    </div>
+    <DesktopHero
+      style={style}
+      lang="tr"
+      photo={photo}
+      alt={profile.photoAlt.tr}
+      eyebrow={profile.title.tr}
+      heading={profile.tagline.tr}
+      intro={profile.intro.tr}
+      memberships={[]}
+    />
+  </body>
+</html>
+
+<style>
+  .phone {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .name {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.8rem;
+    text-align: center;
+  }
+
+  .filler {
+    height: 120vh;
+  }
+</style>

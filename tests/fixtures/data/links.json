@@ -21,7 +21,11 @@
     "url": "https://medium.com/",
     "icon": "medium",
     "inHero": true,
-    "inFooter": true
+    "inFooter": true,
+    "note": {
+      "tr": "İngilizce",
+      "en": "In English"
+    }
   },
   {
     "id": "substack",
@@ -41,7 +45,7 @@
   },
   {
     "id": "x",
-    "label": "X",
+    "label": "X (Twitter)",
     "url": "https://x.com/klinikterapist",
     "icon": "x",
     "inHero": true,
@@ -53,7 +57,11 @@
     "url": "https://www.threads.com/@klinikterapist",
     "icon": "threads",
     "inHero": true,
-    "inFooter": true
+    "inFooter": true,
+    "note": {
+      "tr": "",
+      "en": ""
+    }
   },
   {
     "id": "email",

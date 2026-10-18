@@ -1,0 +1,80 @@
+---
+/**
+ * "Süreç nasıl işler?" on the desktop home page (spec §5.7): up to three numbered steps from
+ * home.json `process`. A step with an empty title or text in this language is skipped; with none
+ * left the whole section is left out.
+ */
+import type { Home, Lang } from '../../lib/settings';
+import { t } from '../../i18n/ui';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  steps: Home['process'];
+}
+const { lang, steps = [] } = Astro.props;
+const ICONS = ['chat', 'target', 'wave'];
+const shown = steps
+  .map((s) => ({ title: s.title[lang].trim(), text: s.text[lang].trim() }))
+  .filter((s) => s.title && s.text);
+---
+
+{
+  shown.length > 0 && (
+    <section class="process-steps container" aria-labelledby="process-title">
+      <h2 id="process-title">{t(lang, 'processTitle')}</h2>
+      <ol>
+        {shown.map((s, i) => (
+          <li>
+            <Icon name={ICONS[i] ?? 'leaf'} size={24} />
+            <h3>
+              {i + 1}. {s.title}
+            </h3>
+            <p>{s.text}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  .process-steps {
+    padding-block: var(--space-6);
+  }
+
+  h2 {
+    font-size: 1.875rem;
+  }
+
+  ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    color: var(--link);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+</style>

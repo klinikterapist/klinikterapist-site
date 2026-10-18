@@ -6,10 +6,31 @@ export const THEME_KEY = 'site.theme';
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
 /**
+ * Status bar colour per applied theme: the page background (--bg), so the phone's bar blends in.
+ * Literal to keep the visitor script free of the palette table; tests/unit/theme-script.test.ts checks it against palette.ts.
+ */
+const BAR = { light: '#FBF3E4', dark: '#1F2E4A' };
+
+/**
  * Inline, first child of <head>. Plain ES5, no dependencies. Sets data-theme explicitly
  * (stored choice, else the OS preference) and follows OS changes while in system mode.
+ * It also adds a <meta name="theme-color" data-theme-color> for the applied theme; inserted before the
+ * static media-query metas, it wins over them (the first matching theme-color counts).
  */
-export const THEME_SCRIPT = `(function(){var d=document.documentElement,k='${THEME_KEY}',m=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function g(){try{var v=localStorage.getItem(k);return v==='light'||v==='dark'?v:null}catch(e){return null}}function a(){d.dataset.theme=g()||(m&&m.matches?'dark':'light')}a();if(m&&m.addEventListener)m.addEventListener('change',function(){if(!g())a()})})();`;
+export const THEME_SCRIPT = `(function(){var d=document.documentElement,k='${THEME_KEY}',m=window.matchMedia&&matchMedia('(prefers-color-scheme: dark)');function g(){try{var v=localStorage.getItem(k);return v==='light'||v==='dark'?v:null}catch(e){return null}}function c(t){var e=document.querySelector('meta[data-theme-color]');if(!e){e=document.createElement('meta');e.name='theme-color';e.setAttribute('data-theme-color','');document.head.appendChild(e)}e.content=t==='dark'?'${BAR.dark}':'${BAR.light}'}function a(){var t=g()||(m&&m.matches?'dark':'light');d.dataset.theme=t;c(t)}a();if(m&&m.addEventListener)m.addEventListener('change',function(){if(!g())a()})})();`;
+
+/** Keep the status bar colour in step with the applied theme (the meta the head script added, or a new one). */
+function setBarColour(win: Window, theme: 'light' | 'dark'): void {
+  const doc = win.document;
+  let meta = doc.querySelector<HTMLMetaElement>('meta[data-theme-color]');
+  if (!meta) {
+    meta = doc.createElement('meta');
+    meta.name = 'theme-color';
+    meta.setAttribute('data-theme-color', '');
+    doc.head.prepend(meta);
+  }
+  meta.content = BAR[theme];
+}
 
 function stored(win: Window): 'light' | 'dark' | null {
   try {
@@ -32,7 +53,9 @@ export function setTheme(choice: ThemeChoice, win: Window = window): void {
   } catch {
     /* private mode or blocked storage: the choice still applies to this page */
   }
-  win.document.documentElement.dataset.theme = choice === 'system' ? systemTheme(win) : choice;
+  const applied = choice === 'system' ? systemTheme(win) : choice;
+  win.document.documentElement.dataset.theme = applied;
+  setBarColour(win, applied);
 }
 
 const LONG_PRESS_MS = 600;

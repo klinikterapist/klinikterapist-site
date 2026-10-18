@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { THEME_KEY, THEME_SCRIPT, initThemeToggles, setTheme } from '../../src/lib/theme';
+import { PALETTE } from '../../src/lib/palette';
 
 function mockMatchMedia(dark: boolean) {
   const listeners: Array<() => void> = [];
@@ -231,5 +232,40 @@ describe('toggle controls', () => {
     vi.advanceTimersByTime(600);
     key('keyup', ' ');
     expect(localStorage.getItem(THEME_KEY)).toBeNull();
+  });
+});
+
+describe('status bar colour (theme-color)', () => {
+  const metas = () => [...document.head.querySelectorAll('meta[name="theme-color"]')];
+  const color = () => metas()[0]?.getAttribute('content');
+  beforeEach(() => metas().forEach((m) => m.remove()));
+
+  it('the head script adds one theme-color meta for the applied theme, before any other', () => {
+    mockMatchMedia(false);
+    localStorage.setItem(THEME_KEY, 'dark');
+    run();
+    expect(color()).toBe(PALETTE.night.bg);
+    expect(metas()[0].hasAttribute('media')).toBe(false);
+    run();
+    expect(metas()).toHaveLength(1);
+  });
+
+  it('follows OS changes while in system mode', () => {
+    const m = mockMatchMedia(false);
+    run();
+    expect(color()).toBe(PALETTE.day.bg);
+    m.mq.matches = true;
+    m.fire();
+    expect(color()).toBe(PALETTE.night.bg);
+  });
+
+  it('setTheme updates it to the chosen theme', () => {
+    mockMatchMedia(true);
+    run();
+    setTheme('light');
+    expect(color()).toBe(PALETTE.day.bg);
+    setTheme('system');
+    expect(color()).toBe(PALETTE.night.bg);
+    expect(metas()).toHaveLength(1);
   });
 });

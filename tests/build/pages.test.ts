@@ -40,10 +40,10 @@ describe('static pages', () => {
     expect(head.querySelector('link[rel=apple-touch-icon]')?.getAttribute('href')).toBe('/apple-touch-icon.png');
   });
 
-  it('home has one dominant booking CTA', () => {
-    expect(loadPage('/').querySelector('a.cta-primary')?.getAttribute('href')).toBe('/randevu/');
-    expect(loadPage('/').querySelectorAll('a.cta-primary').length).toBe(1);
-    expect(loadPage('/en/').querySelector('a.cta-primary')?.getAttribute('href')).toBe('/en/appointment/');
+  it('home has one top booking CTA', () => {
+    expect(loadPage('/').querySelectorAll('#top-cta').length).toBe(1);
+    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
+    expect(loadPage('/en/').querySelector('#top-cta')?.getAttribute('href')).toBe('/en/appointment/');
   });
 
   it('home has the hreflang trio and Person + ProfessionalService JSON-LD', () => {
@@ -56,13 +56,13 @@ describe('static pages', () => {
     expect(types).toEqual(expect.arrayContaining(['Person', 'ProfessionalService']));
   });
 
-  it('home shows the visible cards, not Medium/Substack as cards, and the newest posts', () => {
+  it('home lists the visible cards except blog and contact, the blog card as a tile, and the newest posts', () => {
     const home = loadPage('/');
-    const cards = home.querySelectorAll('.link-card');
-    expect(cards.map((c) => c.getAttribute('href'))).toEqual(['/hakkimda/', '/blog/', '/kaynaklar/', '/iletisim/']);
-    expect(home.querySelectorAll('.link-card').some((c) => /Medium|Substack/.test(c.text))).toBe(false);
+    const items = home.querySelectorAll('.home-phone .cards a.list-item');
+    expect(items.map((c) => c.getAttribute('href'))).toEqual(['/hakkimda/', '/kaynaklar/']);
+    expect(items.some((c) => /Medium|Substack/.test(c.text))).toBe(false);
+    expect(home.querySelector('.home-phone .tile-pair a.tile')?.text).toContain('Blog Yazıları');
     expect(home.querySelectorAll('.post-card').length).toBeGreaterThan(0);
-    expect(home.querySelector('a[href="/blog/"]')).not.toBeNull();
   });
 
   it('appointment page explains booking is coming soon and offers e-mail', () => {
@@ -89,7 +89,7 @@ describe('static pages', () => {
     const social = links.filter((l) => l.icon !== 'email').map((l) => l.label);
     expect(titles.length).toBe(social.length + 2);
     expect(titles.slice(1, -1)).toEqual(social);
-    expect(social).toEqual(expect.arrayContaining(['TikTok', 'X', 'Threads']));
+    expect(social).toEqual(expect.arrayContaining(['TikTok', 'X (Twitter)', 'Threads']));
   });
 
   it('resources page has type filter anchors and the owner note', () => {
@@ -146,24 +146,8 @@ describe('final-review fixes', () => {
   it('Blog nav item is aria-current="page" only on the blog page itself (M6)', () => {
     const navBlog = (path: string, href: string) =>
       loadPage(path).querySelectorAll(`.site-header a[href="${href}"]`).map((a) => a.getAttribute('aria-current'));
-    expect(navBlog('/blog/', '/blog/')).toEqual(['page', 'page']);
-    expect(navBlog('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/', '/blog/')).toEqual(['true', 'true']);
-    expect(navBlog('/en/blog/category/mental-health/', '/en/blog/')).toEqual(['true', 'true']);
-  });
-});
-
-describe('panel v3 final review', () => {
-  /** Every stylesheet the page loads, linked and inline. */
-  const pageCss = (path: string) => {
-    const d = loadPage(path);
-    const linked = d.querySelectorAll('link[rel=stylesheet]').map((l) => readFileSync(join('dist-test', l.getAttribute('href')!.replace(/^\//, '')), 'utf8'));
-    return [...linked, ...d.querySelectorAll('style').map((s) => s.textContent)].join('\n');
-  };
-
-  it('the hero links wrap onto more rows instead of squeezing into one (I1)', () => {
-    const blocks = [...pageCss('/').matchAll(/([^{}]*\.hero-links[^{}]*)\{([^{}]*)\}/g)].map((m) => m[2]);
-    expect(blocks.length).toBeGreaterThan(0);
-    for (const b of blocks) expect(b).not.toMatch(/grid-auto-flow:\s*column/);
-    expect(blocks.some((b) => /auto-fit/.test(b))).toBe(true);
+    expect(navBlog('/blog/', '/blog/')).toEqual(['page']);
+    expect(navBlog('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/', '/blog/')).toEqual(['true']);
+    expect(navBlog('/en/blog/category/mental-health/', '/en/blog/')).toEqual(['true']);
   });
 });

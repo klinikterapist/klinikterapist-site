@@ -14,7 +14,7 @@ const { mode, href, label } = Astro.props;
 const after = mode === 'afterTopCta';
 ---
 
-<div class:list={['sticky-cta', { 'is-hidden': after }]} data-sticky-cta={after ? 'after' : 'always'} aria-hidden={after ? 'true' : undefined}>
+<div class:list={['sticky-cta', { 'is-hidden': after }]} data-sticky-cta={after ? 'after' : 'always'} data-mode={mode} aria-hidden={after ? 'true' : undefined}>
   <a class="cta" href={href} tabindex={after ? -1 : undefined}>
     <Icon name="calendar" size={18} />
     <span>{label}</span>

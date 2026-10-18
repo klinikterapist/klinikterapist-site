@@ -20,5 +20,14 @@
   "photoAlt": {
     "tr": "Osman Güneş Özkurt'un portresi",
     "en": "Portrait of Osman Güneş Özkurt"
-  }
+  },
+  "heroStyle": "background",
+  "memberships": [
+    {
+      "org": {
+        "tr": "Türk Psikologlar Derneği",
+        "en": "Turkish Psychological Association"
+      }
+    }
+  ]
 }
