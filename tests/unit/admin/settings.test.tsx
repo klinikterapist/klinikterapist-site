@@ -82,7 +82,11 @@ describe('settings screens: Plan E fields', () => {
   });
 
   it('Site ana sayfası: Süreç adımları allows at most three', async () => {
-    const api = setup('ana-sayfa');
+    // The site ships with three sample steps; start from none so the add button's limit is exercised.
+    const api = setup('ana-sayfa', (a) => {
+      const f = a.state.files.get('src/data/home.json')!;
+      a.state.files.set('src/data/home.json', { ...f, content: JSON.stringify({ ...JSON.parse(f.content), process: [] }) });
+    });
     fireEvent.click(await screen.findByRole('button', { name: 'Adım ekle' }));
     fireEvent.click(screen.getByRole('button', { name: 'Adım ekle' }));
     fireEvent.click(screen.getByRole('button', { name: 'Adım ekle' }));

@@ -213,10 +213,21 @@ describe('Plan E content fields', () => {
     expect(() => parseHome({ ...h, process: [step, step, step] })).not.toThrow();
     expect(() => parseHome({ ...h, process: [step, step, step, step] })).toThrow(/home\.json.*process/);
   });
-  it('faq: the seed has five unanswered questions, so nothing is shown yet', () => {
-    expect(parseFaq(JSON.parse(readFileSync('src/data/faq.json', 'utf8')))).toHaveLength(5);
-    expect(getFaq('tr')).toEqual([]);
-    expect(getFaq('en')).toEqual([]);
+  it('faq: questions with no answer in either language show nothing', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'faq-'));
+    const prev = process.env.DATA_DIR;
+    try {
+      const faq = JSON.parse(readFileSync('tests/fixtures/data/faq.json', 'utf8')).map((f: object) => ({ ...f, a: { tr: '', en: '' } }));
+      expect(parseFaq(faq)).toHaveLength(4);
+      writeFileSync(join(dir, 'faq.json'), JSON.stringify(faq));
+      process.env.DATA_DIR = dir;
+      expect(getFaq('tr')).toEqual([]);
+      expect(getFaq('en')).toEqual([]);
+    } finally {
+      if (prev === undefined) delete process.env.DATA_DIR;
+      else process.env.DATA_DIR = prev;
+      rmSync(dir, { recursive: true });
+    }
   });
   it('faq: ids must be unique', () => {
     const item = (id: string) => ({ id, q: { tr: 'a', en: 'a' }, a: { tr: '', en: '' } });
@@ -227,8 +238,8 @@ describe('Plan E content fields', () => {
     const dir = mkdtempSync(join(tmpdir(), 'faq-'));
     const prev = process.env.DATA_DIR;
     try {
-      const faq = JSON.parse(readFileSync('src/data/faq.json', 'utf8'));
-      faq[1].a.tr = 'Ücret görüşmede paylaşılır.';
+      const faq = JSON.parse(readFileSync('tests/fixtures/data/faq.json', 'utf8')).map((f: object) => ({ ...f, a: { tr: '', en: '' } }));
+      faq[2].a.tr = 'Ücret görüşmede paylaşılır.';
       writeFileSync(join(dir, 'faq.json'), JSON.stringify(faq));
       process.env.DATA_DIR = dir;
       expect(getFaq('tr')).toEqual([{ id: 'ucret', q: 'Ücret ne kadar, nasıl ödenir?', a: 'Ücret görüşmede paylaşılır.' }]);

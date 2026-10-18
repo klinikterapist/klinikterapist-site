@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { allPages, DIST, distFile, loadPage } from './load';
+import { allPages, DIST, DIST_SAMPLES, distFile, loadPage } from './load';
 
 const STATIC_PAGES = [
   '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/randevu/', '/aydinlatma-metni/', '/gizlilik/',
@@ -362,5 +362,54 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(nf.querySelector('main .not-found svg.sun-mark')).toBeTruthy();
     expect(nf.querySelector('main a.list-item[href="/"]')).toBeTruthy();
     expect(nf.querySelector('main a[href="/en/"]')).toBeTruthy();
+  });
+});
+
+/** The real sample content and texts, built as they are (see `test:build`). */
+describe('sample content (real posts and data)', () => {
+  const sample = (path: string) => loadPage(path, DIST_SAMPLES);
+  const postHrefs = (path: string) => {
+    const d = sample(path);
+    const re = path.startsWith('/en/') ? /^\/en\/blog\/[a-z0-9-]+\/$/ : /^\/blog\/[a-z0-9-]+\/$/;
+    return [...new Set(d.querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h)))];
+  };
+
+  it('the blog list shows six posts in each language', () => {
+    expect(postHrefs('/blog/')).toHaveLength(6);
+    expect(postHrefs('/en/blog/')).toHaveLength(6);
+  });
+
+  it('the home popular tile lists the two featured posts, and the blog has the #popular section', () => {
+    for (const path of ['/', '/en/']) {
+      const pair = sample(path).querySelector('.home-phone .tile-pair')!;
+      expect(pair.classList.contains('single'), path).toBe(false);
+      expect(pair.querySelectorAll('a.tile'), path).toHaveLength(2);
+    }
+    for (const path of ['/blog/', '/en/blog/']) {
+      const links = sample(path).querySelectorAll('section#popular a.list-item');
+      expect(links, path).toHaveLength(2);
+    }
+  });
+
+  it('three posts have an optimised cover, the others none', () => {
+    const covers = (path: string) => sample(path).querySelectorAll('.blog-desk img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
+    expect(new Set(covers('/blog/').map((i) => i.getAttribute('src'))).size).toBe(3);
+    for (const i of covers('/blog/')) expect((i.getAttribute('alt') ?? '').length).toBeGreaterThan(10);
+  });
+
+  it('the FAQ pages show all five questions with answers, and the home accordion matches', () => {
+    expect(sample('/sik-sorulan-sorular/').querySelectorAll('main details')).toHaveLength(5);
+    expect(sample('/en/faq/').querySelectorAll('main details')).toHaveLength(5);
+    expect(sample('/').querySelectorAll('.home-phone details.faq details.faq-item')).toHaveLength(5);
+    const ld = sample('/sik-sorulan-sorular/').querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text));
+    expect(ld.find((d) => d['@type'] === 'FAQPage').mainEntity).toHaveLength(5);
+  });
+
+  it('empty fields render nothing: no "undefined" or "null" anywhere on the sample pages', () => {
+    for (const path of ['/', '/en/', '/blog/', '/en/blog/', '/sik-sorulan-sorular/', '/en/faq/']) {
+      const d = sample(path);
+      d.querySelectorAll('script, style').forEach((n) => n.remove());
+      expect(d.textContent, path).not.toMatch(/undefined|null/);
+    }
   });
 });

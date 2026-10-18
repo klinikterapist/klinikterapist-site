@@ -24,6 +24,7 @@ pnpm-debug.log*
 .idea/
 dist-test/
 dist-test-empty/
+dist-test-samples/
 
 # Apps Script build output and local clasp config
 apps-script/dist/

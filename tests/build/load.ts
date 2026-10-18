@@ -8,6 +8,9 @@ export const DIST = 'dist-test';
 /** The same fixture data built with an empty posts folder (`npm run test:build` writes it too). */
 export const DIST_NO_POSTS = 'dist-test-empty';
 
+/** The real content and data (the owner's sample posts and texts), built as they are (`npm run test:build` writes it too). */
+export const DIST_SAMPLES = 'dist-test-samples';
+
 /** `/x/` → `dist-test/x/index.html`; a path ending in `.html` is read as is. */
 export function distFile(path: string, dist = DIST): string {
   const clean = path.replace(/^\/+/, '');

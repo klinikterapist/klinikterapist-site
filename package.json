@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest run tests/unit",
-    "test:build": "cross-env UI_KIT=1 CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && cross-env CONTENT_DIR=tests/fixtures/content-empty DATA_DIR=tests/fixtures/data astro build --outDir dist-test-empty && vitest run tests/build",
+    "test:build": "cross-env UI_KIT=1 CONTENT_DIR=tests/fixtures/content DATA_DIR=tests/fixtures/data astro build --outDir dist-test && cross-env CONTENT_DIR=tests/fixtures/content-empty DATA_DIR=tests/fixtures/data astro build --outDir dist-test-empty && astro build --outDir dist-test-samples && vitest run tests/build",
     "check": "astro check",
     "check:launch": "node scripts/check-launch.mjs",
     "gas:build": "node apps-script/build.mjs",

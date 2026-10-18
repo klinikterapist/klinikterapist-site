@@ -64,5 +64,37 @@
       "icon": "mail",
       "visible": true
     }
+  ],
+  "process": [
+    {
+      "title": {
+        "tr": "Tanışma",
+        "en": "Getting acquainted"
+      },
+      "text": {
+        "tr": "Bir e-posta ile ulaşırsınız; birlikte uygun bir zaman buluruz.",
+        "en": "You reach out by e-mail and we find a suitable time together."
+      }
+    },
+    {
+      "title": {
+        "tr": "İlk görüşme",
+        "en": "First session"
+      },
+      "text": {
+        "tr": "Çalışma biçimini konuşur, sizi dinler ve ihtiyaçlarınızı birlikte netleştiririz.",
+        "en": "We talk about how we work, I listen, and we clarify your needs together."
+      }
+    },
+    {
+      "title": {
+        "tr": "Birlikte ilerlemek",
+        "en": "Moving forward together"
+      },
+      "text": {
+        "tr": "Devam etmek isterseniz düzenli görüşmelerle, sizin hızınızda ilerleriz.",
+        "en": "If you wish to continue, we meet regularly and go at your pace."
+      }
+    }
   ]
 }
