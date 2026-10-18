@@ -22,8 +22,10 @@ interface Props {
   noindex?: boolean;
   /** Phone top bar: a back link in place of the wordmark. */
   back?: { href: string; label: string };
+  /** The phone's fixed "Randevu Al" bar; off where the page is the booking itself. */
+  cta?: boolean;
 }
-const { lang, meta, jsonLd, alternatePaths, noindex, back } = Astro.props;
+const { lang, meta, jsonLd, alternatePaths, noindex, back, cta = true } = Astro.props;
 ---
 
 <BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={noindex}>
@@ -38,7 +40,7 @@ const { lang, meta, jsonLd, alternatePaths, noindex, back } = Astro.props;
     }
   </div>
   <slot />
-  <StickyCta mode="always" href={pathFor('appointment', lang)} label={t(lang, 'bookSession')} />
+  {cta && <StickyCta mode="always" href={pathFor('appointment', lang)} label={t(lang, 'bookSession')} />}
 </BaseLayout>
 
 <style>

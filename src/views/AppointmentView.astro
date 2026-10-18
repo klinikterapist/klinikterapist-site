@@ -1,9 +1,14 @@
 ---
-/** Appointment (spec §5.9): the same content in the new look. Phase 1: booking is coming soon; e-mail for now. */
+/**
+ * Appointment (spec §5.9). Live: booking is coming soon, e-mail for now. On the dev server (or a
+ * build with `BOOKING_DESIGN=1`) the page shows the booking design instead (owner's review
+ * 2026-10-19, item 12), so it can be looked at before the booking backend exists.
+ */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
 import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import ListItem from '../components/ui/ListItem.astro';
+import BookingDesign from '../components/appointment/BookingDesign.astro';
 import type { Lang } from '../lib/settings';
 import { getContact } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
@@ -17,18 +22,28 @@ const { lang } = Astro.props;
 const title = t(lang, 'bookSession');
 const { meta, alternatePaths } = pageMeta('appointment', lang, title, t(lang, 'appointmentSoon'));
 const { email } = getContact();
+const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 ---
 
-<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
-  <div class="container-text inner-page appointment">
-    <PageHead title={title}>
-      <RoundPortrait slot="media" photo={null} alt="" size={96} />
-      <p class="lead">{t(lang, 'appointmentSoon')}</p>
-    </PageHead>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design}>
+  {
+    design ? (
+      <div class="container inner-page appointment-design">
+        <PageHead title={title} />
+        <BookingDesign lang={lang} email={email} />
+      </div>
+    ) : (
+      <div class="container-text inner-page appointment">
+        <PageHead title={title}>
+          <RoundPortrait slot="media" photo={null} alt="" size={96} />
+          <p class="lead">{t(lang, 'appointmentSoon')}</p>
+        </PageHead>
 
-    <div class="page-stack">
-      <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
-      <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
-    </div>
-  </div>
+        <div class="page-stack">
+          <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
+          <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+        </div>
+      </div>
+    )
+  }
 </PageShell>
