@@ -412,7 +412,7 @@ describe('sample content (real posts and data)', () => {
   it('a post with a cover renders it (optimised) and a post without one renders none', () => {
     for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
       const d = sample(path);
-      const imgs = d.querySelectorAll('img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
+      const imgs = d.querySelectorAll('img.cover, img.featured-cover, img.newest-cover, img.thumb').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
       // Each post's own page carries its cover when it has one, and no optimised image when not.
       for (const m of metas(lang)) {
         const post = sample(`${prefix[lang]}${m.slug}/`);
@@ -435,11 +435,12 @@ describe('sample content (real posts and data)', () => {
     }
   });
 
-  it('empty fields render nothing: no "undefined" or "null" anywhere on the sample pages', () => {
+  it('empty fields render nothing: no "undefined" or "null" artefacts on the sample pages', () => {
     for (const path of ['/', '/en/', '/blog/', '/en/blog/', '/sik-sorulan-sorular/', '/en/faq/']) {
       const d = sample(path);
       d.querySelectorAll('script, style').forEach((n) => n.remove());
-      expect(d.textContent, path).not.toMatch(/undefined|\bnull\b/);
+      // Rendered artefacts only: an attribute or a whole text node that is literally undefined/null, never prose.
+      expect(d.toString(), path).not.toMatch(/="(undefined|null)"|>\s*(undefined|null)\s*</);
     }
   });
 });

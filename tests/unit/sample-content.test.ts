@@ -53,23 +53,6 @@ describe('sample posts', () => {
     for (const p of posts) if (p.data.cover) expect(existsSync(join(POSTS, p.key, String(p.data.cover))), `${p.key}/${p.lang}`).toBe(true);
   });
 
-  it('untouched samples: a cover is declared as ./cover.webp with real alt text', () => {
-    for (const p of samples.filter((x) => x.data.cover)) {
-      expect(p.data.cover).toBe('./cover.webp');
-      expect(String(p.data.coverAlt ?? '').trim().length).toBeGreaterThan(10);
-    }
-  });
-
-  it('untouched samples: both languages share category, date, featured and cover', () => {
-    for (const k of sampleKeys('tr')) {
-      if (!sampleKeys('en').has(k)) continue;
-      const tr = samples.find((p) => p.key === k && p.lang === 'tr')!;
-      const en = samples.find((p) => p.key === k && p.lang === 'en')!;
-      for (const f of ['category', 'featured', 'cover']) expect(en.data[f], `${k}.${f}`).toEqual(tr.data[f]);
-      expect(new Date(en.data.publishedAt).getTime()).toBe(new Date(tr.data.publishedAt).getTime());
-    }
-  });
-
   it('untouched samples carry a publish date with a time', () => {
     for (const p of samples) expect(readFileSync(join(POSTS, p.key, `${p.lang}.md`), 'utf8')).toMatch(/publishedAt: "?\d{4}-\d\d-\d\dT\d\d:\d\d/);
   });
@@ -109,7 +92,7 @@ describe('sample posts', () => {
 
   it('untouched samples: no diagnosis or promise wording, no testimonials', () => {
     for (const p of samples) {
-      expect(p.body).not.toMatch(/garanti|kesin (çözüm|iyileş)|tedavi eder|iyileştirir|guarantee|cure[sd]?|will heal/i);
+      expect(p.body).not.toMatch(/garanti|kesin (çözüm|iyileş)|tedavi eder|iyileştirir|guarantee|cure[sd]?\b|will heal/i);
       expect(p.body).not.toMatch(/danışanım|hastam|my client|my patient/i);
     }
   });

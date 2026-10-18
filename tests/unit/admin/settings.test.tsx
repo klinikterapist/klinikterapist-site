@@ -29,9 +29,15 @@ function setup(screenId: string, tweak: (api: ReturnType<typeof createMockApi>) 
 const json = (api: ReturnType<typeof createMockApi>, path: string) => JSON.parse(api.state.files.get(path)!.content);
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Kaydet' }));
 
+/** Profile fields the tests depend on are seeded here, so the owner's real profile.json can change freely. */
+function seedProfile(a: ReturnType<typeof createMockApi>, patch: Record<string, unknown>) {
+  const f = a.state.files.get('src/data/profile.json')!;
+  a.state.files.set('src/data/profile.json', { ...f, content: JSON.stringify({ ...JSON.parse(f.content), ...patch }) });
+}
+
 describe('settings screens: Plan E fields', () => {
   it('Profil: Ana sayfa görünümü offers both styles and saves heroStyle', async () => {
-    const api = setup('profil');
+    const api = setup('profil', (a) => seedProfile(a, { heroStyle: 'background' }));
     const select = (await screen.findByLabelText('Ana sayfa görünümü')) as HTMLSelectElement;
     expect([...select.options].map((o) => o.text)).toEqual(['Arka planda fotoğraf', 'Yuvarlak fotoğraf']);
     expect(select.value).toBe('background');
@@ -42,8 +48,8 @@ describe('settings screens: Plan E fields', () => {
   });
 
   it('Profil: Mesleki üyelikler lists TPD and a number can be added', async () => {
-    const api = setup('profil');
-    expect(await screen.findByDisplayValue('Türk Psikologlar Derneği')).toBeTruthy();
+    const api = setup('profil', (a) => seedProfile(a, { memberships: [{ org: { tr: 'Örnek Dernek', en: 'Example Association' } }] }));
+    expect(await screen.findByDisplayValue('Örnek Dernek')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Üye numarası (isteğe bağlı)'), { target: { value: '1234' } });
     save();
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
