@@ -16,6 +16,8 @@ import TilePair from '../../components/ui/TilePair.astro';
 import StickyCta from '../../components/ui/StickyCta.astro';
 import PageEnd from '../../components/ui/PageEnd.astro';
 import FaqHello from '../../components/home/FaqHello.astro';
+import PopularPosts from '../../components/blog/PopularPosts.astro';
+import { getPosts } from '../../lib/posts';
 
 export const getStaticPaths = (() => {
   const enabled = import.meta.env.DEV || process.env.UI_KIT === '1';
@@ -25,6 +27,8 @@ export const getStaticPaths = (() => {
 const lang = Astro.params.lang as Lang;
 const alternatePaths = { tr: '/ui-kit/tr/', en: '/ui-kit/en/' };
 const isTr = lang === 'tr';
+// The fixture has no featured post and no read counts, so the blog hides its Popular section; it is shown here.
+const popularKit = (await getPosts(lang)).slice(0, 2);
 // TR page: wordmark on the left, sticky bar always. EN page: back link, sticky bar after #top-cta.
 ---
 
@@ -70,6 +74,7 @@ const isTr = lang === 'tr';
         <TilePair tiles={[{ icon: 'calendar', title: isTr ? 'Tek kutu' : 'Single tile', subtitle: isTr ? 'Tam genişlik' : 'Full width', href: '/randevu/' }]} />
         {/* Desktop home block with no answered question: the hello card stands alone. */}
         <FaqHello lang={lang} faq={[]} firstName="Osman" text={isTr ? 'Kısa bir tanıtım.' : 'A short intro.'} />
+        <PopularPosts lang={lang} posts={popularKit} />
         <div class="spacer"></div>
         <PageEnd lang={lang} />
       </main>

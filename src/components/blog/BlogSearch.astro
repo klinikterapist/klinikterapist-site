@@ -1,0 +1,71 @@
+---
+/**
+ * Round search box of the blog list plus the small inline script that filters the posts on the page
+ * (src/lib/search.ts). Without JavaScript the box would do nothing, so it is hidden then.
+ * Must sit inside the `[data-blog]` element that holds the `[data-post]` items.
+ */
+import type { Lang } from '../../lib/settings';
+import { t } from '../../i18n/ui';
+import { blogFilterScript } from '../../lib/search';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  class?: string;
+}
+const { lang, class: className } = Astro.props;
+---
+
+<form class:list={['blog-search', className]} role="search" data-blog-search action="">
+  <label for="blog-q" class="visually-hidden">{t(lang, 'searchLabel')}</label>
+  <Icon name="search" size={18} />
+  <input id="blog-q" type="search" placeholder={t(lang, 'searchPlaceholder')} autocomplete="off" enterkeyhint="search" />
+</form>
+<noscript><style is:inline>[data-blog-search]{display:none!important}</style></noscript>
+<script is:inline set:html={blogFilterScript()} />
+
+<style>
+  .blog-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--muted);
+  }
+
+  .blog-search:focus-within {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  input::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  @media (min-width: 768px) {
+    .blog-search {
+      min-width: 15rem;
+      border-color: var(--line);
+      border-radius: var(--radius-pill);
+      background: none;
+    }
+  }
+</style>

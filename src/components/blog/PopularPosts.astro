@@ -1,0 +1,70 @@
+---
+/**
+ * "Popüler yazılar" (#popular, the target of the home page's Popular tile and the blog's Popular chip
+ * and tile). Renders nothing when there is no popular post (pickPopular: shown read counts, else featured).
+ */
+import type { Lang } from '../../lib/settings';
+import type { PostEntry } from '../../lib/posts';
+import { t } from '../../i18n/ui';
+import PostCard from '../PostCard.astro';
+
+interface Props {
+  lang: Lang;
+  posts: PostEntry[];
+}
+const { lang, posts } = Astro.props;
+---
+
+{
+  posts.length > 0 && (
+    <section id="popular" class="popular" aria-labelledby="popular-title" data-hide-on-filter>
+      <h2 id="popular-title">{t(lang, 'popularPosts')}</h2>
+      <ul>
+        {posts.map((p) => (
+          <li>
+            <PostCard post={p} lang={lang} variant="row" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .popular {
+    scroll-margin-top: var(--space-5);
+  }
+
+  h2 {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  ul {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 768px) {
+    h2 {
+      font-family: var(--font-serif);
+      font-size: var(--text-xl);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      text-transform: none;
+      color: var(--text);
+    }
+
+    ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

@@ -1,13 +1,24 @@
 ---
-/** Blog list (all posts) or one category page. Category filtering is plain links, no JavaScript. */
+/**
+ * Blog list (all posts) or one category page (spec §5.8). Phones (< 768 px): search box, the newest post
+ * as a big box, "Popüler yazılar · Konular", the other posts as rows, the newsletter box. Desktop: search
+ * and topic chips, the newest post as the featured card, a three-card grid, the newsletter band.
+ * Both looks are in the markup and CSS shows one. Search and topic filtering run in the visitor's
+ * browser on this list (BlogSearch); without JavaScript the chips are plain links to the category pages.
+ */
 import PageShell from '../layouts/PageShell.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import CategoryNav from '../components/CategoryNav.astro';
 import PostCard from '../components/PostCard.astro';
 import NewsletterBox from '../components/NewsletterBox.astro';
 import Leaf from '../components/Leaf.astro';
+import Icon from '../components/Icon.astro';
+import BlogSearch from '../components/blog/BlogSearch.astro';
+import FeaturedPost from '../components/blog/FeaturedPost.astro';
+import PopularPosts from '../components/blog/PopularPosts.astro';
 import type { Category, Lang } from '../lib/settings';
-import { getPosts } from '../lib/posts';
+import { getCategories } from '../lib/settings';
+import { getPosts, pickPopular, type PostEntry } from '../lib/posts';
 import { absoluteUrl, buildMeta } from '../lib/seo';
 import { breadcrumbLd } from '../lib/jsonld';
 import { categoryPath, pathFor } from '../i18n/routes';
@@ -21,6 +32,9 @@ const { lang, category } = Astro.props;
 
 const all = await getPosts(lang);
 const posts = category ? all.filter((p) => p.data.category === category.id) : all;
+const [newest, ...rest] = posts;
+// The Popular section belongs to the all-posts page (the home tile and the chip jump to /blog/#popular).
+const popular = category ? [] : pickPopular(all);
 
 const blogPaths = { tr: pathFor('blog', 'tr'), en: pathFor('blog', 'en') };
 const alternatePaths = category
@@ -43,50 +57,109 @@ const crumbs = [
 ];
 const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl(c.href) })))];
 const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
+
+const categoryLabel = (p: PostEntry) => getCategories().find((c) => c.id === p.data.category)?.label[lang].trim() ?? '';
+/** What the search matches: the title and the topic name. */
+const searchText = (p: PostEntry) => [p.data.title, categoryLabel(p)].filter(Boolean).join(' ');
+const topicLabels = getCategories().map((c) => c.label[lang].trim()).filter(Boolean);
+const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')}…` : topicLabels.join(', ');
 ---
 
 <PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={!!category && posts.length === 0}>
   <link slot="head" rel="alternate" type="application/rss+xml" title={t(lang, 'rssTitle')} href={absoluteUrl(rss)} />
 
-  <div class="container blog">
+  <div class="container blog" data-blog data-filterable={!category ? '' : undefined}>
     <Breadcrumb lang={lang} items={crumbs} />
 
     <header class="page-head">
-      <div>
-        <h1>{heading}</h1>
-        <p class="lead">{lead}</p>
-      </div>
-      <p class="slogan hand" aria-hidden="true">
-        {t(lang, 'slogan')}
-        <Leaf size={36} class="slogan-leaf" />
-      </p>
+      <h1>{heading}</h1>
+      <p class="lead">{lead}</p>
     </header>
 
-    <CategoryNav lang={lang} current={category} />
-
     {
-      posts.length > 0 ? (
-        <section aria-label={t(lang, 'postList')}>
-          <ul class="posts">
-            {posts.map((p, i) => (
-              <li>
-                <PostCard post={p} lang={lang} level={2} eager={i < 2} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : (
-        <div class="empty">
-          <Leaf size={56} class="empty-leaf" />
-          <p>{t(lang, category ? 'noPostsInCategory' : 'noPosts')}</p>
-          {category && (
-            <a href={blogPaths[lang]}>{t(lang, 'allPosts')}</a>
-          )}
+      all.length > 0 && (
+        <div class="blog-filters">
+          {posts.length > 0 && <BlogSearch lang={lang} />}
+          <CategoryNav lang={lang} current={category} variant="chips" popular={popular.length > 0} class="chips" />
         </div>
       )
     }
 
-    <NewsletterBox lang={lang} />
+    {
+      newest ? (
+        <>
+          <div class="blog-phone">
+            <div data-post data-cat={newest.data.category} data-search={searchText(newest)}>
+              <FeaturedPost post={newest} lang={lang} variant="phone" />
+            </div>
+
+            <div class:list={['topic-pair', { single: popular.length === 0 }]}>
+              {popular.length > 0 && (
+                <a class="tile" href="#popular" data-clear-filter>
+                  <Icon name="flame" size={22} />
+                  <b>{t(lang, 'popularPosts')}</b>
+                  <small>{t(lang, 'popularHint')}</small>
+                </a>
+              )}
+              <details class="tile topics">
+                <summary>
+                  <Icon name="tag" size={22} />
+                  <b>{t(lang, 'topics')}</b>
+                  {topicHint && <small>{topicHint}</small>}
+                </summary>
+                <CategoryNav lang={lang} current={category} variant="list" />
+              </details>
+            </div>
+
+            {rest.length > 0 && (
+              <ul class="post-rows" aria-label={t(lang, 'postList')}>
+                {rest.map((p) => (
+                  <li data-post data-cat={p.data.category} data-search={searchText(p)}>
+                    <PostCard post={p} lang={lang} variant="row" />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div class="blog-desk">
+            <div data-post data-cat={newest.data.category} data-search={searchText(newest)}>
+              <FeaturedPost post={newest} lang={lang} variant="desk" />
+            </div>
+            {rest.length > 0 && (
+              <ul class="post-grid" aria-label={t(lang, 'postList')}>
+                {rest.map((p) => (
+                  <li data-post data-cat={p.data.category} data-search={searchText(p)}>
+                    <PostCard post={p} lang={lang} level={3} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div class="status" role="status">
+            <p class="no-results" data-no-results hidden>
+              {t(lang, 'noResults')}
+            </p>
+          </div>
+
+          <PopularPosts lang={lang} posts={popular} />
+        </>
+      ) : (
+        <div class="blog-empty">
+          <Leaf size={56} class="empty-leaf" />
+          <p>{t(lang, category ? 'noPostsInCategory' : 'noPosts')}</p>
+          {category && <a href={blogPaths[lang]}>{t(lang, 'allPosts')}</a>}
+        </div>
+      )
+    }
+
+    <div class="blog-phone">
+      <NewsletterBox lang={lang} variant="row" />
+    </div>
+    <div class="blog-desk">
+      <NewsletterBox lang={lang} variant="band" />
+    </div>
   </div>
 </PageShell>
 
@@ -94,111 +167,230 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
   .blog {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
-    padding-top: var(--space-4);
+    gap: 14px;
+    padding-top: var(--space-2);
     padding-bottom: var(--space-6);
   }
 
+  /* Filtered out by the search script; the rows and boxes set their own display. */
+  .blog :global([hidden]) {
+    display: none !important;
+  }
+
   .page-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-4);
+    text-align: center;
   }
 
   .page-head h1 {
-    margin-bottom: var(--space-2);
+    margin: 4px 0;
+    font-size: 1.875rem;
+    line-height: 1.12;
   }
 
   .lead {
     max-width: 36rem;
-    margin: 0;
+    margin: 0 auto;
     color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
   }
 
-  .slogan {
-    display: none;
-    flex: none;
+  .blog-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .blog-filters :global(.blog-search) {
+    flex: 1 1 100%;
+  }
+
+  .blog-phone,
+  .blog-desk {
+    display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    max-width: 9rem;
-    margin: 0;
-    color: var(--muted);
-    font-size: 1.375rem;
-    line-height: 1.2;
-    text-align: right;
+    gap: 10px;
   }
 
-  .slogan :global(.slogan-leaf) {
-    margin-top: var(--space-2);
-    color: var(--muted);
+  .blog-desk {
+    display: none;
   }
 
-  .posts {
+  .blog-filters :global(.chips) {
+    display: none;
+  }
+
+  /* "Popüler yazılar · Konular": two tiles; "Konular" alone spans the row. Open, the topic list takes the full width. */
+  .topic-pair {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .topic-pair.single,
+  .topic-pair:has(details[open]) {
+    grid-template-columns: 1fr;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 44px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .tile > :global(svg),
+  .tile summary > :global(svg) {
+    color: var(--link);
+  }
+
+  .tile b {
+    margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .tile small {
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  .topics summary {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .topics summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .topics[open] summary {
+    margin-bottom: var(--space-2);
+  }
+
+  .post-rows,
+  .post-grid {
+    display: grid;
+    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .posts > li {
+  .post-rows > li,
+  .post-grid > li {
     display: flex;
   }
 
-  .posts > li > :global(*) {
+  .post-rows > li > :global(*),
+  .post-grid > li > :global(*) {
     flex: 1;
+    min-width: 0;
   }
 
-  .empty {
+  .no-results {
+    margin: 0;
+    padding: var(--space-5) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .blog-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-7) var(--space-4);
-    border: 1px dashed var(--line);
     border-radius: var(--radius-lg);
+    background: var(--surface);
     color: var(--muted);
     text-align: center;
   }
 
-  .empty p {
+  .blog-empty p {
     max-width: 28rem;
     margin: 0;
   }
 
-  .empty :global(.empty-leaf) {
-    color: var(--muted);
+  .blog-empty :global(.empty-leaf) {
+    color: var(--link);
   }
 
-  .empty a {
+  .blog-empty a {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
     font-weight: 600;
   }
 
-  @media (min-width: 560px) {
-    .posts {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Phone column like the home page. */
+  @media (max-width: 767px) {
+    .blog {
+      max-width: 440px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .blog {
+      gap: 20px;
+      padding-top: var(--space-5);
+      padding-bottom: var(--space-7);
     }
 
-    .slogan {
+    .blog-phone {
+      display: none;
+    }
+
+    .blog-desk {
       display: flex;
+      gap: 18px;
+    }
+
+    .page-head {
+      text-align: left;
+    }
+
+    .page-head h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2.25rem, 1.6rem + 1.6vw, 2.75rem);
+      line-height: 1.08;
+    }
+
+    .lead {
+      margin: 0;
+      font-size: 1.0625rem;
+    }
+
+    .blog-filters :global(.blog-search) {
+      flex: 0 1 auto;
+    }
+
+    .blog-filters :global(.chips) {
+      display: block;
+    }
+
+    .post-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
     }
   }
 
   @media (min-width: 1024px) {
-    .blog {
-      gap: var(--space-6);
-      padding-top: var(--space-6);
-      padding-bottom: var(--space-7);
-    }
-
-    .posts {
+    .post-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-5);
     }
   }
 </style>

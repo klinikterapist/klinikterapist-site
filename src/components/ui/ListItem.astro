@@ -1,5 +1,8 @@
 ---
-/** One tappable row: icon (or thumbnail), title, soft subtitle, chevron. `meta` slot sits above the title. */
+/**
+ * One tappable row: icon (or thumbnail), title, soft subtitle, chevron. The `meta` slot is one small,
+ * muted line above the title (a label, a category, a read count); it never wraps.
+ */
 import Icon from '../Icon.astro';
 
 interface Props {
@@ -28,7 +31,7 @@ const external = /^https?:\/\//.test(href);
     )
   }
   <span class="text">
-    <slot name="meta" />
+    {Astro.slots.has('meta') && <span class="meta"><slot name="meta" /></span>}
     <b class="title">{title}</b>
     {subtitle && <small class="subtitle">{subtitle}</small>}
   </span>
@@ -70,6 +73,16 @@ const external = /^https?:\/\//.test(href);
     flex-direction: column;
     gap: 2px;
     overflow-wrap: anywhere;
+  }
+
+  .meta {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    line-height: 1.4;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
   }
 
   .title {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validatePostPairs, validateUniqueSlugs, validateReservedSlugs, sortNewestFirst, pickRelated, toPostEntry } from '../../src/lib/posts';
+import { validatePostPairs, validateUniqueSlugs, validateReservedSlugs, sortNewestFirst, pickRelated, pickPopular, toPostEntry } from '../../src/lib/posts';
 
 describe('validatePostPairs', () => {
   it('throws naming folder and missing language', () => {
@@ -37,6 +37,27 @@ describe('pure helpers', () => {
     ].map(toPostEntry);
     const rel = pickRelated(all[0], all, 3).map((p) => p.key);
     expect(rel).toEqual(['a-new', 'a-old', 'b-new']);
+  });
+});
+
+describe('pickPopular', () => {
+  const feat = (key: string, date: string) => {
+    const p = toPostEntry(mk(key, 'c', date));
+    return { ...p, data: { ...p.data, featured: true } };
+  };
+  const plain = (key: string, date: string) => toPostEntry(mk(key, 'c', date));
+  it('without counts: featured posts only, newest first', () => {
+    const all = [plain('a', '2026-05-01'), feat('b', '2026-04-01'), feat('c', '2026-06-01')];
+    expect(pickPopular(all, () => null).map((p) => p.key)).toEqual(['c', 'b']);
+  });
+  it('nothing featured and no counts: empty (the Popular tile is hidden)', () => {
+    expect(pickPopular([plain('a', '2026-05-01')], () => null)).toEqual([]);
+  });
+  it('with counts: posts with at least 50 reads, most read first, then featured; limited', () => {
+    const counts: Record<string, number> = { a: 900, b: 30, d: 120 };
+    const all = [plain('a', '2026-05-01'), plain('b', '2026-04-01'), feat('c', '2026-03-01'), plain('d', '2026-02-01')];
+    expect(pickPopular(all, (k) => counts[k] ?? null).map((p) => p.key)).toEqual(['a', 'd', 'c']);
+    expect(pickPopular(all, (k) => counts[k] ?? null, 2).map((p) => p.key)).toEqual(['a', 'd']);
   });
 });
 

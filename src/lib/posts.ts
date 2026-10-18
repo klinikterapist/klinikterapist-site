@@ -3,6 +3,7 @@ import type { Lang } from './settings';
 import { RESERVED_SLUGS } from './schemas';
 import { readingTime } from './readingTime';
 import { validateCitations } from './citations';
+import { MIN_READS_SHOWN, readCount } from './read-counts';
 
 export type PostData = {
   title: string;
@@ -97,6 +98,22 @@ export function pickRelated(post: PostEntry, all: PostEntry[], n = 3): PostEntry
   const same = others.filter((p) => p.data.category === post.data.category);
   const rest = others.filter((p) => p.data.category !== post.data.category);
   return [...same, ...rest].slice(0, n);
+}
+
+/**
+ * "Popüler yazılar": posts with a shown read count (at least 50), most read first, then posts the
+ * owner marked featured, newest first. Empty when nothing is featured and there are no counts: the
+ * Popular tile and section are then hidden.
+ */
+export function pickPopular(
+  posts: PostEntry[],
+  count: (key: string) => number | null = readCount,
+  n = 4,
+): PostEntry[] {
+  const reads = new Map(posts.map((p) => [p.key, count(p.key) ?? 0]));
+  const read = posts.filter((p) => reads.get(p.key)! >= MIN_READS_SHOWN).sort((a, b) => reads.get(b.key)! - reads.get(a.key)!);
+  const featured = sortNewestFirst(posts.filter((p) => p.data.featured && !read.includes(p)));
+  return [...read, ...featured].slice(0, n);
 }
 
 async function loadAll(): Promise<PostEntry[]> {

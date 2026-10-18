@@ -4,8 +4,6 @@
  * profile's style. Desktop: the wide layout (spec §5.7) under the site header. Both are in the markup
  * and CSS shows one, so the page needs no script to switch.
  */
-import type { ImageMetadata } from 'astro';
-import { getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PortraitHero from '../components/home/PortraitHero.astro';
 import DesktopHero from '../components/home/DesktopHero.astro';
@@ -20,8 +18,9 @@ import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
 import type { HomeCard, Lang } from '../lib/settings';
 import { getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
-import { getPosts } from '../lib/posts';
-import { readCount } from '../lib/read-counts';
+import { getPosts, pickPopular } from '../lib/posts';
+import { readCount, readsLabel } from '../lib/read-counts';
+import { postThumb } from '../lib/post-image';
 import { portraitStyle } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { personLd, professionalServiceLd } from '../lib/jsonld';
@@ -56,17 +55,14 @@ const cardHref = (c: HomeCard) => ('page' in c.target ? pathFor(c.target.page, l
 
 const posts = await getPosts(lang);
 const newest = posts[0];
-const newestCover = newest?.data.cover
-  ? (await getImage({ src: newest.data.cover as ImageMetadata, width: 96, height: 96, fit: 'cover', format: 'webp' })).src
-  : undefined;
-const newestReads = newest ? readCount(newest.key) : null;
+const newestCover = await postThumb(newest?.data.cover);
 const newestMeta = newest
-  ? [`${newest.readingMinutes} ${t(lang, 'minRead')}`, newestReads !== null ? `${newestReads} ${t(lang, 'reads')}` : '']
+  ? [`${newest.readingMinutes} ${t(lang, 'minRead')}`, readsLabel(readCount(newest.key), lang) ?? '']
       .filter(Boolean)
       .join(' · ')
   : '';
-// "Popüler yazılar" needs something to show: posts marked featured, or read counts (Plan F Task 4).
-const hasPopular = posts.some((p) => p.data.featured || readCount(p.key) !== null);
+// "Popüler yazılar" needs something to show: posts marked featured, or shown read counts.
+const hasPopular = pickPopular(posts).length > 0;
 const blogHref = pathFor('blog', lang);
 type Tile = { icon: string; title: string; subtitle: string; href: string };
 const tiles: Tile[] = [];
