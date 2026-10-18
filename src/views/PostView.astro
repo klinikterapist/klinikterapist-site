@@ -156,6 +156,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     related.length > 0 && (
       <section class="container-text related" aria-labelledby="related-title">
         <h2 id="related-title">{t(lang, 'similarPosts')}</h2>
+        <p class="related-lead">{t(lang, 'similarPostsLead')}</p>
         <ul class="posts">
           {related.map((p) => (
             <li>
@@ -295,14 +296,18 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     padding-bottom: var(--space-6);
   }
 
+  /* A reader's invitation, not a section label: serif heading and a soft line under it. */
   .related h2 {
-    margin: 0 0 10px;
+    margin: 0;
+    font-size: var(--text-lg);
+    font-variation-settings: 'SOFT' 100;
+    line-height: 1.25;
+  }
+
+  .related-lead {
+    margin: 4px 0 12px;
     color: var(--muted);
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: var(--text-sm);
   }
 
   .posts {

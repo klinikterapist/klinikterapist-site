@@ -362,13 +362,15 @@ describe('post page redesign (spec §5.8)', () => {
     expect(loadPage(POST).querySelector('.post-cta')?.text).toContain('Randevu Al');
   });
 
-  it('similar posts: up to two rows', () => {
+  it('similar posts: a reader invitation and up to two rows', () => {
     const rel = loadPage(POST).querySelector('.related')!;
-    expect(rel.querySelector('h2')?.text).toBe('Benzer yazılar');
+    expect(rel.querySelector('h2')?.text).toBe('Bunları da okumanızı öneririm');
+    expect(rel.querySelector('h2 + p.related-lead')?.text).toBe('Aynı konuda yazdığım birkaç yazı daha.');
     const rows = rel.querySelectorAll('a.list-item');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.length).toBeLessThanOrEqual(2);
-    expect(loadPage(EN_POST).querySelector('.related h2')?.text).toBe('Similar posts');
+    expect(loadPage(EN_POST).querySelector('.related h2')?.text).toBe('You might also enjoy reading');
+    expect(loadPage(EN_POST).querySelector('.related .related-lead')?.text).toBe('A few more posts on the same topic.');
   });
 
   it('prose: the drop-cap colour hook and the quote box use tokens', () => {
