@@ -71,7 +71,12 @@ const texts = { copied: t(lang, 'copied'), downloaded: t(lang, 'storyDownloaded'
       sun,
       createCanvas: () => document.createElement('canvas'),
       path: (d) => new Path2D(d),
-      fontsReady: () => Promise.all([document.fonts.load("500 96px 'Fraunces Variable'"), document.fonts.load("600 44px 'DM Sans Variable'")]),
+      // With the title as sample text the browser loads the subsets it needs (latin-ext for ğ, ş, İ).
+      fontsReady: () =>
+        Promise.all([
+          document.fonts.load("500 96px 'Fraunces Variable'", box.dataset.title || 'ğşİ'),
+          document.fonts.load("600 44px 'DM Sans Variable'", box.dataset.host || 'klinikterapist'),
+        ]),
       download: (blob, name) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
