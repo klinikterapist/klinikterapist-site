@@ -22,7 +22,7 @@ afterEach(() => {
 
 const body = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metin.' }] }] };
 const filled = (title: string, slug: string): LangFields => ({
-  title, seoTitle: '', slug, slugTouched: false, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: '', doc: body,
+  title, subtitle: '', seoTitle: '', slug, slugTouched: false, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: '', doc: body, references: [],
 });
 
 const livePost = (slug: string, title: string) =>
@@ -298,6 +298,38 @@ describe('EditorPage', () => {
     }
   });
 
+  it('on a narrow screen a checklist item for a writing-area field closes the sheet and focuses the field', async () => {
+    const orig = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+    try {
+      setup({ ...base(), tr: filled('', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+      fireEvent.click(await screen.findByRole('button', { name: 'Ayarlar' }));
+      const sheet = screen.getByRole('dialog', { name: 'Ayarlar' });
+      const list = within(sheet).getByRole('list', { name: 'Yayın kontrol listesi' });
+      fireEvent.click(within(list).getByRole('button', { name: /Türkçe: Başlık/ }));
+      expect(screen.queryByRole('dialog', { name: 'Ayarlar' })).toBeNull();
+      await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Başlık (Türkçe)')));
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
+    }
+  });
+
+  it('on a narrow screen a blocked Yayınla opens the Ayarlar sheet with the checklist', async () => {
+    const orig = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+    try {
+      setup({ ...base(), tr: filled('Kaygı', 'kaygi') }); // the English side is empty
+      fireEvent.click(await screen.findByRole('button', { name: 'Yayınla' }));
+      expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull();
+      const sheet = screen.getByRole('dialog', { name: 'Ayarlar' });
+      expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+      const list = within(sheet).getByRole('list', { name: 'Yayın kontrol listesi' });
+      expect(within(list).getByRole('button', { name: /İngilizce: Meta açıklama/ }).textContent).toContain('eksik');
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
+    }
+  });
+
   it('a panel open on a wide screen closes, without becoming a sheet, when the window turns narrow', async () => {
     const orig = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
@@ -347,6 +379,62 @@ describe('EditorPage', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Önizleme' })).toBeNull());
     expect(window.location.hash).toBe(hash);
     expect(screen.getByText('Yazıyı düzenle')).toBeTruthy();
+  });
+
+  it('back with the ⋯ menu open closes the menu and stays on the post', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    window.location.hash = '#/yazi/' + base().key;
+    const hash = window.location.hash;
+    fireEvent.click(await screen.findByRole('button', { name: 'Diğer işlemler' }));
+    expect(screen.getByRole('menu')).toBeTruthy();
+    const popped = new Promise((r) => window.addEventListener('popstate', r, { once: true }));
+    history.back();
+    await popped;
+    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull());
+    expect(window.location.hash).toBe(hash);
+    expect(screen.getByText('Yazıyı düzenle')).toBeTruthy();
+  });
+
+  it('back with "Yayınlansın mı?" open closes it and stays on the post', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    window.location.hash = '#/yazi/' + base().key;
+    const hash = window.location.hash;
+    fireEvent.click(await screen.findByRole('button', { name: 'Yayınla' }));
+    expect(screen.getByRole('dialog', { name: 'Yayınlansın mı?' })).toBeTruthy();
+    const popped = new Promise((r) => window.addEventListener('popstate', r, { once: true }));
+    history.back();
+    await popped;
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull());
+    expect(window.location.hash).toBe(hash);
+    expect(screen.getByText('Yazıyı düzenle')).toBeTruthy();
+  });
+
+  it('a confirm opened from the ⋯ menu stays open and leaves no stray history entry when Vazgeç closes it', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    await screen.findByRole('button', { name: 'Diğer işlemler' });
+    const entries = history.length;
+    const state = history.state;
+    fireEvent.click(screen.getByRole('button', { name: 'Diğer işlemler' }));
+    const menuGone = new Promise((r) => window.addEventListener('popstate', r, { once: true }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Taslağı sil' }));
+    await menuGone; // the menu's own entry goes; the confirm must stay open
+    await new Promise((r) => setTimeout(r, 30));
+    const dialog = screen.getByRole('dialog', { name: 'Taslak silinsin mi?' });
+    expect(history.state?.layer).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Vazgeç' }));
+    await waitFor(() => expect(history.state).toEqual(state));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(history.length).toBeGreaterThanOrEqual(entries);
+  });
+
+  it('a language button shows ⚠ while a citation there has no registered reference', async () => {
+    const cited = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metin ' }, { type: 'citation', attrs: { items: [{ id: 'yok2020' }], narrative: false } }] }] };
+    setup({ ...base(), tr: { ...filled('Kaygı', 'kaygi'), doc: cited }, en: filled('Anxiety', 'anxiety') });
+    const tr = await screen.findByRole('button', { name: /Türkçe Sayfa/ });
+    expect(tr.textContent).toContain('⚠');
+    expect(tr.textContent).toContain('eksik');
+    const en = screen.getByRole('button', { name: /English Page/ });
+    expect(en.textContent).toContain('✓');
   });
 
   it('the editor shows the Kaynakça of the cited references under the text', async () => {

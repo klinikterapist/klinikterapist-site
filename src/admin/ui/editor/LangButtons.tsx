@@ -1,22 +1,22 @@
 /**
  * "Türkçe Sayfa" / "English Page" switch in the editor's top bar: flag, name and ✓/⚠ for whether that
- * language is ready. On a narrow phone only the flag and the mark show; the name stays for screen readers.
+ * language is ready (its required publish-checklist items are done). On a narrow phone only the flag and the mark show; the name stays for screen readers.
  */
-import type { Draft } from '../../api/types';
 import type { Lang } from '../../../lib/schemas';
-import { missingFields } from '../../lib/draft';
+import type { ChecklistItem } from '../../lib/checklist';
 import { FlagGB, FlagTR } from '../flags';
 import { useNarrow } from './SideRail';
 
 const PAGE_LABEL: Record<Lang, string> = { tr: 'Türkçe Sayfa', en: 'English Page' };
 const FLAG = { tr: FlagTR, en: FlagGB } satisfies Record<Lang, unknown>;
 
-export function LangButtons({ draft, lang, onLang }: { draft: Draft; lang: Lang; onLang: (l: Lang) => void }) {
+export function LangButtons({ checklist, lang, onLang }: { checklist: ChecklistItem[]; lang: Lang; onLang: (l: Lang) => void }) {
   const narrow = useNarrow(560);
   return (
     <div className="lang-switch" role="group" aria-label="Dil">
       {(['tr', 'en'] as Lang[]).map((l) => {
-        const ok = missingFields(draft[l], l, !!draft.cover).length === 0;
+        // The same rule as the publish gate, so ✓ never shows while Yayınla would be blocked by this language.
+        const ok = checklist.every((i) => !(i.required && i.lang === l) || i.done);
         const Flag = FLAG[l];
         return (
           <button

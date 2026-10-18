@@ -1,6 +1,7 @@
 /** Small UI building blocks shared by the panel screens. */
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Icon, type LucideIcon } from '../icons';
+import { useHistoryLayer } from '../history-layer';
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; busy?: boolean };
 
@@ -106,8 +107,27 @@ export function Banner({ tone = 'info', children, action }: { tone?: 'info' | 's
   );
 }
 
+type DialogProps = {
+  title: string;
+  children: ReactNode;
+  actions: ReactNode;
+  onClose: () => void;
+  /** Join the browser history, so the phone's "back" closes the dialog (via `onClose`) instead of leaving the page. */
+  history?: boolean;
+};
+
 /** Modal dialog with focus moved inside and Escape to cancel. */
-export function Dialog({ title, children, actions, onClose }: { title: string; children: ReactNode; actions: ReactNode; onClose: () => void }) {
+export function Dialog(props: DialogProps) {
+  return props.history ? <HistoryDialog {...props} /> : <DialogFrame {...props} />;
+}
+
+function HistoryDialog(props: DialogProps) {
+  // Its own close paths go through onClose and unmount the dialog, which takes the entry back off.
+  useHistoryLayer(props.onClose);
+  return <DialogFrame {...props} />;
+}
+
+function DialogFrame({ title, children, actions, onClose }: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {

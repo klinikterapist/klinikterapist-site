@@ -346,6 +346,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
           </span>
         }
         draft={draft}
+        checklist={checklist}
         lang={lang}
         onLang={setLang}
         onPreview={() => setPreviewing(true)}
@@ -436,6 +437,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
       {confirm === 'publish' && (
         <Dialog
           title="Yayınlansın mı?"
+          history
           onClose={() => !busy && setConfirm(null)}
           actions={
             <>
@@ -458,6 +460,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
       {confirm === 'unpublish' && (
         <Dialog
           title="Yayından kaldırılsın mı?"
+          history
           onClose={() => !busy && setConfirm(null)}
           actions={
             <>
@@ -476,6 +479,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
       {confirm === 'delete' && (
         <Dialog
           title={loaded.live ? 'Değişiklikler atılsın mı?' : 'Taslak silinsin mi?'}
+          history
           onClose={() => !busy && setConfirm(null)}
           actions={
             <>
@@ -498,6 +502,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
       {stale && (
         <Dialog
           title="Yayındaki sürüm değişmiş"
+          history
           onClose={() => !busy && setStale(false)}
           actions={
             <>

@@ -89,4 +89,23 @@ describe('useHistoryLayer', () => {
     await p;
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('a layer opened right after another closes itself waits for that back and stays open', async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const { rerender } = render(<Layer onClose={first} i={0} />);
+    const settled = popstate();
+    closeFns[0](); // goes back asynchronously
+    rerender(<Layer key="second" onClose={second} i={1} />);
+    await settled;
+    await tick();
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).not.toHaveBeenCalled();
+    expect(history.state?.layer).toBeTruthy();
+    const p = popstate();
+    history.back();
+    await p;
+    await tick();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
 });
