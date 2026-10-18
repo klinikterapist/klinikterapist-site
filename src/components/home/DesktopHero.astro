@@ -1,12 +1,12 @@
 ---
 /**
- * Desktop home intro (spec §5.7): eyebrow, the tagline as the page's h1, intro, "Randevu Al" and
- * "İlk görüşme nasıl geçer?", and the wordmark under them. On the right the portrait sits inside the
- * site column (its right edge on the header's), softly rounded on every corner, with the whole brand
- * sun at its bottom-left corner and the title and name beside it as a handwritten signature (owner's
- * review 2026-10-18). The profile's heroStyle only picks the phone header (PortraitHero); every
- * desktop with a photo gets this layout. Without a photo the big sun with a soft halo stands in the
- * same place.
+ * Desktop home intro (spec §5.7; owner's review 2026-10-18): on the left the portrait inside the
+ * site column (its left edge on the header's), softly rounded on every corner, with the whole brand
+ * sun at its bottom-right corner; on the right a warm greeting ("Merhaba, ben Klinik Psikolog Osman
+ * Güneş Özkurt."), the tagline as the page's h1, intro, "Randevu Al" and "İlk görüşme nasıl geçer?",
+ * and the wordmark under them. The profile's heroStyle only picks the phone header (PortraitHero);
+ * every desktop with a photo gets this layout. Without a photo the big sun with a soft halo stands in
+ * the same place.
  */
 import type { Lang } from '../../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../../lib/portrait-image';
@@ -15,23 +15,21 @@ import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
 import Wordmark from '../brand/Wordmark.astro';
-// The signature's handwriting (latin and latin-ext cover ç ğ ı İ ö ş ü); loaded on the home page only.
-import '@fontsource/great-vibes/400.css';
 
 interface Props {
   lang: Lang;
   photo?: string | null;
   alt: string;
-  eyebrow: string;
   heading: string;
   intro: string;
-  /** The signature on the photo: the profile's title in `lang` (may be empty) and name. */
+  /** The greeting: the profile's title in `lang` (may be empty) and name. */
   title: string;
   name: string;
   /** The "first session" link points at the FAQ item `ilk-gorusme`; hidden when that item has no answer. */
   showFirstSession: boolean;
 }
-const { lang, photo, alt, eyebrow, heading, intro, title, name, showFirstSession } = Astro.props;
+const { lang, photo, alt, heading, intro, title, name, showFirstSession } = Astro.props;
+const greeting = t(lang, 'heroGreeting').replace('{who}', [title, name].filter(Boolean).join(' '));
 // The photo box is at most 30rem (480 px) wide, about 40vw on smaller desktops; 2x screens take the
 // 800 or 1080 px variant.
 const img = photo ? await portraitImage(photo, [560, 800, 1080]) : null;
@@ -43,7 +41,7 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
 <section class:list={['desktop-hero', img ? 'desktop-hero--photo' : 'desktop-hero--none']}>
   <div class="inner container">
     <div class="text">
-      <p class="eyebrow">{eyebrow}</p>
+      <p class="greeting">{greeting}</p>
       <h1>{heading}</h1>
       {intro && <p class="lead">{intro}</p>}
       <div class="actions">
@@ -68,10 +66,6 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
           <span class="sun">
             <SunMark size={150} />
           </span>
-          <p class="signature" aria-hidden="true">
-            {title && <span class="sig-title">{title}</span>}
-            <span class="sig-name">{name}</span>
-          </p>
         </div>
       ) : (
         <div class="art art--none">
@@ -91,7 +85,7 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
 
   .inner {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: 0.9fr 1.1fr;
     /* Wider than the sun's overhang into it (0.4 × its width), so the text is never covered. */
     gap: clamp(4rem, 6vw, 6rem);
   }
@@ -105,13 +99,17 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     padding-block: var(--space-8) var(--space-7);
   }
 
-  .eyebrow {
+  /* The photo first, the text beside it. */
+  .art {
+    order: -1;
+  }
+
+  .greeting {
     margin: 0 0 var(--space-3);
     color: var(--link);
-    font-size: var(--text-xs);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    font-size: 1.125rem;
+    font-weight: 500;
+    line-height: 1.4;
   }
 
   h1 {
@@ -176,11 +174,11 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     position: relative;
   }
 
-  /* Inside the site column: the photo ends on the header's right edge, rounded on every corner. */
+  /* Inside the site column: the photo starts on the header's left edge, rounded on every corner. */
   .art--photo {
     --sun: clamp(110px, 10vw, 150px);
     align-self: center;
-    justify-self: end;
+    justify-self: start;
     width: min(100%, 30rem);
     aspect-ratio: 4 / 5;
     margin-block: var(--space-7) 0;
@@ -194,15 +192,6 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     box-shadow: var(--shadow-soft);
   }
 
-  /* A soft shade at the foot of the photo so the signature reads on any picture. */
-  .art--photo picture::after {
-    content: '';
-    position: absolute;
-    inset: 55% 0 0;
-    background: linear-gradient(to bottom, transparent, rgb(20 24 36 / 0.62));
-    pointer-events: none;
-  }
-
   .photo {
     display: block;
     width: 100%;
@@ -212,10 +201,10 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     object-position: center 20%;
   }
 
-  /* Flat, never rotated and never cut off: the whole sun sits on the photo's bottom-left corner. */
+  /* Flat, never rotated and never cut off: the whole sun sits on the photo's bottom-right corner. */
   .sun {
     position: absolute;
-    left: calc(-0.3 * var(--sun));
+    right: calc(-0.3 * var(--sun));
     bottom: calc(-0.3 * var(--sun));
     display: block;
     width: var(--sun);
@@ -226,29 +215,6 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     display: block;
     width: 100%;
     height: 100%;
-  }
-
-  /* Handwritten title and name beside the sun, on the photo. */
-  .signature {
-    position: absolute;
-    left: calc(0.78 * var(--sun));
-    right: var(--space-4);
-    bottom: var(--space-4);
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    color: #fff8ec;
-    font-family: 'Great Vibes', 'Segoe Script', cursive;
-    line-height: 1.05;
-    text-shadow: 0 1px 3px rgb(0 0 0 / 0.45);
-  }
-
-  .sig-title {
-    font-size: clamp(1.25rem, 1.6vw, 1.6rem);
-  }
-
-  .sig-name {
-    font-size: clamp(1.7rem, 2.3vw, 2.3rem);
   }
 
   .art--none {

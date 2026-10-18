@@ -28,6 +28,7 @@ export const STRINGS = {
   sections: { tr: 'Bölümler', en: 'Sections' },
   opensInNewTab: { tr: '(yeni sekmede açılır)', en: '(opens in a new tab)' },
   memberOf: { tr: '{org} üyesi', en: 'Member of the {org}' },
+  heroGreeting: { tr: 'Merhaba, ben {who}.', en: "Hello, I'm {who}." },
   followSocial: { tr: 'Sosyal medyada takip et', en: 'Follow on social media' },
   andMore: { tr: '{list} ve diğerleri', en: '{list} and more' },
   newPost: { tr: 'YENİ YAZI', en: 'NEW POST' },

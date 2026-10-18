@@ -146,6 +146,10 @@ describe('home (desktop)', () => {
     expect(en().querySelector('.home-desk .desktop-hero a[href="/en/faq/#ilk-gorusme"]')).toBeTruthy();
     // No membership / response-time line on the desktop hero (owner's review 2026-10-18).
     expect(hero.querySelector('.trust')).toBeNull();
+    // The text stays first in the markup (reading order); CSS puts the photo on the left.
+    expect(readFileSync('src/components/home/DesktopHero.astro', 'utf8')).toMatch(/\.art \{\s*order: -1;/);
+    expect(hero.querySelector('p.greeting')?.text).toBe('Merhaba, ben Psikolog Osman Güneş Özkurt.');
+    expect(en().querySelector('.home-desk .desktop-hero p.greeting')?.text).toBe("Hello, I'm Psychologist Osman Güneş Özkurt.");
     expect(hero.text).not.toContain('Dönüş süresi');
   });
 
@@ -173,7 +177,7 @@ describe('home (desktop)', () => {
     expect(loadPage('/en/about/').querySelector('.top-bar a.logo .brand-title')?.text).toBe('Psychologist');
   });
 
-  it('hero portrait: framed photo for desktops only, with the flat sun at its corner and the signature', () => {
+  it('hero portrait: framed photo for desktops only, with the flat sun at its corner, before the text', () => {
     for (const d of [tr(), en()]) {
       const hero = d.querySelector('.home-desk .desktop-hero')!;
       // heroStyle only picks the phone header: a profile with a photo always gets the framed photo on desktop.
@@ -194,10 +198,7 @@ describe('home (desktop)', () => {
       expect(sun.getAttribute('aria-hidden')).toBe('true');
       expect(sun.hasAttribute('transform')).toBe(false);
       expect(art.querySelector('.sun-badge')).toBeNull();
-      const sig = art.querySelector('.signature')!;
-      expect(sig.getAttribute('aria-hidden')).toBe('true');
-      expect(sig.querySelector('.sig-name')?.text).toBe('Osman Güneş Özkurt');
-      expect(['Psikolog', 'Psychologist']).toContain(sig.querySelector('.sig-title')?.text);
+      expect(art.querySelector('.signature')).toBeNull();
     }
   });
 
