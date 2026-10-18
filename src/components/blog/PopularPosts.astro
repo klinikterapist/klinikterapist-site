@@ -1,24 +1,36 @@
 ---
 /**
- * "Popüler yazılar" (#popular, the target of the home page's Popular tile and the blog's Popular chip
- * and tile). Renders nothing when there is no popular post (pickPopular: shown read counts, else featured).
+ * "Popüler yazılar" on the blog page (#popular, the target of the blog's Popular chip;
+ * the tiles open the popular posts page). Renders nothing when there is no popular post (pickPopular: shown read counts, else featured).
+ * `moreHref` adds "Tümünü gör" to the popular posts page.
  */
 import type { Lang } from '../../lib/settings';
 import type { PostEntry } from '../../lib/posts';
 import { t } from '../../i18n/ui';
 import PostCard from '../PostCard.astro';
+import Icon from '../Icon.astro';
 
 interface Props {
   lang: Lang;
   posts: PostEntry[];
+  /** The popular posts page ("Tümünü gör"). */
+  moreHref?: string;
 }
-const { lang, posts } = Astro.props;
+const { lang, posts, moreHref } = Astro.props;
 ---
 
 {
   posts.length > 0 && (
     <section id="popular" class="popular" aria-labelledby="popular-title" data-hide-on-filter>
-      <h2 id="popular-title">{t(lang, 'popularPosts')}</h2>
+      <div class="head">
+        <h2 id="popular-title">{t(lang, 'popularPosts')}</h2>
+        {moreHref && (
+          <a class="more" href={moreHref}>
+            {t(lang, 'seeAll')}
+            <Icon name="arrow" size={16} />
+          </a>
+        )}
+      </div>
       <ul>
         {posts.map((p) => (
           <li>
@@ -35,8 +47,26 @@ const { lang, posts } = Astro.props;
     scroll-margin-top: var(--space-5);
   }
 
-  h2 {
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
     margin: 0 0 10px;
+  }
+
+  .more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  h2 {
+    margin: 0;
     color: var(--muted);
     font-family: var(--font-sans);
     font-size: 0.75rem;

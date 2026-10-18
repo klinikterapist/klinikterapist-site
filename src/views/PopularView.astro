@@ -1,0 +1,201 @@
+---
+/**
+ * Popular posts (/blog/populer/, /en/blog/popular/; owner's review 2026-10-18): the popular set from
+ * pickPopular (shown read counts first, then featured posts, newest first), as list rows on phones and
+ * cards on desktop. The Blog page stays "all posts"; the home and blog "Popüler yazılar" tiles and the
+ * blog's popular section link here. With nothing popular the page shows a short note and a link to all
+ * posts (no empty list frame) and stays out of search results.
+ */
+import PageShell from '../layouts/PageShell.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import PostCard from '../components/PostCard.astro';
+import Leaf from '../components/Leaf.astro';
+import type { Lang } from '../lib/settings';
+import { getPosts, pickPopular } from '../lib/posts';
+import { readCount } from '../lib/read-counts';
+import { absoluteUrl, pageMeta } from '../lib/seo';
+import { breadcrumbLd } from '../lib/jsonld';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+/** More than the four on the blog page: this is the "see all" list. */
+const POPULAR_PAGE_SIZE = 12;
+const posts = pickPopular(await getPosts(lang), readCount, POPULAR_PAGE_SIZE);
+const title = t(lang, 'popularPosts');
+const { meta, alternatePaths } = pageMeta('popular', lang, title, t(lang, 'popularMetaDescription'));
+const crumbs = [
+  { name: t(lang, 'navHome'), href: pathFor('home', lang) },
+  { name: t(lang, 'navBlog'), href: pathFor('blog', lang) },
+  { name: title, href: alternatePaths[lang] },
+];
+const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl(c.href) })))];
+---
+
+<PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={posts.length === 0} back={{ href: pathFor('blog', lang), label: t(lang, 'navBlog') }}>
+  <div class="container popular-page">
+    <Breadcrumb lang={lang} items={crumbs} />
+
+    <header class="page-head">
+      <h1>{title}</h1>
+      <p class="lead">{t(lang, 'popularLead')}</p>
+    </header>
+
+    {
+      posts.length > 0 ? (
+        <>
+          <ul class="post-rows" aria-label={title}>
+            {posts.map((p) => (
+              <li>
+                <PostCard post={p} lang={lang} variant="row" />
+              </li>
+            ))}
+          </ul>
+          <ul class="post-grid" aria-label={title}>
+            {posts.map((p) => (
+              <li>
+                <PostCard post={p} lang={lang} level={2} />
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <div class="popular-empty">
+          <Leaf size={56} class="empty-leaf" />
+          <p>{t(lang, 'popularEmpty')}</p>
+          <a href={pathFor('blog', lang)}>{t(lang, 'allPosts')}</a>
+        </div>
+      )
+    }
+  </div>
+</PageShell>
+
+<style>
+  .popular-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-6);
+  }
+
+  .page-head {
+    text-align: center;
+  }
+
+  .page-head h1 {
+    margin: 4px 0;
+    font-size: 1.875rem;
+    line-height: 1.12;
+  }
+
+  .lead {
+    max-width: 36rem;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .post-rows,
+  .post-grid {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .post-rows > li,
+  .post-grid > li {
+    display: flex;
+  }
+
+  .post-rows > li > :global(*),
+  .post-grid > li > :global(*) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .post-grid {
+    display: none;
+  }
+
+  .popular-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-7) var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .popular-empty p {
+    max-width: 28rem;
+    margin: 0;
+  }
+
+  .popular-empty :global(.empty-leaf) {
+    color: var(--link);
+  }
+
+  .popular-empty a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+  }
+
+  /* Phone column like the blog page. */
+  @media (max-width: 767px) {
+    .popular-page {
+      max-width: 440px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .popular-page {
+      gap: 20px;
+      padding-top: var(--space-5);
+      padding-bottom: var(--space-7);
+    }
+
+    .page-head {
+      text-align: left;
+    }
+
+    .page-head h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2.25rem, 1.6rem + 1.6vw, 2.75rem);
+      line-height: 1.08;
+    }
+
+    .lead {
+      margin: 0;
+      font-size: 1.0625rem;
+    }
+
+    .post-rows {
+      display: none;
+    }
+
+    .post-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .post-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

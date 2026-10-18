@@ -33,7 +33,7 @@ const { lang, category } = Astro.props;
 const all = await getPosts(lang);
 const posts = category ? all.filter((p) => p.data.category === category.id) : all;
 const [newest, ...rest] = posts;
-// The Popular section belongs to the all-posts page (the home tile and the chip jump to /blog/#popular).
+// The Popular section belongs to the all-posts page (the chip jumps to it; its "Tümünü gör" and the tiles open /blog/populer/).
 const popular = category ? [] : pickPopular(all);
 
 const blogPaths = { tr: pathFor('blog', 'tr'), en: pathFor('blog', 'en') };
@@ -95,7 +95,7 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
 
             <div class:list={['topic-pair', { single: popular.length === 0 }]}>
               {popular.length > 0 && (
-                <a class="tile" href="#popular" data-clear-filter>
+                <a class="tile" href={pathFor('popular', lang)}>
                   <Icon name="flame" size={22} />
                   <b>{t(lang, 'popularPosts')}</b>
                   <small>{t(lang, 'popularHint')}</small>
@@ -143,7 +143,7 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
             </p>
           </div>
 
-          <PopularPosts lang={lang} posts={popular} />
+          <PopularPosts lang={lang} posts={popular} moreHref={pathFor('popular', lang)} />
         </>
       ) : (
         <div class="blog-empty">

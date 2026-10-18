@@ -21,6 +21,7 @@ const PAGE_LABEL: Record<(typeof PAGE_KEYS)[number], string> = {
   privacyNotice: 'Aydınlatma metni',
   privacyPolicy: 'Gizlilik politikası',
   faq: 'Sık sorulan sorular',
+  popular: 'Popüler yazılar',
 };
 const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
 

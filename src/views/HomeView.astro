@@ -62,7 +62,7 @@ const blogHref = pathFor('blog', lang);
 type Tile = { icon: string; title: string; subtitle: string; href: string };
 const tiles: Tile[] = [];
 if (blogCard) tiles.push({ icon: 'book', title: blogCard.title[lang], subtitle: blogCard.subtitle[lang], href: blogHref });
-if (hasPopular) tiles.push({ icon: 'flame', title: t(lang, 'popularPosts'), subtitle: t(lang, 'popularHint'), href: `${blogHref}#popular` });
+if (hasPopular) tiles.push({ icon: 'flame', title: t(lang, 'popularPosts'), subtitle: t(lang, 'popularHint'), href: pathFor('popular', lang) });
 const tilePair: [Tile] | [Tile, Tile] | null = tiles.length === 2 ? [tiles[0], tiles[1]] : tiles.length === 1 ? [tiles[0]] : null;
 
 const faq = getFaq(lang);

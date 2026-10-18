@@ -15,6 +15,7 @@ const PAGES: Record<PageKey, Record<Lang, string>> = {
   privacyNotice: { tr: '/aydinlatma-metni/', en: '/en/privacy-notice/' },
   privacyPolicy: { tr: '/gizlilik/', en: '/en/privacy-policy/' },
   faq: { tr: '/sik-sorulan-sorular/', en: '/en/faq/' },
+  popular: { tr: '/blog/populer/', en: '/en/blog/popular/' },
 };
 
 export function pathFor(key: PageKey, lang: Lang): string {

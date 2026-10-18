@@ -10,13 +10,13 @@ export type Localized = { tr: string; en: string };
 
 export const ROUTE_KEYS = [
   'home', 'about', 'blog', 'category', 'post', 'resources',
-  'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq',
+  'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq', 'popular',
 ] as const;
 export type RouteKey = (typeof ROUTE_KEYS)[number];
 
 /** Route keys with one fixed page (no slug): the only pages a home card may target. */
 export const PAGE_KEYS = [
-  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq',
+  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq', 'popular',
 ] as const satisfies readonly RouteKey[];
 
 const localized = z.object({ tr: z.string(), en: z.string() });
@@ -27,8 +27,8 @@ export const slugSchema = z
   .string()
   .regex(SLUG_RE, 'URL kısa adı (slug) boş olamaz; yalnızca küçük harf (a-z), rakam ve tek tire içerebilir (ör. "kaygi-ile-yasamak")');
 
-/** Post slugs that would collide with the category base path (`/blog/kategori/`, `/en/blog/category/`). */
-export const RESERVED_SLUGS: Record<Lang, readonly string[]> = { tr: ['kategori'], en: ['category'] };
+/** Post slugs that would collide with a blog sub-page: the category base path and the popular posts page. */
+export const RESERVED_SLUGS: Record<Lang, readonly string[]> = { tr: ['kategori', 'populer'], en: ['category', 'popular'] };
 
 /** Why `slug` cannot be a post address in `lang` (Turkish, for the owner), or null when it can. */
 export function slugError(slug: string, lang: Lang): string | null {
@@ -36,7 +36,7 @@ export function slugError(slug: string, lang: Lang): string | null {
     return 'URL kısa adı boş olamaz; yalnızca küçük harf (a-z), rakam ve tek tire içerebilir (ör. "kaygi-ile-yasamak")';
   }
   if (RESERVED_SLUGS[lang].includes(slug)) {
-    return `"${slug}" adresi kategori sayfalarına ayrılmış; başka bir URL kısa adı seçin`;
+    return `"${slug}" adresi blogun kendi sayfalarına (kategoriler, popüler yazılar) ayrılmış; başka bir URL kısa adı seçin`;
   }
   return null;
 }

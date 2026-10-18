@@ -80,6 +80,10 @@ describe('validateReservedSlugs', () => {
     expect(() => validateReservedSlugs([e('a/tr', 'kategori')])).toThrow(/"a"/);
     expect(() => validateReservedSlugs([e('b/en', 'category')])).toThrow(/"b"/);
   });
+  it('rejects the popular posts page address too', () => {
+    expect(() => validateReservedSlugs([e('c/tr', 'populer')])).toThrow(/"c"/);
+    expect(() => validateReservedSlugs([e('d/en', 'popular')])).toThrow(/"d"/);
+  });
   it('allows the other language to use it', () => {
     expect(() => validateReservedSlugs([e('a/en', 'kategori'), e('a/tr', 'category')])).not.toThrow();
   });

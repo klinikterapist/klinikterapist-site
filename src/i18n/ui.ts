@@ -93,6 +93,16 @@ export const STRINGS = {
   noResults: { tr: 'Eşleşen yazı bulunamadı.', en: 'No matching posts.' },
   topics: { tr: 'Konular', en: 'Topics' },
   popularChip: { tr: 'Popüler', en: 'Popular' },
+  seeAll: { tr: 'Tümünü gör', en: 'See all' },
+  popularLead: { tr: 'En çok okunan ve öne çıkan yazılarım.', en: 'My most read and featured posts.' },
+  popularMetaDescription: {
+    tr: 'Psikoloji ve daha iyi bir yaşam üzerine en çok okunan ve öne çıkan yazılar.',
+    en: 'The most read and featured posts on psychology and a better life.',
+  },
+  popularEmpty: {
+    tr: 'Henüz öne çıkan bir yazı yok. Tüm yazılara göz atabilirsiniz.',
+    en: 'There are no featured posts yet. You can browse all posts.',
+  },
   newLabel: { tr: 'Yeni', en: 'New' },
   blogNewsletterTitle: { tr: 'Yeni yazılar e-postana gelsin', en: 'Get new posts by e-mail' },
   blogNewsletterBand: { tr: 'Ayda bir, Substack üzerinden.', en: 'Once a month, via Substack.' },

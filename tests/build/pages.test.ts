@@ -10,6 +10,7 @@ const STATIC_PAGES = [
   '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/randevu/', '/aydinlatma-metni/', '/gizlilik/',
   '/en/', '/en/about/', '/en/resources/', '/en/contact/', '/en/appointment/',
   '/en/privacy-notice/', '/en/privacy-policy/', '/sik-sorulan-sorular/', '/en/faq/', '/404.html',
+  '/blog/populer/', '/en/blog/popular/',
 ];
 
 describe('static pages', () => {
@@ -438,7 +439,7 @@ describe('sample content (real posts and data)', () => {
     metas(lang).filter(pick).map((m) => `${prefix[lang]}${m.slug}/`).sort();
   const postLinks = (path: string, lang: 'tr' | 'en') => {
     const re = new RegExp(`^${prefix[lang]}[a-z0-9-]+/$`);
-    return [...new Set(sample(path).querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h)))].sort();
+    return [...new Set(sample(path).querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h) && !/^\/(en\/)?blog\/(populer|popular)\/$/.test(h)))].sort();
   };
 
   it('the blog list links every post that exists, in each language', () => {
@@ -446,18 +447,38 @@ describe('sample content (real posts and data)', () => {
     expect(postLinks('/en/blog/', 'en')).toEqual(hrefs('en'));
   });
 
-  // pickPopular: featured posts, newest first, at most four (read counts are stubbed to none).
-  const popular = (lang: 'tr' | 'en') =>
-    metas(lang).filter((m) => m.featured).sort((x, y) => y.at - x.at).slice(0, 4).map((m) => `${prefix[lang]}${m.slug}/`).sort();
+  // pickPopular: featured posts, newest first, at most four on the blog page and twelve on the popular
+  // page (read counts are stubbed to none).
+  const popular = (lang: 'tr' | 'en', n = 4) =>
+    metas(lang).filter((m) => m.featured).sort((x, y) => y.at - x.at).slice(0, n).map((m) => `${prefix[lang]}${m.slug}/`).sort();
+  const popularPage = { tr: '/blog/populer/', en: '/en/blog/popular/' } as const;
 
-  it('the popular tile and #popular follow the featured posts, and are absent when none is featured', () => {
+  it('the popular tiles open the popular page, #popular follows the featured posts, all absent when none is featured', () => {
     for (const [path, lang] of [['/', 'tr'], ['/en/', 'en']] as const) {
-      const tile = sample(path).querySelectorAll('.home-phone .tile-pair a.tile').filter((a) => (a.getAttribute('href') ?? '').endsWith('#popular'));
+      const tile = sample(path).querySelectorAll('.home-phone .tile-pair a.tile').filter((a) => a.getAttribute('href') === popularPage[lang]);
       expect(tile.length > 0, path).toBe(popular(lang).length > 0);
     }
     for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
       const listed = sample(path).querySelectorAll('section#popular a.list-item').map((a) => a.getAttribute('href') ?? '').sort();
       expect(listed, path).toEqual(popular(lang));
+      const more = sample(path).querySelector('section#popular a.more');
+      if (listed.length > 0) expect(more?.getAttribute('href'), path).toBe(popularPage[lang]);
+      expect(sample(path).querySelectorAll('.blog-phone .topic-pair a.tile').length > 0, path).toBe(listed.length > 0);
+    }
+  });
+
+  it('the popular page lists the popular set, or a short note and a link to all posts', () => {
+    for (const lang of ['tr', 'en'] as const) {
+      const d = sample(popularPage[lang]);
+      const expected = popular(lang, 12);
+      const rows = d.querySelectorAll('main .post-rows a.list-item').map((a) => a.getAttribute('href') ?? '').sort();
+      expect(rows, lang).toEqual(expected);
+      if (expected.length === 0) {
+        expect(d.querySelector('main .popular-empty a')?.getAttribute('href')).toBe(prefix[lang]);
+        expect(d.querySelector('main .post-rows, main .post-grid')).toBeNull();
+      } else {
+        expect(d.querySelector('main .popular-empty')).toBeNull();
+      }
     }
   });
 

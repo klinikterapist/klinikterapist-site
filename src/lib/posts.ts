@@ -67,14 +67,14 @@ export function validateUniqueSlugs(entries: { id: string; data: { slug: string 
   }
 }
 
-/** A slug equal to the category base path (`kategori` / `category`) would shadow the category pages. */
+/** A slug equal to a blog sub-page (`kategori`, `populer` / `category`, `popular`) would shadow that page. */
 export function validateReservedSlugs(entries: { id: string; data: { slug: string } }[]): void {
   for (const { id, data } of entries) {
     const slash = id.lastIndexOf('/');
     const key = id.slice(0, slash);
     const lang = id.slice(slash + 1) as Lang;
     if (RESERVED_SLUGS[lang]?.includes(data.slug)) {
-      throw new Error(`"${key}" yazısının ${lang} slug değeri "${data.slug}" kategori sayfalarına ayrılmış — başka bir adres seçin.`);
+      throw new Error(`"${key}" yazısının ${lang} slug değeri "${data.slug}" blogun kendi sayfalarına (kategoriler, popüler yazılar) ayrılmış — başka bir adres seçin.`);
     }
   }
 }

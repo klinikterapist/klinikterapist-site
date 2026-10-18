@@ -176,6 +176,9 @@ describe('Phase 2 hardening', () => {
   it('reserved category base paths are not valid post slugs in their language', () => {
     expect(slugError('kategori', 'tr')).toMatch(/kategori/);
     expect(slugError('category', 'en')).toMatch(/category/);
+    expect(slugError('populer', 'tr')).toMatch(/populer/);
+    expect(slugError('popular', 'en')).toMatch(/popular/);
+    expect(slugError('popular', 'tr')).toBeNull();
     expect(slugError('kategori', 'en')).toBeNull();
     expect(slugError('category', 'tr')).toBeNull();
     expect(slugError('', 'tr')).toBeTruthy();

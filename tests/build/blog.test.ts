@@ -183,7 +183,7 @@ describe('blog list redesign (spec §5.8)', () => {
     for (const d of [tr(), en()]) {
       const pair = d.querySelector('.blog-phone .topic-pair')!;
       expect(pair.classList.contains('single')).toBe(true);
-      expect(pair.querySelector('a[href="#popular"]')).toBeNull();
+      expect(pair.querySelector('a.tile')).toBeNull();
       expect(pair.querySelector('details.topics')).toBeTruthy();
       expect(d.querySelector('#popular')).toBeNull();
     }
@@ -239,6 +239,32 @@ describe('blog list redesign (spec §5.8)', () => {
     const item = tr().querySelector('.blog-phone [data-post][data-cat="zihinsel-saglik"]')!;
     expect(item.getAttribute('data-search')).toContain('Kapaksız Örnek');
     expect(item.getAttribute('data-search')).toContain('Zihinsel Sağlık');
+  });
+
+  it('popular page: own title, description, canonical and hreflang pair, in the sitemap; empty state without a list', () => {
+    const pages = { tr: '/blog/populer/', en: '/en/blog/popular/' } as const;
+    for (const lang of ['tr', 'en'] as const) {
+      const d = loadPage(pages[lang]);
+      expect(d.querySelector('h1')?.text).toBe(lang === 'tr' ? 'Popüler yazılar' : 'Popular posts');
+      expect(d.querySelector('title')?.text).toMatch(lang === 'tr' ? /^Popüler yazılar \| / : /^Popular posts \| /);
+      expect(d.querySelector('meta[name=description]')?.getAttribute('content')).toBe(
+        lang === 'tr'
+          ? 'Psikoloji ve daha iyi bir yaşam üzerine en çok okunan ve öne çıkan yazılar.'
+          : 'The most read and featured posts on psychology and a better life.',
+      );
+      expect(d.querySelector('link[rel=canonical]')?.getAttribute('href')).toBe(`https://example.com${pages[lang]}`);
+      expect(d.querySelector('link[hreflang=tr]')?.getAttribute('href')).toBe('https://example.com/blog/populer/');
+      expect(d.querySelector('link[hreflang=en]')?.getAttribute('href')).toBe('https://example.com/en/blog/popular/');
+      expect(d.querySelector('a.lang-switch')?.getAttribute('href')).toBe(lang === 'tr' ? pages.en : pages.tr);
+      // The fixtures feature no post: a note and a link to all posts, no empty list frame, kept out of search.
+      expect(d.querySelector('main .popular-empty')?.text).toContain(lang === 'tr' ? 'Henüz öne çıkan bir yazı yok' : 'There are no featured posts yet');
+      expect(d.querySelector('main .popular-empty a')?.getAttribute('href')).toBe(lang === 'tr' ? '/blog/' : '/en/blog/');
+      expect(d.querySelector('main .post-rows, main .post-grid')).toBeNull();
+      expect(d.querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
+    }
+    const sm = distText('sitemap-0.xml');
+    expect(sm).toContain('https://example.com/blog/populer/');
+    expect(sm).toContain('https://example.com/en/blog/popular/');
   });
 
   it('popular section has the #popular anchor in both languages when posts qualify', () => {

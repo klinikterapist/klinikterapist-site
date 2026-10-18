@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { pathFor, categoryPath, postPath, otherLang } from '../../src/i18n/routes';
 import { t } from '../../src/i18n/ui';
 import { getCategories } from '../../src/lib/settings';
+import { PAGE_KEYS } from '../../src/lib/schemas';
 
 describe('routes', () => {
   it('builds page paths from the route map', () => {
@@ -14,6 +15,8 @@ describe('routes', () => {
     expect(pathFor('privacyPolicy', 'en')).toBe('/en/privacy-policy/');
     expect(pathFor('faq', 'tr')).toBe('/sik-sorulan-sorular/');
     expect(pathFor('faq', 'en')).toBe('/en/faq/');
+    expect(pathFor('popular', 'tr')).toBe('/blog/populer/');
+    expect(pathFor('popular', 'en')).toBe('/en/blog/popular/');
   });
 
   it('builds post and category paths', () => {
@@ -25,7 +28,7 @@ describe('routes', () => {
   });
 
   it('every page path ends with a trailing slash', () => {
-    const keys = ['home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq'] as const;
+    const keys = PAGE_KEYS;
     for (const k of keys) for (const l of ['tr', 'en'] as const) expect(pathFor(k, l)).toMatch(/\/$/);
   });
 
