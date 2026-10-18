@@ -22,14 +22,15 @@ const PAGE_LABEL: Record<(typeof PAGE_KEYS)[number], string> = {
   privacyPolicy: 'Gizlilik politikası',
   faq: 'Sık sorulan sorular',
   popular: 'Popüler yazılar',
+  topics: 'Konular',
 };
-const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
+export const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
 
 /**
  * The Simge select with the chosen icon drawn next to it (a native select cannot show SVG). The
  * markup is the site's own icon table from src/lib/icons.ts, a fixed string constant in the repo.
  */
-function IconSelect({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+export function IconSelect({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
   const name = (value in ICONS ? value : 'leaf') as IconName;
   return (
     <div className="icon-pick">

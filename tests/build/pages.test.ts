@@ -489,7 +489,7 @@ describe('sample content (real posts and data)', () => {
     metas(lang).filter(pick).map((m) => `${prefix[lang]}${m.slug}/`).sort();
   const postLinks = (path: string, lang: 'tr' | 'en') => {
     const re = new RegExp(`^${prefix[lang]}[a-z0-9-]+/$`);
-    return [...new Set(sample(path).querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h) && !/^\/(en\/)?blog\/(populer|popular)\/$/.test(h)))].sort();
+    return [...new Set(sample(path).querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h) && !/^\/(en\/)?blog\/(populer|popular|konular|topics)\/$/.test(h)))].sort();
   };
 
   it('the blog list links every post that exists, in each language', () => {

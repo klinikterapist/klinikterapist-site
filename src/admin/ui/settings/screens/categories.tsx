@@ -1,4 +1,4 @@
-/** Kategoriler: add, rename, change slugs (old pages redirect), delete when unused. */
+/** Kategoriler: add, rename, change slugs (old pages redirect), pick the Konular page icon, delete when unused. */
 import { useEffect, useState } from 'react';
 import { parseCategories, type Category } from '../../../../lib/schemas';
 import { slugify } from '../../../../lib/slug';
@@ -9,6 +9,7 @@ import { Field } from '../../kit';
 import { typingSlug } from '../../editor/MetaPanel';
 import { ListEditor, LocalizedField, SettingsForm } from '../fields';
 import { useSettingsFile } from '../useSettingsFile';
+import { ICON_OPTIONS, IconSelect } from './lists';
 
 /** In-panel extras, stripped by the schema on save. */
 type Row = Category & { _new?: boolean; _touched?: boolean };
@@ -52,7 +53,7 @@ export function KategorilerScreen() {
     <SettingsForm
       title="Kategoriler"
       screen="kategoriler"
-      intro="Blog kategorileri. Bir kategorinin adresini değiştirirseniz eski adres yenisine yönlendirilir. İçinde yazı ya da taslak olan kategori silinemez."
+      intro="Blog kategorileri. Simge, Konular sayfasında kategorinin yanında görünür. Bir kategorinin adresini değiştirirseniz eski adres yenisine yönlendirilir. İçinde yazı ya da taslak olan kategori silinemez."
       file={file}
       onSave={save}
     >
@@ -61,7 +62,7 @@ export function KategorilerScreen() {
           items={cats}
           onChange={(next) => file.setValue(() => next)}
           itemLabel={(c) => c.label.tr || 'Yeni kategori'}
-          newItem={() => ({ id: '', slug: { tr: '', en: '' }, label: { tr: '', en: '' }, _new: true })}
+          newItem={() => ({ id: '', slug: { tr: '', en: '' }, label: { tr: '', en: '' }, icon: 'tag', _new: true })}
           addLabel="Kategori ekle"
           canDelete={(c) =>
             c._new ? true : checkFailed ? 'Kontrol edilemedi; sayfayı yenileyin' : used === null ? 'Kontrol ediliyor…' : used.has(c.id) ? 'Kullanımda' : true
@@ -97,6 +98,7 @@ export function KategorilerScreen() {
                   error={file.issues[`${i}.slug.en`]}
                 />
               </div>
+              <IconSelect value={c.icon ?? 'tag'} options={ICON_OPTIONS} onChange={(icon) => update({ icon })} />
             </>
           )}
         />

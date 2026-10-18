@@ -101,14 +101,11 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
                   <small>{t(lang, 'popularHint')}</small>
                 </a>
               )}
-              <details class="tile topics">
-                <summary>
-                  <Icon name="tag" size={22} />
-                  <b>{t(lang, 'topics')}</b>
-                  {topicHint && <small>{topicHint}</small>}
-                </summary>
-                <CategoryNav lang={lang} current={category} variant="list" />
-              </details>
+              <a class="tile topics" href={pathFor('topics', lang)}>
+                <Icon name="tag" size={22} />
+                <b>{t(lang, 'topics')}</b>
+                {topicHint && <small>{topicHint}</small>}
+              </a>
             </div>
 
             {rest.length > 0 && (
@@ -221,7 +218,7 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
     display: none;
   }
 
-  /* "Popüler yazılar · Konular": two tiles; "Konular" alone spans the row. Open, the topic list takes the full width. */
+  /* "Popüler yazılar · Konular": two tiles linking to their pages; "Konular" alone spans the row. */
   .topic-pair {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -229,8 +226,7 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
     align-items: start;
   }
 
-  .topic-pair.single,
-  .topic-pair:has(details[open]) {
+  .topic-pair.single {
     grid-template-columns: 1fr;
   }
 
@@ -248,8 +244,7 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
     overflow-wrap: anywhere;
   }
 
-  .tile > :global(svg),
-  .tile summary > :global(svg) {
+  .tile > :global(svg) {
     color: var(--link);
   }
 
@@ -261,22 +256,6 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
   .tile small {
     color: var(--muted);
     font-size: var(--text-xs);
-  }
-
-  .topics summary {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    list-style: none;
-    cursor: pointer;
-  }
-
-  .topics summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .topics[open] summary {
-    margin-bottom: var(--space-2);
   }
 
   .post-rows,

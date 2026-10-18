@@ -179,18 +179,38 @@ describe('blog list redesign (spec §5.8)', () => {
     expect(en().querySelector('.blog-phone a.newest')?.text).toContain('NEW POST');
   });
 
+  it('topics page: one tile per topic with its icon, name and post count, linking to the category', () => {
+    const d = loadPage('/blog/konular/');
+    expect(d.querySelector('h1')?.text).toBe('Konular');
+    const tiles = d.querySelectorAll('main .topic-grid .topic');
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) {
+      expect(tile.querySelector('svg.icon')).toBeTruthy();
+      expect(tile.querySelector('b')?.text.trim()).toBeTruthy();
+      expect(tile.querySelector('small')?.text).toMatch(/^\d+ yazı$|^Henüz yazı yok$/);
+      // A topic with posts is a link to its category page; an empty one is faded and not a link.
+      if (tile.tagName === 'A') expect(tile.getAttribute('href')).toMatch(/^\/blog\/kategori\/[a-z0-9-]+\/$/);
+      else expect(tile.classList.contains('topic--empty')).toBe(true);
+    }
+    const en = loadPage('/en/blog/topics/');
+    expect(en.querySelector('h1')?.text).toBe('Topics');
+    expect(en.querySelector('main .topic-grid a.topic')?.getAttribute('href')).toMatch(/^\/en\/blog\/category\//);
+    expect(en.text).not.toMatch(/yazı|undefined/);
+  });
+
   it('phone: "Konular" spans the row when no post is featured and there are no counts', () => {
     for (const d of [tr(), en()]) {
       const pair = d.querySelector('.blog-phone .topic-pair')!;
       expect(pair.classList.contains('single')).toBe(true);
-      expect(pair.querySelector('a.tile')).toBeNull();
-      expect(pair.querySelector('details.topics')).toBeTruthy();
+      // The only tile is "Konular", a link to the topics page (no drop-down any more).
+      expect(pair.querySelectorAll('a.tile')).toHaveLength(1);
+      expect(pair.querySelector('details')).toBeNull();
       expect(d.querySelector('#popular')).toBeNull();
     }
-    const topics = tr().querySelector('.blog-phone details.topics')!;
-    expect(topics.querySelector('summary')?.text).toContain('Konular');
-    expect(topics.querySelector('a[href="/blog/kategori/yasam/"]')?.text.trim()).toBe('Yaşam');
-    expect(en().querySelector('.blog-phone details.topics summary')?.text).toContain('Topics');
+    const topics = tr().querySelector('.blog-phone a.tile.topics')!;
+    expect(topics.getAttribute('href')).toBe('/blog/konular/');
+    expect(topics.text).toContain('Konular');
+    expect(en().querySelector('.blog-phone a.tile.topics')?.getAttribute('href')).toBe('/en/blog/topics/');
     expect(tr().textContent).not.toContain('Popüler');
     expect(en().textContent).not.toContain('Popular');
   });

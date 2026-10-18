@@ -1,0 +1,175 @@
+---
+/**
+ * Topics (/blog/konular/, /en/blog/topics/; owner's review 2026-10-18): the topic archive that replaces
+ * the phone blog's "Konular" drop-down. One tile per category, with its own icon (categories.json
+ * `icon`, set in the panel; a tag when empty), its name and how many posts it holds, linking to the
+ * category page. A topic without posts in this language stays visible but faded and is not a link.
+ * Two columns on phones, more on wider screens.
+ */
+import PageShell from '../layouts/PageShell.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import Icon from '../components/Icon.astro';
+import type { Lang } from '../lib/settings';
+import { getCategories } from '../lib/settings';
+import { getPosts } from '../lib/posts';
+import { absoluteUrl, pageMeta } from '../lib/seo';
+import { breadcrumbLd } from '../lib/jsonld';
+import { categoryPath, pathFor } from '../i18n/routes';
+import { t, tCount } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const posts = await getPosts(lang);
+const topics = getCategories()
+  .map((c) => {
+    const n = posts.filter((p) => p.data.category === c.id).length;
+    return {
+      id: c.id,
+      label: c.label[lang].trim(),
+      icon: c.icon?.trim() || 'tag',
+      href: categoryPath(c, lang),
+      n,
+      count: n > 0 ? tCount(lang, 'postsOne', 'postsMany', n) : t(lang, 'postsNone'),
+    };
+  })
+  .filter((c) => c.label);
+
+const title = t(lang, 'topics');
+const { meta, alternatePaths } = pageMeta('topics', lang, title, t(lang, 'topicsMetaDescription'));
+const crumbs = [
+  { name: t(lang, 'navHome'), href: pathFor('home', lang) },
+  { name: t(lang, 'navBlog'), href: pathFor('blog', lang) },
+  { name: title, href: alternatePaths[lang] },
+];
+const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl(c.href) })))];
+---
+
+<PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={topics.length === 0} back={{ href: pathFor('blog', lang), label: t(lang, 'navBlog') }}>
+  <div class="container topics-page">
+    <Breadcrumb lang={lang} items={crumbs} />
+
+    <header class="page-head">
+      <h1>{title}</h1>
+      <p class="lead">{t(lang, 'topicsLead')}</p>
+    </header>
+
+    <ul class="topic-grid" aria-label={title}>
+      {
+        topics.map((c) =>
+          c.n > 0 ? (
+            <li>
+              <a class="topic" href={c.href} data-topic={c.id}>
+                <Icon name={c.icon} size={26} />
+                <b>{c.label}</b>
+                <small>{c.count}</small>
+              </a>
+            </li>
+          ) : (
+            <li>
+              <span class="topic topic--empty" data-topic={c.id}>
+                <Icon name={c.icon} size={26} />
+                <b>{c.label}</b>
+                <small>{c.count}</small>
+              </span>
+            </li>
+          ),
+        )
+      }
+    </ul>
+  </div>
+</PageShell>
+
+<style>
+  .topics-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: var(--space-2);
+    padding-bottom: var(--space-6);
+  }
+
+  .page-head {
+    text-align: center;
+  }
+
+  .page-head h1 {
+    margin: 4px 0;
+    font-size: 1.875rem;
+    line-height: 1.12;
+  }
+
+  .lead {
+    max-width: 36rem;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 768px) {
+    .topic-grid {
+      grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+      gap: var(--space-4);
+    }
+  }
+
+  .topic-grid > li {
+    display: flex;
+  }
+
+  .topic {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 116px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+    transition: background-color 0.15s ease;
+  }
+
+  a.topic:hover {
+    background: var(--surface-2);
+  }
+
+  .topic > :global(svg) {
+    margin-bottom: var(--space-2);
+    color: var(--link);
+  }
+
+  .topic b {
+    font-weight: 600;
+  }
+
+  .topic small {
+    color: var(--muted);
+    font-size: var(--text-xs);
+  }
+
+  .topic--empty {
+    opacity: 0.55;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .topic {
+      transition: none;
+    }
+  }
+</style>
