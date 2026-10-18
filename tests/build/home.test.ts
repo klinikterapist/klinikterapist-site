@@ -163,11 +163,14 @@ describe('home (desktop)', () => {
         expect(svg.getAttribute('fill')).toBe('currentColor');
       }
     }
-    // Elsewhere (the phone top bar) the wordmark keeps its accessible name.
-    const bar = loadPage('/hakkimda/').querySelector('.top-bar svg.wordmark')!;
-    expect(bar.getAttribute('role')).toBe('img');
-    expect(bar.getAttribute('aria-label')).toBe('klinikterapist');
-    expect(bar.hasAttribute('aria-hidden')).toBe(false);
+    // The phone top bar of inner pages shows the brand (sun, name, title), not the wordmark.
+    const bar = loadPage('/hakkimda/').querySelector('.top-bar a.logo')!;
+    expect(bar.getAttribute('href')).toBe('/');
+    expect(bar.querySelector('svg.wordmark')).toBeNull();
+    expect(bar.querySelector('svg.sun-mark')).toBeTruthy();
+    expect(bar.querySelector('.brand-name')?.text).toBe('Osman Güneş Özkurt');
+    expect(bar.querySelector('.brand-title')?.text).toBe('Psikolog');
+    expect(loadPage('/en/about/').querySelector('.top-bar a.logo .brand-title')?.text).toBe('Psychologist');
   });
 
   it('hero portrait: framed photo for desktops only, with the flat sun at its corner and the signature', () => {

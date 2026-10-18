@@ -2,7 +2,10 @@
 /**
  * Top of the phone home page (spec §5.6, §5.10) wrapping the page's content card (default slot).
  * - background: sticky photo with a fade into the page colour, the top bar chips on it, and the card
- *   sliding up over it with the sun in a page-coloured circle on its edge;
+ *   sliding up over it with the sun in a page-coloured circle on its edge. While the card slides up a
+ *   page-coloured veil fades in over the photo, so the top of the screen melts into the status bar
+ *   (theme-color) instead of leaving a strip of photo; without scroll-driven animations the photo
+ *   simply scrolls away with the card (owner's review 2026-10-18);
  * - round: plain top bar, a 112 px round photo with a sun badge;
  * - none (no photo): plain top bar, the sun in a 96 px surface circle.
  */
@@ -42,6 +45,7 @@ const PHONE = '(max-width: 767px)';
           <img src={EMPTY_IMAGE} width={img.width} height={img.height} alt={alt} loading="eager" fetchpriority="high" decoding="async" />
         </picture>
         <span class="fade" aria-hidden="true" />
+        <span class="veil" aria-hidden="true" />
         <div class="chips">
           <TopBar lang={lang} alternatePaths={alternatePaths} left="none" />
         </div>
@@ -124,18 +128,49 @@ const PHONE = '(max-width: 767px)';
     background: linear-gradient(to bottom, transparent 50%, var(--bg) 100%);
   }
 
+  /* The page colour over the photo, from clear at the top of the page to solid once the card has
+     slid most of the way up. */
+  .veil {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .veil {
+      animation: veil-in linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 min(52vh, 340px);
+    }
+  }
+
+  @keyframes veil-in {
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Without scroll-driven animations the photo scrolls away with the card instead of staying put. */
+  @supports not (animation-timeline: scroll()) {
+    .photo {
+      position: relative;
+    }
+  }
+
   .chips {
     position: absolute;
     inset: 0 0 auto;
     z-index: 2;
   }
 
-  /* Chips on the photo: translucent white in both themes, so they read on any photo. */
+  /* Chips on the photo in the page's own colours (navy at night, cream by day), slightly see-through. */
   .chips :global(.theme-chip),
   .chips :global(.lang-switch) {
-    border-color: transparent;
-    background: rgb(255 255 255 / 0.85);
-    color: #2a2420;
+    border-color: var(--line);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    color: var(--text);
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
