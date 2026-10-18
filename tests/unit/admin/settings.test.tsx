@@ -51,7 +51,13 @@ describe('settings screens: Plan E fields', () => {
   });
 
   it('Sık sorulan sorular: lists five questions; add, reorder and delete', async () => {
-    const api = setup('sss');
+    // A fixed FAQ, so the test does not depend on the owner's real questions.
+    const q = (id: string, tr: string) => ({ id, q: { tr, en: tr }, a: { tr: '', en: '' } });
+    const faq = [q('ilk-gorusme', 'İlk görüşme nasıl geçer?'), q('ucret', 'Ücret ne kadar, nasıl ödenir?'), q('online-gorusme', 'Online görüşme nasıl yapılır?'), q('gizlilik', 'Konuştuklarım gizli kalır mı?'), q('iptal', 'Randevuyu iptal edebilir miyim?')];
+    const api = setup('sss', (a) => {
+      const f = a.state.files.get('src/data/faq.json')!;
+      a.state.files.set('src/data/faq.json', { ...f, content: JSON.stringify(faq) });
+    });
     expect(await screen.findByRole('heading', { name: 'Sık sorulan sorular' })).toBeTruthy();
     expect(screen.getByText('Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.')).toBeTruthy();
     expect(screen.getAllByLabelText('Soru (Türkçe)')).toHaveLength(5);

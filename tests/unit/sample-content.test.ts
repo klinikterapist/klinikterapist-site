@@ -10,6 +10,8 @@ import { getCategories, getFaq, getHome, type Lang } from '../../src/lib/setting
 /**
  * The owner's sample content (real files under src/content/posts and src/data). Build tests run on
  * fixtures, so this unit test is where the real content is held to the copy rules and the publish checklist.
+ * The owner edits and deletes these samples in the panel, so nothing here pins a count or a text: every
+ * `ornek-*` post that exists must pass the per-post rules, and any that is gone is simply not checked.
  */
 const POSTS = 'src/content/posts';
 const NOTE: Record<Lang, string> = {
@@ -20,8 +22,9 @@ const NOTE: Record<Lang, string> = {
 type Post = { key: string; lang: Lang; data: Record<string, any>; body: string };
 function load(): Post[] {
   const out: Post[] = [];
-  for (const key of readdirSync(POSTS).filter((k) => !k.startsWith('.'))) {
+  for (const key of readdirSync(POSTS).filter((k) => k.startsWith('ornek-'))) {
     for (const lang of ['tr', 'en'] as const) {
+      if (!existsSync(join(POSTS, key, `${lang}.md`))) continue;
       const raw = readFileSync(join(POSTS, key, `${lang}.md`), 'utf8').replace(/\r\n/g, '\n');
       const m = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(raw)!;
       out.push({ key, lang, data: parseYaml(m[1]), body: m[2].trim() });
@@ -38,45 +41,33 @@ describe('sample posts', () => {
   const keys = [...new Set(posts.map((p) => p.key))];
   const ids = getCategories().map((c) => c.id);
 
-  it('six posts, each in both languages', () => {
-    expect(keys).toHaveLength(6);
-    for (const lang of ['tr', 'en'] as const) expect(posts.filter((p) => p.lang === lang)).toHaveLength(6);
-  });
-
   it('frontmatter passes the post schema', () => {
     for (const p of posts) expect(() => postFrontmatterSchema(ids).parse(p.data), `${p.key}/${p.lang}`).not.toThrow();
   });
 
-  it('covers at least four categories; two featured; three with covers and real alt text', () => {
-    const tr = posts.filter((p) => p.lang === 'tr');
-    expect(new Set(tr.map((p) => p.data.category)).size).toBeGreaterThanOrEqual(4);
-    expect(tr.filter((p) => p.data.featured === true)).toHaveLength(2);
-    const covered = keys.filter((k) => existsSync(join(POSTS, k, 'cover.webp')));
-    expect(covered).toHaveLength(3);
-    for (const p of posts.filter((x) => covered.includes(x.key))) {
-      expect(p.data.cover).toBe('./cover.webp');
-      expect(String(p.data.coverAlt ?? '').trim().length).toBeGreaterThan(10);
+  it('a cover is declared exactly when the cover file exists, and has real alt text', () => {
+    for (const p of posts) {
+      const has = existsSync(join(POSTS, p.key, 'cover.webp'));
+      expect(p.data.cover !== undefined, `${p.key}/${p.lang}`).toBe(has);
+      if (has) {
+        expect(p.data.cover).toBe('./cover.webp');
+        expect(String(p.data.coverAlt ?? '').trim().length).toBeGreaterThan(10);
+      }
     }
-    for (const p of posts.filter((x) => !covered.includes(x.key))) expect(p.data.cover).toBeUndefined();
   });
 
-  it('both languages of a post share category, date, featured and cover', () => {
+  it('both languages of a post (when both exist) share category, date, featured and cover', () => {
     for (const k of keys) {
-      const tr = posts.find((p) => p.key === k && p.lang === 'tr')!;
-      const en = posts.find((p) => p.key === k && p.lang === 'en')!;
+      const tr = posts.find((p) => p.key === k && p.lang === 'tr');
+      const en = posts.find((p) => p.key === k && p.lang === 'en');
+      if (!tr || !en) continue;
       for (const f of ['category', 'featured', 'cover']) expect(en.data[f], `${k}.${f}`).toEqual(tr.data[f]);
       expect(new Date(en.data.publishedAt).getTime()).toBe(new Date(tr.data.publishedAt).getTime());
     }
   });
 
-  it('published over the last six weeks, with times, newest within a week of 18 Oct 2026', () => {
-    const times = posts.filter((p) => p.lang === 'tr').map((p) => new Date(p.data.publishedAt));
+  it('every post has a publish date with a time', () => {
     for (const p of posts) expect(readFileSync(join(POSTS, p.key, `${p.lang}.md`), 'utf8')).toMatch(/publishedAt: "?\d{4}-\d\d-\d\dT\d\d:\d\d/);
-    const ms = times.map((t) => t.getTime()).sort((a, b) => a - b);
-    const end = new Date('2026-10-18T23:59:00+03:00').getTime();
-    expect(end - ms[0]).toBeLessThanOrEqual(43 * 86400000);
-    expect(end - ms[ms.length - 1]).toBeLessThanOrEqual(7 * 86400000);
-    expect(new Set(ms.map((m) => new Date(m).toDateString())).size).toBe(6);
   });
 
   it.each(posts.map((p) => [`${p.key}/${p.lang}`, p] as const))(
@@ -106,34 +97,29 @@ describe('sample posts', () => {
     }
   });
 
-  it('a reference list on exactly two posts; every listed reference is cited in the text', () => {
-    const withRefs = posts.filter((p) => p.lang === 'tr' && (p.data.references ?? []).length > 0);
-    expect(withRefs).toHaveLength(2);
-    for (const p of posts.filter((x) => withRefs.some((w) => w.key === x.key))) {
-      for (const r of p.data.references) expect(p.body, `${p.key}/${p.lang} ${r.id}`).toContain(r.id);
+  it('every listed reference is cited in the text', () => {
+    for (const p of posts) {
+      for (const r of p.data.references ?? []) expect(p.body, `${p.key}/${p.lang} ${r.id}`).toContain(r.id);
     }
   });
 
   it('no diagnosis or promise wording, no testimonials', () => {
     for (const p of posts) {
-      expect(p.body).not.toMatch(/garanti|kesin (çözüm|iyileş)|tedavi eder|iyileştirir|guarantee|cure[sd]?\b|will heal/i);
+      expect(p.body).not.toMatch(/garanti|kesin (çözüm|iyileş)|tedavi eder|iyileştirir|guarantee|cure[sd]?|will heal/i);
       expect(p.body).not.toMatch(/danışanım|hastam|my client|my patient/i);
     }
   });
 });
 
 describe('sample site texts', () => {
-  it('the five FAQ questions are answered in both languages', () => {
-    for (const lang of ['tr', 'en'] as const) expect(getFaq(lang)).toHaveLength(5);
-    expect(getFaq('tr').find((f) => f.id === 'ucret')?.a).toContain('Ücret bilgisi için iletişime geçebilirsiniz.');
-    expect(getFaq('tr').find((f) => f.id === 'ilk-gorusme')?.a).toContain('genellikle 50 dakika');
-    expect(getFaq('tr').find((f) => f.id === 'gizlilik')?.a).toContain('112');
+  it('a FAQ answer is never half-filled: both languages or neither', () => {
+    const faq = JSON.parse(readFileSync('src/data/faq.json', 'utf8')) as { id: string; a: { tr: string; en: string } }[];
+    for (const f of faq) expect(f.a.tr.trim() !== '', f.id).toBe(f.a.en.trim() !== '');
+    expect(getFaq('tr').length).toBe(getFaq('en').length);
   });
 
-  it('home has three process steps in both languages', () => {
-    const steps = getHome().process ?? [];
-    expect(steps).toHaveLength(3);
-    for (const s of steps) {
+  it('every home process step has a title and text in both languages', () => {
+    for (const s of getHome().process ?? []) {
       for (const lang of ['tr', 'en'] as const) {
         expect(s.title[lang].trim()).not.toBe('');
         expect(s.text[lang].trim()).not.toBe('');

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { parse as parseYaml } from 'yaml';
 import { join } from 'node:path';
 import { allPages, DIST, DIST_SAMPLES, distFile, loadPage } from './load';
 
@@ -365,51 +366,79 @@ describe('inner pages redesign (spec §5.9)', () => {
   });
 });
 
-/** The real sample content and texts, built as they are (see `test:build`). */
+/**
+ * The real posts and data, built as they are (see `test:build`). The owner edits and deletes the samples in the
+ * panel, so these are structural checks derived from the content itself: no fixed counts, no fixed texts.
+ */
 describe('sample content (real posts and data)', () => {
   const sample = (path: string) => loadPage(path, DIST_SAMPLES);
-  const postHrefs = (path: string) => {
-    const d = sample(path);
-    const re = path.startsWith('/en/') ? /^\/en\/blog\/[a-z0-9-]+\/$/ : /^\/blog\/[a-z0-9-]+\/$/;
-    return [...new Set(d.querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h)))];
+  type Meta = { slug: string; featured: boolean; cover: boolean };
+  const metas = (lang: 'tr' | 'en'): Meta[] =>
+    readdirSync('src/content/posts')
+      .filter((k) => existsSync(join('src/content/posts', k, `${lang}.md`)))
+      .map((k) => {
+        const raw = readFileSync(join('src/content/posts', k, `${lang}.md`), 'utf8').replace(/\r\n/g, '\n');
+        const fm = parseYaml(/^---\n([\s\S]*?)\n---/.exec(raw)![1]);
+        return { slug: fm.slug as string, featured: fm.featured === true, cover: Boolean(fm.cover) };
+      });
+  const prefix = { tr: '/blog/', en: '/en/blog/' } as const;
+  const hrefs = (lang: 'tr' | 'en', pick: (m: Meta) => boolean = () => true) =>
+    metas(lang).filter(pick).map((m) => `${prefix[lang]}${m.slug}/`).sort();
+  const postLinks = (path: string, lang: 'tr' | 'en') => {
+    const re = new RegExp(`^${prefix[lang]}[a-z0-9-]+/$`);
+    return [...new Set(sample(path).querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h)))].sort();
   };
 
-  it('the blog list shows six posts in each language', () => {
-    expect(postHrefs('/blog/')).toHaveLength(6);
-    expect(postHrefs('/en/blog/')).toHaveLength(6);
+  it('the blog list links every post that exists, in each language', () => {
+    expect(postLinks('/blog/', 'tr')).toEqual(hrefs('tr'));
+    expect(postLinks('/en/blog/', 'en')).toEqual(hrefs('en'));
   });
 
-  it('the home popular tile lists the two featured posts, and the blog has the #popular section', () => {
-    for (const path of ['/', '/en/']) {
-      const pair = sample(path).querySelector('.home-phone .tile-pair')!;
-      expect(pair.classList.contains('single'), path).toBe(false);
-      expect(pair.querySelectorAll('a.tile'), path).toHaveLength(2);
+  it('the popular tile and #popular list exactly the featured posts, or are absent when none is featured', () => {
+    for (const [path, lang] of [['/', 'tr'], ['/en/', 'en']] as const) {
+      const featured = hrefs(lang, (m) => m.featured);
+      const tiles = sample(path).querySelectorAll('.home-phone .tile-pair a.tile');
+      if (featured.length === 0) expect(tiles, path).toHaveLength(1);
+      else expect(tiles, path).toHaveLength(2);
     }
-    for (const path of ['/blog/', '/en/blog/']) {
-      const links = sample(path).querySelectorAll('section#popular a.list-item');
-      expect(links, path).toHaveLength(2);
+    for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
+      const featured = hrefs(lang, (m) => m.featured);
+      const listed = sample(path).querySelectorAll('section#popular a.list-item').map((a) => a.getAttribute('href') ?? '').sort();
+      expect(listed, path).toEqual(featured);
     }
   });
 
-  it('three posts have an optimised cover, the others none', () => {
-    const covers = (path: string) => sample(path).querySelectorAll('.blog-desk img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
-    expect(new Set(covers('/blog/').map((i) => i.getAttribute('src'))).size).toBe(3);
-    for (const i of covers('/blog/')) expect((i.getAttribute('alt') ?? '').length).toBeGreaterThan(10);
+  it('a post with a cover renders it (optimised, with alt text) and a post without one renders none', () => {
+    for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
+      const d = sample(path);
+      const imgs = d.querySelectorAll('img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
+      // Each post's own page carries its cover (with alt text) when it has one, and no optimised image when not.
+      for (const m of metas(lang)) {
+        const post = sample(`${prefix[lang]}${m.slug}/`);
+        const covers = post.querySelectorAll('figure.cover-wrap img').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
+        expect(covers.length > 0, `${prefix[lang]}${m.slug}/`).toBe(m.cover);
+        for (const i of covers) expect((i.getAttribute('alt') ?? '').length, `${prefix[lang]}${m.slug}/`).toBeGreaterThan(10);
+      }
+      // The list shows optimised covers exactly when some post has one.
+      expect(imgs.length > 0, path).toBe(metas(lang).some((m) => m.cover));
+    }
   });
 
-  it('the FAQ pages show all five questions with answers, and the home accordion matches', () => {
-    expect(sample('/sik-sorulan-sorular/').querySelectorAll('main details')).toHaveLength(5);
-    expect(sample('/en/faq/').querySelectorAll('main details')).toHaveLength(5);
-    expect(sample('/').querySelectorAll('.home-phone details.faq details.faq-item')).toHaveLength(5);
-    const ld = sample('/sik-sorulan-sorular/').querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text));
-    expect(ld.find((d) => d['@type'] === 'FAQPage').mainEntity).toHaveLength(5);
+  it('every FAQ item shown has an answer, and the pages agree with the home accordion', () => {
+    for (const [faq, home] of [['/sik-sorulan-sorular/', '/'], ['/en/faq/', '/en/']] as const) {
+      const items = sample(faq).querySelectorAll('main details');
+      for (const it of items) expect(it.text.trim().length).toBeGreaterThan(0);
+      expect(sample(home).querySelectorAll('.home-phone details.faq details.faq-item')).toHaveLength(items.length);
+      const ld = sample(faq).querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text)).find((d) => d['@type'] === 'FAQPage');
+      if (items.length > 0) expect(ld.mainEntity).toHaveLength(items.length);
+    }
   });
 
   it('empty fields render nothing: no "undefined" or "null" anywhere on the sample pages', () => {
     for (const path of ['/', '/en/', '/blog/', '/en/blog/', '/sik-sorulan-sorular/', '/en/faq/']) {
       const d = sample(path);
       d.querySelectorAll('script, style').forEach((n) => n.remove());
-      expect(d.textContent, path).not.toMatch(/undefined|null/);
+      expect(d.textContent, path).not.toMatch(/undefined|\bnull\b/);
     }
   });
 });

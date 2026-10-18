@@ -18,7 +18,7 @@ After a loss, people can feel not only sorrow but also shock, anger, guilt, reli
 
 ## Stages and order
 
-One of the best-known ideas about grief is the set of stages described by Elisabeth Kübler-Ross <cite data-refs="kublerross1969">(Kübler-Ross, 1969)</cite>. These stages offer a useful vocabulary for the feelings that may come up. But not everyone goes through all of them, and they do not follow a fixed order. A feeling can return, and another may never arrive.
+One of the best-known ideas about grief is the set of stages Elisabeth Kübler-Ross described from her work with dying patients, often applied to grief as well <cite data-refs="kublerross1969">(Kübler-Ross, 1969)</cite>. These stages offer a useful vocabulary for the feelings that may come up. But not everyone goes through all of them, and they do not follow a fixed order. A feeling can return, and another may never arrive.
 
 ## A process like the tide
 

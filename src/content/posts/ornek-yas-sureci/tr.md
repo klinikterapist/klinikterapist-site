@@ -18,7 +18,7 @@ Kayıptan sonra yalnızca hüzün değil, şaşkınlık, öfke, suçluluk, rahat
 
 ## Aşamalar ve sıra
 
-Yas konusunda en çok bilinen yaklaşımlardan biri Elisabeth Kübler-Ross'un tanımladığı aşamalardır <cite data-refs="kublerross1969">(Kübler-Ross, 1969)</cite>. Bu aşamalar, yaşanabilecek duyguları anlamak için yararlı bir dildir. Ancak herkes bu duyguların hepsini yaşamaz, belli bir sıraya da uymaz. Bir duygu geri dönebilir, bir diğeri hiç gelmeyebilir.
+Yas konusunda en çok bilinen yaklaşımlardan biri, Elisabeth Kübler-Ross'un ölümcül hastalarla çalışmasından doğan ve yasa da sıklıkla uyarlanan aşamalardır <cite data-refs="kublerross1969">(Kübler-Ross, 1969)</cite>. Bu aşamalar, yaşanabilecek duyguları anlamak için yararlı bir dildir. Ancak herkes bu duyguların hepsini yaşamaz, belli bir sıraya da uymaz. Bir duygu geri dönebilir, bir diğeri hiç gelmeyebilir.
 
 ## Gelgit gibi bir süreç
 
