@@ -1,0 +1,101 @@
+---
+/**
+ * Hidden fixture page for the mobile app building blocks (src/components/ui). It is built only for
+ * the dev server and the fixture build (`UI_KIT=1`, set by `npm run test:build`): in the production
+ * build getStaticPaths returns nothing, so no page, no sitemap entry. It is also noindex.
+ * Dev: http://localhost:4340/ui-kit/tr/ and /ui-kit/en/
+ */
+import '../../styles/global.css';
+import type { GetStaticPaths } from 'astro';
+import type { Lang } from '../../lib/settings';
+import ThemeScript from '../../components/ThemeScript.astro';
+import TopBar from '../../components/ui/TopBar.astro';
+import ListItem from '../../components/ui/ListItem.astro';
+import Accordion from '../../components/ui/Accordion.astro';
+import TilePair from '../../components/ui/TilePair.astro';
+import StickyCta from '../../components/ui/StickyCta.astro';
+import PageEnd from '../../components/ui/PageEnd.astro';
+
+export const getStaticPaths = (() => {
+  const enabled = import.meta.env.DEV || process.env.UI_KIT === '1';
+  return enabled ? [{ params: { lang: 'tr' } }, { params: { lang: 'en' } }] : [];
+}) satisfies GetStaticPaths;
+
+const lang = Astro.params.lang as Lang;
+const alternatePaths = { tr: '/ui-kit/tr/', en: '/ui-kit/en/' };
+const isTr = lang === 'tr';
+// TR page: wordmark on the left, sticky bar always. EN page: back link, sticky bar after #top-cta.
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <ThemeScript />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex" />
+    <title>UI kit ({lang})</title>
+  </head>
+  <body>
+    <div class="app">
+      {
+        isTr ? (
+          <TopBar lang={lang} alternatePaths={alternatePaths} left="logo" />
+        ) : (
+          <TopBar lang={lang} alternatePaths={alternatePaths} left="back" backHref="/en/blog/" backLabel="Blog" />
+        )
+      }
+      <main class="stack">
+        <h1>{isTr ? 'Yapı taşları' : 'Building blocks'}</h1>
+        <a id="top-cta" class="btn" href="/randevu/">{isTr ? 'Randevu Al' : 'Book a Session'}</a>
+        <Accordion icon="users" title={isTr ? 'Sosyal medyada takip et' : 'Follow on social media'} subtitle={isTr ? 'Hesaplarım' : 'My accounts'} name="kit">
+          <p>{isTr ? 'Açılır kutunun içeriği.' : 'Content of the accordion.'}</p>
+        </Accordion>
+        <Accordion icon="book" title={isTr ? 'Sık sorulan sorular' : 'FAQ'} name="kit">
+          <p>{isTr ? 'İkinci kutu; ad aynı olduğu için biri açılınca diğeri kapanır.' : 'Second box; same name, so one closes when the other opens.'}</p>
+        </Accordion>
+        <ListItem icon="user" title={isTr ? 'Hakkımda' : 'About'} subtitle={isTr ? 'Çalışma biçimim' : 'How I work'} href="/hakkimda/" />
+        <ListItem title={isTr ? 'Kaygıyla yaşamayı öğrenmek ve çok uzun bir başlığın nasıl sarıldığını görmek' : 'Learning to live with anxiety, and a very long title wrapping'} subtitle="4 dk" href="/blog/" thumb="/favicon.svg">
+          <small slot="meta">{isTr ? 'YENİ YAZI' : 'NEW POST'}</small>
+        </ListItem>
+        <ListItem icon="external" title="Medium" subtitle={isTr ? 'İngilizce' : 'English'} href="https://medium.com/" />
+        <TilePair
+          tiles={[
+            { icon: 'book', title: isTr ? 'Tüm blog yazıları' : 'All blog posts', subtitle: isTr ? 'Hepsi' : 'Everything', href: '/blog/' },
+            { icon: 'scale', title: isTr ? 'Popüler yazılar' : 'Popular posts', subtitle: isTr ? 'En çok okunan' : 'Most read', href: '/blog/' },
+          ]}
+        />
+        <TilePair tiles={[{ icon: 'calendar', title: isTr ? 'Tek kutu' : 'Single tile', subtitle: isTr ? 'Tam genişlik' : 'Full width', href: '/randevu/' }]} />
+        <div class="spacer"></div>
+        <PageEnd lang={lang} />
+      </main>
+    </div>
+    <StickyCta mode={isTr ? 'always' : 'afterTopCta'} href="/randevu/" label={isTr ? 'Randevu Al' : 'Book a Session'} />
+  </body>
+</html>
+
+<style>
+  .app {
+    max-width: 440px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: var(--space-4) 14px 0;
+  }
+
+  .stack h1 {
+    margin: 0;
+    font-size: var(--text-2xl);
+    text-align: center;
+  }
+
+  .spacer {
+    height: 40vh;
+  }
+</style>

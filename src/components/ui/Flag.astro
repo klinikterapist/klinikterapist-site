@@ -1,0 +1,56 @@
+---
+/**
+ * Small national flag as inline SVG (never an emoji: emoji flags do not render on Windows).
+ * The flag colours are the national colours, not theme colours, so they are literal here.
+ */
+interface Props {
+  flag: 'tr' | 'gb';
+  width?: number;
+}
+const { flag, width = 22 } = Astro.props;
+const height = Math.round((width * 2) / 3);
+
+// Five-pointed star for the Turkish flag, one point facing the crescent.
+const star = Array.from({ length: 10 }, (_, i) => {
+  const r = i % 2 === 0 ? 1.9 : 0.76;
+  const a = Math.PI + (i * Math.PI) / 5;
+  return `${(14.1 + r * Math.cos(a)).toFixed(2)},${(8 + r * Math.sin(a)).toFixed(2)}`;
+}).join(' ');
+---
+
+<svg
+  class="flag"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 16"
+  width={width}
+  height={height}
+  aria-hidden="true"
+  focusable="false"
+>
+  {
+    flag === 'tr' ? (
+      <>
+        <rect width="24" height="16" fill="#E30A17" />
+        <circle cx="8.8" cy="8" r="4.2" fill="#fff" />
+        <circle cx="10.1" cy="8" r="3.4" fill="#E30A17" />
+        <polygon points={star} fill="#fff" />
+      </>
+    ) : (
+      <>
+        <rect width="24" height="16" fill="#012169" />
+        <path d="M0 0L24 16M24 0L0 16" stroke="#fff" stroke-width="3.2" />
+        <path d="M0 0L24 16M24 0L0 16" stroke="#C8102E" stroke-width="1.1" />
+        <path d="M12 0V16M0 8H24" stroke="#fff" stroke-width="5.4" />
+        <path d="M12 0V16M0 8H24" stroke="#C8102E" stroke-width="3.2" />
+      </>
+    )
+  }
+</svg>
+
+<style>
+  .flag {
+    flex: none;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+</style>

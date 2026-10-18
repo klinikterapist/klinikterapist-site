@@ -134,6 +134,15 @@ export const STRINGS = {
     en: 'Appearance: {mode}. Tap to switch, press and hold to return to system.',
   },
 
+  // Mobile app blocks
+  switchLangShort: { tr: 'ENG', en: 'TR' },
+  homeLink: { tr: 'klinikterapist, ana sayfa', en: 'klinikterapist, home page' },
+  emergencyNote: {
+    tr: "Acil bir durumdaysanız lütfen {number}'yi arayın.",
+    en: 'If you are in an emergency, please call {number}.',
+  },
+  rightsReserved: { tr: 'Tüm hakları saklıdır.', en: 'All rights reserved.' },
+
   // 404
   notFoundTitle: { tr: 'Sayfa bulunamadı', en: 'Page not found' },
   notFoundText: {

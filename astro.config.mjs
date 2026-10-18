@@ -25,7 +25,7 @@ export default defineConfig({
     // Only the admin panel (/admin/) uses React, as a client-only island.
     react(),
     sitemap({
-      filter: (page) => !redirectUrls.has(page) && !new URL(page).pathname.startsWith('/admin/'),
+      filter: (page) => !redirectUrls.has(page) && !['/admin/', '/ui-kit/'].some((p) => new URL(page).pathname.startsWith(p)),
       i18n: { defaultLocale: 'tr', locales: { tr: 'tr', en: 'en' } },
     }),
   ],

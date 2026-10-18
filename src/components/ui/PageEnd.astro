@@ -1,0 +1,45 @@
+---
+/** End of a mobile page: the calm emergency line and the copyright line. The year is written at build time. */
+import type { Lang } from '../../lib/settings';
+import { t } from '../../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const year = new Date().getFullYear();
+const [before, after] = t(lang, 'emergencyNote').split('{number}');
+---
+
+<div class="page-end">
+  <p class="emergency">{before}<b>112</b>{after}</p>
+  <p class="copy">© {year} klinikterapist.com · {t(lang, 'rightsReserved')}</p>
+</div>
+
+<style>
+  .page-end {
+    font-size: var(--text-xs);
+    text-align: center;
+    color: var(--muted);
+  }
+
+  .emergency {
+    margin: 22px 0 6px;
+  }
+
+  .emergency b {
+    color: var(--text);
+  }
+
+  .copy {
+    margin: 0;
+    padding: 14px 0 110px;
+    border-top: 1px solid var(--line);
+  }
+
+  @media (min-width: 768px) {
+    .copy {
+      padding-bottom: var(--space-5);
+    }
+  }
+</style>

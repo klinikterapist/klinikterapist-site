@@ -1,0 +1,80 @@
+---
+/**
+ * Top row of a mobile page: logo or back link on the left, day/night chip and language
+ * switch on the right. The home page uses `none` (the big sun and name are there instead).
+ */
+import type { Lang } from '../../lib/settings';
+import { pathFor } from '../../i18n/routes';
+import { t } from '../../i18n/ui';
+import Wordmark from '../brand/Wordmark.astro';
+import ThemeToggle from '../ThemeToggle.astro';
+import LangSwitch from '../LangSwitch.astro';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  alternatePaths: { tr: string; en: string };
+  /** Left slot: the klinikterapist wordmark linking home, a back link, or nothing. */
+  left?: 'logo' | 'back' | 'none';
+  /** Required when `left` is `back`. */
+  backHref?: string;
+  backLabel?: string;
+}
+const { lang, alternatePaths, left = 'logo', backHref, backLabel } = Astro.props;
+---
+
+<div class="top-bar">
+  {
+    left === 'logo' ? (
+      <a class="left logo" href={pathFor('home', lang)} aria-label={t(lang, 'homeLink')}>
+        <Wordmark height={20} />
+      </a>
+    ) : left === 'back' && backHref ? (
+      <a class="left back" href={backHref}>
+        <Icon name="chevron" size={18} class="back-arrow" />
+        <span>{backLabel}</span>
+      </a>
+    ) : (
+      <span class="left"></span>
+    )
+  }
+  <div class="right">
+    <ThemeToggle lang={lang} variant="chip" />
+    <LangSwitch lang={lang} alternatePaths={alternatePaths} />
+  </div>
+</div>
+
+<style>
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-3) 14px 0;
+  }
+
+  .left {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .back {
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--link);
+  }
+
+  .back :global(.back-arrow) {
+    transform: scaleX(-1);
+  }
+
+  .right {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+</style>

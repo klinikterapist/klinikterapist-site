@@ -2,6 +2,7 @@
 import type { Lang } from '../lib/settings';
 import { otherLang } from '../i18n/routes';
 import { t } from '../i18n/ui';
+import Flag from './ui/Flag.astro';
 
 interface Props {
   lang: Lang;
@@ -11,27 +12,34 @@ const { lang, alternatePaths } = Astro.props;
 const other = otherLang(lang);
 ---
 
+<!-- Flag of the other language + short label: GB "ENG" on Turkish pages, TR "TR" on English pages. -->
 <a
   class="lang-switch"
   href={alternatePaths[other]}
   hreflang={other}
   lang={other}
   aria-label={t(lang, 'switchLangLabel')}
->{other.toUpperCase()}</a>
+>
+  <Flag flag={other === 'en' ? 'gb' : 'tr'} width={20} />
+  <span>{t(lang, 'switchLangShort')}</span>
+</a>
 
 <style>
   .lang-switch {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 36px;
+    gap: 0.4rem;
+    min-width: 44px;
     min-height: 44px;
-    padding: 0 var(--space-2);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line);
     border-radius: var(--radius-pill);
-    color: var(--link);
+    background: color-mix(in srgb, var(--surface) 80%, transparent);
+    color: var(--text);
     font-size: var(--text-sm);
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     text-decoration: none;
   }
 

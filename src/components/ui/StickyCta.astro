@@ -1,0 +1,96 @@
+---
+/**
+ * Fixed bottom "Randevu Al" bar for phones. `always` is visible from the start;
+ * `afterTopCta` stays hidden until the page's #top-cta button has scrolled up under the top edge.
+ */
+import Icon from '../Icon.astro';
+
+interface Props {
+  mode: 'afterTopCta' | 'always';
+  href: string;
+  label: string;
+}
+const { mode, href, label } = Astro.props;
+const after = mode === 'afterTopCta';
+---
+
+<div class:list={['sticky-cta', { 'is-hidden': after }]} data-sticky-cta={after ? 'after' : 'always'} aria-hidden={after ? 'true' : undefined}>
+  <a class="cta" href={href} tabindex={after ? -1 : undefined}>
+    <Icon name="calendar" size={18} />
+    <span>{label}</span>
+  </a>
+</div>
+
+<script>
+  // Show the bar once #top-cta's bottom edge is under 90 px from the viewport top; hide it again on the way back.
+  const bar = document.querySelector<HTMLElement>('[data-sticky-cta="after"]');
+  if (bar) {
+    const link = bar.querySelector('a');
+    const target = document.getElementById('top-cta');
+    const update = () => {
+      const show = !target || target.getBoundingClientRect().bottom < 90;
+      bar.classList.toggle('is-hidden', !show);
+      if (show) {
+        bar.removeAttribute('aria-hidden');
+        link?.removeAttribute('tabindex');
+      } else {
+        bar.setAttribute('aria-hidden', 'true');
+        link?.setAttribute('tabindex', '-1');
+      }
+    };
+    addEventListener('scroll', update, { passive: true });
+    update();
+  }
+</script>
+
+<style>
+  .sticky-cta {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    z-index: 20;
+    width: min(440px, 100%);
+    transform: translateX(-50%);
+    padding: 10px 16px calc(16px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    transition: transform 0.35s ease, visibility 0.35s;
+  }
+
+  .sticky-cta.is-hidden {
+    transform: translate(-50%, 110%);
+    visibility: hidden;
+  }
+
+  .cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .cta:hover {
+    background: var(--btn-bg-hover);
+  }
+
+  @media (min-width: 768px) {
+    .sticky-cta {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-cta {
+      transition: none;
+    }
+  }
+</style>

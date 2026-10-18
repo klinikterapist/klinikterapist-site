@@ -1,0 +1,87 @@
+---
+/** One tappable row: icon (or thumbnail), title, soft subtitle, chevron. `meta` slot sits above the title. */
+import Icon from '../Icon.astro';
+
+interface Props {
+  title: string;
+  href: string;
+  subtitle?: string;
+  icon?: string;
+  /** Image URL for a 48 px rounded thumbnail (replaces the icon). */
+  thumb?: string;
+}
+const { title, href, subtitle, icon, thumb } = Astro.props;
+const external = /^https?:\/\//.test(href);
+---
+
+<a class="list-item" href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+  {
+    thumb ? (
+      <img class="thumb" src={thumb} alt="" width="48" height="48" loading="lazy" />
+    ) : (
+      icon && (
+        <span class="ic">
+          <Icon name={icon} size={20} />
+        </span>
+      )
+    )
+  }
+  <span class="text">
+    <slot name="meta" />
+    <b class="title">{title}</b>
+    {subtitle && <small class="subtitle">{subtitle}</small>}
+  </span>
+  <span class="chv"><Icon name="chevron" size={18} /></span>
+</a>
+
+<style>
+  .list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .ic {
+    display: flex;
+    color: var(--link);
+  }
+
+  .thumb {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--surface-2);
+  }
+
+  .text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-wrap: anywhere;
+  }
+
+  .title {
+    font-weight: 600;
+  }
+
+  .subtitle {
+    font-size: var(--text-xs);
+    color: var(--muted);
+  }
+
+  .chv {
+    display: flex;
+    color: var(--muted);
+  }
+</style>
