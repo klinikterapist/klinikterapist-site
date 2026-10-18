@@ -6,6 +6,7 @@ import { SITE as site } from './src/lib/site.ts';
 import { getRedirects } from './src/lib/settings.ts';
 import { satteri } from '@astrojs/markdown-satteri';
 import { figurePlugin } from './src/lib/markdown-figure.ts';
+import { sitemapNoindex } from './src/lib/sitemap-noindex.ts';
 
 // Redirect stubs (redirects.json) are noindex pages: keep them out of the sitemap.
 // Same validated list the stub pages use (paths are site-relative with a trailing slash).
@@ -28,5 +29,7 @@ export default defineConfig({
       filter: (page) => !redirectUrls.has(page) && !['/admin/', '/ui-kit/'].some((p) => new URL(page).pathname.startsWith(p)),
       i18n: { defaultLocale: 'tr', locales: { tr: 'tr', en: 'en' } },
     }),
+    // After the sitemap: drops noindex pages (empty category, nothing popular) from it.
+    sitemapNoindex(site),
   ],
 });

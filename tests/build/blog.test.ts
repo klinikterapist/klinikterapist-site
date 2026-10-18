@@ -241,7 +241,7 @@ describe('blog list redesign (spec §5.8)', () => {
     expect(item.getAttribute('data-search')).toContain('Zihinsel Sağlık');
   });
 
-  it('popular page: own title, description, canonical and hreflang pair, in the sitemap; empty state without a list', () => {
+  it('popular page: own title, description, canonical and hreflang pair; empty state without a list, noindex and out of the sitemap', () => {
     const pages = { tr: '/blog/populer/', en: '/en/blog/popular/' } as const;
     for (const lang of ['tr', 'en'] as const) {
       const d = loadPage(pages[lang]);
@@ -262,9 +262,22 @@ describe('blog list redesign (spec §5.8)', () => {
       expect(d.querySelector('main .post-rows, main .post-grid')).toBeNull();
       expect(d.querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
     }
+    // Every noindex page (this one, the empty categories) is left out of the sitemap; the others stay.
     const sm = distText('sitemap-0.xml');
-    expect(sm).toContain('https://example.com/blog/populer/');
-    expect(sm).toContain('https://example.com/en/blog/popular/');
+    expect(sm).not.toContain('https://example.com/blog/populer/');
+    expect(sm).not.toContain('https://example.com/en/blog/popular/');
+    expect(sm).not.toContain('https://example.com/blog/kategori/arastirma/');
+    expect(sm).not.toContain('https://example.com/en/blog/category/research/');
+    expect(sm).toContain('https://example.com/blog/kategori/zihinsel-saglik/');
+    expect(sm).toContain('https://example.com/blog/');
+    for (const p of allPages().filter((p) => p !== '/404.html')) {
+      const noindex = loadPage(p).querySelector('meta[name=robots]')?.getAttribute('content')?.includes('noindex') ?? false;
+      expect(sm.includes(`<loc>https://example.com${p}</loc>`), p).toBe(!noindex);
+    }
+    // With featured posts (the samples build) the page is indexed and listed.
+    const samples = readFileSync(join('dist-test-samples', 'sitemap-0.xml'), 'utf8');
+    const listed = loadPage('/blog/populer/', 'dist-test-samples').querySelectorAll('main .post-rows a').length > 0;
+    expect(samples.includes('/blog/populer/</loc>')).toBe(listed);
   });
 
   it('popular section has the #popular anchor in both languages when posts qualify', () => {
@@ -330,6 +343,11 @@ describe('post page redesign (spec §5.8)', () => {
     expect(acc.querySelector('summary .subtitle')?.text.trim()).toBe('2 kaynak');
     expect(acc.querySelectorAll('ol.references-list li')).toHaveLength(2);
     expect(loadPage(EN_POST).querySelector('section.references summary .subtitle')?.text.trim()).toBe('2 references');
+  });
+
+  it('story image waits for the heading font with the title as sample text (latin-ext subset)', () => {
+    const src = readFileSync('src/components/post/ShareButtons.astro', 'utf8');
+    expect(src).toMatch(/fonts\.load\("500 96px 'Fraunces Variable'", box\.dataset\.title/);
   });
 
   it('share: Instagram story, copy link and WhatsApp side by side, with a live status region', () => {
