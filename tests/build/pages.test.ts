@@ -154,10 +154,10 @@ describe('static pages', () => {
       'For questions about appointments and sessions, please use the Appointment page.',
     );
     expect(squash(loadPage('/iletisim/').querySelector('main .consent label')?.text)).toBe(
-      'Kişisel verilerimin aydınlatma metnine uygun işlenmesini kabul ediyorum.',
+      'Aydınlatma metnini okudum.',
     );
     expect(squash(loadPage('/en/contact/').querySelector('main .consent label')?.text)).toBe(
-      'I agree to my personal data being processed in line with the privacy notice.',
+      'I have read the privacy notice.',
     );
     // The direct e-mail row and the emergency box stay, below the form.
     const html = loadPage('/iletisim/').querySelector('main')!.innerHTML;
@@ -505,6 +505,9 @@ describe('sample content (real posts and data)', () => {
       const more = sample(path).querySelector('section#popular a.more');
       if (listed.length > 0) expect(more?.getAttribute('href'), path).toBe(popularPage[lang]);
       expect(sample(path).querySelectorAll('.blog-phone .topic-pair a.tile').length > 0, path).toBe(listed.length > 0);
+      const chips = sample(path).querySelectorAll('.blog-filters nav.category-nav a').map((a) => a.getAttribute('href'));
+      expect(chips.includes(popularPage[lang]), path).toBe(listed.length > 0);
+      expect(chips, path).not.toContain('#popular');
     }
   });
 

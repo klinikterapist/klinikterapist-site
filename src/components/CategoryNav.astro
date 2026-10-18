@@ -16,7 +16,7 @@ interface Props {
   /** The category page being shown; none on the full blog list. */
   current?: Category;
   variant?: 'chips' | 'list';
-  /** Add the "Popüler" chip, which jumps to the #popular section. */
+  /** Add the "Popüler" chip, which opens the popular-posts page. */
   popular?: boolean;
   class?: string;
 }
@@ -48,7 +48,7 @@ const items = [
     {
       popular && variant === 'chips' && (
         <li>
-          <a class="chip-link" href="#popular" data-clear-filter>
+          <a class="chip-link" href={pathFor('popular', lang)}>
             <Icon name="flame" size={16} />
             {t(lang, 'popularChip')}
           </a>

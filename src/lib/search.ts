@@ -21,7 +21,6 @@ export function foldTr(s: string): string {
  * the search box (folded `data-search` text) and, on the all-posts page (`data-filterable`), by the
  * topic chip clicked (`a[data-cat]`, plain links to the category pages without JavaScript). While a
  * filter is on, `[data-hide-on-filter]` blocks hide and `[data-no-results]` shows when nothing matches.
- * A link with `data-clear-filter` (the Popular chip) clears the filter before it jumps.
  * Plain ES5 text, not a serialised function, so no build helper can leak into it.
  */
 export function blogFilterScript(): string {
@@ -57,13 +56,6 @@ export function blogFilterScript(): string {
     var t = e.target;
     var a = t && t.closest ? t.closest('a') : null;
     if (!a || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-    if (a.hasAttribute('data-clear-filter')) {
-      input.value = '';
-      cat = '';
-      mark();
-      apply();
-      return;
-    }
     if (!a.hasAttribute('data-cat') || !root.hasAttribute('data-filterable')) return;
     e.preventDefault();
     cat = a.getAttribute('data-cat') || '';

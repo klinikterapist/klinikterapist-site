@@ -68,16 +68,4 @@ describe('blog filter script', () => {
     document.querySelector<HTMLAnchorElement>('a[data-cat=""]')!.click();
     expect(shown()).toEqual(['a', 'b']);
   });
-
-  it('a clear-filter link (the Popular chip) clears search and topic before it jumps', () => {
-    const pop = document.createElement('a');
-    pop.href = '#popular';
-    pop.setAttribute('data-clear-filter', '');
-    document.querySelector('nav')!.append(pop);
-    type('gece');
-    pop.click();
-    expect(document.querySelector('input')!.value).toBe('');
-    expect(shown()).toEqual(['a', 'b']);
-    expect(document.querySelector<HTMLElement>('[data-hide-on-filter]')!.hidden).toBe(false);
-  });
 });

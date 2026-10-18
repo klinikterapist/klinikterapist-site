@@ -33,7 +33,7 @@ const { lang, category } = Astro.props;
 const all = await getPosts(lang);
 const posts = category ? all.filter((p) => p.data.category === category.id) : all;
 const [newest, ...rest] = posts;
-// The Popular section belongs to the all-posts page (the chip jumps to it; its "Tümünü gör" and the tiles open /blog/populer/).
+// The Popular section belongs to the all-posts page (the chip, its "Tümünü gör" and the tiles open /blog/populer/).
 const popular = category ? [] : pickPopular(all);
 
 const blogPaths = { tr: pathFor('blog', 'tr'), en: pathFor('blog', 'en') };

@@ -158,10 +158,10 @@ export const STRINGS = {
   formTopicChoose: { tr: 'Bir konu seçin', en: 'Choose a topic' },
   formMessage: { tr: 'Mesaj', en: 'Message' },
   formConsent: {
-    tr: 'Kişisel verilerimin {link} uygun işlenmesini kabul ediyorum.',
-    en: 'I agree to my personal data being processed in line with the {link}.',
+    tr: '{link} okudum.',
+    en: 'I have read the {link}.',
   },
-  formConsentLink: { tr: 'aydınlatma metnine', en: 'privacy notice' },
+  formConsentLink: { tr: 'Aydınlatma metnini', en: 'privacy notice' },
   formHoneypot: { tr: 'Bu alanı boş bırakın', en: 'Leave this field empty' },
   formSend: { tr: 'Gönder', en: 'Send' },
   formSending: { tr: 'Gönderiliyor…', en: 'Sending…' },
