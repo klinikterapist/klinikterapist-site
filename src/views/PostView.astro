@@ -71,6 +71,7 @@ const jsonLd = [
 const related = await getRelated(post, 2);
 const profile = getProfile();
 const reads = readsLabel(readCount(post.key), lang);
+const role = profile.title[lang].trim();
 const { Content } = await render(post as never);
 const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
 ---
@@ -87,7 +88,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="byline byline--left">
         <SunMark size={36} />
         <p>
-          <span class="byline-name"><b>{profile.name}</b> · {profile.title[lang]}</span>
+          <span class="byline-name"><b>{profile.name}</b>{role && ` · ${role}`}</span>
           <span class="byline-meta">
             <span class="visually-hidden">{t(lang, 'published')}: </span>
             <time datetime={isoDay(data.publishedAt)}>{formatDate(data.publishedAt, lang)}</time>

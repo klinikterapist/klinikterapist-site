@@ -12,6 +12,7 @@ import type { Lang, Resource } from '../lib/settings';
 import { getResources } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { t, tCount, type UiKey } from '../i18n/ui';
+import { isExternalUrl, newTabAttrs } from '../lib/safe-link';
 
 interface Props {
   lang: Lang;
@@ -29,7 +30,8 @@ const upper = (s: string) => s.toLocaleUpperCase(lang === 'tr' ? 'tr-TR' : 'en-U
 const typeName = (type: Resource['type']) => t(lang, `type_${type}` as UiKey);
 const typesName = (type: Resource['type']) => t(lang, `types_${type}` as UiKey);
 const anchor = (type: Resource['type']) => `tur-${type}`;
-const newTab = { target: '_blank', rel: 'noopener noreferrer' };
+// The "Türüne göre" block always has all six types; a type without resources is a muted tile, not a link.
+const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
@@ -41,7 +43,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer' };
     <div class="page-stack">
       {
         featured && (
-          <a class="featured-card" href={featured.url} {...newTab}>
+          <a class="featured-card" href={featured.url} {...newTabAttrs(featured.url)}>
             <span class="cov" aria-hidden="true">
               {featured.cover ? (
                 <img src={featured.cover} alt="" width="120" height="160" loading="lazy" decoding="async" />
@@ -55,7 +57,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer' };
               </small>
               <b class="title">{featured.title}</b>
               <small class="sub">{[featured.author?.trim(), featured.note[lang].trim()].filter(Boolean).join(' · ')}</small>
-              <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+              {isExternalUrl(featured.url) && <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>}
             </span>
           </a>
         )
@@ -67,13 +69,20 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer' };
             <h2 id="by-type-title" class="section-label">
               {t(lang, 'byType')}
             </h2>
-            <ul class="type-tiles" style={`--cols:${Math.min(3, groups.length)}`}>
-              {groups.map((g) => (
+            <ul class="type-tiles">
+              {TYPES.map((type) => (
                 <li>
-                  <a href={`#${anchor(g.type)}`}>
-                    <Icon name={g.type} size={22} />
-                    <b>{typesName(g.type)}</b>
-                  </a>
+                  {hasType(type) ? (
+                    <a class="tile" href={`#${anchor(type)}`}>
+                      <Icon name={type} size={22} />
+                      <b>{typesName(type)}</b>
+                    </a>
+                  ) : (
+                    <span class="tile tile-empty">
+                      <Icon name={type} size={22} />
+                      <b>{typesName(type)}</b>
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -92,16 +101,16 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer' };
             open={i === 0}
           >
             {g.items.map((r) => (
-              <a class="res" href={r.url} {...newTab}>
+              <a class="res" href={r.url} {...newTabAttrs(r.url)}>
                 <span class="res-text">
                   <span class="res-title">
                     {r.title}
                     {r.author && <span class="res-author"> · {r.author}</span>}
                   </span>
                   {r.note[lang].trim() && <small>{r.note[lang]}</small>}
-                  <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+                  {isExternalUrl(r.url) && <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>}
                 </span>
-                <Icon name="external" size={16} class="res-ext" />
+                {isExternalUrl(r.url) && <Icon name="external" size={16} class="res-ext" />}
               </a>
             ))}
           </Accordion>
@@ -186,14 +195,14 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer' };
 
   .type-tiles {
     display: grid;
-    grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .type-tiles a {
+  .type-tiles .tile {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -212,6 +221,17 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer' };
 
   .type-tiles :global(.icon) {
     color: var(--link);
+  }
+
+  /* No resources of this type yet: shown for the full picture, quiet and not tappable. */
+  .type-tiles .tile-empty {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--muted);
+  }
+
+  .type-tiles .tile-empty :global(.icon) {
+    color: var(--muted);
   }
 
   .type-tiles b {

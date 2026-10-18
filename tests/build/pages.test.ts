@@ -270,8 +270,17 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(squash(loadPage('/en/resources/').querySelector('a.featured-card .label')?.text)).toBe('FEATURED · BOOK');
   });
 
-  it('resources: type tiles link to per-type accordions with those ids', () => {
+  it('resources: six type tiles; those with resources link to per-type accordions with those ids', () => {
     const d = loadPage('/kaynaklar/');
+    const all = d.querySelectorAll('main .type-tiles > li');
+    expect(all.map((li) => li.text.trim())).toEqual(['Kitaplar', 'Makaleler', 'Ölçekler', 'Videolar', 'Podcastler', 'Rehberler']);
+    expect(loadPage('/en/resources/').querySelectorAll('main .type-tiles > li').map((li) => li.text.trim())).toEqual([
+      'Books', 'Articles', 'Scales', 'Videos', 'Podcasts', 'Guides',
+    ]);
+    // A type without resources is a muted tile, not a link (no dead anchor, no count).
+    const empty = all.filter((li) => !li.querySelector('a'));
+    expect(empty.map((li) => li.text.trim())).toEqual(['Videolar', 'Podcastler']);
+    for (const li of empty) expect(li.querySelector('.tile-empty'), li.text).toBeTruthy();
     const tiles = d.querySelectorAll('main .type-tiles a');
     const present = ['book', 'article', 'scale', 'guide'];
     expect(tiles.map((a) => a.getAttribute('href'))).toEqual(present.map((t) => `#tur-${t}`));
