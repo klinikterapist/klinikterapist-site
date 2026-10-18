@@ -8,6 +8,25 @@ import '../../admin/ui/panel-tokens.css';
 import '../../styles/prose.css';
 import '../../admin/ui/admin.css';
 import AdminRoot from '../../admin/ui/AdminRoot';
+
+/*
+ * Content Security Policy for the live panel (the dev server needs its own inline scripts and
+ * websocket, so it gets none). Scripts, styles and frames only from this site and Google sign-in;
+ * requests only to the panel backend (Apps Script), Google sign-in and the DOI services the reference
+ * lookup uses. Inline scripts stay allowed: Astro writes the island loader inline.
+ */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/client",
+  "style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style",
+  "img-src 'self' data: blob: https://*.googleusercontent.com https://accounts.google.com",
+  "font-src 'self'",
+  "connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/ https://doi.org https://*.doi.org https://*.crossref.org https://*.datacite.org",
+  "frame-src https://accounts.google.com/gsi/",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
 ---
 
 <!doctype html>
@@ -16,9 +35,16 @@ import AdminRoot from '../../admin/ui/AdminRoot';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
+    {import.meta.env.PROD && <meta http-equiv="Content-Security-Policy" content={CSP} />}
+    <meta name="referrer" content="same-origin" />
     <meta name="theme-color" content="#F4E9D4" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1A2740" media="(prefers-color-scheme: dark)" />
     <script is:inline>
+      // Never inside another site's frame (clickjacking): GitHub Pages cannot send frame-ancestors.
+      if (window.top !== window.self) {
+        document.documentElement.style.display = 'none';
+        try { window.top.location.href = window.self.location.href; } catch (e) {}
+      }
       // Same logic as resolveTheme() in src/admin/ui/theme.ts, run before first paint.
       (function () {
         var stored = null;

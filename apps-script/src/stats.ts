@@ -20,6 +20,8 @@ export const MAX_BUCKET_KEYS = 200;
 /** Script Properties allows about 9 KB per value. */
 const MAX_BUCKET_BYTES = 8000;
 const READS_CACHE = 'st:reads';
+/** Flood guard: hits past this many in one hour are dropped before the lock (cache counter, approximate). */
+export const MAX_HITS_PER_HOUR = 3000;
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type MonthFile = { days: Record<string, DayCounts> };
@@ -76,6 +78,10 @@ export function recordHit(gas: Gas, body: unknown): Record<string, never> {
   const hit = parseHit(body);
   if (!hit) return {};
   const keys = hitKeys(hit);
+  const rateKey = `st:rate:${istanbulHour(gas.now())}`;
+  const seen = Number(gas.cache.get(rateKey) ?? '0') || 0;
+  if (seen >= MAX_HITS_PER_HOUR) return {};
+  gas.cache.put(rateKey, String(seen + 1), 3700);
   gas.withLock(() => {
     const now = gas.now();
     const hour = istanbulHour(now);

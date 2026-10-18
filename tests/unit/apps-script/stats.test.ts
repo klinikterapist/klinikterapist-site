@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fakeGas } from './fake-gas';
-import { MAX_BUCKET_KEYS, recordHit, statsReads, statsSummary } from '../../../apps-script/src/stats';
+import { MAX_BUCKET_KEYS, MAX_HITS_PER_HOUR, recordHit, statsReads, statsSummary } from '../../../apps-script/src/stats';
 import { handle } from '../../../apps-script/src/main';
 
 const at = (iso: string) => Date.parse(iso);
@@ -13,6 +13,13 @@ describe('page counter backend', () => {
     recordHit(gas, { t: 'read', k: 'yazi' });
     expect(JSON.parse(gas.props.get('st:h:2026101910')!)).toEqual({ 'v|/': 2, 'ref|direct': 2, 'rd|yazi': 1 });
     expect(gas.props.get('st:since')).toBe('2026-10-19');
+  });
+
+  it('drops hits past the hourly flood limit', () => {
+    const gas = fakeGas({ now: at('2026-10-19T10:00:00+03:00') });
+    gas.cache.put('st:rate:2026101910', String(MAX_HITS_PER_HOUR), 3700);
+    recordHit(gas, { t: 'view', p: '/' });
+    expect(gas.props.get('st:h:2026101910')).toBeNull();
   });
 
   it('ignores invalid hits', () => {
