@@ -230,6 +230,27 @@ Plans D and E come first.
 - [ ] **Step 4: Run all suites and `npm run check`.** Expected: PASS, with no new type errors.
 - [ ] **Step 5: Commit.** Message: `feat(site): FAQ page, author metadata, home-screen manifest`.
 
+### Task 6b: Sample content (owner request, 2026-10-18)
+
+The owner asked for sample posts and texts so the new design is seen full; they will replace them in the panel later. Everything here is ordinary content the panel can edit or delete. Nothing is pushed without the owner's approval, and the push summary must remind them these are samples.
+
+**Files:**
+- Create: `src/content/posts/<key>/tr.md` and `en.md` for 6 posts (keys e.g. `ornek-kaygi-ile-yasamak`, `ornek-ilk-gorusme`, `ornek-uyku-ve-duygular`, `ornek-sinirlar`, `ornek-yas-sureci`, `ornek-arastirma-ozeti`), covering at least 4 categories from `categories.json`, `publishedAt` spread over the last 6 weeks with times, 2 with `featured: true`, 3 with covers.
+- Create: covers in `src/content/posts/<key>/cover.webp`, generated with `sharp` as abstract "Gün & Gece" gradients (cream / honey / navy, a soft sun disc), 1600×900, with real `coverAlt` text.
+- Modify: `src/data/faq.json` (sample answers TR + EN for all five questions), `src/data/home.json` process steps if still empty, any other §5.11 field left empty by Plan E that the design shows.
+- Test: `tests/build/pages.test.ts` (blog list shows 6 posts per language; the popular tile lists the featured ones), and update the Plan E `getFaq` seed test to use a fixture instead of the real data.
+
+**Copy rules:**
+- Body 300–500 words, plain warm Turkish (EN is a faithful translation), subheadings, one reference list on 2 posts, each with a focus keyword that appears in title, description, first paragraph and slug so the panel checklist passes.
+- General psychoeducation only. No diagnosis or treatment promises, no testimonials or client stories, no invented statistics. Any reference must be real and verifiable (classic books or WHO/APA pages); otherwise leave references out.
+- The first line of each body is a short italic note: "_Bu bir örnek yazıdır; panelden düzenleyebilir ya da silebilirsiniz._" / "_This is a sample post; edit or delete it in the panel._"
+- FAQ answers stay factual and generic (process, duration "genellikle 50 dakika", online/in person, privacy, crisis → 112). Fees: "Ücret bilgisi için iletişime geçebilirsiniz."
+
+- [ ] **Step 1: Write the failing build tests.**
+- [ ] **Step 2: Add the content and covers.**
+- [ ] **Step 3: Run all suites and `npm run check`.** Expected: PASS.
+- [ ] **Step 4: Commit.** Message: `content: sample posts and texts for the redesign`.
+
 ### Task 7: Final visual pass
 
 - [ ] Run the dev server and capture every page at 375px and 1280px, in both themes, in TR and EN:
