@@ -221,11 +221,6 @@ a:hover {
   box-shadow: var(--shadow-soft);
 }
 
-.hand {
-  font-family: var(--font-hand);
-  font-weight: 400;
-}
-
 /* Day/night: colours ease over 0.3 s; none for people who ask for less motion. */
 body,
 body * {

@@ -1,8 +1,6 @@
 /* Design tokens: "Gün & Gece" (day and night). */
 @import '@fontsource-variable/fraunces/wght.css';
 @import '@fontsource-variable/dm-sans/wght.css';
-@import '@fontsource/caveat/latin-400.css';
-@import '@fontsource/caveat/latin-ext-400.css';
 
 :root,
 html[data-theme="light"] {
@@ -32,7 +30,6 @@ html[data-theme="light"] {
   /* Type */
   --font-serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
   --font-sans: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-hand: 'Caveat', 'Segoe Script', cursive;
 
   --text-xs: 0.8125rem;
   --text-sm: 0.9375rem;

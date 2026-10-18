@@ -36,3 +36,14 @@ describe.each(['/blog/eski-adres/', '/en/blog/old-address/'])('theme redirect st
     expect(head.querySelector('meta[name="color-scheme"]')?.getAttribute('content')).toBe('light dark');
   });
 });
+
+describe('fonts', () => {
+  it('ships no Caveat (R-F6: unused, removed)', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const dir = join('dist-test', '_astro');
+    const files = readdirSync(dir);
+    expect(files.some((f) => /caveat/i.test(f))).toBe(false);
+    for (const f of files.filter((n) => n.endsWith('.css'))) expect(readFileSync(join(dir, f), 'utf8'), f).not.toMatch(/Caveat/);
+  });
+});
