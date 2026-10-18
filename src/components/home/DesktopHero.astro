@@ -1,7 +1,7 @@
 ---
 /**
  * Desktop home intro (spec §5.7): eyebrow, the tagline as the page's h1, intro, "Randevu Al" and
- * "İlk görüşme nasıl geçer?", the membership and response-time line. On the right the portrait runs
+ * "İlk görüşme nasıl geçer?", the membership and response-time line with the wordmark under it. On the right the portrait runs
  * frameless to the window's right edge, top to bottom of the hero, with a big rounded top-left corner
  * and the brand sun rising from its bottom-left corner ("kenara taşan"). The profile's heroStyle only
  * picks the phone header (PortraitHero); every desktop with a photo gets this layout. Without a photo
@@ -13,6 +13,7 @@ import { pathFor } from '../../i18n/routes';
 import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
+import Wordmark from '../brand/Wordmark.astro';
 
 interface Props {
   lang: Lang;
@@ -52,6 +53,9 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
         <Icon name="shield" size={16} />
         <span>{trust}</span>
       </p>
+      <span class="hero-wordmark">
+        <Wordmark height={22} decorative />
+      </span>
     </div>
 
     {
@@ -158,6 +162,19 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
     margin: var(--space-5) 0 0;
     color: var(--muted);
     font-size: var(--text-xs);
+  }
+
+  /* The klinikterapist wordmark under the trust line: modest, in the theme's accent colour. */
+  .hero-wordmark {
+    display: block;
+    margin-top: var(--space-4);
+    color: var(--link);
+    line-height: 0;
+  }
+
+  .hero-wordmark :global(.wordmark) {
+    width: auto;
+    height: 22px;
   }
 
   .art {

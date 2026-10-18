@@ -16,6 +16,7 @@ import TilePair from '../components/ui/TilePair.astro';
 import StickyCta from '../components/ui/StickyCta.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
+import Wordmark from '../components/brand/Wordmark.astro';
 import type { HomeCard, Lang } from '../lib/settings';
 import { getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
 import { getPosts, pickPopular } from '../lib/posts';
@@ -84,6 +85,9 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
             </p>
           ))
         }
+        <span class="hero-wordmark">
+          <Wordmark height={18} decorative />
+        </span>
       </div>
       {intro && <p class="intro">{intro}</p>}
       <a id="top-cta" class="top-cta" href={pathFor('appointment', lang)}>
@@ -237,6 +241,14 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     margin: 8px 0 0;
     color: var(--muted);
     font-size: var(--text-xs);
+  }
+
+  /* The wordmark under the membership line, as on the desktop hero. */
+  .hero-wordmark {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    color: var(--link);
   }
 
   .intro {

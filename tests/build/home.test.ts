@@ -141,6 +141,27 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('.trust')?.text).toContain('1 iş günü');
   });
 
+  it('wordmark directly under the trust line (desktop) and the membership line (phone), decorative', () => {
+    for (const d of [tr(), en()]) {
+      const desk = d.querySelector('.home-desk .desktop-hero .trust')!.nextElementSibling!;
+      expect(desk.classList.contains('hero-wordmark')).toBe(true);
+      const phone = d.querySelector('.home-phone .profile .hero-wordmark')!;
+      expect(phone).toBeTruthy();
+      expect(phone.previousElementSibling?.classList.contains('tpd')).toBe(true);
+      for (const svg of [desk.querySelector('svg.wordmark')!, phone.querySelector('svg.wordmark')!]) {
+        expect(svg.getAttribute('aria-hidden')).toBe('true');
+        expect(svg.hasAttribute('role')).toBe(false);
+        expect(svg.hasAttribute('aria-label')).toBe(false);
+        expect(svg.getAttribute('fill')).toBe('currentColor');
+      }
+    }
+    // Elsewhere (the phone top bar) the wordmark keeps its accessible name.
+    const bar = loadPage('/hakkimda/').querySelector('.top-bar svg.wordmark')!;
+    expect(bar.getAttribute('role')).toBe('img');
+    expect(bar.getAttribute('aria-label')).toBe('klinikterapist');
+    expect(bar.hasAttribute('aria-hidden')).toBe(false);
+  });
+
   it('hero portrait: edge-bleed photo for desktops only, with the flat sun at its corner', () => {
     for (const d of [tr(), en()]) {
       const hero = d.querySelector('.home-desk .desktop-hero')!;

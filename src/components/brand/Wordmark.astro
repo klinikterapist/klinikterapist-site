@@ -6,8 +6,10 @@
 interface Props {
   /** Height in px; the width follows the logo's proportions. */
   height?: number;
+  /** Beside text that already names the site: hidden from screen readers instead of labelled. */
+  decorative?: boolean;
 }
-const { height = 24 } = Astro.props;
+const { height = 24, decorative = false } = Astro.props;
 const width = Math.round((height * 1131) / 198);
 ---
 
@@ -18,8 +20,10 @@ const width = Math.round((height * 1131) / 198);
   width={width}
   height={height}
   fill="currentColor"
-  role="img"
-  aria-label="klinikterapist"
+  role={decorative ? undefined : 'img'}
+  aria-label={decorative ? undefined : 'klinikterapist'}
+  aria-hidden={decorative ? 'true' : undefined}
+  focusable="false"
 >
   <path
     fill-rule="evenodd"
