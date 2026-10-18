@@ -352,6 +352,41 @@ describe('EditorPage', () => {
     }
   });
 
+  it('the SEO panel heading, the focus keyword and the Meta fields have help tips', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    fireEvent.click(await screen.findByRole('button', { name: 'SEO' }));
+    const seo = screen.getByRole('region', { name: 'SEO' });
+    expect(within(seo).getByRole('button', { name: 'SEO hakkında bilgi' })).toBeTruthy();
+    fireEvent.click(within(seo).getByRole('button', { name: 'Odak kelime hakkında bilgi' }));
+    expect(within(seo).getByRole('region', { name: 'Odak kelime hakkında' }).textContent).toContain('ilk paragraf');
+    fireEvent.click(screen.getByRole('button', { name: 'Meta' }));
+    const meta = screen.getByRole('region', { name: 'Meta' });
+    for (const n of ['SEO başlığı (isteğe bağlı)', 'Meta açıklama', 'URL kısa adı']) {
+      expect(within(meta).getByRole('button', { name: `${n} hakkında bilgi` })).toBeTruthy();
+    }
+  });
+
+  it('a help tip inside the mobile Meta sheet opens without closing the sheet or touching history', async () => {
+    const orig = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
+    try {
+      setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+      fireEvent.click(await screen.findByRole('button', { name: 'Meta' }));
+      const sheet = screen.getByRole('dialog', { name: 'Meta' });
+      const entries = history.length;
+      const tip = within(sheet).getByRole('button', { name: 'Meta açıklama hakkında bilgi' });
+      fireEvent.click(tip);
+      expect(tip.getAttribute('aria-expanded')).toBe('true');
+      expect(screen.getByRole('dialog', { name: 'Meta' })).toBeTruthy();
+      expect(history.length).toBe(entries);
+      fireEvent.keyDown(tip, { key: 'Escape' });
+      expect(tip.getAttribute('aria-expanded')).toBe('false');
+      expect(screen.getByRole('dialog', { name: 'Meta' })).toBeTruthy();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
+    }
+  });
+
   it('Önizle shows the selected language full screen, never saves or publishes, and ← Düzenlemeye dön closes it', async () => {
     const api = setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
     window.location.hash = '#/yazi/' + base().key;

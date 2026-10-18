@@ -10,6 +10,7 @@ import { slugify } from '../../../lib/slug';
 import { postPath } from '../../../i18n/routes';
 import { LANG_LABEL } from '../../lib/draft';
 import { truncateToWidth } from '../../lib/text-width';
+import { HELP } from '../../lib/help-texts';
 import { Field } from '../kit';
 import type { ImageStore } from './images';
 
@@ -82,6 +83,7 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
         <Field
           label="URL kısa adı"
           field="slug"
+          help={HELP.slug}
           value={f.slug}
           onChange={(v) => props.onLang({ slug: typingSlug(v, lang), slugTouched: true })}
           hint={
@@ -103,6 +105,7 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
         <Field
           label="SEO başlığı (isteğe bağlı)"
           field="seoTitle"
+          help={HELP.seoTitle}
           value={f.seoTitle}
           onChange={(seoTitle) => props.onLang({ seoTitle })}
           hint="Boş bırakırsanız yazı başlığı kullanılır."
@@ -111,6 +114,7 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
         <Field
           label="Meta açıklama"
           field="description"
+          help={HELP.description}
           multiline
           rows={3}
           value={f.description}
@@ -122,6 +126,7 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
           <Field
             label="Kapak görselinin alt metni"
             field="coverAlt"
+            help={HELP.coverAlt}
             value={f.coverAlt}
             onChange={(coverAlt) => props.onLang({ coverAlt })}
             hint="Görselde ne var? Kısa bir cümle."

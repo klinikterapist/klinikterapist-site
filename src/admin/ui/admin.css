@@ -218,6 +218,47 @@ body.admin {
   font-weight: 600;
 }
 
+.k-label-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-space-2);
+}
+
+.k-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--p-border);
+  border-radius: 50%;
+  background: var(--p-field);
+  color: var(--p-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.k-help-btn[aria-expanded='true'] {
+  border-color: var(--p-accent);
+  color: var(--p-accent);
+}
+
+.k-help-body {
+  flex: 1 0 100%;
+  margin: 0;
+  padding: var(--k-space-2) var(--k-space-3);
+  border-radius: var(--k-radius-sm);
+  background: var(--p-selected);
+  color: var(--p-text);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
 .k-input {
   width: 100%;
   min-height: 44px;

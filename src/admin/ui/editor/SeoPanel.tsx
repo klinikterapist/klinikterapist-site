@@ -8,7 +8,8 @@ import type { Draft, LangFields } from '../../api/types';
 import type { Lang } from '../../../lib/schemas';
 import { LANG_LABEL } from '../../lib/draft';
 import { runSeoChecks, type SeoCheck } from '../../lib/seo-check';
-import { Field, Light } from '../kit';
+import { HELP } from '../../lib/help-texts';
+import { Field, HelpTip, Light } from '../kit';
 
 export function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);
@@ -34,7 +35,10 @@ export function SeoPanel(props: { lang: Lang; draft: Draft; otherKeywords: strin
 
   return (
     <div className="rail-panel-body seo-panel">
-      <h3>SEO ({LANG_LABEL[lang]})</h3>
+      <div className="k-label-row seo-head">
+        <h3>SEO ({LANG_LABEL[lang]})</h3>
+        <HelpTip label="SEO">{HELP.seo}</HelpTip>
+      </div>
       <div className="seo-score">
         <div
           className={`score-ring score-${scoreTone(score)}`}
@@ -56,6 +60,7 @@ export function SeoPanel(props: { lang: Lang; draft: Draft; otherKeywords: strin
         field="focusKeyword"
         value={props.draft[lang].focusKeyword}
         onChange={(focusKeyword) => props.onLang({ focusKeyword })}
+        help={HELP.focusKeyword}
         hint="Bu yazının Google'da bulunmasını istediğiniz kelime ya da ifade."
         lang={lang}
         className="seo-keyword"

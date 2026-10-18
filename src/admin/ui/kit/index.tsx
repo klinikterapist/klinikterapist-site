@@ -1,5 +1,5 @@
 /** Small UI building blocks shared by the panel screens. */
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Icon, type LucideIcon } from '../icons';
 import { useHistoryLayer } from '../history-layer';
 
@@ -30,6 +30,8 @@ export function Field(props: {
   lang?: string;
   /** Set as `data-field` on the input, so the publish checklist can find and focus it. */
   field?: string;
+  /** Explanation opened by a small "?" button beside the label. */
+  help?: ReactNode;
 }) {
   const id = useId();
   const describedBy = [props.hint ? `${id}-hint` : '', props.error ? `${id}-err` : ''].filter(Boolean).join(' ') || undefined;
@@ -46,7 +48,10 @@ export function Field(props: {
   };
   return (
     <div className={`k-field ${props.className ?? ''}`}>
-      <label htmlFor={id}>{props.label}</label>
+      <div className="k-label-row">
+        <label htmlFor={id}>{props.label}</label>
+        {props.help && <HelpTip label={props.label}>{props.help}</HelpTip>}
+      </div>
       {props.multiline ? (
         <textarea {...common} rows={props.rows ?? 3} onChange={(e) => props.onChange(e.target.value)} />
       ) : (
@@ -66,6 +71,48 @@ export function Field(props: {
   );
 }
 
+/**
+ * Small round "?" button that opens a short explanation inline, below the label row it sits in.
+ * Not a modal and not part of the browser history, so it is safe inside the bottom sheet: Escape
+ * closes only the tip (while it is open) and never reaches the sheet.
+ */
+export function HelpTip({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  const regionId = useId();
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation(); // capture phase: runs before the sheet's own Escape handler
+      setOpen(false);
+      btn.current?.focus();
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [open]);
+  return (
+    <>
+      <button
+        type="button"
+        ref={btn}
+        className="k-help-btn"
+        aria-label={`${label} hakkında bilgi`}
+        aria-expanded={open}
+        aria-controls={regionId}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span aria-hidden="true">?</span>
+      </button>
+      {open && (
+        <div className="k-help-body" id={regionId} role="region" aria-label={`${label} hakkında`}>
+          {children}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="k-toggle">
@@ -82,11 +129,15 @@ export function Select<T extends string>(props: {
   onChange: (v: T) => void;
   className?: string;
   field?: string;
+  help?: ReactNode;
 }) {
   const id = useId();
   return (
     <div className={`k-field ${props.className ?? ''}`}>
-      <label htmlFor={id}>{props.label}</label>
+      <div className="k-label-row">
+        <label htmlFor={id}>{props.label}</label>
+        {props.help && <HelpTip label={props.label}>{props.help}</HelpTip>}
+      </div>
       <select id={id} className="k-input" data-field={props.field} value={props.value} onChange={(e) => props.onChange(e.target.value as T)}>
         {props.options.map((o) => (
           <option key={o.value} value={o.value}>
