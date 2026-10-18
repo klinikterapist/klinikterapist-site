@@ -19,7 +19,7 @@ describe('blog', () => {
     expect(bp.inLanguage).toBe('tr-TR');
     expect(bp.datePublished).toBeTruthy(); expect(bp.dateModified).toBeTruthy();
     expect(ld.some(x => x['@type'] === 'BreadcrumbList')).toBe(true);
-    expect(tr.querySelector('.author-box')).not.toBeNull();
+    expect(tr.querySelector('a.author-line')).not.toBeNull();
     expect(tr.querySelector('meta[property="og:type"]')?.getAttribute('content')).toBe('article');
     expect(loadPage('/blog/kategori/zihinsel-saglik/').querySelector('h1')).not.toBeNull();
     expect(loadPage('/en/blog/category/mental-health/').querySelector('html')?.getAttribute('lang')).toBe('en');
@@ -126,11 +126,6 @@ describe('blog', () => {
     expect(loadPage('/en/blog/category/research/').querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
     expect(loadPage('/blog/kategori/zihinsel-saglik/').querySelector('meta[name=robots]')).toBeNull();
     expect(loadPage('/blog/').querySelector('meta[name=robots]')).toBeNull();
-  });
-
-  it('author box shows the explicit short intro', () => {
-    const intro = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/').querySelector('.author-box .intro');
-    expect(intro?.textContent).toBe('Kısa tanıtım: Uzm. Psk. olarak çalışıyorum.');
   });
 
   it('rich post body: captioned figure, callout box, click-to-load YouTube without an iframe', () => {
@@ -323,16 +318,28 @@ describe('post page redesign (spec §5.8)', () => {
     expect(loadPage(EN_POST).querySelector('button.share-btn')?.text).toContain('Share this post');
   });
 
-  it('author box: centred, name, "title · membership", short intro and Randevu Al', () => {
-    const box = loadPage(POST).querySelector('.author-box')!;
-    expect(box.querySelector('.name')?.text).toBe('Osman Güneş Özkurt');
-    expect(box.querySelector('.role')?.text.trim()).toBe('Psikolog · Türk Psikologlar Derneği üyesi');
-    expect(box.querySelector('a[href="/randevu/"]')?.text).toContain('Randevu Al');
-    const img = box.querySelector('img')!;
+  it('author line on every post: small optimised photo, "Yazar: title name", linking to About; then one Randevu Al', () => {
+    const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+    for (const [path, lang] of allPages().filter((p) => /^\/(en\/)?blog\/[^/]+\/$/.test(p) && !/\/(kategori|category)\//.test(p)).map((p) => [p, p.startsWith('/en/') ? 'en' : 'tr'] as const)) {
+      const d = loadPage(path);
+      if (!d.querySelector('article')) continue;
+      const line = d.querySelectorAll('a.author-line');
+      expect(line, path).toHaveLength(1);
+      expect(line[0].getAttribute('href'), path).toBe(lang === 'tr' ? '/hakkimda/' : '/en/about/');
+      expect(d.querySelector('.author-box'), path).toBeNull();
+      // Exactly one booking button at the post end, after the author line.
+      const end = d.querySelector('.post-end')!;
+      expect(end.querySelectorAll('a[href$="/randevu/"], a[href$="/appointment/"]'), path).toHaveLength(1);
+      expect(end.innerHTML.indexOf('author-line')).toBeLessThan(end.innerHTML.indexOf('post-cta'));
+    }
+    const line = loadPage(POST).querySelector('a.author-line')!;
+    expect(squash(line.text)).toBe('Yazar: Psikolog Osman Güneş Özkurt');
+    expect(squash(loadPage(EN_POST).querySelector('a.author-line')?.text)).toBe('Author: Psychologist Osman Güneş Özkurt');
+    const img = line.querySelector('.portrait img')!;
+    expect(img.getAttribute('width')).toBe('40');
     expect(img.getAttribute('loading')).toBe('lazy');
-    expect(loadPage(EN_POST).querySelector('.author-box .role')?.text.trim()).toBe(
-      'Psychologist · Member of the Turkish Psychological Association',
-    );
+    expect(img.getAttribute('alt')).toBe('');
+    expect(loadPage(POST).querySelector('.post-cta')?.text).toContain('Randevu Al');
   });
 
   it('similar posts: up to two rows', () => {

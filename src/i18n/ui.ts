@@ -76,6 +76,7 @@ export const STRINGS = {
   references: { tr: 'Kaynakça', en: 'References' },
   referencesOne: { tr: '{n} kaynak', en: '{n} reference' },
   referencesMany: { tr: '{n} kaynak', en: '{n} references' },
+  authorLabel: { tr: 'Yazar', en: 'Author' },
   sharePost: { tr: 'Yazıyı paylaş', en: 'Share this post' },
   shareHint: { tr: 'Bağlantıyı kopyala ya da gönder', en: 'Copy or send the link' },
   linkCopied: { tr: 'Bağlantı kopyalandı', en: 'Link copied' },

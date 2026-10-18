@@ -1,0 +1,63 @@
+---
+/**
+ * Compact author line at the end of every post (owner's review 2026-10-18): a 40 px round photo
+ * (optimised; the sun when there is none) and "Yazar: <title> <name>" from profile.json, the whole line
+ * linking to Hakkımda. An empty title leaves just the name (R-F8).
+ */
+import type { Lang } from '../../lib/settings';
+import { getProfile } from '../../lib/settings';
+import { pathFor } from '../../i18n/routes';
+import { t } from '../../i18n/ui';
+import RoundPortrait from '../ui/RoundPortrait.astro';
+import Icon from '../Icon.astro';
+import { authorWho } from '../../lib/author';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const profile = getProfile();
+const who = authorWho(profile.title[lang], profile.name);
+---
+
+<a class="author-line" href={pathFor('about', lang)}>
+  <RoundPortrait photo={profile.photo} alt="" size={40} />
+  <span class="text">{t(lang, 'authorLabel')}: <b>{who}</b></span>
+  <Icon name="chevron" size={16} class="chv" />
+</a>
+
+<style>
+  .author-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.4;
+    text-decoration: none;
+  }
+
+  .author-line:hover {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  b {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .author-line :global(.chv) {
+    flex: none;
+    color: var(--muted);
+  }
+</style>
