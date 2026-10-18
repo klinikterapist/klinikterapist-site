@@ -1,0 +1,39 @@
+---
+/**
+ * The sun mark ("temel güneş"), drawn from src/assets/brand/sun.svg.
+ * Halo and disc keep the brand yellows in both themes; the face takes `--sun-face`
+ * (dark brown by day, night blue by night, so the face looks carved out of the sun).
+ */
+import source from '../../assets/brand/sun.svg?raw';
+
+interface Props {
+  /** Width and height in px. */
+  size?: number;
+  /** Accessible name; without it the mark is decorative and hidden from screen readers. */
+  label?: string;
+}
+const { size = 48, label } = Astro.props;
+
+const pathD = (cls: string) => source.match(new RegExp(`<path class="${cls}" d="([^"]+)"`))![1];
+const halo = pathD('halo');
+const disc = pathD('disc');
+const face = [...source.match(/<g class="face"[^>]*>([\s\S]*?)<\/g>/)![1].matchAll(/<path d="([^"]+)"/g)].map((m) => m[1]);
+---
+
+<svg
+  class="sun-mark"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 100 100"
+  width={size}
+  height={size}
+  role={label ? 'img' : undefined}
+  aria-label={label}
+  aria-hidden={label ? undefined : 'true'}
+>
+  <path d={halo} fill="#FCD873" />
+  <path d={disc} fill="#F6B92B" />
+  {/* var() works in style, not in SVG presentation attributes. */}
+  <g fill="none" style="stroke: var(--sun-face, #2A2420)" stroke-width="2.8" stroke-linecap="round">
+    {face.map((d) => <path d={d} />)}
+  </g>
+</svg>

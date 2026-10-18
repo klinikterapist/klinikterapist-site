@@ -33,6 +33,13 @@ describe('static pages', () => {
     expect(loadPage('/en/').querySelector('html')?.getAttribute('lang')).toBe('en');
   });
 
+  it('home head links the sun favicons and the apple touch icon', () => {
+    const head = loadPage('/').querySelector('head')!;
+    expect(head.querySelector('link[rel=icon][type="image/svg+xml"]')?.getAttribute('href')).toBe('/favicon.svg');
+    expect(head.querySelector('link[rel=icon][sizes="32x32"]')?.getAttribute('href')).toBe('/favicon.ico');
+    expect(head.querySelector('link[rel=apple-touch-icon]')?.getAttribute('href')).toBe('/apple-touch-icon.png');
+  });
+
   it('home has one dominant booking CTA', () => {
     expect(loadPage('/').querySelector('a.cta-primary')?.getAttribute('href')).toBe('/randevu/');
     expect(loadPage('/').querySelectorAll('a.cta-primary').length).toBe(1);
