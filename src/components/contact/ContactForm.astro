@@ -48,7 +48,7 @@ const id = (name: string) => `cf-${name}`;
     <span>{noteBefore}<a href={pathFor('appointment', lang)}>{t(lang, 'formAppointmentLink')}</a>{noteAfter}</span>
   </p>
 
-  <form data-contact-form data-endpoint={endpoint} data-lang={lang} data-messages={JSON.stringify(messages)}>
+  <form method="post" data-contact-form data-endpoint={endpoint} data-lang={lang} data-messages={JSON.stringify(messages)}>
     <div class="field">
       <label for={id('name')}>{t(lang, 'formName')}</label>
       <input id={id('name')} name="name" type="text" autocomplete="name" required maxlength={CONTACT_LIMITS.nameMax} aria-describedby={id('name-err')} />
@@ -81,8 +81,8 @@ const id = (name: string) => `cf-${name}`;
 
     {/* Honeypot: off screen and out of the tab order; people never fill it. */}
     <div class="hp" aria-hidden="true">
-      <label for={id('website')}>{t(lang, 'formHoneypot')}</label>
-      <input id={id('website')} name="website" type="text" tabindex="-1" autocomplete="off" />
+      <label for={id('hp')}>{t(lang, 'formHoneypot')}</label>
+      <input id={id('hp')} name="hp_field" type="text" tabindex="-1" autocomplete="off" />
     </div>
 
     <div class="field consent">
@@ -93,12 +93,14 @@ const id = (name: string) => `cf-${name}`;
       <p class="error" id={id('consent-err')} data-error-for="consent" hidden></p>
     </div>
 
-    <button class="send" type="submit">
+    {/* Enabled by the script: without it a native submit would send nothing to the owner. */}
+    <button class="send" type="submit" disabled>
       <Icon name="send" size={18} />
       <span class="label">{t(lang, 'formSend')}</span>
     </button>
 
-    <div class="result" role="status" aria-live="polite">
+    {/* The script moves focus to the shown message, which reads it out once (no live region too). */}
+    <div class="result">
       <p class="ok" data-success tabindex="-1" hidden>
         <Icon name="heart" size={18} />
         <span>{t(lang, 'formSuccess')}</span>
@@ -283,6 +285,10 @@ const id = (name: string) => `cf-${name}`;
 
   .send:disabled {
     opacity: 0.7;
+    cursor: default;
+  }
+
+  form[aria-busy='true'] .send {
     cursor: progress;
   }
 

@@ -20,9 +20,9 @@ function mount(endpoint: string | null = 'https://script.example/exec') {
       <input name="email" /><p data-error-for="email" hidden></p>
       <select name="topic"><option value="">Seç</option><option value="general">Genel</option></select><p data-error-for="topic" hidden></p>
       <textarea name="message"></textarea><p data-error-for="message" hidden></p>
-      <input name="website" />
+      <input name="hp_field" />
       <input name="consent" type="checkbox" /><p data-error-for="consent" hidden></p>
-      <button type="submit"><span class="label">Gönder</span></button>
+      <button type="submit" disabled><span class="label">Gönder</span></button>
       <p data-success tabindex="-1" hidden>ok</p>
       <p data-failure tabindex="-1" hidden>fail <a href="mailto:x@example.com">x</a></p>
     </form>`;
@@ -51,7 +51,10 @@ describe('contact form script', () => {
 
   it('shows inline errors, marks fields invalid and focuses the first one without sending', () => {
     const fetch = reply({ ok: true });
+    // Disabled in the markup; the script enables it.
+    expect(form.querySelector('button')!.disabled).toBe(true);
     initContactForm(form, { fetch });
+    expect(form.querySelector('button')!.disabled).toBe(false);
     expect(form.noValidate).toBe(true);
     submit(form);
     expect(fetch).not.toHaveBeenCalled();
@@ -91,7 +94,7 @@ describe('contact form script', () => {
       topic: 'general',
       message: 'Merhaba, bir sorum var.',
       consent: true,
-      website: '',
+      hp_field: '',
       lang: 'tr',
     });
     // A second submit while sending does nothing.
@@ -103,6 +106,7 @@ describe('contact form script', () => {
     expect(button.disabled).toBe(false);
     expect(button.textContent).toBe('Gönder');
     expect(document.querySelector<HTMLElement>('[data-success]')!.hidden).toBe(false);
+    expect(document.activeElement).toBe(document.querySelector('[data-success]'));
     expect(document.querySelector<HTMLElement>('[data-failure]')!.hidden).toBe(true);
     expect(field('name').value).toBe('');
   });

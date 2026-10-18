@@ -116,6 +116,8 @@ describe('static pages', () => {
       // Posts to the panel's Apps Script URL (the shared value, not a copy).
       expect(form.getAttribute('data-endpoint')).toBe(ADMIN_CONFIG.apiUrl);
       expect(form.getAttribute('data-lang')).toBe(lang);
+      // POST, never GET: even a native submit (no script yet) cannot put personal data in a URL.
+      expect(form.getAttribute('method')).toBe('post');
       expect(form.hasAttribute('action')).toBe(false);
       for (const name of ['name', 'email', 'topic', 'message', 'consent']) {
         const el = form.querySelector(`[name="${name}"]`)!;
@@ -133,10 +135,16 @@ describe('static pages', () => {
       expect(consent.querySelector('a')?.getAttribute('href')).toBe(lang === 'tr' ? '/aydinlatma-metni/' : '/en/privacy-notice/');
       const hp = form.querySelector('.hp')!;
       expect(hp.getAttribute('aria-hidden')).toBe('true');
-      expect(hp.querySelector('input[name=website]')?.getAttribute('tabindex')).toBe('-1');
+      const trap = hp.querySelector('input[name=hp_field]')!;
+      expect(trap.getAttribute('tabindex')).toBe('-1');
+      expect(trap.getAttribute('autocomplete')).toBe('off');
+      expect(form.querySelector('[name=website]')).toBeNull();
       expect(form.querySelector('[data-failure] a[href="mailto:iletisim@example.com"]')).toBeTruthy();
       expect(form.querySelector('[data-success]')?.hasAttribute('hidden')).toBe(true);
-      expect(form.querySelector('button[type=submit]')).toBeTruthy();
+      // Disabled until the script runs (it enables it); the shown message gets focus, not a live region.
+      expect(form.querySelector('button[type=submit]')?.hasAttribute('disabled')).toBe(true);
+      expect(form.querySelector('.result')?.hasAttribute('aria-live')).toBe(false);
+      expect(form.querySelector('.result')?.hasAttribute('role')).toBe(false);
       expect(d.querySelector('main .contact-form .note a')?.getAttribute('href')).toBe(lang === 'tr' ? '/randevu/' : '/en/appointment/');
     }
     expect(squash(loadPage('/iletisim/').querySelector('main .contact-form .note')?.text)).toBe(

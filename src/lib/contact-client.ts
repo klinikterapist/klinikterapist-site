@@ -42,8 +42,10 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
   const failure = form.querySelector<HTMLElement>('[data-failure]')!;
   const control = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
 
-  // The script does the checking (with texts in the page's language) from here on.
+  // The script does the checking (with texts in the page's language) from here on, and only now
+  // can the form be sent: the button is disabled in the markup.
   form.noValidate = true;
+  button.disabled = false;
 
   const setError = (field: ContactField, text: string) => {
     const el = control(field);
@@ -55,13 +57,13 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
     else el.removeAttribute('aria-invalid');
   };
 
-  const read = (): ContactInput & { website: string } => ({
+  const read = (): ContactInput & { hp_field: string } => ({
     name: control('name')?.value ?? '',
     email: control('email')?.value ?? '',
     topic: control('topic')?.value ?? '',
     message: control('message')?.value ?? '',
     consent: (control('consent') as HTMLInputElement | null)?.checked ?? false,
-    website: control('website')?.value ?? '',
+    hp_field: control('hp_field')?.value ?? '',
   });
 
   for (const field of FIELDS) {
@@ -114,6 +116,7 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
     const shown = sent ? success : failure;
     if (sent) form.reset();
     shown.hidden = false;
+    // Focus reads the message out once (it is not a live region as well).
     shown.focus();
   });
 }
