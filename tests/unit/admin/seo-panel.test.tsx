@@ -12,7 +12,7 @@ afterEach(cleanup);
 
 const body = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Habits shape the day.' }] }] };
 const fields = (over: Partial<LangFields>): LangFields => ({
-  title: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: body, ...over,
+  title: '', subtitle: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: body, references: [], ...over,
 });
 const longDesc = 'Kaygı herkesin yaşadığı bir duygudur. '.repeat(6).trim();
 const draft = (): Draft => ({
