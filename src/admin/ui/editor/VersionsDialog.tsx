@@ -8,6 +8,7 @@ import { ApiFailure, type Api, type Draft, type VersionSummary } from '../../api
 import { normalizeDraft } from '../../lib/draft';
 import { renderPreviewHtml } from '../../lib/preview';
 import { relativeLabel } from '../../lib/versions';
+import { useHistoryLayer } from '../history-layer';
 import { Banner, Button, Dialog, Spinner } from '../kit';
 
 const NEEDS_UPDATE = "Sürüm geçmişi için Apps Script'in güncellenmesi gerekiyor.";
@@ -27,6 +28,7 @@ export function VersionsDialog({ api, draftKey, lang, now, onRestore, onClose }:
   const [reading, setReading] = useState(false);
   const latestPick = useRef<string | null>(null);
   const clock = useMemo(() => now ?? new Date(), [now]);
+  const close = useHistoryLayer(onClose);
 
   useEffect(() => {
     let alive = true;
@@ -58,10 +60,10 @@ export function VersionsDialog({ api, draftKey, lang, now, onRestore, onClose }:
   return (
     <Dialog
       title="Sürüm geçmişi"
-      onClose={onClose}
+      onClose={close}
       actions={
         <>
-          <Button onClick={onClose}>Kapat</Button>
+          <Button onClick={close}>Kapat</Button>
           {version && (
             <Button variant="primary" onClick={() => onRestore(version)}>
               Bu sürüme dön

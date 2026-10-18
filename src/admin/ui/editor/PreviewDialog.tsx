@@ -7,6 +7,7 @@ import type { Lang } from '../../../lib/schemas';
 import type { Draft } from '../../api/types';
 import { renderPreviewHtml } from '../../lib/preview';
 import { Button, Spinner } from '../kit';
+import { useHistoryLayer } from '../history-layer';
 import type { ImageStore } from './images';
 
 type Node = { type?: string; attrs?: Record<string, unknown>; content?: Node[] };
@@ -27,6 +28,7 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
   const [urls, setUrls] = useState<Map<string, string> | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const names = useMemo(() => previewImageNames(draft, lang), [draft, lang]);
+  const close = useHistoryLayer(onClose);
 
   useEffect(() => {
     let alive = true;
@@ -46,7 +48,7 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
     const focusable = () => Array.from(rootRef.current?.querySelectorAll<HTMLElement>('button, a[href], [tabindex]:not([tabindex=\'-1\'])') ?? []);
     focusable()[0]?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') return onClose();
+      if (e.key === 'Escape') return close();
       if (e.key !== 'Tab') return;
       const items = focusable();
       if (!items.length) return;
@@ -70,7 +72,7 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
       document.body.style.overflow = overflow;
       prev?.focus?.();
     };
-  }, [onClose]);
+  }, [close]);
 
   const html = useMemo(() => (urls ? renderPreviewHtml(draft, lang, (n) => urls.get(n) ?? null) : ''), [urls, draft, lang]);
 
@@ -78,7 +80,7 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
     <div className="preview-root" ref={rootRef} role="dialog" aria-modal="true" aria-label="Önizleme">
       <div className="preview-bar">
         <span>{`Önizleme · ${lang === 'tr' ? 'Türkçe' : 'İngilizce'} · Henüz yayınlanmadı`}</span>
-        <Button onClick={onClose}>
+        <Button onClick={close}>
           Kapat
         </Button>
       </div>

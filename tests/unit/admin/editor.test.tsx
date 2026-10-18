@@ -231,6 +231,21 @@ describe('EditorPage', () => {
     expect(api.state.commits.length).toBe(commits);
   });
 
+  it('back while previewing closes the preview and stays on the post', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    window.location.hash = '#/yazi/' + base().key;
+    const hash = window.location.hash;
+    await screen.findByRole('button', { name: 'Yayınla' });
+    fireEvent.click(screen.getByRole('button', { name: 'Önizle' }));
+    await screen.findByRole('dialog', { name: 'Önizleme' });
+    const popped = new Promise((r) => window.addEventListener('popstate', r, { once: true }));
+    history.back();
+    await popped;
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Önizleme' })).toBeNull());
+    expect(window.location.hash).toBe(hash);
+    expect(screen.getByText('Yazıyı düzenle')).toBeTruthy();
+  });
+
   it('the editor shows the Kaynakça of the cited references under the text', async () => {
     const ref = { id: 'ray2004', type: 'article' as const, authors: [{ family: 'Ray', given: 'Oakley' }], year: 2004, title: 'Why we need positive psychology' };
     const unused = { id: 'lee2010', type: 'book' as const, authors: [{ family: 'Lee', given: 'Ann' }], year: 2010, title: 'Uncited book', publisher: 'P' };
