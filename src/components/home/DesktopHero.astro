@@ -24,15 +24,19 @@ interface Props {
   intro: string;
   /** Membership organisations already filtered to non-empty names in `lang`. */
   memberships: string[];
+  /** The contact page's response-time text in `lang` (contact.json); nothing is shown when empty. */
+  responseTime: string;
+  /** The "first session" link points at the FAQ item `ilk-gorusme`; hidden when that item has no answer. */
+  showFirstSession: boolean;
 }
-const { lang, photo, alt, eyebrow, heading, intro, memberships } = Astro.props;
+const { lang, photo, alt, eyebrow, heading, intro, memberships, responseTime, showFirstSession } = Astro.props;
 // The photo box is about 45vw wide (and as tall as the hero, so a square photo is cropped to it):
 // ~480 px at 768, ~550 at 1280, ~720 at 1600; the 1080 px variant only for wide or 2x screens.
 const img = photo ? await portraitImage(photo, [560, 800, 1080]) : null;
 const sizes = '(max-width: 1279px) 560px, 45vw';
 // Phones never show this hero: the <source> only matches from 768 px, and below that the <img>
 // falls back to an empty inline GIF, so a phone fetches nothing while desktops load it eagerly.
-const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', org)), t(lang, 'responseTime')].join(' · ');
+const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', org)), responseTime].filter(Boolean).join(' · ');
 ---
 
 <section class:list={['desktop-hero', img ? 'desktop-hero--photo' : 'desktop-hero--none']}>
@@ -46,12 +50,16 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
           <Icon name="calendar" size={18} />
           {t(lang, 'bookSession')}
         </a>
-        <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>
+        {showFirstSession && <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>}
       </div>
-      <p class="trust">
-        <Icon name="shield" size={16} />
-        <span>{trust}</span>
-      </p>
+      {
+        trust && (
+          <p class="trust">
+            <Icon name="shield" size={16} />
+            <span>{trust}</span>
+          </p>
+        )
+      }
       <span class="hero-wordmark">
         <Wordmark height={22} decorative />
       </span>

@@ -145,7 +145,9 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')?.text).toContain('İlk görüşme nasıl geçer?');
     expect(en().querySelector('.home-desk .desktop-hero a[href="/en/faq/#ilk-gorusme"]')).toBeTruthy();
     expect(hero.querySelector('.trust')?.text).toContain('Türk Psikologlar Derneği üyesi');
-    expect(hero.querySelector('.trust')?.text).toContain('1 iş günü');
+    // The response time is the contact page's (contact.json), not a fixed string.
+    expect(hero.querySelector('.trust')?.text).toContain('Dönüş süresi: 24–48 saat.');
+    expect(en().querySelector('.home-desk .desktop-hero .trust')?.text).toContain('Response time: 24–48 hours.');
   });
 
   it('wordmark directly under the trust line (desktop) and the membership line (phone), decorative', () => {

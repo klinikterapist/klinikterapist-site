@@ -42,7 +42,6 @@ export const STRINGS = {
     en: 'My writing and small suggestions, via Substack.',
   },
   firstSession: { tr: 'İlk görüşme nasıl geçer?', en: 'What is the first session like?' },
-  responseTime: { tr: 'Yanıt süresi genelde 1 iş günü', en: 'Replies usually within 1 business day' },
   processTitle: { tr: 'Süreç nasıl işler?', en: 'How does it work?' },
   hello: { tr: 'Merhaba, ben {name}.', en: "Hi, I'm {name}." },
 

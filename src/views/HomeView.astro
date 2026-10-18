@@ -18,7 +18,7 @@ import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
 import Wordmark from '../components/brand/Wordmark.astro';
 import type { HomeCard, Lang } from '../lib/settings';
-import { getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
+import { getContact, getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
 import { getPosts, pickPopular } from '../lib/posts';
 import { readCount, readsLabel } from '../lib/read-counts';
 import { postThumb } from '../lib/post-image';
@@ -37,7 +37,9 @@ const { meta, alternatePaths } = pageMeta('home', lang, getProfile().name, getSe
 const profile = getProfile();
 const style = portraitStyle(profile);
 const alt = profile.photoAlt[lang];
-const role = `${profile.title[lang]} · ${t(lang, 'onlineSessions')}`;
+// An empty title leaves just "Online sessions", not " · Online sessions".
+const role = [profile.title[lang].trim(), t(lang, 'onlineSessions')].filter(Boolean).join(' · ');
+const responseTime = getContact().responseTime[lang].trim();
 const intro = profile.intro[lang].trim();
 const memberships = (profile.memberships ?? []).map((m) => m.org[lang].trim()).filter(Boolean);
 
@@ -45,7 +47,8 @@ const substack = getLinks().find((l) => l.icon === 'substack');
 
 const cards = getHome().cards.filter((c) => c.visible);
 const blogCard = cards.find((c) => c.id === 'blog');
-const listCards = cards.filter((c) => c.id !== 'blog' && c.id !== 'contact');
+// A card with no title in this language would render an empty row: skip it.
+const listCards = cards.filter((c) => c.id !== 'blog' && c.id !== 'contact' && c.title[lang].trim());
 const cardHref = (c: HomeCard) => ('page' in c.target ? pathFor(c.target.page, lang) : c.target.url);
 
 const posts = await getPosts(lang);
@@ -66,6 +69,7 @@ if (hasPopular) tiles.push({ icon: 'flame', title: t(lang, 'popularPosts'), subt
 const tilePair: [Tile] | [Tile, Tile] | null = tiles.length === 2 ? [tiles[0], tiles[1]] : tiles.length === 1 ? [tiles[0]] : null;
 
 const faq = getFaq(lang);
+const hasFirstSession = faq.some((f) => f.id === 'ilk-gorusme');
 const firstName = profile.name.split(/\s+/)[0];
 const helloText = profile.shortIntro?.[lang].trim() || intro;
 const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
@@ -142,6 +146,8 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       heading={profile.tagline[lang]}
       intro={intro}
       memberships={memberships}
+      responseTime={responseTime}
+      showFirstSession={hasFirstSession}
     />
 
     <section class="latest container" aria-label={t(lang, 'recentPosts')}>

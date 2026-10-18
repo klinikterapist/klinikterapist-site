@@ -19,7 +19,7 @@ export function personLd(lang: Lang) {
     '@type': 'Person',
     '@id': personId(),
     name: profile.name,
-    jobTitle: profile.title[lang],
+    ...(profile.title[lang].trim() ? { jobTitle: profile.title[lang].trim() } : {}),
     description: profile.intro[lang],
     url: absoluteUrl(pathFor('home', lang)),
     ...(profile.photo ? { image: absoluteUrl(profile.photo) } : {}),
