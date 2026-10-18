@@ -77,22 +77,49 @@ describe('EditorPage', () => {
     expect(window.location.hash).toBe('#/yazilar');
   });
 
-  it('publishing stays off until both languages are complete, and says what is missing', async () => {
-    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('', '') });
+  it('Yayınla with missing fields opens Ayarlar and the checklist', async () => {
+    localStorage.setItem('panel.rail', 'closed');
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi') }); // the English side is empty
     const publish = await screen.findByRole('button', { name: 'Yayınla' });
-    expect((publish as HTMLButtonElement).disabled).toBe(true);
-    const missing = screen.getByRole('list', { name: 'Eksikler' });
-    expect(within(missing).getByText('İngilizce: Başlık')).toBeTruthy();
+    expect((publish as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+    fireEvent.click(publish);
+    expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Ayarlar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ayarlar' }).getAttribute('aria-pressed')).toBe('true');
+    const list = screen.getByRole('list', { name: 'Yayın kontrol listesi' });
+    const item = within(list).getByRole('button', { name: /İngilizce: Meta açıklama/ });
+    expect(item.closest('li')!.getAttribute('data-done')).toBe('false');
+    expect(item.textContent).toContain('eksik');
 
-    fireEvent.click(screen.getByRole('button', { name: /^EN/ }));
+    fireEvent.click(screen.getByRole('button', { name: /English Page/ }));
     fireEvent.change(screen.getByLabelText('Başlık (İngilizce)'), { target: { value: 'Living with anxiety' } });
-    await waitFor(() => expect((screen.getByRole('button', { name: 'Yayınla' }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(screen.getByRole('button', { name: 'Meta' }));
+    fireEvent.change(screen.getByLabelText('Meta açıklama'), { target: { value: 'Açıklama' } });
+    fireEvent.click(screen.getByRole('button', { name: 'SEO' }));
+    fireEvent.change(screen.getByLabelText('Odak kelime'), { target: { value: 'anxiety' } });
+    // A body text is still missing in English.
+    fireEvent.click(screen.getByRole('button', { name: 'Yayınla' }));
+    expect(screen.queryByRole('dialog', { name: 'Yayınlansın mı?' })).toBeNull();
+    expect(within(screen.getByRole('list', { name: 'Yayın kontrol listesi' })).getByRole('button', { name: /İngilizce: Yazı metni boş/ })).toBeTruthy();
+  });
+
+  it('clicking a checklist item switches language and opens the right panel', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi') });
+    const list = await screen.findByRole('list', { name: 'Yayın kontrol listesi' });
+    fireEvent.click(within(list).getByRole('button', { name: /İngilizce: Meta açıklama/ }));
+    expect(screen.getByRole('button', { name: /English Page/ }).getAttribute('aria-pressed')).toBe('true');
+    const meta = screen.getByRole('region', { name: 'Meta' });
+    expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+    await waitFor(() => expect(document.activeElement).toBe(within(meta).getByLabelText('Meta açıklama')));
+    expect(document.activeElement!.tagName).toBe('TEXTAREA');
   });
 
   it('the URL slug follows the title until it is edited by hand', async () => {
     setup({ ...base(), tr: filled('', ''), en: filled('Title', 'title') });
     const title = await screen.findByLabelText('Başlık (Türkçe)');
     fireEvent.change(title, { target: { value: 'Kaygı ile Yaşamak' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Meta' }));
     const slug = screen.getByLabelText('URL kısa adı') as HTMLInputElement;
     expect(slug.value).toBe('kaygi-ile-yasamak');
     fireEvent.change(slug, { target: { value: 'kaygi' } });
@@ -169,18 +196,55 @@ describe('EditorPage', () => {
   it('language buttons show completeness and switch the editor', async () => {
     setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('', '') });
     const group = await screen.findByRole('group', { name: 'Dil' });
-    expect(within(group).getByRole('button', { name: /^TR/ }).textContent).toContain('✓');
-    expect(within(group).getByRole('button', { name: /^EN/ }).textContent).toContain('⚠');
-    fireEvent.click(within(group).getByRole('button', { name: /^EN/ }));
+    expect(within(group).getByRole('button', { name: /Türkçe Sayfa/ }).textContent).toContain('✓');
+    expect(within(group).getByRole('button', { name: /English Page/ }).textContent).toContain('⚠');
+    fireEvent.click(within(group).getByRole('button', { name: /English Page/ }));
     expect(await screen.findByLabelText('Başlık (İngilizce)')).toBeTruthy();
   });
 
-  it('the settings column can be hidden and the choice is remembered', async () => {
+  it('language buttons are named "Türkçe Sayfa" and "English Page" and show a flag', async () => {
     setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
-    fireEvent.click(await screen.findByRole('button', { name: 'Yazı ayarlarını gizle' }));
-    expect(screen.queryByRole('button', { name: 'Yayınla' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Yazı ayarlarını göster' })).toBeTruthy();
-    expect(localStorage.getItem('panel.side')).toBe('closed');
+    const tr = await screen.findByRole('button', { name: /Türkçe Sayfa/ });
+    expect(tr.querySelector('svg')).toBeTruthy();
+    expect(tr.querySelector('svg')!.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByRole('button', { name: /English Page/ }).querySelector('svg')).toBeTruthy();
+  });
+
+  it('Yayınla sits in the top bar next to Önizle', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const publish = await screen.findByRole('button', { name: 'Yayınla' });
+    const preview = screen.getByRole('button', { name: 'Önizle' });
+    const actions = document.querySelector('.editor-top-actions')!;
+    expect(actions.contains(publish)).toBe(true);
+    expect(actions.contains(preview)).toBe(true);
+    expect(preview.compareDocumentPosition(publish) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(publish.className).toContain('k-btn-primary');
+    expect(screen.queryByRole('button', { name: /Yazı ayarlarını/ })).toBeNull();
+  });
+
+  it('the rail opens one panel at a time and remembers it', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    fireEvent.click(await screen.findByRole('button', { name: 'SEO' }));
+    expect(screen.getByRole('region', { name: 'SEO' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'SEO' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'SEO' }).getAttribute('title')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Meta' }));
+    expect(screen.queryByRole('region', { name: 'SEO' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Meta' })).toBeTruthy();
+    expect(localStorage.getItem('panel.rail')).toBe('meta');
+    fireEvent.click(screen.getByRole('button', { name: 'Meta' }));
+    expect(screen.queryByRole('region', { name: 'Meta' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
+    expect(localStorage.getItem('panel.rail')).toBe('closed');
+  });
+
+  it('the ⋯ menu holds Taslağı sil', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    fireEvent.click(await screen.findByRole('button', { name: 'Diğer işlemler' }));
+    expect(screen.queryByRole('menuitem', { name: 'Yayından kaldır' })).toBeNull();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Taslağı sil' }));
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Taslak silinsin mi?' })).toBeTruthy();
   });
 
   it('the footer shows word count and reading time', async () => {
@@ -201,17 +265,34 @@ describe('EditorPage', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('on a narrow screen the settings column starts hidden, and a stored closed state stays hidden', async () => {
+  it('on a narrow screen the rail starts closed and opens its panel as a bottom sheet that back closes', async () => {
     const orig = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', { value: 500, configurable: true });
     try {
+      localStorage.setItem('panel.rail', 'seo');
       setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
-      expect(await screen.findByRole('button', { name: 'Yazı ayarlarını göster' })).toBeTruthy();
+      const seo = await screen.findByRole('button', { name: 'SEO' });
+      expect(seo.getAttribute('aria-pressed')).toBe('false');
+      expect(screen.queryByRole('dialog')).toBeNull();
+      fireEvent.click(seo);
+      const sheet = screen.getByRole('dialog', { name: 'SEO' });
+      expect(screen.queryByRole('region', { name: 'SEO' })).toBeNull();
+      expect(within(sheet).getByRole('meter', { name: /SEO puanı/ })).toBeTruthy();
+      const popped = new Promise((r) => window.addEventListener('popstate', r, { once: true }));
+      history.back();
+      await popped;
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: 'SEO' })).toBeNull());
+      expect(screen.getByText('Yazıyı düzenle')).toBeTruthy();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Ayarlar' }));
+      fireEvent.click(within(screen.getByRole('dialog', { name: 'Ayarlar' })).getByRole('button', { name: 'Kapat' }));
+      expect(screen.queryByRole('dialog', { name: 'Ayarlar' })).toBeNull();
       cleanup();
       Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
-      localStorage.setItem('panel.side', 'closed');
+      localStorage.setItem('panel.rail', 'closed');
       setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
-      expect(await screen.findByRole('button', { name: 'Yazı ayarlarını göster' })).toBeTruthy();
+      expect((await screen.findByRole('button', { name: 'Ayarlar' })).getAttribute('aria-pressed')).toBe('false');
+      expect(screen.queryByRole('region', { name: 'Ayarlar' })).toBeNull();
     } finally {
       Object.defineProperty(window, 'innerWidth', { value: orig, configurable: true });
     }
@@ -220,7 +301,7 @@ describe('EditorPage', () => {
   it('Önizle shows the selected language full screen, never saves or publishes, and Kapat closes it', async () => {
     const api = setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
     await screen.findByRole('button', { name: 'Yayınla' });
-    fireEvent.click(screen.getByRole('button', { name: /^EN/ }));
+    fireEvent.click(screen.getByRole('button', { name: /English Page/ }));
     const commits = api.state.commits.length;
     fireEvent.click(screen.getByRole('button', { name: 'Önizle' }));
     const dialog = await screen.findByRole('dialog', { name: 'Önizleme' });
@@ -259,7 +340,7 @@ describe('EditorPage', () => {
     expect(within(section).getByRole('heading', { name: 'Kaynakça' })).toBeTruthy();
     expect(section.textContent).toContain('Why we need positive psychology');
     expect(section.textContent).not.toContain('Uncited book');
-    fireEvent.click(screen.getByRole('button', { name: /^EN/ }));
+    fireEvent.click(screen.getByRole('button', { name: /English Page/ }));
     expect(document.querySelector('.editor-references')).toBeNull();
   });
 });

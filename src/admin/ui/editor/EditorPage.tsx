@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type Draft, type LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
-import { canPublish, describeMissing, isoDay, LANG_LABEL, missingFields, normalizeDraft } from '../../lib/draft';
+import { isoDay, LANG_LABEL, normalizeDraft } from '../../lib/draft';
+import { EDITOR_FIELDS, publishChecklist, type ChecklistItem } from '../../lib/checklist';
+import { runSeoChecks } from '../../lib/seo-check';
 import { docToMarkdown } from '../../lib/markdown';
 import { UnknownReferenceError, citedIds, renderReferencesSection } from '../../../lib/citations';
 import { countWords, readingTime } from '../../../lib/readingTime';
@@ -17,10 +19,13 @@ import { useDeploy } from '../DeployStatus';
 import { Banner, Button, Dialog, Spinner } from '../kit';
 import { ImageStore } from './images';
 import { PostEditor } from './PostEditor';
-import { PostSettings } from './PostSettings';
+import { EditorTopBar, type MoreAction } from './EditorTopBar';
+import { MetaPanel } from './MetaPanel';
+import { SettingsPanel } from './SettingsPanel';
+import { RailPanelFrame, SHEET_BELOW, SideRail, useNarrow, useRailPanel } from './SideRail';
 import { PreviewDialog } from './PreviewDialog';
 import { clearBackup, readBackup, useAutosave, type AutosaveStatus } from './useAutosave';
-import { SeoPanel } from './SeoPanel';
+import { scoreTone, SeoPanel, useDebounced } from './SeoPanel';
 import { VersionsDialog } from './VersionsDialog';
 import { restoreLang } from '../../lib/versions';
 
@@ -117,24 +122,13 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [versioning, setVersioning] = useState(false);
   const closeVersions = useCallback(() => setVersioning(false), []);
   const [toolbarHost, setToolbarHost] = useState<HTMLElement | null>(null);
-  const [side, setSide] = useState<'open' | 'closed'>(() => {
-    try {
-      const v = window.localStorage.getItem('panel.side');
-      if (v === 'open' || v === 'closed') return v;
-    } catch {
-      /* storage unavailable */
-    }
-    return window.innerWidth < 768 ? 'closed' : 'open';
-  });
-  const toggleSide = () => {
-    const next = side === 'open' ? 'closed' : 'open';
-    setSide(next);
-    try {
-      window.localStorage.setItem('panel.side', next);
-    } catch {
-      /* storage unavailable */
-    }
-  };
+  const [rail, setRail] = useRailPanel();
+  const closeRail = useCallback(() => setRail(null), [setRail]);
+  const narrow = useNarrow(SHEET_BELOW);
+  /** Yayınla was pressed with something missing: the checklist marks the missing required items. */
+  const [flagMissing, setFlagMissing] = useState(false);
+  /** A `data-field` to scroll to and focus once the panel or language it lives in has rendered. */
+  const [focusField, setFocusField] = useState<string | null>(null);
 
   const repoImages = useMemo(
     () =>
@@ -164,10 +158,50 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const words = useMemo(() => countWords(markdown), [markdown]);
   const minutes = useMemo(() => readingTime(markdown), [markdown]);
 
-  const check = canPublish(draft);
-  const missing = describeMissing(check);
   const onLang = useCallback((patch: Partial<LangFields>) => update((d) => ({ ...d, [lang]: { ...d[lang], ...patch } })), [lang, update]);
-  const otherKeywords = loaded.others.map((p) => p[lang].fm.focusKeyword).filter(Boolean);
+  const keywordsOf = useCallback((l: Lang) => loaded.others.map((p) => p[l].fm.focusKeyword).filter(Boolean), [loaded.others]);
+  const otherKeywords = useMemo(() => keywordsOf(lang), [keywordsOf, lang]);
+  // Scores for the rail dot and the checklist; debounced like the SEO panel.
+  const seoDraft = useDebounced(draft, 300);
+  const seoScore = useMemo(() => {
+    const score = (l: Lang) => runSeoChecks({ lang: l, fields: seoDraft[l], hasCover: !!seoDraft.cover, otherKeywords: keywordsOf(l) }).score;
+    return { tr: score('tr'), en: score('en') };
+  }, [seoDraft, keywordsOf]);
+  const checklist = useMemo(() => publishChecklist(draft, seoScore), [draft, seoScore]);
+  const blocked = checklist.some((i) => i.required && !i.done);
+
+  useEffect(() => {
+    if (!focusField) return;
+    setFocusField(null);
+    const selector = focusField === 'checklist' ? '[data-field="checklist"] .is-flagged button' : `[data-field="${focusField}"]`;
+    // The writing area's body appears a moment after a language switch: try for a few frames.
+    const attempt = (left: number) => {
+      const el = document.querySelector<HTMLElement>(selector);
+      if (!el) return left > 0 && requestAnimationFrame(() => attempt(left - 1));
+      el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      el.focus({ preventScroll: true });
+    };
+    attempt(10);
+  }, [focusField]);
+
+  /** A checklist item: switch to its language, open the panel that holds its field, focus the field. */
+  const goTo = (item: ChecklistItem) => {
+    if (item.lang && item.lang !== lang) setLang(item.lang);
+    if (EDITOR_FIELDS.has(item.field)) {
+      if (narrow) setRail(null); // the field is in the text, behind the sheet
+      if (item.field === 'references') return; // the citation lives in the text; switching language is all
+    } else {
+      setRail(item.panel);
+    }
+    setFocusField(item.field);
+  };
+
+  const onPublish = () => {
+    if (!blocked) return setConfirm('publish');
+    setFlagMissing(true);
+    setRail('settings');
+    setFocusField('checklist');
+  };
 
   const replaceDraft = (d: Draft) => {
     auto.replace(d);
@@ -264,6 +298,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
     }
   };
 
+  const more: MoreAction[] = [
+    ...(draft.published && loaded.live ? [{ label: 'Yayından kaldır', onSelect: () => setConfirm('unpublish') }] : []),
+    ...(inDrive ? [{ label: loaded.live ? 'Değişiklikleri at' : 'Taslağı sil', onSelect: () => setConfirm('delete') }] : []),
+  ];
+
   if (done) {
     return (
       <section className="card-panel done" aria-labelledby="done-title">
@@ -300,39 +339,20 @@ function Editing({ loaded }: { loaded: Loaded }) {
   return (
     <div className="editor-page">
       <h2 className="k-visually-hidden">Yazıyı düzenle</h2>
-      <div className="editor-top">
-        <a href="#/yazilar">← Yazılar</a>
-        <span className={`save-status save-${auto.status}`} role="status">
-          {STATUS_TEXT[auto.status]}
-        </span>
-        <div className="editor-top-actions">
-          <div className="lang-switch" role="group" aria-label="Dil">
-            {(['tr', 'en'] as Lang[]).map((l) => {
-              const ok = missingFields(draft[l], l, !!draft.cover).length === 0;
-              return (
-                <button
-                  key={l}
-                  type="button"
-                  aria-pressed={lang === l}
-                  title={`${LANG_LABEL[l]}${ok ? '' : ' (eksik alanlar var)'}`}
-                  className={`lang-btn ${lang === l ? 'is-active' : ''}`}
-                  onClick={() => setLang(l)}
-                >
-                  {l.toUpperCase()}{' '}
-                  <span className={`dot ${ok ? 'dot-ok' : 'dot-missing'}`} aria-hidden="true">
-                    {ok ? '✓' : '⚠'}
-                  </span>
-                  <span className="k-visually-hidden">{ok ? ' tamam' : ' eksik alanlar var'}</span>
-                </button>
-              );
-            })}
-          </div>
-          <Button onClick={() => setPreviewing(true)}>Önizle</Button>
-          <Button variant="ghost" onClick={toggleSide}>
-            {side === 'open' ? 'Yazı ayarlarını gizle' : 'Yazı ayarlarını göster'}
-          </Button>
-        </div>
-      </div>
+      <EditorTopBar
+        status={
+          <span className={`save-status save-${auto.status}`} role="status">
+            {STATUS_TEXT[auto.status]}
+          </span>
+        }
+        draft={draft}
+        lang={lang}
+        onLang={setLang}
+        onPreview={() => setPreviewing(true)}
+        onPublish={onPublish}
+        publishing={busy && confirm === 'publish'}
+        more={more}
+      />
 
       {restore && (
         <Banner
@@ -369,7 +389,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
 
       <div className="editor-toolbar-slot" ref={setToolbarHost} />
 
-      <div className={`editor-grid ${side === 'closed' ? 'side-closed' : ''}`}>
+      <div className={`editor-grid ${rail && !narrow ? 'has-panel' : ''}`}>
         <div className="editor-main">
           <div aria-label={LANG_LABEL[lang]}>
             <PostEditor key={`${lang}-${version}`} lang={lang} fields={draft[lang]} onChange={onLang} images={images} onError={setMessage} toolbarHost={toolbarHost} />
@@ -377,48 +397,31 @@ function Editing({ loaded }: { loaded: Loaded }) {
           {referencesHtml && <div className="editor-references" dangerouslySetInnerHTML={{ __html: referencesHtml }} />}
         </div>
 
-        <aside className="editor-side" hidden={side === 'closed'}>
-          <section className="side-card publish-card" aria-label="Yayın">
-            {draft.published ? <p className="badge badge-live">Yayında</p> : <p className="badge">Taslak</p>}
-            <Button variant="primary" disabled={!check.ok} busy={busy && confirm === 'publish'} onClick={() => setConfirm('publish')}>
-              {draft.published ? 'Değişiklikleri yayınla' : 'Yayınla'}
-            </Button>
-            {!check.ok && (
-              <>
-                <p className="k-hint">Yayınlamak için iki dil de tamamlanmalı:</p>
-                <ul className="missing" aria-label="Eksikler">
-                  {missing.map((m) => (
-                    <li key={m}>{m}</li>
-                  ))}
-                </ul>
-              </>
+        {rail && (
+          <RailPanelFrame panel={rail} sheet={narrow} onClose={closeRail}>
+            {rail === 'settings' && (
+              <SettingsPanel
+                draft={draft}
+                categories={loaded.categories}
+                images={images}
+                coverVersion={coverVersion}
+                onShared={(patch) => update((d) => ({ ...d, ...patch }))}
+                onCoverUploaded={() => setCoverVersion((v) => v + 1)}
+                onError={setMessage}
+                checklist={checklist}
+                flagMissing={flagMissing}
+                onGo={goTo}
+              />
             )}
-            <div className="row">
-              {draft.published && loaded.live && (
-                <Button variant="ghost" onClick={() => setConfirm('unpublish')}>
-                  Yayından kaldır
-                </Button>
-              )}
-              {inDrive && (
-                <Button variant="ghost" onClick={() => setConfirm('delete')}>
-                  {loaded.live ? 'Değişiklikleri at' : 'Taslağı sil'}
-                </Button>
-              )}
-            </div>
-          </section>
-          <PostSettings
-            draft={draft}
-            lang={lang}
-            categories={loaded.categories}
-            images={images}
-            coverVersion={coverVersion}
-            onShared={(patch) => update((d) => ({ ...d, ...patch }))}
-            onLang={onLang}
-            onCoverUploaded={() => setCoverVersion((v) => v + 1)}
-            onError={setMessage}
-          />
-          <SeoPanel lang={lang} draft={draft} otherKeywords={otherKeywords} images={images} />
-        </aside>
+            {rail === 'seo' && <SeoPanel lang={lang} draft={draft} otherKeywords={otherKeywords} onLang={onLang} />}
+            {rail === 'meta' && <MetaPanel draft={draft} lang={lang} images={images} onLang={onLang} />}
+          </RailPanelFrame>
+        )}
+        <SideRail
+          open={rail}
+          onToggle={(p) => setRail(rail === p ? null : p)}
+          dots={{ seo: scoreTone(seoScore[lang]), seoScore: seoScore[lang], settingsMissing: blocked }}
+        />
       </div>
 
       <footer className="editor-footer">

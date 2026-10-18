@@ -55,7 +55,7 @@ function useTiptap(lang: Lang, doc: JSONContent, references: Reference[], images
         Citation.configure({ refs: citedRefs(references, doc, lang), lang }),
       ],
       content: doc,
-      editorProps: { attributes: { class: 'ed-body prose', lang, 'aria-label': `Yazı metni (${LANG_LABEL[lang]})` } },
+      editorProps: { attributes: { class: 'ed-body prose', lang, 'aria-label': `Yazı metni (${LANG_LABEL[lang]})`, 'data-field': 'body' } },
       onUpdate: ({ editor }) => onDocRef.current(editor.getJSON()),
     },
     [lang],
@@ -217,6 +217,7 @@ export function PostEditor(props: {
       </label>
       <textarea
         id={`title-${lang}`}
+        data-field="title"
         ref={title}
         className="ed-title"
         rows={1}
@@ -230,6 +231,7 @@ export function PostEditor(props: {
       </label>
       <textarea
         id={`subtitle-${lang}`}
+        data-field="subtitle"
         ref={subtitle}
         className="ed-subtitle"
         rows={1}

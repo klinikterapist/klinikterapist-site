@@ -6,7 +6,7 @@ import { buildCategoryChangeset } from '../../../lib/publish';
 import { loadSiteState } from '../../../lib/posts-repo';
 import { usePanel } from '../../context';
 import { Field } from '../../kit';
-import { typingSlug } from '../../editor/PostSettings';
+import { typingSlug } from '../../editor/MetaPanel';
 import { ListEditor, LocalizedField, SettingsForm } from '../fields';
 import { useSettingsFile } from '../useSettingsFile';
 

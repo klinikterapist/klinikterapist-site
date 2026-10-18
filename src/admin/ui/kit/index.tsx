@@ -27,6 +27,8 @@ export function Field(props: {
   className?: string;
   inputClassName?: string;
   lang?: string;
+  /** Set as `data-field` on the input, so the publish checklist can find and focus it. */
+  field?: string;
 }) {
   const id = useId();
   const describedBy = [props.hint ? `${id}-hint` : '', props.error ? `${id}-err` : ''].filter(Boolean).join(' ') || undefined;
@@ -36,6 +38,7 @@ export function Field(props: {
     placeholder: props.placeholder,
     maxLength: props.maxLength,
     lang: props.lang,
+    'data-field': props.field,
     className: `k-input ${props.inputClassName ?? ''}`,
     'aria-invalid': props.error ? true : undefined,
     'aria-describedby': describedBy,
@@ -77,12 +80,13 @@ export function Select<T extends string>(props: {
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
   className?: string;
+  field?: string;
 }) {
   const id = useId();
   return (
     <div className={`k-field ${props.className ?? ''}`}>
       <label htmlFor={id}>{props.label}</label>
-      <select id={id} className="k-input" value={props.value} onChange={(e) => props.onChange(e.target.value as T)}>
+      <select id={id} className="k-input" data-field={props.field} value={props.value} onChange={(e) => props.onChange(e.target.value as T)}>
         {props.options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
