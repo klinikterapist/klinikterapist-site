@@ -43,6 +43,8 @@ export const ICONS = {
   chat: '<path d="M4 5h16v11H9l-5 4z"/>',
   target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
   wave: '<path d="M5 19c4 0 4-6 7-6s3 6 7 6M5 5c4 0 4 6 7 6s3-6 7-6"/>',
+  share: '<circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 10.8l7.6-3.6M8.2 13.2l7.6 3.6"/>',
+  list: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

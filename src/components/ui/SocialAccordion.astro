@@ -1,0 +1,95 @@
+---
+/**
+ * "Sosyal medyada takip et": an accordion with every social account from links.json (not e-mail),
+ * in file order, each with its big logo, name and optional note (e.g. Medium "İngilizce").
+ * Used on the phone home page and the contact page. Nothing when there is no account.
+ */
+import type { Lang } from '../../lib/settings';
+import { getLinks } from '../../lib/settings';
+import { t } from '../../i18n/ui';
+import Accordion from './Accordion.astro';
+import Flag from './Flag.astro';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const socials = getLinks()
+  .filter((l) => l.icon !== 'email')
+  .map((l) => ({ ...l, note: l.note?.[lang].trim() ?? '' }));
+const labels = socials.map((l) => l.label);
+const hint = labels.length > 3 ? t(lang, 'andMore').replace('{list}', labels.slice(0, 3).join(', ')) : labels.join(', ');
+---
+
+{
+  socials.length > 0 && (
+    <Accordion class="social" icon="heart" title={t(lang, 'followSocial')} subtitle={hint}>
+      {socials.map((l) => (
+        <a class="soc" href={l.url} target="_blank" rel="noopener noreferrer me">
+          <span class="soc-ic">
+            <Icon name={l.icon} size={26} />
+          </span>
+          <span class="soc-text">
+            <span class="soc-name">{l.label}</span>
+            {l.note && (
+              <em class="note">
+                <Flag flag="gb" width={18} />
+                {l.note}
+              </em>
+            )}
+            <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+          </span>
+          <Icon name="chevron" size={14} class="soc-chv" />
+        </a>
+      ))}
+    </Accordion>
+  )
+}
+
+<style>
+  /* Social rows inside the accordion: big logos, names only. */
+  .soc {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 44px;
+    padding: 12px 6px;
+    border-top: 1px solid var(--line);
+    color: var(--text);
+    font-size: 0.96875rem;
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .soc-ic {
+    display: flex;
+    color: var(--link);
+  }
+
+  .soc-text {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .note {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--sun-disc) 20%, transparent);
+    font-size: 0.75rem;
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .soc :global(.soc-chv) {
+    flex: none;
+    color: var(--muted);
+  }
+</style>

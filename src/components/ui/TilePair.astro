@@ -1,10 +1,10 @@
 ---
-/** Two square-ish tiles side by side; a single tile spans the full width. */
+/** Two square-ish tiles side by side; a single tile spans the full width. A tile without `href` is not a link. */
 import Icon from '../Icon.astro';
 
 interface Tile {
   title: string;
-  href: string;
+  href?: string;
   subtitle?: string;
   icon?: string;
 }
@@ -16,17 +16,20 @@ const { tiles } = Astro.props;
 
 <div class:list={['tile-pair', { single: tiles.length === 1 }]}>
   {
-    tiles.map((tile) => (
-      <a class="tile" href={tile.href}>
-        {tile.icon && (
-          <span class="ic">
-            <Icon name={tile.icon} size={22} />
-          </span>
-        )}
-        <b class="title">{tile.title}</b>
-        {tile.subtitle && <small class="subtitle">{tile.subtitle}</small>}
-      </a>
-    ))
+    tiles.map((tile) => {
+      const Tag = tile.href ? 'a' : 'div';
+      return (
+        <Tag class="tile" href={tile.href}>
+          {tile.icon && (
+            <span class="ic">
+              <Icon name={tile.icon} size={22} />
+            </span>
+          )}
+          <b class="title">{tile.title}</b>
+          {tile.subtitle && <small class="subtitle">{tile.subtitle}</small>}
+        </Tag>
+      );
+    })
   }
 </div>
 

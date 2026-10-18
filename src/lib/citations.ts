@@ -87,11 +87,17 @@ export function validateCitations(body: string, refs: Reference[], file: string)
   }
 }
 
-/** The Kaynakça / References section as HTML; empty when nothing is cited. */
-export function renderReferencesSection(refs: Reference[], cited: Set<string>, lang: Lang, headingId = 'references-title'): string {
+/** The cited references, APA-sorted, each as one `<li>` (HTML); empty when nothing is cited. */
+export function referenceItemsHtml(refs: Reference[], cited: Set<string>, lang: Lang): string[] {
   const bib = bibliography(refs, cited, lang);
-  if (!bib.length) return '';
-  const items = bib.map((r) => `<li>${formatReferenceHtml(r, bib, lang)}</li>`).join('');
+  return bib.map((r) => `<li>${formatReferenceHtml(r, bib, lang)}</li>`);
+}
+
+/** The Kaynakça / References section as HTML (the admin preview); empty when nothing is cited. */
+export function renderReferencesSection(refs: Reference[], cited: Set<string>, lang: Lang, headingId = 'references-title'): string {
+  const list = referenceItemsHtml(refs, cited, lang);
+  if (!list.length) return '';
+  const items = list.join('');
   return (
     `<section class="references" aria-labelledby="${headingId}">` +
     `<h2 id="${headingId}">${t(lang, 'references')}</h2>` +

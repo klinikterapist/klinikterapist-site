@@ -8,12 +8,14 @@ interface Props {
   icon?: string;
   name?: string;
   open?: boolean;
+  /** Anchor target (e.g. a resources type box). */
+  id?: string;
   class?: string;
 }
-const { title, subtitle, icon, name, open = false, class: className } = Astro.props;
+const { title, subtitle, icon, name, open = false, id, class: className } = Astro.props;
 ---
 
-<details class:list={['acc', className]} name={name} open={open}>
+<details class:list={['acc', className]} id={id} name={name} open={open}>
   <summary>
     {
       icon && (

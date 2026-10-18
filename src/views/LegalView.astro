@@ -1,5 +1,5 @@
 ---
-/** Renders `<data>/legal/<name>.<lang>.md`. The text's own `#` heading is the page h1. */
+/** Renders `<data>/legal/<name>.<lang>.md` in the new look, text unchanged. The text's own `#` heading is the page h1. */
 import { getEntry, render } from 'astro:content';
 import PageShell from '../layouts/PageShell.astro';
 import type { Lang } from '../lib/settings';
@@ -26,7 +26,7 @@ const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
-  <article class="container-text legal">
+  <article class="container-text inner-page legal legal-page">
     {!h1 && <h1>{title}</h1>}
     <Content />
   </article>
@@ -34,11 +34,16 @@ const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc
 
 <style>
   .legal {
-    padding-top: var(--space-6);
+    font-size: var(--text-sm);
+    line-height: 1.65;
   }
 
   .legal :global(h1) {
-    color: var(--link);
+    margin: 4px 0 var(--space-4);
+    font-size: 1.875rem;
+    font-variation-settings: 'SOFT' 100;
+    line-height: 1.12;
+    text-align: center;
   }
 
   .legal :global(h2) {
@@ -53,10 +58,10 @@ const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc
 
   .legal :global(blockquote) {
     margin: var(--space-4) 0;
-    padding: var(--space-3) var(--space-4);
-    border-left: 3px solid var(--quote-rule);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    background: var(--surface-2);
+    padding: 12px 14px;
+    border-left: 4px solid var(--quote-rule);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    background: var(--surface);
   }
 
   .legal :global(blockquote p) {
@@ -75,10 +80,25 @@ const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc
     border-collapse: collapse;
   }
 
+  .legal :global(h2),
+  .legal :global(h3) {
+    font-variation-settings: 'SOFT' 100;
+  }
+
   .legal :global(th),
   .legal :global(td) {
     padding: var(--space-2);
     border: 1px solid var(--line);
     text-align: left;
+  }
+
+  @media (min-width: 768px) {
+    .legal {
+      font-size: var(--text-base);
+    }
+
+    .legal :global(h1) {
+      font-size: var(--text-2xl);
+    }
   }
 </style>

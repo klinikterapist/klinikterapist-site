@@ -1,254 +1,122 @@
 ---
+/**
+ * Contact (spec §5.9): photo (or the sun), "İletişim", the intro; the big "Randevu Al"; "E-posta gönder";
+ * the "Online görüşme" / "Dönüş süresi" pair; the social accordion; the membership; and the emergency
+ * note in a dashed box drawn with theme tokens (readable by day and by night).
+ */
 import PageShell from '../layouts/PageShell.astro';
-import LinkCard from '../components/LinkCard.astro';
-import Portrait from '../components/Portrait.astro';
+import PageHead from '../components/ui/PageHead.astro';
+import RoundPortrait from '../components/ui/RoundPortrait.astro';
+import ListItem from '../components/ui/ListItem.astro';
+import TilePair from '../components/ui/TilePair.astro';
+import SocialAccordion from '../components/ui/SocialAccordion.astro';
 import Icon from '../components/Icon.astro';
 import type { Lang } from '../lib/settings';
-import { getContact, getLinks } from '../lib/settings';
+import { getContact, getProfile } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { pathFor } from '../i18n/routes';
-import { STRINGS, t, type UiKey } from '../i18n/ui';
+import { t } from '../i18n/ui';
 
 interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
 const contact = getContact();
+const profile = getProfile();
 const title = t(lang, 'navContact');
-const { meta, alternatePaths } = pageMeta('contact', lang, title, contact.intro[lang]);
+const intro = contact.intro[lang].trim();
+const { meta, alternatePaths } = pageMeta('contact', lang, title, intro);
 
-const links = getLinks();
-// Every social account gets a card; its hint is `<icon>Hint` when the string exists.
-const hintFor = (l: { icon: string; label: string }) => {
-  const key = `${l.icon}Hint`;
-  return key in STRINGS ? t(lang, key as UiKey) : l.label;
-};
+/** "Dönüş süresi: 24–48 saat." under the title "Dönüş süresi" reads "24–48 saat.". */
+function withoutLabel(text: string, label: string): string {
+  const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
+  if (!text.toLocaleLowerCase(locale).startsWith(label.toLocaleLowerCase(locale))) return text;
+  const rest = text.slice(label.length);
+  return /^\s*:/.test(rest) ? rest.replace(/^\s*:\s*/, '') : text;
+}
 
-const channels = [
-  { href: `mailto:${contact.email}`, title: t(lang, 'emailLabel'), subtitle: t(lang, 'emailHint'), icon: 'email', external: false },
-  ...links
-    .filter((l) => l.icon !== 'email')
-    .map((l) => ({ href: l.url, title: l.label, subtitle: hintFor(l), icon: l.icon, external: true })),
-  { href: pathFor('appointment', lang), title: t(lang, 'bookSession'), subtitle: t(lang, 'appointmentHint'), icon: 'calendar', external: false },
-];
+type Tile = { title: string; subtitle: string; icon: string };
+const facts: Tile[] = [
+  { title: t(lang, 'onlineSessions'), subtitle: contact.workStyle[lang].trim(), icon: 'laptop' },
+  { title: t(lang, 'responseTitle'), subtitle: withoutLabel(contact.responseTime[lang].trim(), t(lang, 'responseTitle')), icon: 'clock' },
+].filter((f) => f.subtitle);
+const factPair: [Tile] | [Tile, Tile] | null = facts.length === 2 ? [facts[0], facts[1]] : facts.length === 1 ? [facts[0]] : null;
+
+const memberships = (profile.memberships ?? [])
+  .map((m) => ({ org: m.org[lang].trim(), number: m.number?.trim() ?? '' }))
+  .filter((m) => m.org);
+const emergency = contact.emergencyNote[lang].trim();
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
-  <div class="container contact">
-    <header class="page-head">
-      <div>
-        <h1>{title}</h1>
-        <p class="lead">{contact.intro[lang]}</p>
-        <span class="rule" aria-hidden="true"></span>
-      </div>
-      <div class="head-photo">
-        <Portrait lang={lang} size={280} eager />
-      </div>
-    </header>
+  <div class="container-text inner-page contact">
+    <PageHead title={title}>
+      <RoundPortrait slot="media" photo={profile.photo} alt={profile.photoAlt[lang]} size={96} eager />
+      {intro && <p class="lead">{intro}</p>}
+    </PageHead>
 
-    <section aria-labelledby="channels-title">
-      <h2 id="channels-title" class="visually-hidden">{t(lang, 'channels')}</h2>
-      <ul class="channels">
-        {
-          channels.map((c) => (
-            <li>
-              <LinkCard
-                href={c.href}
-                title={c.title}
-                subtitle={c.subtitle}
-                icon={c.icon}
-                external={c.external}
-                newTabLabel={t(lang, 'opensInNewTab')}
-              />
-            </li>
-          ))
-        }
-      </ul>
-    </section>
+    <a class="big-cta" href={pathFor('appointment', lang)}>
+      <Icon name="calendar" size={18} />
+      {t(lang, 'bookSession')}
+    </a>
 
-    <section class="work" aria-labelledby="work-title">
-      <div class="work-head">
-        <span class="work-icon" aria-hidden="true"><Icon name="leaf" size={24} /></span>
-        <div>
-          <h2 id="work-title">{t(lang, 'workStyle')}</h2>
-          <p>{contact.workStyle[lang]}</p>
-        </div>
-      </div>
-      <ul class="facts">
-        <li>
-          <Icon name="laptop" size={24} />
-          <span class="fact-title">{t(lang, 'onlineSessions')}</span>
-        </li>
-        <li>
-          <Icon name="clock" size={24} />
-          <span class="fact-title">{contact.responseTime[lang]}</span>
-        </li>
-      </ul>
-    </section>
+    <div class="page-stack">
+      <ListItem icon="email" title={t(lang, 'sendEmail')} subtitle={contact.email} href={`mailto:${contact.email}`} />
 
-    <aside class="emergency" aria-label={t(lang, 'emergency')}>
-      <Icon name="alert" size={22} />
-      <p>{contact.emergencyNote[lang]}</p>
-    </aside>
+      {
+        factPair && (
+          <div class="facts">
+            <TilePair tiles={factPair} />
+          </div>
+        )
+      }
+
+      <SocialAccordion lang={lang} />
+
+      {
+        memberships.map((m) => (
+          <ListItem
+            class="membership"
+            icon="shield"
+            title={t(lang, 'memberOf').replace('{org}', m.org)}
+            subtitle={m.number ? t(lang, 'memberNo').replace('{n}', m.number) : undefined}
+          />
+        ))
+      }
+
+      {
+        emergency && (
+          <aside class="emergency-box" aria-label={t(lang, 'emergency')}>
+            <Icon name="alert" size={20} />
+            <p>{emergency}</p>
+          </aside>
+        )
+      }
+    </div>
   </div>
 </PageShell>
 
 <style>
-  .contact {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
-    padding-top: var(--space-4);
-  }
-
-  .page-head {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
-    gap: var(--space-4);
-    align-items: center;
-  }
-
-  .page-head h1 {
-    margin-bottom: var(--space-3);
-    font-size: clamp(1.875rem, 1.2rem + 3vw, 3.25rem);
-  }
-
-  .lead {
-    margin: 0;
-    color: var(--muted);
-    font-size: var(--text-sm);
-    line-height: 1.55;
-  }
-
-  .rule {
-    display: block;
-    width: 2.5rem;
-    height: 1px;
-    margin-top: var(--space-4);
-    background: var(--btn-bg);
-  }
-
-  .head-photo {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .channels {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .work {
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
-    background: var(--surface-2);
-  }
-
-  .work-head {
+  .emergency-box {
     display: flex;
     align-items: flex-start;
-    gap: var(--space-3);
-  }
-
-  .work-head h2 {
-    margin-bottom: var(--space-1);
-    font-size: var(--text-lg);
-  }
-
-  .work-head p {
-    margin: 0;
-    font-size: var(--text-sm);
-  }
-
-  .work-icon {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--surface);
-    color: var(--link);
-  }
-
-  .facts {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    margin: var(--space-4) 0 0;
-    padding: var(--space-3) 0 0;
-    border-top: 1px solid var(--line);
-    list-style: none;
-  }
-
-  .facts li {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-2);
-    text-align: center;
-  }
-
-  .facts li + li {
-    border-left: 1px solid var(--line);
-  }
-
-  .facts :global(.icon) {
-    color: var(--link);
-  }
-
-  .fact-title {
-    font-size: var(--text-sm);
-    font-weight: 600;
-  }
-
-  .emergency {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
-    padding: var(--space-4);
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px dashed var(--line);
     border-radius: var(--radius-md);
-    background: #f3e3dc;
-    color: #6b2f1f;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.8125rem;
+    line-height: 1.5;
   }
 
-  .emergency :global(.icon) {
+  .emergency-box :global(.icon) {
     flex: none;
-    margin-top: 2px;
+    margin-top: 1px;
+    color: var(--text);
   }
 
-  .emergency p {
+  .emergency-box p {
     margin: 0;
-    font-size: var(--text-sm);
-  }
-
-  @media (min-width: 768px) {
-    .lead {
-      font-size: var(--text-base);
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .contact {
-      gap: var(--space-6);
-      padding-top: var(--space-6);
-    }
-
-    .page-head {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 34%);
-    }
-
-    .channels {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .work,
-    .emergency {
-      max-width: 56rem;
-    }
   }
 </style>

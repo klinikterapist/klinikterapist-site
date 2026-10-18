@@ -10,10 +10,10 @@ import DesktopHero from '../components/home/DesktopHero.astro';
 import ProcessSteps from '../components/home/ProcessSteps.astro';
 import FaqHello from '../components/home/FaqHello.astro';
 import Accordion from '../components/ui/Accordion.astro';
+import SocialAccordion from '../components/ui/SocialAccordion.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import TilePair from '../components/ui/TilePair.astro';
 import StickyCta from '../components/ui/StickyCta.astro';
-import Flag from '../components/ui/Flag.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
 import type { HomeCard, Lang } from '../lib/settings';
@@ -40,13 +40,7 @@ const role = `${profile.title[lang]} · ${t(lang, 'onlineSessions')}`;
 const intro = profile.intro[lang].trim();
 const memberships = (profile.memberships ?? []).map((m) => m.org[lang].trim()).filter(Boolean);
 
-const allLinks = getLinks();
-const socials = allLinks
-  .filter((l) => l.icon !== 'email')
-  .map((l) => ({ ...l, note: l.note?.[lang].trim() ?? '' }));
-const substack = allLinks.find((l) => l.icon === 'substack');
-const labels = socials.map((l) => l.label);
-const socialHint = labels.length > 3 ? t(lang, 'andMore').replace('{list}', labels.slice(0, 3).join(', ')) : labels.join(', ');
+const substack = getLinks().find((l) => l.icon === 'substack');
 
 const cards = getHome().cards.filter((c) => c.visible);
 const blogCard = cards.find((c) => c.id === 'blog');
@@ -98,30 +92,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       </a>
 
       <div class="stack">
-        {
-          socials.length > 0 && (
-            <Accordion class="social" icon="heart" title={t(lang, 'followSocial')} subtitle={socialHint}>
-              {socials.map((l) => (
-                <a class="soc" href={l.url} {...newTab}>
-                  <span class="soc-ic">
-                    <Icon name={l.icon} size={26} />
-                  </span>
-                  <span class="soc-text">
-                    <span class="soc-name">{l.label}</span>
-                    {l.note && (
-                      <em class="note">
-                        <Flag flag="gb" width={18} />
-                        {l.note}
-                      </em>
-                    )}
-                    <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
-                  </span>
-                  <Icon name="chevron" size={14} class="soc-chv" />
-                </a>
-              ))}
-            </Accordion>
-          )
-        }
+        <SocialAccordion lang={lang} />
 
         {
           newest && (
@@ -307,47 +278,6 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     margin-top: 14px;
   }
 
-  /* Social rows inside the accordion: big logos, names only. */
-  .soc {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-height: 44px;
-    padding: 12px 6px;
-    border-top: 1px solid var(--line);
-    color: var(--text);
-    font-size: 0.96875rem;
-    font-weight: 500;
-    text-decoration: none;
-  }
-
-  .soc-ic {
-    display: flex;
-    color: var(--link);
-  }
-
-  .soc-text {
-    flex: 1;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .note {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--sun-disc) 20%, transparent);
-    font-size: 0.75rem;
-    font-style: normal;
-    font-weight: 600;
-  }
-
-  .soc :global(.soc-chv),
   .faq-item :global(.faq-chv) {
     flex: none;
     color: var(--muted);

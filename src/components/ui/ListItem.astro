@@ -2,12 +2,13 @@
 /**
  * One tappable row: icon (or thumbnail), title, soft subtitle, chevron. The `meta` slot is one small,
  * muted line above the title (a label, a category, a read count); it never wraps.
+ * Without `href` it is a plain row (no link, no chevron), for facts such as a membership.
  */
 import Icon from '../Icon.astro';
 
 interface Props {
   title: string;
-  href: string;
+  href?: string;
   subtitle?: string;
   icon?: string;
   /** Image URL for a 48 px rounded thumbnail (replaces the icon). */
@@ -15,10 +16,11 @@ interface Props {
   class?: string;
 }
 const { title, href, subtitle, icon, thumb, class: className } = Astro.props;
-const external = /^https?:\/\//.test(href);
+const external = !!href && /^https?:\/\//.test(href);
+const Tag = href ? 'a' : 'div';
 ---
 
-<a class:list={['list-item', className]} href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+<Tag class:list={['list-item', className]} href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
   {
     thumb ? (
       <img class="thumb" src={thumb} alt="" width="48" height="48" loading="lazy" />
@@ -35,8 +37,8 @@ const external = /^https?:\/\//.test(href);
     <b class="title">{title}</b>
     {subtitle && <small class="subtitle">{subtitle}</small>}
   </span>
-  <span class="chv"><Icon name="chevron" size={18} /></span>
-</a>
+  {href && <span class="chv"><Icon name="chevron" size={18} /></span>}
+</Tag>
 
 <style>
   .list-item {

@@ -51,8 +51,8 @@ describe('blog', () => {
     const tr = loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
     const cites = tr.querySelectorAll('.prose cite');
     expect(cites.map((c) => c.text)).toEqual(['(Ray, 2004)', 'Smith ve Lee (2010)', '(Ray, 2004; Smith ve Lee, 2010, s. 34)']);
-    expect(tr.querySelector('section.references h2')?.text).toBe('Kaynakça');
-    const items = tr.querySelectorAll('section.references li');
+    expect(tr.querySelector('section.references details summary .title')?.text).toBe('Kaynakça');
+    const items = tr.querySelectorAll('section.references details ol.references-list li');
     expect(items).toHaveLength(2);
     expect(items[0].text).toMatch(/^Ray, O\./);
     expect(items[1].text).toMatch(/^Smith, J\. ve Lee, K\./);
@@ -61,7 +61,7 @@ describe('blog', () => {
 
     const en = loadPage('/en/blog/small-steps-towards-a-better-life/');
     expect(en.querySelector('.prose cite')?.text).toBe('(Ray, 2004)');
-    expect(en.querySelector('section.references h2')?.text).toBe('References');
+    expect(en.querySelector('section.references details summary .title')?.text).toBe('References');
     expect(en.querySelectorAll('section.references li')).toHaveLength(2);
 
     // A post without citations has no reference list.
@@ -77,7 +77,7 @@ describe('blog', () => {
   it('post page shows the last update only when set, and related posts', () => {
     const noCover = loadPage('/blog/kapaksiz-ornek/');
     expect(noCover.textContent).toContain('Son güncelleme');
-    expect(noCover.querySelectorAll('.related .post-card').length).toBeGreaterThan(0);
+    expect(noCover.querySelectorAll('.related a.list-item').length).toBeGreaterThan(0);
     expect(loadPage('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/').textContent).not.toContain('Son güncelleme');
   });
 
@@ -268,5 +268,86 @@ describe('blog list redesign (spec §5.8)', () => {
       expect(d.querySelectorAll('[data-post]'), path).toHaveLength(0);
       expect(d.querySelector('main')?.textContent, path).not.toMatch(/undefined|null|NaN/);
     }
+  });
+});
+
+describe('post page redesign (spec §5.8)', () => {
+  const POST = '/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/';
+  const EN_POST = '/en/blog/small-steps-towards-a-better-life/';
+
+  it('byline is left-aligned: name · title, without the membership', () => {
+    const by = loadPage(POST).querySelector('.post-head .byline')!;
+    expect(by.classList.contains('byline--left')).toBe(true);
+    expect(by.querySelector('.byline-name')?.text.replace(/\s+/g, ' ').trim()).toBe('Osman Güneş Özkurt · Psikolog');
+    expect(by.text).not.toContain('Türk Psikologlar');
+    expect(by.querySelector('svg.sun-mark')).toBeTruthy();
+    expect(loadPage(EN_POST).querySelector('.byline-name')?.text.replace(/\s+/g, ' ').trim()).toBe('Osman Güneş Özkurt · Psychologist');
+  });
+
+  it('meta line: date and reading time; no read count while there is no data', () => {
+    const meta = loadPage(POST).querySelector('.byline .byline-meta')!;
+    expect(meta.querySelector('time')?.getAttribute('datetime')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(meta.text).toMatch(/\d+ dk okuma/);
+    expect(meta.text).not.toMatch(/okunma|null|undefined|NaN/);
+    expect(meta.querySelector('.reads')).toBeNull();
+    expect(loadPage(EN_POST).querySelector('.byline-meta')?.text).toMatch(/\d+ min read/);
+    expect(loadPage(EN_POST).querySelector('.byline-meta')?.text).not.toMatch(/reads|null|undefined/);
+  });
+
+  it('16:9 cover keeps the .cover class and loads first, eager and high priority', () => {
+    const img = loadPage(POST).querySelector('main img.cover')!;
+    expect(img.getAttribute('loading')).toBe('eager');
+    expect(img.getAttribute('fetchpriority')).toBe('high');
+    expect(img.getAttribute('src')).toMatch(/^\/_astro\//);
+  });
+
+  it('Kaynakça is an accordion holding the references list, open by default (closed on phones by script)', () => {
+    const d = loadPage(POST);
+    const acc = d.querySelector('section.references details.acc')!;
+    expect(acc.hasAttribute('open')).toBe(true);
+    expect(acc.querySelector('summary')?.text).toContain('Kaynakça');
+    expect(acc.querySelector('summary .subtitle')?.text.trim()).toBe('2 kaynak');
+    expect(acc.querySelectorAll('ol.references-list li')).toHaveLength(2);
+    expect(loadPage(EN_POST).querySelector('section.references summary .subtitle')?.text.trim()).toBe('2 references');
+  });
+
+  it('share button: hidden until the script runs, with a live status region', () => {
+    const d = loadPage(POST);
+    const btn = d.querySelector('button.share-btn')!;
+    expect(btn.text).toContain('Yazıyı paylaş');
+    expect(btn.hasAttribute('hidden')).toBe(true);
+    expect(btn.getAttribute('type')).toBe('button');
+    const status = d.querySelector('.share [aria-live="polite"]')!;
+    expect(status).toBeTruthy();
+    expect(status.getAttribute('data-copied')).toBe('Bağlantı kopyalandı');
+    expect(loadPage(EN_POST).querySelector('button.share-btn')?.text).toContain('Share this post');
+  });
+
+  it('author box: centred, name, "title · membership", short intro and Randevu Al', () => {
+    const box = loadPage(POST).querySelector('.author-box')!;
+    expect(box.querySelector('.name')?.text).toBe('Osman Güneş Özkurt');
+    expect(box.querySelector('.role')?.text.trim()).toBe('Psikolog · Türk Psikologlar Derneği üyesi');
+    expect(box.querySelector('a[href="/randevu/"]')?.text).toContain('Randevu Al');
+    const img = box.querySelector('img')!;
+    expect(img.getAttribute('loading')).toBe('lazy');
+    expect(loadPage(EN_POST).querySelector('.author-box .role')?.text.trim()).toBe(
+      'Psychologist · Member of the Turkish Psychological Association',
+    );
+  });
+
+  it('similar posts: up to two rows', () => {
+    const rel = loadPage(POST).querySelector('.related')!;
+    expect(rel.querySelector('h2')?.text).toBe('Benzer yazılar');
+    const rows = rel.querySelectorAll('a.list-item');
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.length).toBeLessThanOrEqual(2);
+    expect(loadPage(EN_POST).querySelector('.related h2')?.text).toBe('Similar posts');
+  });
+
+  it('prose: the drop-cap colour hook and the quote box use tokens', () => {
+    const css = readFileSync('src/styles/prose.css', 'utf8');
+    expect(css).toContain('var(--dropcap)');
+    expect(css).toMatch(/\.prose blockquote\s*\{[^}]*border-left:[^;]*var\(--quote-rule\)[^}]*background:\s*var\(--surface\)/);
+    expect(css).toMatch(/'SOFT' 50/);
   });
 });

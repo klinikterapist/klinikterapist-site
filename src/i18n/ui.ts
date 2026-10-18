@@ -72,10 +72,13 @@ export const STRINGS = {
   noPostsInCategory: { tr: 'Bu kategoride henüz yazı yok.', en: 'There are no posts in this category yet.' },
   published: { tr: 'Yayın tarihi', en: 'Published' },
   lastUpdated: { tr: 'Son güncelleme', en: 'Last updated' },
-  relatedPosts: { tr: 'İlgili Yazılar', en: 'Related Posts' },
+  similarPosts: { tr: 'Benzer yazılar', en: 'Similar posts' },
   references: { tr: 'Kaynakça', en: 'References' },
-  aboutAuthor: { tr: 'Yazar hakkında', en: 'About the author' },
-  moreAboutMe: { tr: 'Hakkımda daha fazlası', en: 'More about me' },
+  referencesOne: { tr: '{n} kaynak', en: '{n} reference' },
+  referencesMany: { tr: '{n} kaynak', en: '{n} references' },
+  sharePost: { tr: 'Yazıyı paylaş', en: 'Share this post' },
+  shareHint: { tr: 'Bağlantıyı kopyala ya da gönder', en: 'Copy or send the link' },
+  linkCopied: { tr: 'Bağlantı kopyalandı', en: 'Link copied' },
   rssTitle: { tr: 'Blog yazıları (RSS)', en: 'Blog posts (RSS)' },
   searchLabel: { tr: 'Yazılarda ara', en: 'Search posts' },
   searchPlaceholder: { tr: 'Yazılarda ara…', en: 'Search posts…' },
@@ -88,22 +91,24 @@ export const STRINGS = {
   subscribe: { tr: 'Abone ol', en: 'Subscribe' },
 
   // About
-  areasOfWork: { tr: 'Çalışma alanları', en: 'Areas of work' },
-  whoAmI: { tr: 'Ben Kimim?', en: 'Who Am I?' },
-  whyThisWork: { tr: 'Neden Bu Mesleği Seçtim?', en: 'Why I Chose This Work' },
-  education: { tr: 'Eğitim ve Mesleki Gelişim', en: 'Education and Professional Development' },
+  areasOfWork: { tr: 'Çalışma alanlarım', en: 'My areas of work' },
+  whoAmI: { tr: 'Ben kimim?', en: 'Who am I?' },
+  whyThisWork: { tr: 'Bu işi neden yapıyorum?', en: 'Why do I do this work?' },
+  education: { tr: 'Eğitim ve deneyim', en: 'Education and experience' },
+  timelineHint: { tr: 'Zaman çizelgesi', en: 'Timeline' },
+  contactMe: { tr: 'Benimle iletişime geç', en: 'Get in touch' },
+  contactMeHint: { tr: 'E-posta ve sosyal medya', en: 'E-mail and social media' },
 
   // Resources
   resourcesLead: {
     tr: 'Psikoloji, psikoterapi ve kişisel gelişim alanında seçtiğim kaynaklar.',
     en: 'Resources I have selected in psychology, psychotherapy and personal growth.',
   },
-  resourceTypes: { tr: 'Kaynak türleri', en: 'Resource types' },
   filterAll: { tr: 'Tümü', en: 'All' },
-  featured: { tr: 'Öne Çıkan', en: 'Featured' },
-  resourceList: { tr: 'Kaynak Listesi', en: 'Resource List' },
-  viewResource: { tr: 'Kaynağa Git', en: 'View Resource' },
-  myNote: { tr: 'Benim Notum', en: 'My Note' },
+  featured: { tr: 'Öne çıkan', en: 'Featured' },
+  byType: { tr: 'Türüne göre', en: 'By type' },
+  resourcesOne: { tr: '{n} kaynak', en: '{n} resource' },
+  resourcesMany: { tr: '{n} kaynak', en: '{n} resources' },
   type_book: { tr: 'Kitap', en: 'Book' },
   type_article: { tr: 'Makale', en: 'Article' },
   type_scale: { tr: 'Ölçek', en: 'Scale' },
@@ -118,20 +123,10 @@ export const STRINGS = {
   types_guide: { tr: 'Rehberler', en: 'Guides' },
 
   // Contact
-  channels: { tr: 'İletişim kanalları', en: 'Contact channels' },
   emailLabel: { tr: 'E-posta', en: 'E-mail' },
-  emailHint: { tr: 'Sorularınızı iletin', en: 'Send your questions' },
-  instagramHint: { tr: 'Güncel paylaşımlar', en: 'Latest posts' },
-  linkedinHint: { tr: 'Mesleki geçmiş', en: 'Professional background' },
-  tiktokHint: { tr: 'Kısa videolar', en: 'Short videos' },
-  xHint: { tr: 'Kısa notlar', en: 'Short notes' },
-  threadsHint: { tr: 'Sohbetler', en: 'Conversations' },
-  mediumHint: { tr: 'Uzun yazılar', en: 'Long reads' },
-  substackHint: { tr: 'Bülten', en: 'Newsletter' },
-  youtubeHint: { tr: 'Videolar', en: 'Videos' },
-  appointmentHint: { tr: 'Online görüşme', en: 'Online sessions' },
-  workStyle: { tr: 'Çalışma Biçimi', en: 'How I Work' },
   onlineSessions: { tr: 'Online görüşme', en: 'Online sessions' },
+  responseTitle: { tr: 'Dönüş süresi', en: 'Response time' },
+  memberNo: { tr: 'Üye No: {n}', en: 'Member no. {n}' },
   emergency: { tr: 'Acil durum', en: 'Emergency' },
 
   // Appointment
@@ -139,7 +134,7 @@ export const STRINGS = {
     tr: 'Online randevu sistemi çok yakında burada. Şimdilik e-posta ile ulaşabilirsiniz.',
     en: 'The online booking system is coming here soon. For now, you can reach me by e-mail.',
   },
-  sendEmail: { tr: 'E-posta Gönder', en: 'Send an E-mail' },
+  sendEmail: { tr: 'E-posta gönder', en: 'Send an e-mail' },
   goToContact: { tr: 'İletişim sayfasına git', en: 'Go to the contact page' },
 
   // Legal
@@ -184,4 +179,9 @@ export type UiKey = keyof typeof STRINGS;
 
 export function t(lang: Lang, key: UiKey): string {
   return STRINGS[key][lang];
+}
+
+/** A counted phrase: `one` for 1, `many` otherwise, with `{n}` filled in ("1 reference", "2 references"). */
+export function tCount(lang: Lang, one: UiKey, many: UiKey, n: number): string {
+  return t(lang, n === 1 ? one : many).replace('{n}', String(n));
 }

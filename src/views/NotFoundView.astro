@@ -1,8 +1,9 @@
 ---
-/** Bilingual 404: Turkish first (site default), English below, links to both home pages. */
+/** Bilingual 404 in the new look: the sun, Turkish first (site default), English below, links to both home pages. */
 import PageShell from '../layouts/PageShell.astro';
-import Leaf from '../components/Leaf.astro';
-import Icon from '../components/Icon.astro';
+import PageHead from '../components/ui/PageHead.astro';
+import RoundPortrait from '../components/ui/RoundPortrait.astro';
+import ListItem from '../components/ui/ListItem.astro';
 import type { Lang } from '../lib/settings';
 import { buildMeta } from '../lib/seo';
 import { pathFor } from '../i18n/routes';
@@ -24,79 +25,47 @@ const meta = buildMeta({
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} noindex>
-  <div class="container-text not-found">
-    <Leaf size={88} class="nf-leaf" />
-    <p class="code" aria-hidden="true">404</p>
-    <h1>{t(lang, 'notFoundTitle')}</h1>
-    <p class="text">{t(lang, 'notFoundText')}</p>
-    <a class="btn" href={pathFor('home', lang)}>
-      <Icon name="home" size={18} />
-      {t(lang, 'backHome')}
-    </a>
+  <div class="container-text inner-page not-found">
+    <PageHead title={t(lang, 'notFoundTitle')}>
+      <RoundPortrait slot="media" photo={null} alt="" size={96} />
+      <p class="ti code" aria-hidden="true">404</p>
+      <p class="lead">{t(lang, 'notFoundText')}</p>
+    </PageHead>
+
+    <div class="page-stack">
+      <ListItem icon="home" title={t(lang, 'backHome')} href={pathFor('home', lang)} />
+    </div>
 
     <div class="other" lang={other}>
       <p class="other-title">{t(other, 'notFoundTitle')}</p>
       <p class="text">{t(other, 'notFoundText')}</p>
-      <a class="to-other" href={pathFor('home', other)}>
-        {t(other, 'backHome')}
-        <Icon name="arrow" size={16} />
-      </a>
+      <ListItem icon="home" title={t(other, 'backHome')} href={pathFor('home', other)} />
     </div>
   </div>
 </PageShell>
 
 <style>
-  .not-found {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: var(--space-7);
+  .other {
+    margin-top: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
     text-align: center;
   }
 
-  .not-found :global(.nf-leaf) {
-    color: var(--muted);
-  }
-
-  .code {
-    margin: 0;
-    color: var(--link);
-    font-family: var(--font-hand);
-    font-size: 3.5rem;
-    line-height: 1;
-  }
-
-  h1 {
-    margin: var(--space-2) 0 var(--space-3);
+  .other-title {
+    margin: 0 0 var(--space-1);
+    font-family: var(--font-serif);
+    font-size: 1.375rem;
+    font-variation-settings: 'SOFT' 100;
   }
 
   .text {
-    max-width: 28rem;
+    margin: 0 0 var(--space-4);
     color: var(--muted);
+    font-size: var(--text-sm);
   }
 
-  .other {
-    width: 100%;
-    margin-top: var(--space-7);
-    padding-top: var(--space-5);
-    border-top: 1px solid var(--line);
-  }
-
-  .other-title {
-    margin: 0 0 var(--space-2);
-    font-family: var(--font-serif);
-    font-size: var(--text-xl);
-  }
-
-  .other .text {
-    margin-inline: auto;
-  }
-
-  .to-other {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    min-height: 44px;
-    font-weight: 500;
+  .other :global(.list-item) {
+    text-align: left;
   }
 </style>

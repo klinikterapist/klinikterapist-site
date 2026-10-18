@@ -83,20 +83,18 @@ describe('static pages', () => {
     expect(d.querySelector('main a[href="/randevu/"]')).not.toBeNull();
   });
 
-  it('contact page lists e-mail, every social link in file order, then Randevu', () => {
+  it('contact page: the social accordion lists every social link in file order', () => {
     const links = JSON.parse(readFileSync('tests/fixtures/data/links.json', 'utf8')) as { label: string; icon: string }[];
-    const titles = loadPage('/iletisim/').querySelectorAll('ul.channels li').map((li) => li.querySelector('.title')?.text.trim() ?? '');
+    const names = loadPage('/iletisim/').querySelectorAll('details.social a.soc .soc-name').map((n) => n.text.trim());
     const social = links.filter((l) => l.icon !== 'email').map((l) => l.label);
-    expect(titles.length).toBe(social.length + 2);
-    expect(titles.slice(1, -1)).toEqual(social);
+    expect(names).toEqual(social);
     expect(social).toEqual(expect.arrayContaining(['TikTok', 'X (Twitter)', 'Threads']));
   });
 
-  it('resources page has type filter anchors and the owner note', () => {
+  it('resources page has type anchors', () => {
     const d = loadPage('/kaynaklar/');
-    expect(d.querySelector('a[href="#book"]')).not.toBeNull();
-    expect(d.querySelector('#book')).not.toBeNull();
-    expect(d.textContent).toContain('Benim Notum');
+    expect(d.querySelector('a[href="#tur-book"]')).not.toBeNull();
+    expect(d.querySelector('#tur-book')).not.toBeNull();
   });
 
   it('legal pages render their markdown', () => {
@@ -116,7 +114,7 @@ describe('final-review fixes', () => {
   const fixture = (file: string) => JSON.parse(readFileSync(join('tests/fixtures/data', file), 'utf8'));
 
   it('about texts are rendered as Markdown, with raw HTML escaped (I3)', () => {
-    const who = loadPage('/hakkimda/').querySelector('.who-text .md')!;
+    const who = loadPage('/hakkimda/').querySelector('details.who .md')!;
     expect(who.querySelectorAll('p')).toHaveLength(2);
     expect(who.querySelector('strong')?.text).toBe('Osman Güneş Özkurt');
     expect(who.querySelector('em')?.text).toBe('bilimsel temelli');
@@ -215,5 +213,125 @@ describe('page shell (every page but home)', () => {
     const css = pageCss('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
     expect(css).toMatch(/@media \(width>=768px\)\{[^@]*\.page-top\[data-astro-cid-\w+\]\{display:none\}/);
     expect(css).toMatch(/@media \(width<=767px\)\{[^@]*\.breadcrumb\[data-astro-cid-\w+\]\{display:none\}/);
+  });
+});
+
+describe('inner pages redesign (spec §5.9)', () => {
+  const fixture = (file: string) => JSON.parse(readFileSync(join('tests/fixtures/data', file), 'utf8'));
+  const summaries = (path: string) =>
+    loadPage(path).querySelectorAll('main details.acc > summary .title').map((t) => t.text.trim());
+  const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+
+  it('about: photo, heading, name · title, membership line and lead', () => {
+    const d = loadPage('/hakkimda/');
+    const head = d.querySelector('main .page-head')!;
+    expect(head.querySelector('.portrait img')).toBeTruthy();
+    expect(head.querySelector('h1')?.text).toBe('Hakkımda');
+    expect(squash(head.querySelector('.who-line')?.text)).toBe('Osman Güneş Özkurt · Psikolog');
+    expect(squash(head.querySelector('.tpd')?.text)).toBe('Türk Psikologlar Derneği üyesi');
+    expect(squash(head.querySelector('.lead')?.text)).toBe(fixture('about.json').lead.tr);
+    expect(squash(loadPage('/en/about/').querySelector('.page-head .tpd')?.text)).toBe(
+      'Member of the Turkish Psychological Association',
+    );
+  });
+
+  it('about: accordions in order, the first one open', () => {
+    expect(summaries('/hakkimda/')).toEqual(['Ben kimim?', 'Bu işi neden yapıyorum?', 'Eğitim ve deneyim']);
+    expect(summaries('/en/about/')).toEqual(['Who am I?', 'Why do I do this work?', 'Education and experience']);
+    const accs = loadPage('/hakkimda/').querySelectorAll('main details.acc');
+    expect(accs[0].hasAttribute('open')).toBe(true);
+    expect(accs[1].hasAttribute('open')).toBe(false);
+    expect(accs[2].querySelectorAll('.timeline li')).toHaveLength(4);
+    // The quote stays (no content is lost).
+    expect(loadPage('/hakkimda/').querySelector('main blockquote')?.text).toContain('kendi hikâyesinin uzmanıdır');
+  });
+
+  it('about: work areas as tile pairs, and a link to contact', () => {
+    const d = loadPage('/hakkimda/');
+    expect(d.querySelectorAll('main .areas .tile-pair')).toHaveLength(2);
+    expect(d.querySelectorAll('main .areas .tile').map((t) => t.text.trim())).toEqual(
+      fixture('about.json').areas.map((a: { label: { tr: string } }) => a.label.tr),
+    );
+    expect(d.querySelector('main .areas h2')?.text).toBe('Çalışma alanlarım');
+    const contact = d.querySelector('main a.list-item[href="/iletisim/"]')!;
+    expect(contact.text).toContain('Benimle iletişime geç');
+  });
+
+  it('resources: title, note, featured card', () => {
+    const d = loadPage('/kaynaklar/');
+    expect(d.querySelector('h1')?.text).toBe('Kaynaklar');
+    expect(squash(d.querySelector('.page-head .lead')?.text)).toBe(fixture('resources.json').myNote.tr);
+    const feat = d.querySelector('main a.featured-card')!;
+    expect(feat.getAttribute('href')).toBe('https://example.com/beck-cbt');
+    expect(feat.getAttribute('target')).toBe('_blank');
+    expect(squash(feat.querySelector('.label')?.text)).toBe('ÖNE ÇIKAN · KİTAP');
+    expect(feat.querySelector('.title')?.text).toBe('Cognitive Behavior Therapy: Basics and Beyond');
+    expect(feat.text).toContain('Judith S. Beck');
+    expect(squash(loadPage('/en/resources/').querySelector('a.featured-card .label')?.text)).toBe('FEATURED · BOOK');
+  });
+
+  it('resources: type tiles link to per-type accordions with those ids', () => {
+    const d = loadPage('/kaynaklar/');
+    const tiles = d.querySelectorAll('main .type-tiles a');
+    const present = ['book', 'article', 'scale', 'guide'];
+    expect(tiles.map((a) => a.getAttribute('href'))).toEqual(present.map((t) => `#tur-${t}`));
+    expect(tiles.map((a) => a.text.trim())).toEqual(['Kitaplar', 'Makaleler', 'Ölçekler', 'Rehberler']);
+    for (const type of present) {
+      const acc = d.querySelector(`details.acc#tur-${type}`)!;
+      expect(acc, type).toBeTruthy();
+      expect(acc.querySelectorAll('a.res').length, type).toBeGreaterThan(0);
+    }
+    expect(d.querySelector('#tur-book summary .subtitle')?.text.trim()).toBe('1 kaynak');
+    expect(d.querySelector('#tur-book a.res')?.getAttribute('href')).toBe('https://example.com/beck-cbt');
+    expect(d.querySelector('#tur-video')).toBeNull();
+    expect(d.querySelector('details#tur-book')?.hasAttribute('open')).toBe(true);
+    expect(loadPage('/en/resources/').querySelector('#tur-book summary .subtitle')?.text.trim()).toBe('1 resource');
+  });
+
+  it('contact: photo or sun, heading, intro, big CTA and e-mail row', () => {
+    const d = loadPage('/iletisim/');
+    expect(d.querySelector('main .page-head .portrait')).toBeTruthy();
+    expect(d.querySelector('main .page-head h1')?.text).toBe('İletişim');
+    expect(squash(d.querySelector('main .page-head .lead')?.text)).toBe(fixture('contact.json').intro.tr);
+    const cta = d.querySelector('main a.big-cta')!;
+    expect(cta.getAttribute('href')).toBe('/randevu/');
+    expect(cta.text).toContain('Randevu Al');
+    const mail = d.querySelector('main a.list-item[href="mailto:iletisim@example.com"]')!;
+    expect(mail.querySelector('.title')?.text).toBe('E-posta gönder');
+    expect(mail.querySelector('.subtitle')?.text).toBe('iletisim@example.com');
+  });
+
+  it('contact: "Online görüşme" / "Dönüş süresi" pair, social accordion, membership', () => {
+    const d = loadPage('/iletisim/');
+    const tiles = d.querySelectorAll('main .facts .tile');
+    expect(tiles.map((t) => t.querySelector('.title')?.text)).toEqual(['Online görüşme', 'Dönüş süresi']);
+    expect(tiles[0].querySelector('.subtitle')?.text).toBe(fixture('contact.json').workStyle.tr);
+    expect(tiles[1].querySelector('.subtitle')?.text).toBe('24–48 saat.');
+    expect(d.querySelector('main details.social summary')?.text).toContain('Sosyal medyada takip et');
+    expect(squash(d.querySelector('main .membership .title')?.text)).toBe('Türk Psikologlar Derneği üyesi');
+    const en = loadPage('/en/contact/');
+    expect(en.querySelectorAll('main .facts .tile .title').map((t) => t.text)).toEqual(['Online sessions', 'Response time']);
+    expect(en.querySelectorAll('main .facts .tile .subtitle')[1].text).toBe('24–48 hours.');
+  });
+
+  it('contact: emergency note in a dashed, token-coloured box', () => {
+    for (const [path, lang] of [['/iletisim/', 'tr'], ['/en/contact/', 'en']] as const) {
+      const box = loadPage(path).querySelector('main .emergency-box')!;
+      expect(squash(box.text), path).toBe(fixture('contact.json').emergencyNote[lang]);
+    }
+    const src = readFileSync('src/views/ContactView.astro', 'utf8');
+    expect(src).toMatch(/\.emergency-box\s*\{[^}]*border:\s*1px dashed var\(--line\)[^}]*background:\s*var\(--surface\)/);
+    expect(src).not.toMatch(/#f3e3dc|#6b2f1f/i);
+  });
+
+  it('appointment, legal and 404 keep their content in the new look', () => {
+    const appt = loadPage('/randevu/');
+    expect(appt.querySelector('main .page-head h1')?.text).toBe('Randevu Al');
+    expect(appt.querySelector('main a.list-item[href^="mailto:"]')).toBeTruthy();
+    expect(loadPage('/gizlilik/').querySelector('main article.legal.legal-page')).toBeTruthy();
+    const nf = loadPage('/404.html');
+    expect(nf.querySelector('main .not-found svg.sun-mark')).toBeTruthy();
+    expect(nf.querySelector('main a.list-item[href="/"]')).toBeTruthy();
+    expect(nf.querySelector('main a[href="/en/"]')).toBeTruthy();
   });
 });

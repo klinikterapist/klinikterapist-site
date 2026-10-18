@@ -1,6 +1,6 @@
 /* The post body (.prose) and Kaynakça (.references): shared by the site's post page and the admin preview. */
 
-/* Cover: a wider column than the text. */
+/* Cover: 16:9, a wider column than the text; edge to edge on phones (spec §5.8). */
 .cover-wrap {
   max-width: calc(55rem + 2 * var(--gutter));
   margin: var(--space-6) auto 0;
@@ -15,12 +15,30 @@
   object-fit: cover;
 }
 
-/* Reading column: about 68 characters a line, generous leading. */
+@media (max-width: 767px) {
+  .cover-wrap {
+    margin-top: var(--space-4);
+    padding-inline: 0;
+  }
+
+  .cover-wrap .cover {
+    border-radius: 0;
+  }
+}
+
+/* Reading column (≈42rem): Fraunces with a softer SOFT axis, 18–19 px, generous leading. */
 .prose {
-  max-width: 68ch;
-  margin: var(--space-6) 0 var(--space-7);
-  font-size: 1.125rem;
-  line-height: 1.8;
+  max-width: 42rem;
+  margin: var(--space-5) 0 var(--space-6);
+  font-family: var(--font-serif);
+  font-size: clamp(1.125rem, 1.08rem + 0.2vw, 1.1875rem);
+  font-variation-settings: 'SOFT' 50;
+  line-height: 1.7;
+}
+
+/* Drop cap colour hook (navy by day, sunflower by night). The drop cap itself arrives with Panel v3 Plan B. */
+.prose .drop-cap::first-letter {
+  color: var(--dropcap);
 }
 
 .prose > * + * {
@@ -44,6 +62,11 @@
   font-size: var(--text-lg);
 }
 
+.prose h2,
+.prose h3 {
+  font-variation-settings: 'SOFT' 100;
+}
+
 .prose h2 + *,
 .prose h3 + * {
   margin-top: 0.75em;
@@ -62,14 +85,19 @@
   color: var(--muted);
 }
 
+/* Quote: a surface box with the sunflower rule on the left, rounded on the right. */
 .prose blockquote {
   margin-inline: 0;
-  padding: 0.2em 0 0.2em 1.2em;
-  border-left: 3px solid var(--quote-rule);
-  color: var(--link);
-  font-family: var(--font-serif);
-  font-size: 1.2rem;
+  padding: 14px 16px;
+  border-left: 4px solid var(--quote-rule);
+  border-radius: 0 14px 14px 0;
+  background: var(--surface);
+  color: var(--text);
   font-style: italic;
+}
+
+.prose blockquote > :first-child {
+  margin-top: 0;
 }
 
 .prose img {
@@ -111,6 +139,7 @@
 
 .prose figcaption {
   margin-top: var(--space-2);
+  font-family: var(--font-sans);
   color: var(--muted);
   font-size: var(--text-sm);
   text-align: center;
@@ -166,15 +195,20 @@
   border: 0;
 }
 
-/* Kaynakça: APA hanging indent, no visible numbers. */
+/* Kaynakça: APA hanging indent, no visible numbers. On the site it sits in an accordion. */
 .references {
-  max-width: 68ch;
-  margin: 0 0 var(--space-7);
+  max-width: 42rem;
 }
 
 .references h2 {
   margin: 0 0 var(--space-4);
   font-size: var(--text-xl);
+}
+
+.references .references-list {
+  padding: var(--space-2) 2px var(--space-1);
+  font-size: var(--text-sm);
+  line-height: 1.55;
 }
 
 .references-list {

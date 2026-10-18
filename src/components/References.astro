@@ -1,8 +1,14 @@
 ---
-/** The post's Kaynakça / References: only the cited references, APA-sorted. Nothing when none is cited. */
+/**
+ * The post's Kaynakça / References (spec §5.8): only the cited references, APA-sorted, inside an
+ * accordion. It is open in the HTML (readers without JavaScript and wide screens see the list); the
+ * one-line script right after it closes it on phones before the first paint. Nothing when none is cited.
+ */
 import type { Reference } from '../lib/apa';
-import { citedIds, renderReferencesSection } from '../lib/citations';
+import { citedIds, referenceItemsHtml } from '../lib/citations';
 import type { Lang } from '../lib/schemas';
+import { t, tCount } from '../i18n/ui';
+import Accordion from './ui/Accordion.astro';
 
 interface Props {
   references: Reference[];
@@ -10,7 +16,22 @@ interface Props {
   lang: Lang;
 }
 const { references, body, lang } = Astro.props;
-const html = renderReferencesSection(references, citedIds(body), lang);
+const items = referenceItemsHtml(references, citedIds(body), lang);
+const count = tCount(lang, 'referencesOne', 'referencesMany', items.length);
 ---
 
-{html && <Fragment set:html={html} />}
+{
+  items.length > 0 && (
+    <section class="references" aria-label={t(lang, 'references')}>
+      <Accordion class="refs" icon="list" title={t(lang, 'references')} subtitle={count} open>
+        <ol class="references-list" set:html={items.join('')} />
+      </Accordion>
+      <script is:inline>
+        (function (s) {
+          var d = s.parentNode.querySelector('details');
+          if (d && !matchMedia('(min-width: 768px)').matches) d.open = false;
+        })(document.currentScript);
+      </script>
+    </section>
+  )
+}

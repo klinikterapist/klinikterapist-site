@@ -162,6 +162,58 @@ a:hover {
   color: var(--btn-text);
 }
 
+/* Inner pages (spec §5.9): one column of rounded boxes in the phone "app" language. */
+.inner-page {
+  padding-top: 12px;
+  padding-bottom: var(--space-6);
+}
+
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.section-label {
+  margin: 6px 0 -2px;
+  color: var(--muted);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The big "Randevu Al" block button of an inner page. */
+.big-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  margin-top: 16px;
+  padding: 15px;
+  border-radius: 16px;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.big-cta:hover {
+  background: var(--btn-bg-hover);
+  color: var(--btn-text);
+}
+
+@media (min-width: 768px) {
+  .inner-page {
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-7);
+  }
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--line);

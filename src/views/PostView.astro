@@ -1,5 +1,9 @@
 ---
-/** One blog post: breadcrumb, header, cover, Markdown body, author box, related posts. */
+/**
+ * One blog post (spec §5.8): centred topic, title and subtitle; under a hairline the left-aligned byline
+ * (sun, "name · title", "date · N dk okuma · reads"); the 16:9 cover (edge to edge on phones); the
+ * Markdown body; then the Kaynakça accordion, the share button, the author box and two similar posts.
+ */
 import { render } from 'astro:content';
 import { Image, getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
@@ -8,9 +12,12 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import AuthorBox from '../components/AuthorBox.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
+import SunMark from '../components/brand/SunMark.astro';
+import ShareButton from '../components/post/ShareButton.astro';
 import '../styles/prose.css';
 import References from '../components/References.astro';
-import { getCategories } from '../lib/settings';
+import { getCategories, getProfile } from '../lib/settings';
+import { readCount, readsLabel } from '../lib/read-counts';
 import type { PostEntry } from '../lib/posts';
 import { getRelated, getTranslation } from '../lib/posts';
 import { absoluteUrl, buildMeta } from '../lib/seo';
@@ -61,7 +68,9 @@ const jsonLd = [
   breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl(c.href) }))),
 ];
 
-const related = await getRelated(post, 3);
+const related = await getRelated(post, 2);
+const profile = getProfile();
+const reads = readsLabel(readCount(post.key), lang);
 const { Content } = await render(post as never);
 const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
 ---
@@ -70,27 +79,42 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
   <link slot="head" rel="alternate" type="application/rss+xml" title={t(lang, 'rssTitle')} href={absoluteUrl(rss)} />
 
   <article class="post">
-    <div class="container-text head">
+    <header class="container-text post-head">
       <Breadcrumb lang={lang} items={crumbs} />
       {category && <a class="category" href={categoryPath(category, lang)}>{category.label[lang]}</a>}
       <h1>{data.title}</h1>
       <p class="standfirst">{data.subtitle || data.description}</p>
-      <p class="meta">
-        <span>
-          <span class="visually-hidden">{t(lang, 'published')}: </span>
-          <time datetime={isoDay(data.publishedAt)}>{formatDate(data.publishedAt, lang)}</time>
-        </span>
-        <span aria-hidden="true">·</span>
-        <span class="read"><Icon name="clock" size={15} />{post.readingMinutes} {t(lang, 'minRead')}</span>
-        {
-          data.updatedAt && (
-            <span class="updated">
-              {t(lang, 'lastUpdated')}: <time datetime={isoDay(data.updatedAt)}>{formatDate(data.updatedAt, lang)}</time>
-            </span>
-          )
-        }
-      </p>
-    </div>
+      <div class="byline byline--left">
+        <SunMark size={36} />
+        <p>
+          <span class="byline-name"><b>{profile.name}</b> · {profile.title[lang]}</span>
+          <span class="byline-meta">
+            <span class="visually-hidden">{t(lang, 'published')}: </span>
+            <time datetime={isoDay(data.publishedAt)}>{formatDate(data.publishedAt, lang)}</time>
+            <span aria-hidden="true">·</span>
+            <span>{post.readingMinutes} {t(lang, 'minRead')}</span>
+            {
+              reads && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span class="reads">
+                    <Icon name="eye" size={14} />
+                    {reads}
+                  </span>
+                </>
+              )
+            }
+          </span>
+          {
+            data.updatedAt && (
+              <span class="updated">
+                {t(lang, 'lastUpdated')}: <time datetime={isoDay(data.updatedAt)}>{formatDate(data.updatedAt, lang)}</time>
+              </span>
+            )
+          }
+        </p>
+      </div>
+    </header>
 
     {
       cover && (
@@ -112,19 +136,22 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="prose">
         <Content />
       </div>
-      <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
-      <AuthorBox lang={lang} />
+      <div class="post-end">
+        <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
+        <ShareButton lang={lang} title={data.title} url={absoluteUrl(path)} />
+        <AuthorBox lang={lang} />
+      </div>
     </div>
   </article>
 
   {
     related.length > 0 && (
-      <section class="container related" aria-labelledby="related-title">
-        <h2 id="related-title">{t(lang, 'relatedPosts')}</h2>
+      <section class="container-text related" aria-labelledby="related-title">
+        <h2 id="related-title">{t(lang, 'similarPosts')}</h2>
         <ul class="posts">
           {related.map((p) => (
             <li>
-              <PostCard post={p} lang={lang} level={3} />
+              <PostCard post={p} lang={lang} variant="row" />
             </li>
           ))}
         </ul>
@@ -132,7 +159,6 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     )
   }
 </PageShell>
-
 <script>
   // Click-to-load: no request to YouTube until the reader asks for the video.
   for (const box of document.querySelectorAll<HTMLElement>('.prose .youtube[data-id]')) {
@@ -156,107 +182,141 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     padding-top: var(--space-4);
   }
 
-  .head {
+  /* Topic, title and subtitle centred; the byline under them starts at the left. */
+  .post-head {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+  }
+
+  .post-head :global(.breadcrumb) {
+    align-self: stretch;
+    text-align: left;
   }
 
   .category {
     display: inline-flex;
     align-items: center;
     min-height: 32px;
-    margin-top: var(--space-5);
-    padding: 0 var(--space-3);
-    border-radius: var(--radius-pill);
-    background: var(--surface-2);
+    margin-top: var(--space-2);
     color: var(--link);
     font-size: 0.75rem;
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-decoration: none;
     text-transform: uppercase;
   }
 
   .category:hover {
-    background: color-mix(in srgb, var(--surface-2), var(--text) 8%);
+    text-decoration: underline;
   }
 
   h1 {
-    margin: var(--space-4) 0 var(--space-3);
-    font-size: var(--text-3xl);
+    margin: var(--space-1) 0;
+    font-size: clamp(1.875rem, 1.4rem + 2vw, 2.75rem);
+    font-variation-settings: 'SOFT' 100;
   }
 
   .standfirst {
-    margin-bottom: var(--space-4);
-    color: var(--muted);
-    font-size: var(--text-lg);
-    line-height: 1.55;
-  }
-
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-1) var(--space-2);
-    margin: 0;
+    margin: 0 0 var(--space-1);
     color: var(--muted);
     font-size: var(--text-sm);
+    line-height: 1.5;
   }
 
-  .read {
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    align-self: stretch;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    font-size: 0.8125rem;
+    line-height: 1.35;
+  }
+
+  .byline--left {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .byline :global(.sun-mark) {
+    flex: none;
+  }
+
+  .byline p {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+  }
+
+  .byline-meta,
+  .updated {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted);
+  }
+
+  .reads {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 3px;
   }
 
   .updated {
-    flex-basis: 100%;
     font-style: italic;
   }
 
-  /* Same width as the cover, so the page keeps one centred axis. */
+  .post-end {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: var(--space-5);
+  }
+
   .related {
-    max-width: calc(55rem + 2 * var(--gutter));
-    padding-top: var(--space-6);
-    padding-bottom: var(--space-7);
+    padding-bottom: var(--space-6);
   }
 
   .related h2 {
-    font-size: var(--text-xl);
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   .posts {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-4);
+    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
-  .posts > li {
-    display: flex;
-  }
-
-  .posts > li > :global(*) {
-    flex: 1;
-  }
-
-  @media (min-width: 560px) {
-    .posts {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     .post {
       padding-top: var(--space-6);
     }
 
+    .standfirst {
+      font-size: var(--text-lg);
+    }
+
+    .byline {
+      margin-top: var(--space-5);
+      font-size: var(--text-sm);
+    }
+
     .posts {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-5);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>
