@@ -1,6 +1,6 @@
 import rss from '@astrojs/rss';
 import type { Lang } from './settings';
-import { getSeo } from './settings';
+import { getContact, getProfile, getSeo } from './settings';
 import { getPosts } from './posts';
 import { pathFor, postPath } from '../i18n/routes';
 import { SITE } from './site';
@@ -9,6 +9,9 @@ import { SITE } from './site';
 export async function blogFeed(lang: Lang): Promise<Response> {
   const seo = getSeo();
   const posts = await getPosts(lang);
+  const profile = getProfile();
+  const role = profile.title[lang].trim();
+  const author = `${getContact().email} (${role ? `${profile.name}, ${role}` : profile.name})`;
   return rss({
     title: `${seo.siteName[lang]} · Blog`,
     description: seo.defaultDescription[lang],
@@ -18,6 +21,7 @@ export async function blogFeed(lang: Lang): Promise<Response> {
       description: p.data.description,
       pubDate: p.data.publishedAt,
       link: `${SITE}${postPath(p.data.slug, lang)}`,
+      author,
     })),
     customData: `<language>${lang}</language>`,
   });

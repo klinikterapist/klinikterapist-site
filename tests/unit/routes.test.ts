@@ -12,6 +12,8 @@ describe('routes', () => {
     expect(pathFor('appointment', 'en')).toBe('/en/appointment/');
     expect(pathFor('privacyNotice', 'tr')).toBe('/aydinlatma-metni/');
     expect(pathFor('privacyPolicy', 'en')).toBe('/en/privacy-policy/');
+    expect(pathFor('faq', 'tr')).toBe('/sik-sorulan-sorular/');
+    expect(pathFor('faq', 'en')).toBe('/en/faq/');
   });
 
   it('builds post and category paths', () => {
@@ -23,7 +25,7 @@ describe('routes', () => {
   });
 
   it('every page path ends with a trailing slash', () => {
-    const keys = ['home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy'] as const;
+    const keys = ['home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq'] as const;
     for (const k of keys) for (const l of ['tr', 'en'] as const) expect(pathFor(k, l)).toMatch(/\/$/);
   });
 

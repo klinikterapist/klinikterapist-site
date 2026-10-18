@@ -6,7 +6,7 @@
  */
 import type { Lang } from '../lib/settings';
 import { getProfile } from '../lib/settings';
-import { faqPath, pathFor } from '../i18n/routes';
+import { pathFor } from '../i18n/routes';
 import { t, type UiKey } from '../i18n/ui';
 import SunMark from './brand/SunMark.astro';
 import ThemeToggle from './ThemeToggle.astro';
@@ -25,7 +25,7 @@ const NAV: [string, UiKey][] = [
   [pathFor('about', lang), 'navAbout'],
   [blog, 'navBlog'],
   [pathFor('resources', lang), 'navResources'],
-  [faqPath(lang), 'navFaq'],
+  [pathFor('faq', lang), 'navFaq'],
   [pathFor('contact', lang), 'navContact'],
 ];
 const current = Astro.url.pathname;

@@ -16,6 +16,7 @@ const ogEntries = Object.entries(meta.og);
 
 <title>{meta.title}</title>
 <meta name="description" content={meta.description} />
+{meta.author && <meta name="author" content={meta.author} />}
 <link rel="canonical" href={meta.canonical} />
 {meta.alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
 {

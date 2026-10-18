@@ -44,7 +44,10 @@ const cover = data.cover as ImageMetadata | undefined;
 // Share image: a JPEG rendition of the cover (widest support); the default from seo.json otherwise.
 const shareImage = cover ? (await getImage({ src: cover, width: 1200, format: 'jpg' })).src : undefined;
 
+const profile = getProfile();
+const role = profile.title[lang].trim();
 const meta = buildMeta({
+  author: role ? `${profile.name}, ${role}` : profile.name,
   lang,
   title: data.seoTitle ?? data.title,
   description: data.description,
@@ -53,6 +56,7 @@ const meta = buildMeta({
   image: shareImage,
   type: 'article',
 });
+meta.og['article:author'] = absoluteUrl(pathFor('about', lang));
 meta.og['article:published_time'] = data.publishedAt.toISOString();
 if (data.updatedAt) meta.og['article:modified_time'] = data.updatedAt.toISOString();
 
@@ -69,9 +73,7 @@ const jsonLd = [
 ];
 
 const related = await getRelated(post, 2);
-const profile = getProfile();
 const reads = readsLabel(readCount(post.key), lang);
-const role = profile.title[lang].trim();
 const { Content } = await render(post as never);
 const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
 ---

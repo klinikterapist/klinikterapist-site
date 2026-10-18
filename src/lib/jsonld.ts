@@ -1,5 +1,5 @@
 import type { Lang } from './settings';
-import { getLinks, getProfile, getSeo } from './settings';
+import { getFaq, getLinks, getProfile, getSeo } from './settings';
 import type { PostEntry } from './posts';
 import { pathFor, postPath } from '../i18n/routes';
 import { absoluteUrl } from './seo';
@@ -10,6 +10,10 @@ const personId = () => `${absoluteUrl('/')}#person`;
 
 export function personLd(lang: Lang) {
   const profile = getProfile();
+  const memberOf = (profile.memberships ?? [])
+    .map((m) => m.org[lang].trim())
+    .filter(Boolean)
+    .map((name) => ({ '@type': 'Organization', name }));
   return {
     '@context': CONTEXT,
     '@type': 'Person',
@@ -19,6 +23,7 @@ export function personLd(lang: Lang) {
     description: profile.intro[lang],
     url: absoluteUrl(pathFor('home', lang)),
     ...(profile.photo ? { image: absoluteUrl(profile.photo) } : {}),
+    ...(memberOf.length > 0 ? { memberOf } : {}),
     sameAs: getLinks().map((l) => l.url).filter((url) => /^https?:\/\//.test(url)),
   };
 }
@@ -52,6 +57,8 @@ function coverSrc(cover: unknown): string | undefined {
 
 export function blogPostingLd(post: PostEntry, translationUrl: string) {
   const { data } = post;
+  const profile = getProfile();
+  const jobTitle = profile.title[post.lang].trim();
   const url = absoluteUrl(postPath(data.slug, post.lang));
   return {
     '@context': CONTEXT,
@@ -65,7 +72,13 @@ export function blogPostingLd(post: PostEntry, translationUrl: string) {
     dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
     image: absoluteUrl(coverSrc(data.cover) ?? getSeo().ogImage),
     keywords: data.focusKeyword,
-    author: { '@type': 'Person', '@id': personId(), name: getProfile().name },
+    author: {
+      '@type': 'Person',
+      '@id': personId(),
+      name: profile.name,
+      ...(jobTitle ? { jobTitle } : {}),
+      url: absoluteUrl(pathFor('about', post.lang)),
+    },
     workTranslation: { '@id': translationUrl },
   };
 }
@@ -79,6 +92,21 @@ export function breadcrumbLd(items: { name: string; url: string }[]) {
       position: i + 1,
       name: item.name,
       item: item.url,
+    })),
+  };
+}
+
+/** FAQPage for the answered questions in `lang`; null when none is answered (no empty markup). */
+export function faqPageLd(lang: Lang) {
+  const faq = getFaq(lang);
+  if (faq.length === 0) return null;
+  return {
+    '@context': CONTEXT,
+    '@type': 'FAQPage',
+    mainEntity: faq.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
     })),
   };
 }

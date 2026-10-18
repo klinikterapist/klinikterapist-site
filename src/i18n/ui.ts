@@ -137,6 +137,16 @@ export const STRINGS = {
   sendEmail: { tr: 'E-posta gönder', en: 'Send an e-mail' },
   goToContact: { tr: 'İletişim sayfasına git', en: 'Go to the contact page' },
 
+  // FAQ page
+  faqDesc: {
+    tr: 'Online görüşmeler, ilk seans, gizlilik ve randevu hakkında sık sorulan soruların yanıtları.',
+    en: 'Answers to common questions about online sessions, the first meeting, confidentiality and booking.',
+  },
+  faqEmpty: {
+    tr: 'Sorular yakında burada olacak. Merak ettiğiniz bir şey varsa bana yazabilirsiniz.',
+    en: 'Questions will be here soon. If you are wondering about something, feel free to write to me.',
+  },
+
   // Legal
   privacyNoticeDesc: {
     tr: 'Kişisel verilerin işlenmesine ilişkin KVKK aydınlatma metni.',

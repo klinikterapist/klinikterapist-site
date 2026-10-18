@@ -6,7 +6,7 @@ import { allPages, DIST, distFile, loadPage } from './load';
 const STATIC_PAGES = [
   '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/randevu/', '/aydinlatma-metni/', '/gizlilik/',
   '/en/', '/en/about/', '/en/resources/', '/en/contact/', '/en/appointment/',
-  '/en/privacy-notice/', '/en/privacy-policy/', '/404.html',
+  '/en/privacy-notice/', '/en/privacy-policy/', '/sik-sorulan-sorular/', '/en/faq/', '/404.html',
 ];
 
 describe('static pages', () => {
@@ -26,6 +26,26 @@ describe('static pages', () => {
       expect(d.querySelectorAll('img').filter((i) => !i.hasAttribute('alt')).length, p).toBe(0);
       expect(d.textContent, p).not.toMatch(/Lefkoşa|İstanbul|yüz yüze|NFC/i);
     }
+  });
+
+  it('FAQ pages list answered questions only, with FAQPage JSON-LD', () => {
+    const tr = loadPage('/sik-sorulan-sorular/');
+    expect(tr.querySelector('h1')?.text).toBe('Sık sorulan sorular');
+    expect(tr.querySelectorAll('main details').length).toBe(3);
+    expect(tr.querySelector('main details#ilk-gorusme')).not.toBeNull();
+    expect(tr.textContent).not.toContain('Randevuyu iptal edebilir miyim?');
+    const ld = tr.querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text));
+    const faq = ld.find((d) => d['@type'] === 'FAQPage');
+    expect(faq.mainEntity).toHaveLength(3);
+    const en = loadPage('/en/faq/');
+    expect(en.querySelectorAll('main details').length).toBe(2);
+    const enLd = en.querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text));
+    expect(enLd.find((d) => d['@type'] === 'FAQPage').mainEntity).toHaveLength(2);
+  });
+
+  it('home and header links to the first-session answer resolve', () => {
+    expect(loadPage('/').querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')).not.toBeNull();
+    expect(loadPage('/en/').querySelector('a[href="/en/faq/#ilk-gorusme"]')).not.toBeNull();
   });
 
   it('sets the document language', () => {

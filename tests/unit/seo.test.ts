@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildMeta, pageMeta } from '../../src/lib/seo';
-import { personLd, professionalServiceLd, blogPostingLd, breadcrumbLd } from '../../src/lib/jsonld';
+import { personLd, professionalServiceLd, blogPostingLd, breadcrumbLd, faqPageLd } from '../../src/lib/jsonld';
 import type { PostEntry } from '../../src/lib/posts';
-import { getProfile, getSeo } from '../../src/lib/settings';
+import { getFaq, getProfile, getSeo } from '../../src/lib/settings';
 
 const about = {
   lang: 'tr' as const, title: 'Hakkımda', description: 'd', path: '/hakkimda/',
@@ -89,6 +89,34 @@ describe('jsonld', () => {
     });
   });
 
+  it('post author carries the job title and the about page', () => {
+    const post = {
+      lang: 'en',
+      data: { slug: 'a', title: 'T', description: 'd', focusKeyword: 'k', publishedAt: new Date('2026-09-01T00:00:00Z') },
+    } as PostEntry;
+    const author = (blogPostingLd(post, 'https://example.com/x/') as { author: Record<string, string> }).author;
+    expect(author.jobTitle).toBe('Clinical Psychologist');
+    expect(author.url).toBe('https://example.com/en/about/');
+  });
+
+  it('the person is a member of the listed organisations', () => {
+    expect(personLd('tr')).toMatchObject({ memberOf: [{ '@type': 'Organization', name: 'Türk Psikologlar Derneği' }] });
+    expect(personLd('en')).toMatchObject({ memberOf: [{ name: 'Turkish Psychological Association' }] });
+  });
+
+  it('FAQPage mirrors the answered questions, or is absent when there are none', () => {
+    for (const lang of ['tr', 'en'] as const) {
+      const answered = getFaq(lang);
+      const ld = faqPageLd(lang);
+      if (answered.length === 0) expect(ld).toBeNull();
+      else {
+        expect(ld!['@type']).toBe('FAQPage');
+        expect(ld!.mainEntity.map((q) => q.name)).toEqual(answered.map((f) => f.q));
+        expect(ld!.mainEntity[0]).toMatchObject({ '@type': 'Question', acceptedAnswer: { '@type': 'Answer', text: answered[0].a } });
+      }
+    }
+  });
+
   it('breadcrumb numbers its items', () => {
     expect(breadcrumbLd([
       { name: 'Ana Sayfa', url: 'https://example.com/' },
@@ -100,6 +128,13 @@ describe('jsonld', () => {
         { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://example.com/blog/' },
       ],
     });
+  });
+});
+
+describe('author meta', () => {
+  it('buildMeta carries an author when given', () => {
+    expect(buildMeta({ ...about, author: 'A, B' }).author).toBe('A, B');
+    expect(buildMeta(about).author).toBeUndefined();
   });
 });
 

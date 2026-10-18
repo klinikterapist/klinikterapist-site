@@ -9,6 +9,7 @@ export type Meta = {
   canonical: string;
   alternates: { hreflang: string; href: string }[];
   og: Record<string, string>;
+  author?: string;
 };
 
 export type MetaInput = {
@@ -19,6 +20,8 @@ export type MetaInput = {
   alternates: { tr: string; en: string };
   image?: string;
   type?: 'website' | 'article';
+  /** Author line (`name, title`) for the `author` meta; posts only. */
+  author?: string;
 };
 
 const OG_LOCALE: Record<Lang, string> = { tr: 'tr_TR', en: 'en_US' };
@@ -40,6 +43,7 @@ export function buildMeta(input: MetaInput): Meta {
     title,
     description: input.description,
     canonical,
+    ...(input.author ? { author: input.author } : {}),
     alternates: [
       { hreflang: 'tr', href: absoluteUrl(input.alternates.tr) },
       { hreflang: 'en', href: absoluteUrl(input.alternates.en) },

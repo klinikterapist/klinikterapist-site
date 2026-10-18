@@ -10,13 +10,13 @@ export type Localized = { tr: string; en: string };
 
 export const ROUTE_KEYS = [
   'home', 'about', 'blog', 'category', 'post', 'resources',
-  'contact', 'appointment', 'privacyNotice', 'privacyPolicy',
+  'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq',
 ] as const;
 export type RouteKey = (typeof ROUTE_KEYS)[number];
 
 /** Route keys with one fixed page (no slug): the only pages a home card may target. */
 export const PAGE_KEYS = [
-  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy',
+  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq',
 ] as const satisfies readonly RouteKey[];
 
 const localized = z.object({ tr: z.string(), en: z.string() });

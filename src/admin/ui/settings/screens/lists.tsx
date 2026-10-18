@@ -20,6 +20,7 @@ const PAGE_LABEL: Record<(typeof PAGE_KEYS)[number], string> = {
   appointment: 'Randevu',
   privacyNotice: 'Aydınlatma metni',
   privacyPolicy: 'Gizlilik politikası',
+  faq: 'Sık sorulan sorular',
 };
 const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
 

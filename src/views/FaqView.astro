@@ -1,0 +1,60 @@
+---
+/** FAQ page (spec §10): the answered questions as Accordions. The home page links to `#ilk-gorusme`. */
+import PageShell from '../layouts/PageShell.astro';
+import PageHead from '../components/ui/PageHead.astro';
+import Accordion from '../components/ui/Accordion.astro';
+import ListItem from '../components/ui/ListItem.astro';
+import type { Lang } from '../lib/settings';
+import { getFaq } from '../lib/settings';
+import { pageMeta } from '../lib/seo';
+import { faqPageLd } from '../lib/jsonld';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const title = t(lang, 'faqTitle');
+const { meta, alternatePaths } = pageMeta('faq', lang, title, t(lang, 'faqDesc'));
+const faq = getFaq(lang);
+const ld = faqPageLd(lang);
+---
+
+<PageShell lang={lang} meta={meta} jsonLd={ld ? [ld] : undefined} alternatePaths={alternatePaths}>
+  <div class="container-text inner-page faq-page">
+    <PageHead title={title}>
+      <p class="lead">{t(lang, 'faqDesc')}</p>
+    </PageHead>
+
+    {
+      faq.length > 0 ? (
+        <div class="page-stack">
+          {faq.map((f) => (
+            <Accordion title={f.q} id={f.id === 'ilk-gorusme' ? f.id : undefined} open={f.id === 'ilk-gorusme'}>
+              <p class="answer">{f.a}</p>
+            </Accordion>
+          ))}
+        </div>
+      ) : (
+        <div class="page-stack">
+          <p class="empty">{t(lang, 'faqEmpty')}</p>
+          <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+        </div>
+      )
+    }
+  </div>
+</PageShell>
+
+<style>
+  .answer,
+  .empty {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .empty {
+    text-align: center;
+  }
+</style>
