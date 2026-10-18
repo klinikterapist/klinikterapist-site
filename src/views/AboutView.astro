@@ -131,9 +131,12 @@ for (let i = 0; i < areas.length; i += 2) {
       max-width: calc(var(--max-wide) + 2 * var(--gutter));
     }
 
-    .about-side {
-      position: sticky;
-      top: var(--space-5);
+    /* Sticky only where the whole side column fits in the window; on short screens it scrolls. */
+    @media (min-height: 700px) {
+      .about-side {
+        position: sticky;
+        top: var(--space-5);
+      }
     }
 
     .about-side :global(.page-head) {

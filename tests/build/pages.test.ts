@@ -338,7 +338,9 @@ describe('inner pages redesign (spec §5.9)', () => {
     const src = readFileSync('src/views/AboutView.astro', 'utf8');
     const desk = src.slice(src.indexOf('@media (min-width: 768px)'));
     expect(desk).toMatch(/\.about\s*\{[^}]*display:\s*grid/);
-    expect(desk).toMatch(/\.about-side\s*\{[^}]*position:\s*sticky/);
+    // Sticky only on windows tall enough for the whole side column.
+    expect(desk).toMatch(/@media \(min-height: 700px\)\s*\{\s*\.about-side\s*\{[^}]*position:\s*sticky/);
+    expect(desk.replace(/@media \(min-height: 700px\)\s*\{\s*\.about-side\s*\{[^}]*\}/, '')).not.toMatch(/sticky/);
     expect(desk).toMatch(/\.side-cta\s*\{[^}]*display:\s*flex/);
     // Phones: the side button is hidden (the sticky booking bar does that job).
     expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.side-cta\s*\{\s*display:\s*none/);
