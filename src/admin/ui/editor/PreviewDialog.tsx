@@ -81,7 +81,7 @@ export function PreviewDialog({ draft, lang, images, onClose }: { draft: Draft; 
       <div className="preview-bar">
         <span>{`Önizleme · ${lang === 'tr' ? 'Türkçe' : 'İngilizce'} · Henüz yayınlanmadı`}</span>
         <Button onClick={close}>
-          Kapat
+          ← Düzenlemeye dön
         </Button>
       </div>
       <div className="preview-scroll">

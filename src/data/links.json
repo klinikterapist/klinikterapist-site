@@ -54,5 +54,13 @@
     "icon": "threads",
     "inHero": true,
     "inFooter": true
+  },
+  {
+    "id": "substack",
+    "label": "Substack",
+    "url": "https://substack.com/@klinikterapist",
+    "icon": "substack",
+    "inHero": true,
+    "inFooter": true
   }
 ]
