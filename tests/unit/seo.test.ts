@@ -3,6 +3,12 @@ import { buildMeta, pageMeta } from '../../src/lib/seo';
 import { personLd, professionalServiceLd, blogPostingLd, breadcrumbLd, faqPageLd } from '../../src/lib/jsonld';
 import type { PostEntry } from '../../src/lib/posts';
 import { getFaq, getProfile, getSeo } from '../../src/lib/settings';
+import { useFixtureData } from '../helpers/fixture-data';
+
+// Texts below come from the data readers, never from the owner's real src/data, which the panel edits and deploy.yml
+// runs this suite against (see tests/helpers/fixture-data.ts).
+useFixtureData();
+const site = (lang: 'tr' | 'en') => getSeo().siteName[lang];
 
 const about = {
   lang: 'tr' as const, title: 'Hakkımda', description: 'd', path: '/hakkimda/',
@@ -10,9 +16,9 @@ const about = {
 };
 
 describe('site name', () => {
-  it('uses the full professional name', () => {
-    expect(getSeo().siteName.tr).toBe('Psikolog Osman Güneş Özkurt');
-    expect(getSeo().siteName.en).toBe('Psychologist Osman Güneş Özkurt');
+  it('is set in both languages', () => {
+    expect(site('tr').trim()).not.toBe('');
+    expect(site('en').trim()).not.toBe('');
   });
 });
 
@@ -28,24 +34,24 @@ describe('buildMeta', () => {
   });
 
   it('formats the title with the site name; home uses the site name alone', () => {
-    expect(buildMeta(about).title).toBe('Hakkımda | Psikolog Osman Güneş Özkurt');
+    expect(buildMeta(about).title).toBe(`Hakkımda | ${site('tr')}`);
     const home = buildMeta({ ...about, title: 'Ana Sayfa', path: '/', alternates: { tr: '/', en: '/en/' } });
-    expect(home.title).toBe('Psikolog Osman Güneş Özkurt');
+    expect(home.title).toBe(site('tr'));
     const homeEn = buildMeta({ ...about, lang: 'en', title: 'Home', path: '/en/', alternates: { tr: '/', en: '/en/' } });
-    expect(homeEn.title).toBe('Psychologist Osman Güneş Özkurt');
+    expect(homeEn.title).toBe(site('en'));
   });
 
   it('fills og and twitter tags', () => {
     const m = buildMeta({ ...about, lang: 'en', path: '/en/about/', image: '/images/x.jpg', type: 'article' });
     expect(m.og).toEqual({
-      'og:title': 'Hakkımda | Psychologist Osman Güneş Özkurt',
+      'og:title': `Hakkımda | ${site('en')}`,
       'og:description': 'd',
       'og:url': 'https://example.com/en/about/',
       'og:image': 'https://example.com/images/x.jpg',
       'og:type': 'article',
       'og:locale': 'en_US',
       'og:locale:alternate': 'tr_TR',
-      'og:site_name': 'Psychologist Osman Güneş Özkurt',
+      'og:site_name': site('en'),
       'twitter:card': 'summary_large_image',
     });
     expect(buildMeta(about).og['og:type']).toBe('website');
@@ -67,7 +73,7 @@ describe('jsonld', () => {
 
   it('person uses the profile title and public links', () => {
     const ld = personLd('en');
-    expect(ld).toMatchObject({ '@type': 'Person', name: 'Osman Güneş Özkurt', jobTitle: getProfile().title.en, url: 'https://example.com/en/' });
+    expect(ld).toMatchObject({ '@type': 'Person', name: getProfile().name, jobTitle: getProfile().title.en, url: 'https://example.com/en/' });
     expect(ld.sameAs).toContain('https://instagram.com/klinikterapist');
     expect(ld.sameAs).toContain('https://www.tiktok.com/@klinikterapist');
     expect(JSON.stringify(ld.sameAs)).not.toContain('mailto:');
@@ -95,7 +101,7 @@ describe('jsonld', () => {
       data: { slug: 'a', title: 'T', description: 'd', focusKeyword: 'k', publishedAt: new Date('2026-09-01T00:00:00Z') },
     } as PostEntry;
     const author = (blogPostingLd(post, 'https://example.com/x/') as { author: Record<string, string> }).author;
-    expect(author.jobTitle).toBe('Clinical Psychologist');
+    expect(author.jobTitle).toBe(getProfile().title.en);
     expect(author.url).toBe('https://example.com/en/about/');
   });
 
@@ -143,7 +149,7 @@ describe('pageMeta', () => {
     const { meta, alternatePaths } = pageMeta('about', 'en', 'About Me', 'd');
     expect(alternatePaths).toEqual({ tr: '/hakkimda/', en: '/en/about/' });
     expect(meta.canonical).toBe('https://example.com/en/about/');
-    expect(meta.title).toBe('About Me | Psychologist Osman Güneş Özkurt');
+    expect(meta.title).toBe(`About Me | ${site('en')}`);
     expect(meta.description).toBe('d');
   });
 });

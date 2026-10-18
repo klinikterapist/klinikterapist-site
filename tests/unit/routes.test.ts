@@ -3,6 +3,9 @@ import { pathFor, categoryPath, postPath, otherLang } from '../../src/i18n/route
 import { t } from '../../src/i18n/ui';
 import { getCategories } from '../../src/lib/settings';
 import { PAGE_KEYS } from '../../src/lib/schemas';
+import { useFixtureData } from '../helpers/fixture-data';
+
+useFixtureData(); // categories come from the fixtures, not the owner's editable src/data
 
 describe('routes', () => {
   it('builds page paths from the route map', () => {

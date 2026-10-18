@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect } from 'vitest';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { SettingsPage } from '../../../src/admin/ui/settings/SettingsPage';
 import { Panel } from '../../../src/admin/ui/context';
@@ -13,8 +15,27 @@ afterEach(() => {
   localStorage.clear();
 });
 
+/**
+ * The panel is seeded from the fixtures (tests/fixtures/data and /content), never from the owner's real
+ * src/data: deploy.yml runs this suite before every deploy, so a test on the real values would block the
+ * live site after an ordinary panel edit.
+ */
+function fixtureSeed(): Record<string, string> {
+  const seed: Record<string, string> = {};
+  const walk = (dir: string, prefix: string) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walk(full, `${prefix}/${name}`);
+      else if (/\.(json|md)$/.test(name)) seed[`${prefix}/${name}`] = readFileSync(full, 'utf8');
+    }
+  };
+  walk('tests/fixtures/data', 'src/data');
+  walk('tests/fixtures/content', 'src/content/posts');
+  return seed;
+}
+
 function setup(screenId: string, tweak: (api: ReturnType<typeof createMockApi>) => void = () => {}) {
-  const api = createMockApi();
+  const api = createMockApi({ seed: fixtureSeed() });
   tweak(api);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>

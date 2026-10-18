@@ -9,26 +9,35 @@ import {
   parseRedirects, parseCategories, parseResources, parseAbout, checkRedirectCollisions, slugSchema, periodText, parseContact, slugError,
 } from '../../src/lib/settings';
 import { staticPagePaths } from '../../src/i18n/routes';
+import { useFixtureData } from '../helpers/fixture-data';
 
-describe('real seed files', () => {
-  it('all parse', () => {
-    expect(() => getProfile()).not.toThrow();
-    expect(() => getLinks()).not.toThrow();
-    expect(() => getHome()).not.toThrow();
-    expect(() => getAbout()).not.toThrow();
-    expect(() => getContact()).not.toThrow();
-    expect(() => getResources()).not.toThrow();
-    expect(() => getSeo()).not.toThrow();
-    expect(getRedirects()).toEqual([]);
+// The readers run on tests/fixtures/data. The owner edits src/data in the panel and deploy.yml runs this suite
+// before every deploy, so nothing here may assert the owner's real values (see tests/helpers/fixture-data.ts).
+useFixtureData();
+
+const parseAll = () => {
+  getProfile(); getLinks(); getHome(); getAbout(); getContact(); getResources(); getSeo(); getRedirects(); getCategories();
+};
+
+describe('data files', () => {
+  it('the fixture files all parse', () => {
+    expect(parseAll).not.toThrow();
+    expect(Array.isArray(getRedirects())).toBe(true);
   });
-  it('has the seed categories', () => {
+  it('the real src/data parses (structure only, any valid panel state)', () => {
+    const prev = process.env.DATA_DIR;
+    process.env.DATA_DIR = 'src/data';
+    try {
+      expect(parseAll).not.toThrow();
+      expect(getCategories().length).toBeGreaterThan(0);
+    } finally {
+      process.env.DATA_DIR = prev;
+    }
+  });
+  it('has categories with unique ids', () => {
     const ids = getCategories().map((c) => c.id);
     expect(ids).toContain('zihinsel-saglik');
-    expect(ids).toHaveLength(6);
-  });
-  it('has no location wording', () => {
-    const all = JSON.stringify([getProfile(), getAbout(), getContact()]);
-    expect(all).not.toMatch(/yüz yüze|in-person/i);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 
@@ -146,8 +155,8 @@ describe('url fields (M2)', () => {
 describe('resources note (myNote) and timeline period', () => {
   it('resources.json holds a localized owner note next to the items', () => {
     const res = getResources();
-    expect(res.myNote.tr).toMatch(/kaynaklara yer veriyorum/);
-    expect(res.myNote.en).toMatch(/resources/);
+    expect(typeof res.myNote.tr).toBe('string');
+    expect(typeof res.myNote.en).toBe('string');
     expect(res.items.length).toBeGreaterThan(0);
     expect(() => parseResources({ items: [] })).toThrow(/resources\.json.*myNote/);
   });
@@ -160,7 +169,7 @@ describe('resources note (myNote) and timeline period', () => {
     expect(periodText('2016–2020', 'en')).toBe('2016–2020');
     expect(periodText({ tr: 'Devam ediyor', en: 'Ongoing' }, 'en')).toBe('Ongoing');
   });
-  it('the real seed has no Turkish-only period', () => {
+  it('a plain-string period is a year range, never Turkish-only text', () => {
     for (const item of getAbout().timeline) {
       if (typeof item.period === 'string') expect(item.period).toMatch(/^[\d–\-\s]+$/);
     }
@@ -196,17 +205,17 @@ describe('Phase 2 hardening', () => {
 describe('Plan E content fields', () => {
   it('current data still parses and the new optional fields are accepted', () => {
     const p = getProfile();
-    expect(p.heroStyle).toBeUndefined();
-    expect(p.memberships?.[0].org.tr).toBe('Türk Psikologlar Derneği');
-    expect(p.photo).toMatch(/^\/images\/profil-[0-9a-f]{8}\.webp$/);
+    expect(p.heroStyle === undefined || ['round', 'background'].includes(p.heroStyle)).toBe(true);
+    expect(Array.isArray(p.memberships) || p.memberships === undefined).toBe(true);
     expect(() => parseProfile({ ...p, heroStyle: 'round', memberships: [{ org: { tr: 'a', en: 'b' }, number: '12' }] })).not.toThrow();
     expect(() => parseProfile({ ...p, heroStyle: 'background' })).not.toThrow();
   });
   it('rejects an unknown heroStyle', () => {
     expect(() => parseProfile({ ...getProfile(), heroStyle: 'x' })).toThrow(/profile\.json.*heroStyle/);
   });
-  it('links accept a note; Medium has one', () => {
-    expect(getLinks().find((l) => l.id === 'medium')?.note).toEqual({ tr: 'İngilizce', en: 'In English' });
+  it('links accept a note (and keep it when parsed)', () => {
+    const noted = parseLinks([{ ...getLinks()[0], note: { tr: 'İngilizce', en: 'In English' } }]);
+    expect(noted[0].note).toEqual({ tr: 'İngilizce', en: 'In English' });
     const l = getLinks()[0];
     expect(() => parseLinks([{ ...l, note: { tr: 'n', en: 'n' } }])).not.toThrow();
   });

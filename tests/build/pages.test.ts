@@ -461,6 +461,11 @@ describe('inner pages redesign (spec §5.9)', () => {
  */
 describe('sample content (real posts and data)', () => {
   const sample = (path: string) => loadPage(path, DIST_SAMPLES);
+
+  it('the production-like build has no UI-kit fixture pages (UI_KIT is only set for the fixture build)', () => {
+    expect(existsSync(join(DIST_SAMPLES, 'ui-kit'))).toBe(false);
+    expect(existsSync(join(DIST, 'ui-kit'))).toBe(true);
+  });
   type Meta = { slug: string; featured: boolean; cover: boolean; at: number };
   const metas = (lang: 'tr' | 'en'): Meta[] =>
     readdirSync('src/content/posts')
