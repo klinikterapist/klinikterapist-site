@@ -44,3 +44,10 @@ export async function portraitImage(photo: string, widths: number[]): Promise<Po
     height: Math.round((width * meta.height) / meta.width),
   };
 }
+
+/**
+ * A 1×1 inline GIF for the <img> inside a <picture> whose only <source> carries a media query: a screen
+ * the query does not match falls back to this and fetches nothing (the desktop hero on phones, the
+ * phone header on desktops).
+ */
+export const EMPTY_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';

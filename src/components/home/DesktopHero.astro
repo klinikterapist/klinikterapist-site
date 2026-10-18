@@ -8,7 +8,7 @@
  * the big sun with a soft halo stands in the same place.
  */
 import type { Lang } from '../../lib/settings';
-import { portraitImage } from '../../lib/portrait-image';
+import { EMPTY_IMAGE, portraitImage } from '../../lib/portrait-image';
 import { pathFor } from '../../i18n/routes';
 import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
@@ -32,7 +32,6 @@ const img = photo ? await portraitImage(photo, [560, 800, 1080]) : null;
 const sizes = '(max-width: 1279px) 560px, 45vw';
 // Phones never show this hero: the <source> only matches from 768 px, and below that the <img>
 // falls back to an empty inline GIF, so a phone fetches nothing while desktops load it eagerly.
-const EMPTY = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', org)), t(lang, 'responseTime')].join(' · ');
 ---
 
@@ -63,7 +62,7 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
         <div class="art art--bleed">
           <picture>
             <source media="(min-width: 768px)" srcset={img.srcset ?? img.src} sizes={img.srcset ? sizes : undefined} />
-            <img class="photo" src={EMPTY} width={img.width} height={img.height} alt={alt} loading="eager" decoding="async" />
+            <img class="photo" src={EMPTY_IMAGE} width={img.width} height={img.height} alt={alt} loading="eager" decoding="async" />
           </picture>
           <span class="sun">
             <SunMark size={170} />

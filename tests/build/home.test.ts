@@ -92,7 +92,14 @@ describe('home (phone)', () => {
 
   it('portrait styles', () => {
     expect(loadPage('/ui-kit/portrait/background/').querySelector('.portrait-hero--background img')).toBeTruthy();
-    expect(loadPage('/ui-kit/portrait/round/').querySelector('.portrait-hero--round img + .sun-badge')).toBeTruthy();
+    expect(loadPage('/ui-kit/portrait/round/').querySelector('.portrait-hero--round picture + .sun-badge')).toBeTruthy();
+    // Phones only: the photo sits in a <source> for < 768 px; desktops get the inline placeholder and fetch nothing.
+    for (const path of ['/ui-kit/portrait/background/', '/ui-kit/portrait/round/', '/']) {
+      const pic = loadPage(path).querySelector('.portrait-hero picture')!;
+      expect(pic.querySelector('source')?.getAttribute('media'), path).toBe('(max-width: 767px)');
+      expect(pic.querySelector('source')?.getAttribute('srcset'), path).toBeTruthy();
+      expect(pic.querySelector('img')?.getAttribute('src'), path).toMatch(/^data:image\//);
+    }
     const none = loadPage('/ui-kit/portrait/none/').querySelector('.portrait-hero--none')!;
     expect(none.querySelector('svg.sun-mark')).toBeTruthy();
     expect(none.querySelector('img')).toBeNull();

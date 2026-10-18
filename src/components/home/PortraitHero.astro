@@ -7,7 +7,7 @@
  * - none (no photo): plain top bar, the sun in a 96 px surface circle.
  */
 import type { Lang } from '../../lib/settings';
-import { portraitImage, type PortraitStyle } from '../../lib/portrait-image';
+import { EMPTY_IMAGE, portraitImage, type PortraitStyle } from '../../lib/portrait-image';
 import TopBar from '../ui/TopBar.astro';
 import SunMark from '../brand/SunMark.astro';
 
@@ -22,20 +22,25 @@ interface Props {
 const { style, lang, alternatePaths, photo, alt } = Astro.props;
 const withPhoto = style !== 'none' && !!photo;
 const kind: PortraitStyle = withPhoto ? style : 'none';
-// The phone column is at most 440 px wide; on desktop this block is hidden, so the smallest file is enough.
+// The phone column is at most 440 px wide. Desktops never show this block: the <source> only matches
+// below 768 px and the <img> itself is an empty inline GIF, so a desktop fetches no photo here.
 const img = withPhoto
   ? kind === 'background'
     ? await portraitImage(photo!, [480, 720, 1080])
     : await portraitImage(photo!, [112, 224, 336])
   : null;
-const sizes = kind === 'background' ? '(min-width: 768px) 1px, min(100vw, 440px)' : '(min-width: 768px) 1px, 112px';
+const sizes = kind === 'background' ? 'min(100vw, 440px)' : '112px';
+const PHONE = '(max-width: 767px)';
 ---
 
 <div class:list={['portrait-hero', `portrait-hero--${kind}`]}>
   {
     kind === 'background' && img ? (
       <div class="photo">
-        <img src={img.src} srcset={img.srcset} sizes={img.srcset ? sizes : undefined} width={img.width} height={img.height} alt={alt} loading="eager" fetchpriority="high" decoding="async" />
+        <picture>
+          <source media={PHONE} srcset={img.srcset ?? img.src} sizes={img.srcset ? sizes : undefined} />
+          <img src={EMPTY_IMAGE} width={img.width} height={img.height} alt={alt} loading="eager" fetchpriority="high" decoding="async" />
+        </picture>
         <span class="fade" aria-hidden="true" />
         <div class="chips">
           <TopBar lang={lang} alternatePaths={alternatePaths} left="none" />
@@ -56,7 +61,10 @@ const sizes = kind === 'background' ? '(min-width: 768px) 1px, min(100vw, 440px)
     {
       kind === 'round' && img && (
         <span class="avatar">
-          <img src={img.src} srcset={img.srcset} sizes={img.srcset ? sizes : undefined} width="112" height="112" alt={alt} loading="eager" decoding="async" />
+          <picture>
+            <source media={PHONE} srcset={img.srcset ?? img.src} sizes={img.srcset ? sizes : undefined} />
+            <img src={EMPTY_IMAGE} width="112" height="112" alt={alt} loading="eager" decoding="async" />
+          </picture>
           <span class="sun-badge">
             <SunMark size={34} />
           </span>
@@ -96,6 +104,11 @@ const sizes = kind === 'background' ? '(min-width: 768px) 1px, min(100vw, 440px)
     z-index: 0;
     height: min(64vh, 430px);
     overflow: hidden;
+  }
+
+  .photo picture,
+  .avatar picture {
+    display: contents;
   }
 
   .photo img {
