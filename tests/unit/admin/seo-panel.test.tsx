@@ -66,4 +66,18 @@ describe('MetaPanel', () => {
     rerender(<MetaPanel lang="tr" draft={{ ...draft(), cover: 'cover.jpg' }} images={images} onLang={() => {}} />);
     expect(fieldsOf()).toEqual(['slug', 'seoTitle', 'description']); // the cover alt text lives in Ayarlar
   });
+
+  it('the share preview shows the site name under the address, with a note', () => {
+    render(<MetaPanel lang="tr" draft={draft()} images={images} siteName="Psikolog Osman Güneş Özkurt" onLang={() => {}} />);
+    const social = screen.getByRole('region', { name: 'Paylaşım önizlemesi' });
+    expect(within(social).getByText('KLINIKTERAPIST.COM')).toBeTruthy();
+    expect(within(social).getByText('Psikolog Osman Güneş Özkurt')).toBeTruthy();
+    expect(within(social).getByText('Bazı uygulamalar site adını gösterir, bazıları yalnızca adresi.')).toBeTruthy();
+  });
+
+  it('without a site name the share preview omits that line', () => {
+    render(<MetaPanel lang="tr" draft={draft()} images={images} onLang={() => {}} />);
+    expect(screen.queryByText(/undefined/)).toBeNull();
+    expect(document.querySelector('.social-name')).toBeNull();
+  });
 });

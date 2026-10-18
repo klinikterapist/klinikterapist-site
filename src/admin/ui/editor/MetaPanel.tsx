@@ -44,7 +44,7 @@ function SerpPreview({ lang, title, slug, description }: { lang: Lang; title: st
   );
 }
 
-function SocialPreview({ title, description, image }: { title: string; description: string; image: string | null }) {
+function SocialPreview({ title, description, image, siteName }: { title: string; description: string; image: string | null; siteName?: string }) {
   return (
     <section className="social" aria-label="Paylaşım önizlemesi">
       <h4>Paylaşınca görünüm</h4>
@@ -52,15 +52,17 @@ function SocialPreview({ title, description, image }: { title: string; descripti
         {image ? <img src={image} alt="" /> : <div className="social-noimg">Varsayılan paylaşım görseli</div>}
         <div className="social-text">
           <p className="social-site">KLINIKTERAPIST.COM</p>
+          {siteName && <p className="social-name">{siteName}</p>}
           <p className="social-title">{cut(title || 'Başlık', 70)}</p>
           <p className="social-desc">{cut(description, 110)}</p>
         </div>
       </div>
+      <p className="k-hint">Bazı uygulamalar site adını gösterir, bazıları yalnızca adresi.</p>
     </section>
   );
 }
 
-export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore; onLang: (patch: Partial<LangFields>) => void }) {
+export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore; siteName?: string; onLang: (patch: Partial<LangFields>) => void }) {
   const { draft, lang, images } = props;
   const f = draft[lang];
   const [cover, setCover] = useState<string | null>(null);
@@ -124,7 +126,7 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
         />
       </div>
       <SerpPreview lang={lang} title={title} slug={f.slug} description={f.description.trim()} />
-      <SocialPreview title={title} description={f.description.trim()} image={cover} />
+      <SocialPreview title={title} description={f.description.trim()} image={cover} siteName={props.siteName} />
     </div>
   );
 }

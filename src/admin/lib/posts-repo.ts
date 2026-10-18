@@ -1,6 +1,6 @@
 /** Loading what is live in the repo, and turning it into editable drafts and list rows. */
 import type { Api, Draft, DraftSummary, LangFields } from '../api/types';
-import { parseCategories, parseRedirects, type Category, type Lang } from '../../lib/schemas';
+import { parseCategories, parseRedirects, parseSeo, type Category, type Lang } from '../../lib/schemas';
 import { normalizeDraft } from './draft';
 import { parsePost, type PostFrontmatter } from './frontmatter';
 import { markdownToDoc } from './markdown';
@@ -11,6 +11,8 @@ export type SiteState = {
   posts: LoadedPost[];
   redirects: RedirectsFile;
   categories: { list: Category[]; sha: string };
+  /** Site name per language from seo.json; null when that file is missing or unreadable. */
+  siteName: Record<Lang, string> | null;
 };
 
 const POST_FILE = /^src\/content\/posts\/([a-z0-9-]+)\/(tr|en)\.md$/;
@@ -18,7 +20,7 @@ const POST_FILE = /^src\/content\/posts\/([a-z0-9-]+)\/(tr|en)\.md$/;
 export async function loadSiteState(api: Api): Promise<SiteState> {
   const { files } = await api.tree();
   const postPaths = files.filter((f) => POST_FILE.test(f.path)).map((f) => f.path);
-  const wanted = [...postPaths, 'src/data/redirects.json', 'src/data/categories.json'].filter((p) => files.some((f) => f.path === p));
+  const wanted = [...postPaths, 'src/data/redirects.json', 'src/data/categories.json', 'src/data/seo.json'].filter((p) => files.some((f) => f.path === p));
   const read = wanted.length ? (await api.read(wanted)).files : [];
   const byPath = new Map(read.map((f) => [f.path, f]));
 
@@ -42,10 +44,18 @@ export async function loadSiteState(api: Api): Promise<SiteState> {
 
   const r = byPath.get('src/data/redirects.json');
   const c = byPath.get('src/data/categories.json');
+  let siteName: SiteState['siteName'] = null;
+  try {
+    const seo = byPath.get('src/data/seo.json');
+    if (seo) siteName = parseSeo(JSON.parse(seo.content)).siteName;
+  } catch {
+    siteName = null;
+  }
   return {
     posts,
     redirects: { list: r ? parseRedirects(JSON.parse(r.content)) : [], sha: r?.sha ?? '' },
     categories: { list: c ? parseCategories(JSON.parse(c.content)) : [], sha: c?.sha ?? '' },
+    siteName,
   };
 }
 

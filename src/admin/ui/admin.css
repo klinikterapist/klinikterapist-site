@@ -1639,6 +1639,11 @@ textarea.k-input {
   font-size: 11px;
 }
 
+.social-name {
+  color: #5b675f;
+  font-size: var(--text-sm);
+}
+
 .social-title {
   font-weight: 700;
 }

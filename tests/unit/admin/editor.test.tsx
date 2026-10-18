@@ -163,7 +163,9 @@ describe('EditorPage', () => {
 
   it('removing the cover hides the alt field and its checklist item', async () => {
     localStorage.setItem('panel.rail', 'settings');
-    setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const initial = { ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') };
+    const draftKey = initial.key;
+    setup(initial);
     const settings = await screen.findByRole('region', { name: 'Ayarlar' });
     fireEvent.change(within(settings).getByLabelText('Kapak görselinin alt metni (Türkçe)'), { target: { value: 'Bir fincan çay' } });
     fireEvent.click(within(settings).getByRole('button', { name: 'Kapağı kaldır' }));
@@ -171,6 +173,10 @@ describe('EditorPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kontrol listesi' }));
     const list = screen.getByRole('list', { name: 'Yayın kontrol listesi' });
     expect(within(list).queryByRole('button', { name: /Kapak görselinin alt metni/ })).toBeNull();
+    // the typed alt text is kept in the draft (this device's copy), only the field is hidden
+    const saved = JSON.parse(localStorage.getItem(`kt-draft-${draftKey}`) ?? 'null');
+    expect(saved.cover).toBeNull();
+    expect(saved.tr.coverAlt).toBe('Bir fincan çay');
   });
 
   it('the Kontrol listesi heading has a help tip', async () => {

@@ -30,7 +30,7 @@ import { scoreTone, SeoPanel, useDebounced } from './SeoPanel';
 import { VersionsDialog } from './VersionsDialog';
 import { restoreLang } from '../../lib/versions';
 
-type Loaded = { draft: Draft; live: LoadedPost | null; categories: Category[]; others: LoadedPost[]; restore: Draft | null; inDrive: boolean };
+type Loaded = { draft: Draft; live: LoadedPost | null; categories: Category[]; siteName: Record<Lang, string> | null; others: LoadedPost[]; restore: Draft | null; inDrive: boolean };
 
 const STATUS_TEXT: Record<AutosaveStatus, string> = {
   kaydedildi: 'Taslak kaydedildi',
@@ -77,7 +77,7 @@ export function EditorPage({ postKey }: { postKey: string }) {
       if (!draft && backup) draft = backup;
       else if (draft && backup && JSON.stringify({ ...backup, updatedAt: '' }) !== JSON.stringify({ ...draft, updatedAt: '' })) restore = backup;
       if (!draft) throw new ApiFailure('not_found', 'Bu yazı bulunamadı. Silinmiş ya da başka bir cihazda yayınlanmış olabilir.');
-      if (alive) setLoaded({ draft, live, categories: site.categories.list, others: site.posts.filter((p) => p.key !== postKey), restore, inDrive });
+      if (alive) setLoaded({ draft, live, categories: site.categories.list, siteName: site.siteName, others: site.posts.filter((p) => p.key !== postKey), restore, inDrive });
     })().catch((e) => alive && setError(e instanceof ApiFailure ? e.message : 'Yazı yüklenemedi. Tekrar deneyin.'));
     return () => {
       alive = false;
@@ -416,7 +416,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
             )}
             {rail === 'checklist' && <ChecklistPanel items={checklist} flagMissing={flagMissing} onGo={goTo} />}
             {rail === 'seo' && <SeoPanel lang={lang} draft={draft} otherKeywords={otherKeywords} onLang={onLang} />}
-            {rail === 'meta' && <MetaPanel draft={draft} lang={lang} images={images} onLang={onLang} />}
+            {rail === 'meta' && <MetaPanel draft={draft} lang={lang} images={images} siteName={loaded.siteName?.[lang]} onLang={onLang} />}
           </RailPanelFrame>
         )}
         <SideRail
