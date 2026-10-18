@@ -37,6 +37,24 @@ describe('settings screens', () => {
     expect(screen.getByText('Sitede görünen sosyal hesaplarınız.')).toBeTruthy();
   });
 
+  it('Sosyal ve linkler: the chosen icon is shown next to the Simge select and follows it', async () => {
+    setup('linkler');
+    const select = (await screen.findAllByLabelText('Simge'))[0] as HTMLSelectElement;
+    const preview = () => select.closest('.icon-pick')!.querySelector('svg.icon-preview')!;
+    expect(preview()).toBeTruthy();
+    expect(preview().getAttribute('aria-hidden')).toBe('true');
+    const before = preview().innerHTML;
+    const other = [...select.options].find((o) => o.value !== select.value)!.value;
+    fireEvent.change(select, { target: { value: other } });
+    expect(preview().getAttribute('data-icon')).toBe(other);
+    expect(preview().innerHTML).not.toBe(before);
+  });
+
+  it('Profil: the intro mentions the author box', async () => {
+    setup('profil');
+    expect(await screen.findByText('Adınız, unvanınız ve fotoğrafınız; ana sayfada ve yazıların altındaki yazar kutusunda görünür.')).toBeTruthy();
+  });
+
   it('İletişim: an invalid e-mail is shown under the field and nothing is committed', async () => {
     const api = setup('iletisim');
     const email = await screen.findByLabelText('E-posta adresi');

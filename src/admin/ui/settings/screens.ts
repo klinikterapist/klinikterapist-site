@@ -2,7 +2,7 @@
 import { BookOpen, IdCard, LayoutTemplate, Mail, Scale, Search, Share2, Tags, UserRound, type LucideIcon } from '../icons';
 
 export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; intro: string }[] = [
-  { id: 'profil', label: 'Profil', icon: UserRound, intro: 'Adınız, unvanınız ve fotoğrafınız.' },
+  { id: 'profil', label: 'Profil', icon: UserRound, intro: 'Adınız, unvanınız ve fotoğrafınız; ana sayfada ve yazıların altındaki yazar kutusunda görünür.' },
   { id: 'ana-sayfa', label: 'Site ana sayfası', icon: LayoutTemplate, intro: 'Randevu butonunun altındaki kartlar: sıra, görünürlük ve metinler.' },
   { id: 'linkler', label: 'Sosyal ve linkler', icon: Share2, intro: 'Sitede görünen sosyal hesaplarınız.' },
   { id: 'hakkimda', label: 'Hakkımda', icon: IdCard, intro: 'Hakkımda sayfasındaki yazılar ve bilgiler.' },

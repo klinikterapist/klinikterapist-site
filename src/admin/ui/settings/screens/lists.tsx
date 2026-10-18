@@ -2,7 +2,7 @@
 import {
   PAGE_KEYS, parseHome, parseLinks, parseResources, type Home, type HomeCard, type Link, type Resources, type Resource,
 } from '../../../../lib/schemas';
-import { ICONS } from '../../../../lib/icons';
+import { ICONS, type IconName } from '../../../../lib/icons';
 import { Field, Select, Toggle } from '../../kit';
 import { ImageField, ListEditor, LocalizedField, SettingsForm } from '../fields';
 import { useSettingsFile } from '../useSettingsFile';
@@ -20,6 +20,34 @@ const PAGE_LABEL: Record<(typeof PAGE_KEYS)[number], string> = {
   privacyPolicy: 'Gizlilik politikası',
 };
 const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
+
+/**
+ * The Simge select with the chosen icon drawn next to it (a native select cannot show SVG). The
+ * markup is the site's own icon table from src/lib/icons.ts, a fixed string constant in the repo.
+ */
+function IconSelect({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
+  const name = (value in ICONS ? value : 'leaf') as IconName;
+  return (
+    <div className="icon-pick">
+      <Select label="Simge" value={value} options={options} onChange={onChange} />
+      <svg
+        className="icon-preview"
+        data-icon={name}
+        width="28"
+        height="28"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        focusable="false"
+        dangerouslySetInnerHTML={{ __html: ICONS[name] }}
+      />
+    </div>
+  );
+}
 
 export function AnaSayfaScreen() {
   const file = useSettingsFile<Home>('src/data/home.json', parseHome, 'Ana sayfa');
@@ -39,7 +67,7 @@ export function AnaSayfaScreen() {
                 <Toggle label="Ana sayfada görünsün" checked={c.visible} onChange={(visible) => update({ visible })} />
                 <LocalizedField label="Başlık" value={c.title} onChange={(title) => update({ title })} issues={file.issues} path={`cards.${i}.title`} />
                 <LocalizedField label="Alt metin" value={c.subtitle} onChange={(subtitle) => update({ subtitle })} issues={file.issues} path={`cards.${i}.subtitle`} />
-                <Select label="Simge" value={c.icon} options={ICON_OPTIONS} onChange={(icon) => update({ icon })} />
+                <IconSelect value={c.icon} options={ICON_OPTIONS} onChange={(icon) => update({ icon })} />
                 <Select
                   label="Gideceği yer"
                   value={isUrl ? '__url' : (c.target as { page: string }).page}
@@ -85,7 +113,11 @@ export function LinklerScreen() {
           render={(l, update, i) => (
             <>
               <Field label="Görünen ad" value={l.label} onChange={(label) => update({ label })} />
-              <Select label="Simge" value={l.icon} options={LINK_ICONS.map((v) => ({ value: v, label: ICON_NAMES[v] }))} onChange={(icon) => update({ icon })} />
+              <IconSelect
+                value={l.icon}
+                options={LINK_ICONS.map((v) => ({ value: v, label: ICON_NAMES[v] }))}
+                onChange={(icon) => update({ icon: icon as Link['icon'] })}
+              />
               <Field
                 label="Adres"
                 value={l.url}
