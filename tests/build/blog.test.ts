@@ -19,7 +19,7 @@ describe('blog', () => {
     expect(bp.inLanguage).toBe('tr-TR');
     expect(bp.datePublished).toBeTruthy(); expect(bp.dateModified).toBeTruthy();
     expect(ld.some(x => x['@type'] === 'BreadcrumbList')).toBe(true);
-    expect(tr.querySelector('a.author-line')).not.toBeNull();
+    expect(tr.querySelector('.byline a.byline-author')?.getAttribute('href')).toBe('/hakkimda/');
     expect(tr.querySelector('meta[property="og:type"]')?.getAttribute('content')).toBe('article');
     expect(loadPage('/blog/kategori/zihinsel-saglik/').querySelector('h1')).not.toBeNull();
     expect(loadPage('/en/blog/category/mental-health/').querySelector('html')?.getAttribute('lang')).toBe('en');
@@ -309,12 +309,18 @@ describe('post page redesign (spec §5.8)', () => {
   const POST = '/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/';
   const EN_POST = '/en/blog/small-steps-towards-a-better-life/';
 
-  it('byline is left-aligned: name · title, without the membership', () => {
+  it('byline is left-aligned: the author photo, name · title, without the membership', () => {
     const by = loadPage(POST).querySelector('.post-head .byline')!;
     expect(by.classList.contains('byline--left')).toBe(true);
     expect(by.querySelector('.byline-name')?.text.replace(/\s+/g, ' ').trim()).toBe('Osman Güneş Özkurt · Psikolog');
     expect(by.text).not.toContain('Türk Psikologlar');
-    expect(by.querySelector('svg.sun-mark')).toBeTruthy();
+    // The author's round photo in place of the sun (the sun only stands in without a photo).
+    const img = by.querySelector('.portrait img')!;
+    expect(img.getAttribute('width')).toBe('36');
+    expect(img.getAttribute('alt')).toBe('');
+    expect(by.querySelector('svg.sun-mark')).toBeNull();
+    expect(by.querySelector('a.byline-author')?.text).toBe('Osman Güneş Özkurt');
+    expect(loadPage(EN_POST).querySelector('.byline a.byline-author')?.getAttribute('href')).toBe('/en/about/');
     expect(loadPage(EN_POST).querySelector('.byline-name')?.text.replace(/\s+/g, ' ').trim()).toBe('Osman Güneş Özkurt · Psychologist');
   });
 
@@ -335,10 +341,13 @@ describe('post page redesign (spec §5.8)', () => {
     expect(img.getAttribute('src')).toMatch(/^\/_astro\//);
   });
 
-  it('Kaynakça is an accordion holding the references list, open by default (closed on phones by script)', () => {
+  it('Kaynakça is an accordion holding the references list, closed by default, above the share buttons', () => {
     const d = loadPage(POST);
     const acc = d.querySelector('section.references details.acc')!;
-    expect(acc.hasAttribute('open')).toBe(true);
+    expect(acc.hasAttribute('open')).toBe(false);
+    expect(d.querySelector('section.references script')).toBeNull();
+    const end = d.querySelector('.post-end')!.innerHTML;
+    expect(end.indexOf('class="references"')).toBeLessThan(end.indexOf('data-share'));
     expect(acc.querySelector('summary')?.text).toContain('Kaynakça');
     expect(acc.querySelector('summary .subtitle')?.text.trim()).toBe('2 kaynak');
     expect(acc.querySelectorAll('ol.references-list li')).toHaveLength(2);
@@ -382,27 +391,15 @@ describe('post page redesign (spec §5.8)', () => {
     }
   });
 
-  it('author line on every post: small optimised photo, "Yazar: title name", linking to About; then one Randevu Al', () => {
-    const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
-    for (const [path, lang] of allPages().filter((p) => /^\/(en\/)?blog\/[^/]+\/$/.test(p) && !/\/(kategori|category)\//.test(p)).map((p) => [p, p.startsWith('/en/') ? 'en' : 'tr'] as const)) {
+  it('post end: no second author line, then one Randevu Al after the share buttons', () => {
+    for (const path of allPages().filter((p) => /^\/(en\/)?blog\/[^/]+\/$/.test(p) && !/\/(kategori|category)\//.test(p))) {
       const d = loadPage(path);
       if (!d.querySelector('article')) continue;
-      const line = d.querySelectorAll('a.author-line');
-      expect(line, path).toHaveLength(1);
-      expect(line[0].getAttribute('href'), path).toBe(lang === 'tr' ? '/hakkimda/' : '/en/about/');
-      expect(d.querySelector('.author-box'), path).toBeNull();
-      // Exactly one booking button at the post end, after the author line.
+      expect(d.querySelector('a.author-line, .author-box'), path).toBeNull();
       const end = d.querySelector('.post-end')!;
       expect(end.querySelectorAll('a[href$="/randevu/"], a[href$="/appointment/"]'), path).toHaveLength(1);
-      expect(end.innerHTML.indexOf('author-line')).toBeLessThan(end.innerHTML.indexOf('post-cta'));
+      expect(end.innerHTML.indexOf('data-share')).toBeLessThan(end.innerHTML.indexOf('post-cta'));
     }
-    const line = loadPage(POST).querySelector('a.author-line')!;
-    expect(squash(line.text)).toBe('Yazar: Psikolog Osman Güneş Özkurt');
-    expect(squash(loadPage(EN_POST).querySelector('a.author-line')?.text)).toBe('Author: Psychologist Osman Güneş Özkurt');
-    const img = line.querySelector('.portrait img')!;
-    expect(img.getAttribute('width')).toBe('40');
-    expect(img.getAttribute('loading')).toBe('lazy');
-    expect(img.getAttribute('alt')).toBe('');
     expect(loadPage(POST).querySelector('.post-cta')?.text).toContain('Randevu Al');
   });
 

@@ -1,9 +1,10 @@
 ---
 /**
  * One blog post (spec §5.8): centred topic, title and subtitle; under a hairline the left-aligned byline
- * (sun, "name · title", "date · N dk okuma · reads"); the 16:9 cover (edge to edge on phones); the
- * Markdown body; then the Kaynakça accordion, the share buttons, the compact author line, "Randevu Al"
- * and up to two posts on the same topic.
+ * (the author's round photo, or the sun without one; "name · title" with the name linking to About;
+ * "date · N dk okuma · reads"); the 16:9 cover (edge to edge on phones); the Markdown body; then the
+ * Kaynakça accordion (closed), the share buttons, "Randevu Al" and up to two posts on the same topic.
+ * No second author line at the end: the byline at the top is enough (owner's review 2026-10-18).
  */
 import { render } from 'astro:content';
 import { Image, getImage } from 'astro:assets';
@@ -12,9 +13,8 @@ import PageShell from '../layouts/PageShell.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
-import SunMark from '../components/brand/SunMark.astro';
+import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import ShareButtons from '../components/post/ShareButtons.astro';
-import AuthorLine from '../components/post/AuthorLine.astro';
 import '../styles/prose.css';
 import References from '../components/References.astro';
 import { getCategories, getProfile } from '../lib/settings';
@@ -89,9 +89,9 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <h1>{data.title}</h1>
       <p class="standfirst">{data.subtitle || data.description}</p>
       <div class="byline byline--left">
-        <SunMark size={36} />
+        <RoundPortrait photo={profile.photo} alt="" size={36} eager />
         <p>
-          <span class="byline-name"><b>{profile.name}</b>{role && ` · ${role}`}</span>
+          <span class="byline-name"><a class="byline-author" href={pathFor('about', lang)}><b>{profile.name}</b></a>{role && ` · ${role}`}</span>
           <span class="byline-meta">
             <span class="visually-hidden">{t(lang, 'published')}: </span>
             <time datetime={isoDay(data.publishedAt)}>{formatDate(data.publishedAt, lang)}</time>
@@ -143,7 +143,6 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="post-end">
         <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
         <ShareButtons lang={lang} title={data.title} url={absoluteUrl(path)} />
-        <AuthorLine lang={lang} />
         <a class="big-cta post-cta" href={pathFor('appointment', lang)}>
           <Icon name="calendar" size={18} />
           {t(lang, 'bookSession')}
@@ -251,8 +250,17 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
     text-align: left;
   }
 
-  .byline :global(.sun-mark) {
+  .byline :global(.portrait) {
     flex: none;
+  }
+
+  .byline-author {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .byline-author:hover {
+    text-decoration: underline;
   }
 
   .byline p {

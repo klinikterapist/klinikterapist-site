@@ -1,8 +1,8 @@
 ---
 /**
  * The post's Kaynakça / References (spec §5.8): only the cited references, APA-sorted, inside an
- * accordion. It is open in the HTML (readers without JavaScript and wide screens see the list); the
- * one-line script right after it closes it on phones before the first paint. Nothing when none is cited.
+ * accordion that starts closed on every screen (owner's review 2026-10-18); a native <details>, so it
+ * opens without JavaScript too. Nothing when none is cited.
  */
 import type { Reference } from '../lib/apa';
 import { citedIds, referenceItemsHtml } from '../lib/citations';
@@ -23,15 +23,9 @@ const count = tCount(lang, 'referencesOne', 'referencesMany', items.length);
 {
   items.length > 0 && (
     <section class="references" aria-label={t(lang, 'references')}>
-      <Accordion class="refs" icon="list" title={t(lang, 'references')} subtitle={count} open>
+      <Accordion class="refs" icon="list" title={t(lang, 'references')} subtitle={count}>
         <ol class="references-list" set:html={items.join('')} />
       </Accordion>
-      <script is:inline>
-        (function (s) {
-          var d = s.parentNode.querySelector('details');
-          if (d && !matchMedia('(min-width: 768px)').matches) d.open = false;
-        })(document.currentScript);
-      </script>
     </section>
   )
 }
