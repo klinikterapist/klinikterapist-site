@@ -12,7 +12,7 @@ const about = {
 describe('site name', () => {
   it('uses the full professional name', () => {
     expect(getSeo().siteName.tr).toBe('Psikolog Osman Güneş Özkurt');
-    expect(getSeo().siteName.en).toBe('Psikolog Osman Güneş Özkurt');
+    expect(getSeo().siteName.en).toBe('Psychologist Osman Güneş Özkurt');
   });
 });
 
@@ -32,20 +32,20 @@ describe('buildMeta', () => {
     const home = buildMeta({ ...about, title: 'Ana Sayfa', path: '/', alternates: { tr: '/', en: '/en/' } });
     expect(home.title).toBe('Psikolog Osman Güneş Özkurt');
     const homeEn = buildMeta({ ...about, lang: 'en', title: 'Home', path: '/en/', alternates: { tr: '/', en: '/en/' } });
-    expect(homeEn.title).toBe('Psikolog Osman Güneş Özkurt');
+    expect(homeEn.title).toBe('Psychologist Osman Güneş Özkurt');
   });
 
   it('fills og and twitter tags', () => {
     const m = buildMeta({ ...about, lang: 'en', path: '/en/about/', image: '/images/x.jpg', type: 'article' });
     expect(m.og).toEqual({
-      'og:title': 'Hakkımda | Psikolog Osman Güneş Özkurt',
+      'og:title': 'Hakkımda | Psychologist Osman Güneş Özkurt',
       'og:description': 'd',
       'og:url': 'https://example.com/en/about/',
       'og:image': 'https://example.com/images/x.jpg',
       'og:type': 'article',
       'og:locale': 'en_US',
       'og:locale:alternate': 'tr_TR',
-      'og:site_name': 'Psikolog Osman Güneş Özkurt',
+      'og:site_name': 'Psychologist Osman Güneş Özkurt',
       'twitter:card': 'summary_large_image',
     });
     expect(buildMeta(about).og['og:type']).toBe('website');
@@ -108,7 +108,7 @@ describe('pageMeta', () => {
     const { meta, alternatePaths } = pageMeta('about', 'en', 'About Me', 'd');
     expect(alternatePaths).toEqual({ tr: '/hakkimda/', en: '/en/about/' });
     expect(meta.canonical).toBe('https://example.com/en/about/');
-    expect(meta.title).toBe('About Me | Psikolog Osman Güneş Özkurt');
+    expect(meta.title).toBe('About Me | Psychologist Osman Güneş Özkurt');
     expect(meta.description).toBe('d');
   });
 });

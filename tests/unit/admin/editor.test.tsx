@@ -354,6 +354,8 @@ describe('EditorPage', () => {
 
   it('Önizle shows the selected language full screen, never saves or publishes, and ← Düzenlemeye dön closes it', async () => {
     const api = setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    window.location.hash = '#/yazi/' + base().key;
+    const hash = window.location.hash;
     await screen.findByRole('button', { name: 'Yayınla' });
     fireEvent.click(screen.getByRole('button', { name: /English Page/ }));
     const commits = api.state.commits.length;
@@ -364,6 +366,7 @@ describe('EditorPage', () => {
     expect(within(dialog).queryByRole('button', { name: 'Kapat' })).toBeNull();
     fireEvent.click(within(dialog).getByRole('button', { name: '← Düzenlemeye dön' }));
     expect(screen.queryByRole('dialog', { name: 'Önizleme' })).toBeNull();
+    expect(window.location.hash).toBe(hash);
     expect(api.state.commits.length).toBe(commits);
   });
 
