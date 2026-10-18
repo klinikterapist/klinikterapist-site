@@ -70,4 +70,14 @@ describe('icon files', () => {
     expect(fav).toMatch(/@media \(prefers-color-scheme: dark\)/);
     expect(fav).toContain('#1F2E4A');
   });
+
+  it('favicon.svg has a thicker face for tab size; the source keeps 2.8', () => {
+    const width = (svg: string) => Number(svg.match(/<g class="face"[^>]*stroke-width="([\d.]+)"/)?.[1]);
+    const fav = readFileSync('public/favicon.svg', 'utf8');
+    expect(width(fav)).toBeGreaterThanOrEqual(4);
+    expect(width(sun)).toBe(2.8);
+    // Same face paths, only the stroke differs.
+    expect(fav).toContain('<path d="M37 47q5.5 5 11 0"/>');
+    expect(fav).toContain('<path d="M43 57q7 5.5 14 0"/>');
+  });
 });
