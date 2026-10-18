@@ -141,7 +141,7 @@ body.admin {
   border: 1px solid var(--p-accent);
   border-radius: var(--k-radius-sm);
   background: transparent;
-  color: var(--p-accent-deep);
+  color: var(--p-heading);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -620,10 +620,6 @@ textarea.k-input {
 .badge-live {
   background: var(--p-ok-bg);
   color: var(--p-ok-text);
-}
-
-.empty {
-  color: var(--p-muted);
 }
 
 /* EmptyState: icon, one calm sentence, optional action. */
