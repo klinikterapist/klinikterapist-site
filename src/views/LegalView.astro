@@ -1,7 +1,7 @@
 ---
 /** Renders `<data>/legal/<name>.<lang>.md`. The text's own `#` heading is the page h1. */
 import { getEntry, render } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import type { Lang } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { t } from '../i18n/ui';
@@ -25,12 +25,12 @@ const title = h1 ?? t(lang, doc.label);
 const { meta, alternatePaths } = pageMeta(doc.key, lang, title, t(lang, doc.desc));
 ---
 
-<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <article class="container-text legal">
     {!h1 && <h1>{title}</h1>}
     <Content />
   </article>
-</BaseLayout>
+</PageShell>
 
 <style>
   .legal {

@@ -1,6 +1,6 @@
 ---
 /** Blog list (all posts) or one category page. Category filtering is plain links, no JavaScript. */
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import CategoryNav from '../components/CategoryNav.astro';
 import PostCard from '../components/PostCard.astro';
@@ -45,7 +45,7 @@ const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl
 const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
 ---
 
-<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={!!category && posts.length === 0}>
+<PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={!!category && posts.length === 0}>
   <link slot="head" rel="alternate" type="application/rss+xml" title={t(lang, 'rssTitle')} href={absoluteUrl(rss)} />
 
   <div class="container blog">
@@ -88,7 +88,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
 
     <NewsletterBox lang={lang} />
   </div>
-</BaseLayout>
+</PageShell>
 
 <style>
   .blog {

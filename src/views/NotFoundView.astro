@@ -1,6 +1,6 @@
 ---
 /** Bilingual 404: Turkish first (site default), English below, links to both home pages. */
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import Leaf from '../components/Leaf.astro';
 import Icon from '../components/Icon.astro';
 import type { Lang } from '../lib/settings';
@@ -23,7 +23,7 @@ const meta = buildMeta({
 });
 ---
 
-<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths} noindex>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} noindex>
   <div class="container-text not-found">
     <Leaf size={88} class="nf-leaf" />
     <p class="code" aria-hidden="true">404</p>
@@ -43,7 +43,7 @@ const meta = buildMeta({
       </a>
     </div>
   </div>
-</BaseLayout>
+</PageShell>
 
 <style>
   .not-found {

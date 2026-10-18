@@ -1,6 +1,6 @@
 ---
 /** Phase 1: booking is coming soon; e-mail is the way to reach out for now. */
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import Icon from '../components/Icon.astro';
 import Leaf from '../components/Leaf.astro';
 import type { Lang } from '../lib/settings';
@@ -18,7 +18,7 @@ const { meta, alternatePaths } = pageMeta('appointment', lang, title, t(lang, 'a
 const { email } = getContact();
 ---
 
-<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container-text appointment">
     <div class="panel card">
       <span class="icon-wrap" aria-hidden="true"><Icon name="calendar" size={30} /></span>
@@ -36,7 +36,7 @@ const { email } = getContact();
       <Leaf size={96} class="panel-leaf" />
     </div>
   </div>
-</BaseLayout>
+</PageShell>
 
 <style>
   .appointment {

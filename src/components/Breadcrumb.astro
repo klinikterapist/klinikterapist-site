@@ -1,5 +1,8 @@
 ---
-/** Visible breadcrumb trail. The last item is the current page (no link). Pair with `breadcrumbLd`. */
+/**
+ * Visible breadcrumb trail, desktop only (from 768 px; phones have the TopBar). The last item is the
+ * current page (no link). Pair with `breadcrumbLd`, which stays on every screen.
+ */
 import type { Lang } from '../lib/settings';
 import { t } from '../i18n/ui';
 import Icon from './Icon.astro';
@@ -32,6 +35,12 @@ const last = items.length - 1;
 </nav>
 
 <style>
+  @media (max-width: 767px) {
+    .breadcrumb {
+      display: none;
+    }
+  }
+
   ol {
     display: flex;
     flex-wrap: wrap;

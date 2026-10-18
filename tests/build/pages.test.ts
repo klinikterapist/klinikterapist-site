@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { allPages, distFile, loadPage } from './load';
+import { allPages, DIST, distFile, loadPage } from './load';
 
 const STATIC_PAGES = [
   '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/randevu/', '/aydinlatma-metni/', '/gizlilik/',
@@ -149,5 +149,71 @@ describe('final-review fixes', () => {
     expect(navBlog('/blog/', '/blog/')).toEqual(['page']);
     expect(navBlog('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/', '/blog/')).toEqual(['true']);
     expect(navBlog('/en/blog/category/mental-health/', '/en/blog/')).toEqual(['true']);
+  });
+});
+
+describe('page shell (every page but home)', () => {
+  const pages = allPages().filter((p) => p !== '/' && p !== '/en/');
+  const isPost = (p: string) => /^\/(en\/)?blog\/[^/]+\/$/.test(p);
+  const langOf = (p: string) => (p.startsWith('/en/') ? 'en' : 'tr');
+
+  /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
+  const pageCss = (p: string) => {
+    const d = loadPage(p);
+    const linked = d
+      .querySelectorAll('link[rel=stylesheet]')
+      .map((l) => readFileSync(join(DIST, l.getAttribute('href')!.replace(/^\//, '')), 'utf8'));
+    return [...linked, ...d.querySelectorAll('style').map((s) => s.text)].join('\n');
+  };
+
+  it('covers the static pages, the blog list, categories and posts', () => {
+    expect(pages).toEqual(expect.arrayContaining(['/hakkimda/', '/404.html', '/blog/', '/en/blog/category/therapy/']));
+    expect(pages.filter(isPost).length).toBeGreaterThan(0);
+  });
+
+  it.each(pages)('%s has one phone top bar, the desktop header, one page end and an always-on sticky CTA', (p) => {
+    const d = loadPage(p);
+    const lang = langOf(p);
+    const bars = d.querySelectorAll('.page-top .top-bar');
+    expect(bars).toHaveLength(1);
+    expect(d.querySelectorAll('.top-bar')).toHaveLength(1);
+    // The phone top bar comes before the main content, after the skip link.
+    const all = d.querySelectorAll('*');
+    expect(all.indexOf(d.querySelector('.page-top')!)).toBeLessThan(all.indexOf(d.querySelector('main#main')!));
+    expect(bars[0].querySelector('button.theme-chip')).toBeTruthy();
+    expect(bars[0].querySelector('a.lang-switch')).toBeTruthy();
+    if (!isPost(p)) {
+      const logo = bars[0].querySelector('a.logo')!;
+      expect(logo.getAttribute('href')).toBe(lang === 'en' ? '/en/' : '/');
+      expect(logo.querySelector('svg')).toBeTruthy();
+      expect(bars[0].querySelector('a.back')).toBeNull();
+    }
+
+    expect(d.querySelectorAll('header.site-header')).toHaveLength(1);
+
+    expect(d.querySelectorAll('.page-end')).toHaveLength(1);
+    expect(d.querySelector('.page-end b')?.text).toBe('112');
+
+    const sticky = d.querySelectorAll('.sticky-cta');
+    expect(sticky).toHaveLength(1);
+    expect(sticky[0].getAttribute('data-mode')).toBe('always');
+    expect(sticky[0].getAttribute('aria-hidden')).toBeUndefined();
+    expect(sticky[0].querySelector('a')?.getAttribute('href')).toBe(lang === 'en' ? '/en/appointment/' : '/randevu/');
+    expect(sticky[0].text).toContain(lang === 'en' ? 'Book a Session' : 'Randevu Al');
+  });
+
+  it.each(pages.filter(isPost))('post %s shows "← Blog" instead of the logo', (p) => {
+    const bar = loadPage(p).querySelector('.page-top .top-bar')!;
+    expect(bar.querySelector('a.logo')).toBeNull();
+    const back = bar.querySelector('a.back')!;
+    expect(back.getAttribute('href')).toBe(langOf(p) === 'en' ? '/en/blog/' : '/blog/');
+    expect(back.text.trim()).toBe('Blog');
+    expect(back.querySelector('svg')).toBeTruthy(); // the "←" arrow
+  });
+
+  it('the phone top bar hides from 768 px and the breadcrumb shows only from 768 px', () => {
+    const css = pageCss('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/');
+    expect(css).toMatch(/@media \(width>=768px\)\{[^@]*\.page-top\[data-astro-cid-\w+\]\{display:none\}/);
+    expect(css).toMatch(/@media \(width<=767px\)\{[^@]*\.breadcrumb\[data-astro-cid-\w+\]\{display:none\}/);
   });
 });

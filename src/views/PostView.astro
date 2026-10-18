@@ -3,7 +3,7 @@
 import { render } from 'astro:content';
 import { Image, getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import AuthorBox from '../components/AuthorBox.astro';
 import PostCard from '../components/PostCard.astro';
@@ -66,7 +66,7 @@ const { Content } = await render(post as never);
 const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
 ---
 
-<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths}>
+<PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} back={{ href: pathFor('blog', lang), label: t(lang, 'navBlog') }}>
   <link slot="head" rel="alternate" type="application/rss+xml" title={t(lang, 'rssTitle')} href={absoluteUrl(rss)} />
 
   <article class="post">
@@ -131,7 +131,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       </section>
     )
   }
-</BaseLayout>
+</PageShell>
 
 <script>
   // Click-to-load: no request to YouTube until the reader asks for the video.

@@ -39,6 +39,7 @@ const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
   <body id="top">
     <a class="skip-link" href="#main">{t(lang, 'skipToContent')}</a>
     <Header lang={lang} alternatePaths={alternatePaths} />
+    <slot name="top" />
     <main id="main">
       <slot />
     </main>

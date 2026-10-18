@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import ResourceCard from '../components/ResourceCard.astro';
 import Icon from '../components/Icon.astro';
 import Leaf from '../components/Leaf.astro';
@@ -29,7 +29,7 @@ const featuredAnchor =
   featured && !groups.some((g) => g.type === featured.type) ? featured.type : undefined;
 ---
 
-<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container resources">
     <header class="page-head">
       <div>
@@ -97,7 +97,7 @@ const featuredAnchor =
       <Leaf size={64} class="note-leaf" />
     </aside>
   </div>
-</BaseLayout>
+</PageShell>
 
 <style>
   .resources {

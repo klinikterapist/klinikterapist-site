@@ -1,0 +1,50 @@
+---
+/**
+ * Frame of every page except home (spec §5.5, §5.7–5.9). BaseLayout already brings the desktop
+ * Header (hidden < 768 px) and the Footer with the page end (112 line and copyright). This adds the
+ * phone TopBar (hidden from 768 px): the wordmark linking home, or a back link (a post's "← Blog"),
+ * and the "Randevu Al" bar, visible from the start on phones.
+ */
+import type { Lang } from '../lib/settings';
+import type { Meta } from '../lib/seo';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+import BaseLayout from './BaseLayout.astro';
+import TopBar from '../components/ui/TopBar.astro';
+import StickyCta from '../components/ui/StickyCta.astro';
+
+interface Props {
+  lang: Lang;
+  meta: Meta;
+  jsonLd?: object[];
+  alternatePaths: { tr: string; en: string };
+  /** Keep the page out of search results (404, empty category). */
+  noindex?: boolean;
+  /** Phone top bar: a back link in place of the wordmark. */
+  back?: { href: string; label: string };
+}
+const { lang, meta, jsonLd, alternatePaths, noindex, back } = Astro.props;
+---
+
+<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={noindex}>
+  <slot name="head" slot="head" />
+  <div class="page-top" slot="top">
+    {
+      back ? (
+        <TopBar lang={lang} alternatePaths={alternatePaths} left="back" backHref={back.href} backLabel={back.label} />
+      ) : (
+        <TopBar lang={lang} alternatePaths={alternatePaths} left="logo" />
+      )
+    }
+  </div>
+  <slot />
+  <StickyCta mode="always" href={pathFor('appointment', lang)} label={t(lang, 'bookSession')} />
+</BaseLayout>
+
+<style>
+  @media (min-width: 768px) {
+    .page-top {
+      display: none;
+    }
+  }
+</style>

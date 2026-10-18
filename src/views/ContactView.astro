@@ -1,5 +1,5 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import PageShell from '../layouts/PageShell.astro';
 import LinkCard from '../components/LinkCard.astro';
 import Portrait from '../components/Portrait.astro';
 import Icon from '../components/Icon.astro';
@@ -33,7 +33,7 @@ const channels = [
 ];
 ---
 
-<BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths}>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container contact">
     <header class="page-head">
       <div>
@@ -91,7 +91,7 @@ const channels = [
       <p>{contact.emergencyNote[lang]}</p>
     </aside>
   </div>
-</BaseLayout>
+</PageShell>
 
 <style>
   .contact {
