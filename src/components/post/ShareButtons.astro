@@ -97,21 +97,24 @@ const texts = { copied: t(lang, 'copied'), downloaded: t(lang, 'storyDownloaded'
 
   .share-row > li {
     display: flex;
-    flex: 1 1 160px;
+    flex: 1 1 0;
+    min-width: 96px;
   }
 
   .share-row > li[hidden] {
     display: none;
   }
 
+  /* Phones: three tiles, icon over label; wider screens: icon beside label. */
   .share-btn {
     display: flex;
     flex: 1;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
     min-height: 48px;
-    padding: 10px 12px;
+    padding: 12px 8px;
     border: 0;
     border-radius: var(--radius-md);
     background: var(--surface);
@@ -123,6 +126,14 @@ const texts = { copied: t(lang, 'copied'), downloaded: t(lang, 'storyDownloaded'
     text-align: center;
     text-decoration: none;
     cursor: pointer;
+  }
+
+  @media (min-width: 560px) {
+    .share-btn {
+      flex-direction: row;
+      gap: 8px;
+      padding: 10px 12px;
+    }
   }
 
   .share-btn:hover {
