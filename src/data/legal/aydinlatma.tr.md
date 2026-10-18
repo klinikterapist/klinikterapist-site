@@ -1,6 +1,6 @@
 # Aydınlatma Metni
 
-_Son güncelleme: 17 Ekim 2026_
+_Son güncelleme: 18 Ekim 2026_
 
 Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun ("KVKK") 10. maddesi uyarınca, klinikterapist.com sitesini ziyaret eden ve benimle iletişime geçen kişileri bilgilendirmek için hazırlanmıştır.
 
@@ -11,8 +11,9 @@ E-posta: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
 
 ## Hangi verileri işliyorum?
 
-- **Siteyi ziyaret ettiğinizde:** Bu sitede çerez, form ya da ziyaretçi takibi yapan bir analiz aracı kullanılmaz. Siteyi barındıran hizmet sağlayıcı (GitHub Pages), güvenlik ve hizmetin işletilmesi amacıyla IP adresi gibi teknik bağlantı kayıtlarını kendi politikası çerçevesinde tutabilir.
+- **Siteyi ziyaret ettiğinizde:** Bu sitede çerez ya da ziyaretçi takibi yapan bir analiz aracı kullanılmaz. Siteyi barındıran hizmet sağlayıcı (GitHub Pages), güvenlik ve hizmetin işletilmesi amacıyla IP adresi gibi teknik bağlantı kayıtlarını kendi politikası çerçevesinde tutabilir.
 - **Bana e-posta gönderdiğinizde:** Adınız, e-posta adresiniz ve mesajınızda paylaştığınız bilgiler.
+- **İletişim formunu kullandığınızda:** Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır; sitede ayrıca saklanmaz ve yalnızca size yanıt vermek için tutulur.
 
 Lütfen e-postalarınızda sağlık durumunuza ilişkin ayrıntılı bilgi paylaşmayın. Bu tür bilgiler, görüşme sürecinde ve uygun koşullarda ele alınır.
 

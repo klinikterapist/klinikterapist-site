@@ -1,5 +1,5 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import type { FetchOpts, FetchResult, FileLike, FolderLike, Gas } from '../../../apps-script/src/gas';
+import type { FetchOpts, FetchResult, FileLike, FolderLike, Gas, MailMessage } from '../../../apps-script/src/gas';
 
 export type Route = (url: string, opts: FetchOpts) => FetchResult | undefined;
 
@@ -49,12 +49,15 @@ export class MemFile implements FileLike {
 
 export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]; now?: number } = {}) {
   const props = new Map(Object.entries(init.props ?? {}));
-  const cache = new Map<string, string>();
+  // Entries expire like CacheService: `ttlSec` after the fake clock time of the put.
+  const cache = new Map<string, { value: string; until: number }>();
+  const mails: MailMessage[] = [];
   const calls: { url: string; opts: FetchOpts }[] = [];
   const logs: string[] = [];
   const routes = [...(init.routes ?? [])];
   const root = new MemFolder('root', 'Klinikterapist Panel');
-  const gas: Gas & { calls: typeof calls; logs: string[]; routes: Route[]; clock: { now: number }; root: MemFolder } = {
+  const gas: Gas & { calls: typeof calls; logs: string[]; mails: MailMessage[]; routes: Route[]; clock: { now: number }; root: MemFolder } = {
+    mails,
     calls,
     logs,
     routes,
@@ -69,7 +72,13 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
       return json(404, { message: 'Not Found' });
     },
     props: { get: (k) => props.get(k) ?? null, set: (k, v) => void props.set(k, v) },
-    cache: { get: (k) => cache.get(k) ?? null, put: (k, v) => void cache.set(k, v) },
+    cache: {
+      get: (k) => {
+        const e = cache.get(k);
+        return e && e.until > gas.clock.now ? e.value : null;
+      },
+      put: (k, v, ttl) => void cache.set(k, { value: v, until: gas.clock.now + ttl * 1000 }),
+    },
     withLock: (fn) => fn(),
     drive: { rootFolder: () => root },
     now() { return this.clock.now; },
@@ -80,6 +89,7 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
       decode: (text) => Buffer.from(text, 'base64url').toString('utf8'),
     },
     log: (msg) => void logs.push(msg),
+    mail: { send: (m) => void mails.push(m) },
   };
   return gas;
 }

@@ -128,6 +128,45 @@ export const STRINGS = {
   responseTitle: { tr: 'Dönüş süresi', en: 'Response time' },
   memberNo: { tr: 'Üye No: {n}', en: 'Member no. {n}' },
   emergency: { tr: 'Acil durum', en: 'Emergency' },
+  // Contact form: "{link}" is the Appointment page / privacy notice link.
+  formTitle: { tr: 'Mesaj gönder', en: 'Send a message' },
+  formAppointmentNote: {
+    tr: 'Randevu ve seanslarla ilgili sorularınız için {link} kullanın.',
+    en: 'For questions about appointments and sessions, please use the {link}.',
+  },
+  formAppointmentLink: { tr: 'Randevu sayfasını', en: 'Appointment page' },
+  formName: { tr: 'Ad Soyad', en: 'Full name' },
+  formEmail: { tr: 'E-posta', en: 'E-mail' },
+  formTopic: { tr: 'Konu', en: 'Topic' },
+  formTopicChoose: { tr: 'Bir konu seçin', en: 'Choose a topic' },
+  formMessage: { tr: 'Mesaj', en: 'Message' },
+  formConsent: {
+    tr: 'Kişisel verilerimin {link} uygun işlenmesini kabul ediyorum.',
+    en: 'I agree to my personal data being processed in line with the {link}.',
+  },
+  formConsentLink: { tr: 'aydınlatma metnine', en: 'privacy notice' },
+  formHoneypot: { tr: 'Bu alanı boş bırakın', en: 'Leave this field empty' },
+  formSend: { tr: 'Gönder', en: 'Send' },
+  formSending: { tr: 'Gönderiliyor…', en: 'Sending…' },
+  formSuccess: {
+    tr: 'Teşekkürler, mesajınız bana ulaştı. En kısa sürede yanıt vereceğim.',
+    en: 'Thank you, your message has reached me. I will reply as soon as I can.',
+  },
+  formFailure: {
+    tr: 'Mesajınız şu anda gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da doğrudan {link} adresine e-posta gönderin.',
+    en: 'Your message could not be sent right now. Please try again a little later, or e-mail me directly at {link}.',
+  },
+  formNoScript: {
+    tr: 'Formu göndermek için tarayıcınızda JavaScript açık olmalı. Bana doğrudan {link} adresinden de yazabilirsiniz.',
+    en: 'Sending the form needs JavaScript in your browser. You can also write to me directly at {link}.',
+  },
+  errRequired: { tr: 'Bu alanı doldurun.', en: 'Please fill in this field.' },
+  errNameLong: { tr: 'En fazla 100 karakter yazabilirsiniz.', en: 'Please use at most 100 characters.' },
+  errEmail: { tr: 'Geçerli bir e-posta adresi yazın.', en: 'Please enter a valid e-mail address.' },
+  errTopic: { tr: 'Bir konu seçin.', en: 'Please choose a topic.' },
+  errMessageShort: { tr: 'Mesajınız en az 10 karakter olmalı.', en: 'Your message needs at least 10 characters.' },
+  errMessageLong: { tr: 'Mesajınız en fazla 5000 karakter olabilir.', en: 'Your message can be at most 5000 characters.' },
+  errConsent: { tr: 'Göndermek için onay kutusunu işaretleyin.', en: 'Please tick the box to send.' },
 
   // Appointment
   appointmentSoon: {

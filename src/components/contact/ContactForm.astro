@@ -1,0 +1,308 @@
+---
+/**
+ * The contact form (İletişim): Ad Soyad, E-posta, Konu (fixed list), Mesaj and the consent box linking
+ * the privacy notice. The script (contact-client.ts) checks the fields inline and posts them as one
+ * text/plain JSON request (`contact.send`) to the panel's Apps Script URL (ADMIN_CONFIG.apiUrl), which
+ * e-mails the owner. No cookies, no tracking, no third-party service. A hidden honeypot field catches
+ * bots. Success and failure texts are in the markup; the failure text carries a mailto fallback.
+ */
+import type { Lang } from '../../lib/settings';
+import { CONTACT_LIMITS, CONTACT_TOPICS } from '../../lib/contact-form';
+import type { ContactMessages } from '../../lib/contact-client';
+import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
+import { pathFor } from '../../i18n/routes';
+import { t } from '../../i18n/ui';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  /** The contact address for the mailto fallback. */
+  email: string;
+}
+const { lang, email } = Astro.props;
+// Same URL the panel uses; the in-memory development backend cannot send mail, so it gets none.
+const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
+const messages: ContactMessages = {
+  required: t(lang, 'errRequired'),
+  nameTooLong: t(lang, 'errNameLong'),
+  emailInvalid: t(lang, 'errEmail'),
+  topicRequired: t(lang, 'errTopic'),
+  messageTooShort: t(lang, 'errMessageShort'),
+  messageTooLong: t(lang, 'errMessageLong'),
+  consentRequired: t(lang, 'errConsent'),
+  sending: t(lang, 'formSending'),
+};
+/** "… {link} …" → the text before and after the link. */
+const around = (key: Parameters<typeof t>[1]) => t(lang, key).split('{link}') as [string, string];
+const [noteBefore, noteAfter] = around('formAppointmentNote');
+const [consentBefore, consentAfter] = around('formConsent');
+const [failBefore, failAfter] = around('formFailure');
+const [noJsBefore, noJsAfter] = around('formNoScript');
+const id = (name: string) => `cf-${name}`;
+---
+
+<section class="contact-form" aria-labelledby="cf-title">
+  <h2 id="cf-title" class="section-label">{t(lang, 'formTitle')}</h2>
+  <p class="note">
+    <Icon name="calendar" size={18} />
+    <span>{noteBefore}<a href={pathFor('appointment', lang)}>{t(lang, 'formAppointmentLink')}</a>{noteAfter}</span>
+  </p>
+
+  <form data-contact-form data-endpoint={endpoint} data-lang={lang} data-messages={JSON.stringify(messages)}>
+    <div class="field">
+      <label for={id('name')}>{t(lang, 'formName')}</label>
+      <input id={id('name')} name="name" type="text" autocomplete="name" required maxlength={CONTACT_LIMITS.nameMax} aria-describedby={id('name-err')} />
+      <p class="error" id={id('name-err')} data-error-for="name" hidden></p>
+    </div>
+
+    <div class="field">
+      <label for={id('email')}>{t(lang, 'formEmail')}</label>
+      <input id={id('email')} name="email" type="email" autocomplete="email" inputmode="email" required maxlength={CONTACT_LIMITS.emailMax} aria-describedby={id('email-err')} />
+      <p class="error" id={id('email-err')} data-error-for="email" hidden></p>
+    </div>
+
+    <div class="field">
+      <label for={id('topic')}>{t(lang, 'formTopic')}</label>
+      <span class="select">
+        <select id={id('topic')} name="topic" required aria-describedby={id('topic-err')}>
+          <option value="" selected disabled>{t(lang, 'formTopicChoose')}</option>
+          {CONTACT_TOPICS.map((topic) => <option value={topic.id}>{topic[lang]}</option>)}
+        </select>
+        <Icon name="chevron" size={16} class="select-chv" />
+      </span>
+      <p class="error" id={id('topic-err')} data-error-for="topic" hidden></p>
+    </div>
+
+    <div class="field">
+      <label for={id('message')}>{t(lang, 'formMessage')}</label>
+      <textarea id={id('message')} name="message" rows="6" required minlength={CONTACT_LIMITS.messageMin} maxlength={CONTACT_LIMITS.messageMax} aria-describedby={id('message-err')}></textarea>
+      <p class="error" id={id('message-err')} data-error-for="message" hidden></p>
+    </div>
+
+    {/* Honeypot: off screen and out of the tab order; people never fill it. */}
+    <div class="hp" aria-hidden="true">
+      <label for={id('website')}>{t(lang, 'formHoneypot')}</label>
+      <input id={id('website')} name="website" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <div class="field consent">
+      <input id={id('consent')} name="consent" type="checkbox" required aria-describedby={id('consent-err')} />
+      <label for={id('consent')}>
+        {consentBefore}<a href={pathFor('privacyNotice', lang)}>{t(lang, 'formConsentLink')}</a>{consentAfter}
+      </label>
+      <p class="error" id={id('consent-err')} data-error-for="consent" hidden></p>
+    </div>
+
+    <button class="send" type="submit">
+      <Icon name="send" size={18} />
+      <span class="label">{t(lang, 'formSend')}</span>
+    </button>
+
+    <div class="result" role="status" aria-live="polite">
+      <p class="ok" data-success tabindex="-1" hidden>
+        <Icon name="heart" size={18} />
+        <span>{t(lang, 'formSuccess')}</span>
+      </p>
+      <p class="fail" data-failure tabindex="-1" hidden>
+        <Icon name="alert" size={18} />
+        <span>{failBefore}<a href={`mailto:${email}`}>{email}</a>{failAfter}</span>
+      </p>
+    </div>
+
+    <noscript>
+      <p class="fail">{noJsBefore}<a href={`mailto:${email}`}>{email}</a>{noJsAfter}</p>
+    </noscript>
+  </form>
+</section>
+
+<script>
+  import { initContactForm } from '../../lib/contact-client';
+  for (const form of document.querySelectorAll<HTMLFormElement>('form[data-contact-form]')) initContactForm(form);
+</script>
+
+<style>
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .note,
+  .result p,
+  .fail {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .note :global(.icon),
+  .result :global(.icon) {
+    flex: none;
+    margin-top: 1px;
+    color: var(--link);
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 16px;
+    background: var(--surface);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  input[type='text'],
+  input[type='email'],
+  select,
+  textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 1rem;
+  }
+
+  textarea {
+    min-height: 140px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .select {
+    position: relative;
+    display: block;
+  }
+
+  select {
+    padding-right: 40px;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .select :global(.select-chv) {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    color: var(--muted);
+    transform: translateY(-50%) rotate(90deg);
+    pointer-events: none;
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  [aria-invalid='true'] {
+    border-color: var(--text);
+    border-width: 2px;
+  }
+
+  .error {
+    margin: 0;
+    color: var(--text);
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .consent {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 6px 10px;
+  }
+
+  .consent input {
+    width: 22px;
+    height: 22px;
+    margin: 1px 0 0;
+    accent-color: var(--btn-bg);
+  }
+
+  .consent label {
+    font-weight: 400;
+    line-height: 1.45;
+  }
+
+  .consent .error {
+    grid-column: 1 / -1;
+  }
+
+  /* Off screen, never display:none (some bots skip hidden fields). */
+  .hp {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 52px;
+    padding: 14px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .send:hover:not(:disabled) {
+    background: var(--btn-bg-hover);
+  }
+
+  .send:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  .result p {
+    background: var(--bg);
+  }
+
+  .result p[hidden] {
+    display: none;
+  }
+
+  .result p:focus {
+    outline: none;
+  }
+
+  .result:has(p:not([hidden])) {
+    margin-top: -2px;
+  }
+
+  .fail {
+    background: var(--bg);
+  }
+</style>

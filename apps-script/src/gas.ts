@@ -50,7 +50,11 @@ export interface Gas {
   b64url: { encode(text: string): string; decode(text: string): string };
   /** Error log (Apps Script executions log). Never pass request bodies here. */
   log(message: string): void;
+  /** One plain-text e-mail from the deploying account (MailApp; needs the script.send_mail scope). */
+  mail: { send(m: MailMessage): void };
 }
+
+export type MailMessage = { to: string; replyTo: string; subject: string; body: string; name?: string };
 
 const ROOT_NAME = 'Klinikterapist Panel';
 const JSON_MIME = 'application/json';
@@ -171,5 +175,8 @@ export function realGas(): Gas {
       },
     },
     log: (message) => console.error(message),
+    mail: {
+      send: (m) => MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name }),
+    },
   };
 }

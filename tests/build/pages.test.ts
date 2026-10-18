@@ -3,6 +3,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { parse as parseYaml } from 'yaml';
 import { join } from 'node:path';
 import { allPages, DIST, DIST_SAMPLES, distFile, loadPage } from './load';
+import { ADMIN_CONFIG } from '../../src/admin/config';
+import { CONTACT_TOPICS } from '../../src/lib/contact-form';
 
 const STATIC_PAGES = [
   '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/randevu/', '/aydinlatma-metni/', '/gizlilik/',
@@ -97,11 +99,62 @@ describe('static pages', () => {
     expect(en.querySelector('main a[href="/en/contact/"]')).not.toBeNull();
   });
 
-  it('contact page has channels and the emergency note but no form', () => {
+  it('contact page has the form, the channels and the emergency note', () => {
     const d = loadPage('/iletisim/');
-    expect(d.querySelector('form')).toBeNull();
+    expect(d.querySelectorAll('main form')).toHaveLength(1);
     expect(d.textContent).toContain('112');
     expect(d.querySelector('main a[href="/randevu/"]')).not.toBeNull();
+  });
+
+  it('contact form: fields, fixed topics, consent linking the privacy notice, honeypot, appointment note', () => {
+    const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+    for (const [path, lang] of [['/iletisim/', 'tr'], ['/en/contact/', 'en']] as const) {
+      const d = loadPage(path);
+      const form = d.querySelector('main form[data-contact-form]')!;
+      expect(form, path).toBeTruthy();
+      // Posts to the panel's Apps Script URL (the shared value, not a copy).
+      expect(form.getAttribute('data-endpoint')).toBe(ADMIN_CONFIG.apiUrl);
+      expect(form.getAttribute('data-lang')).toBe(lang);
+      expect(form.hasAttribute('action')).toBe(false);
+      for (const name of ['name', 'email', 'topic', 'message', 'consent']) {
+        const el = form.querySelector(`[name="${name}"]`)!;
+        expect(el, `${path} ${name}`).toBeTruthy();
+        expect(el.hasAttribute('required'), name).toBe(true);
+        expect(form.querySelector(`label[for="${el.getAttribute('id')}"]`)?.text.trim(), name).toBeTruthy();
+        expect(form.querySelector(`#${el.getAttribute('aria-describedby')}[data-error-for="${name}"]`), name).toBeTruthy();
+      }
+      expect(form.querySelector('[name=email]')?.getAttribute('type')).toBe('email');
+      expect(form.querySelector('[name=name]')?.getAttribute('maxlength')).toBe('100');
+      expect(form.querySelector('[name=message]')?.getAttribute('maxlength')).toBe('5000');
+      const options = form.querySelectorAll('select[name=topic] option').filter((o) => o.getAttribute('value')).map((o) => o.text.trim());
+      expect(options).toEqual(CONTACT_TOPICS.map((t) => t[lang]));
+      const consent = form.querySelector('.consent label')!;
+      expect(consent.querySelector('a')?.getAttribute('href')).toBe(lang === 'tr' ? '/aydinlatma-metni/' : '/en/privacy-notice/');
+      const hp = form.querySelector('.hp')!;
+      expect(hp.getAttribute('aria-hidden')).toBe('true');
+      expect(hp.querySelector('input[name=website]')?.getAttribute('tabindex')).toBe('-1');
+      expect(form.querySelector('[data-failure] a[href="mailto:iletisim@example.com"]')).toBeTruthy();
+      expect(form.querySelector('[data-success]')?.hasAttribute('hidden')).toBe(true);
+      expect(form.querySelector('button[type=submit]')).toBeTruthy();
+      expect(d.querySelector('main .contact-form .note a')?.getAttribute('href')).toBe(lang === 'tr' ? '/randevu/' : '/en/appointment/');
+    }
+    expect(squash(loadPage('/iletisim/').querySelector('main .contact-form .note')?.text)).toBe(
+      'Randevu ve seanslarla ilgili sorularınız için Randevu sayfasını kullanın.',
+    );
+    expect(squash(loadPage('/en/contact/').querySelector('main .contact-form .note')?.text)).toBe(
+      'For questions about appointments and sessions, please use the Appointment page.',
+    );
+    expect(squash(loadPage('/iletisim/').querySelector('main .consent label')?.text)).toBe(
+      'Kişisel verilerimin aydınlatma metnine uygun işlenmesini kabul ediyorum.',
+    );
+    expect(squash(loadPage('/en/contact/').querySelector('main .consent label')?.text)).toBe(
+      'I agree to my personal data being processed in line with the privacy notice.',
+    );
+    // The direct e-mail row and the emergency box stay, below the form.
+    const html = loadPage('/iletisim/').querySelector('main')!.innerHTML;
+    expect(html.indexOf('data-contact-form')).toBeLessThan(html.lastIndexOf('href="mailto:iletisim@example.com"'));
+    expect(html.lastIndexOf('href="mailto:iletisim@example.com"')).toBeGreaterThan(html.indexOf('</form>'));
+    expect(html.indexOf('data-contact-form')).toBeLessThan(html.indexOf('emergency-box'));
   });
 
   it('contact page: the social accordion lists every social link in file order', () => {
@@ -318,14 +371,13 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(loadPage('/en/resources/').querySelector('#tur-book summary .subtitle')?.text.trim()).toBe('1 resource');
   });
 
-  it('contact: photo or sun, heading, intro, big CTA and e-mail row', () => {
+  it('contact: photo or sun, heading, intro and e-mail row', () => {
     const d = loadPage('/iletisim/');
     expect(d.querySelector('main .page-head .portrait')).toBeTruthy();
     expect(d.querySelector('main .page-head h1')?.text).toBe('İletişim');
     expect(squash(d.querySelector('main .page-head .lead')?.text)).toBe(fixture('contact.json').intro.tr);
-    const cta = d.querySelector('main a.big-cta')!;
-    expect(cta.getAttribute('href')).toBe('/randevu/');
-    expect(cta.text).toContain('Randevu Al');
+    // The form is the page's main content; appointment questions go to the Randevu page via its note.
+    expect(d.querySelector('main a.big-cta')).toBeNull();
     const mail = d.querySelector('main a.list-item[href="mailto:iletisim@example.com"]')!;
     expect(mail.querySelector('.title')?.text).toBe('E-posta gönder');
     expect(mail.querySelector('.subtitle')?.text).toBe('iletisim@example.com');

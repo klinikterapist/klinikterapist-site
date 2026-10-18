@@ -1,6 +1,7 @@
 /**
  * Web app entry point. The panel POSTs `{ action, session?, ...params }` as text/plain JSON
- * (a CORS simple request); every answer is JSON with HTTP 200.
+ * (a CORS simple request); every answer is JSON with HTTP 200. The site's contact form posts
+ * `contact.send` the same way, without a session.
  */
 import type { ApiResponse } from '../../src/admin/api/types';
 import { realGas, type Gas } from './gas';
@@ -8,9 +9,15 @@ import { checkSession, issueSession, logout, verifyIdToken } from './auth';
 import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listVersions, putImage, saveDraft } from './drive';
+import { sendContact } from './contact';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
+
+/** Actions anyone may call without a session: only the site's contact form. */
+export const PUBLIC_ACTIONS: Record<string, Handler> = {
+  'contact.send': (gas, p) => sendContact(gas, p),
+};
 
 /** Actions that need a valid session. */
 export const ACTIONS: Record<string, Handler> = {
@@ -47,6 +54,7 @@ export function handle(gas: Gas, body: string): ApiResponse {
       const { email } = verifyIdToken(gas, typeof req.idToken === 'string' ? req.idToken : '');
       return ok(issueSession(gas, email));
     }
+    if (Object.prototype.hasOwnProperty.call(PUBLIC_ACTIONS, action)) return ok(PUBLIC_ACTIONS[action](gas, req));
     checkSession(gas, req.session);
     const handler = Object.prototype.hasOwnProperty.call(ACTIONS, action) ? ACTIONS[action] : undefined;
     if (!handler) return fail(badRequest(`Bilinmeyen işlem: ${action}`));

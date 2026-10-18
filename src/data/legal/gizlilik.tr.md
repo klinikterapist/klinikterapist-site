@@ -1,6 +1,6 @@
 # Gizlilik Politikası
 
-_Son güncelleme: 17 Ekim 2026_
+_Son güncelleme: 18 Ekim 2026_
 
 Gizliliğiniz, terapi ilişkisinin temelidir. Bu sayfa, klinikterapist.com sitesinin ziyaretçi bilgilerini nasıl ele aldığını sade bir dille açıklar.
 
@@ -9,7 +9,7 @@ Gizliliğiniz, terapi ilişkisinin temelidir. Bu sayfa, klinikterapist.com sites
 - **Çerez yok.** Site, çerez ya da benzeri izleme teknolojileri kullanmaz. Bu yüzden çerez onay penceresi göremezsiniz.
 - **Takip yok.** Reklam ya da ziyaretçi davranışını izleyen analiz araçları kullanılmaz.
 - **Dış bağlantılar yok.** Yazı tipleri ve görseller bu sitenin kendi sunucusundan yüklenir. Siteyi açtığınızda Google Fonts gibi üçüncü taraf servislere istek gönderilmez.
-- **Form yok.** Bu aşamada sitede veri toplayan bir form bulunmaz. Benimle yalnızca e-posta ya da sosyal medya üzerinden iletişime geçebilirsiniz.
+- **Yalnızca iletişim formu.** Sitedeki tek form İletişim sayfasındaki formdur. Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır; sitede ayrıca saklanmaz ve yalnızca size yanıt vermek için tutulur.
 
 ## Görünüm tercihi
 
@@ -25,7 +25,7 @@ Instagram gibi sosyal medya hesaplarıma ya da önerdiğim kaynaklara verilen ba
 
 ## E-posta
 
-Bana gönderdiğiniz e-postalar yalnızca size yanıt vermek ve randevu sürecini yürütmek için kullanılır. Ayrıntılar için [Aydınlatma Metni](/aydinlatma-metni/) sayfasına bakabilirsiniz.
+Bana gönderdiğiniz e-postalar ve iletişim formu mesajları yalnızca size yanıt vermek ve randevu sürecini yürütmek için kullanılır. Ayrıntılar için [Aydınlatma Metni](/aydinlatma-metni/) sayfasına bakabilirsiniz.
 
 ## Değişiklikler
 
