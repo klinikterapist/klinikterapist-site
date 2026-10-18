@@ -3,9 +3,12 @@
  * About (spec §5.9): photo (or the sun), "Hakkımda", name and title, membership, the lead sentence;
  * accordions "Ben kimim?" (open), "Bu işi neden yapıyorum?", the work areas as tile pairs,
  * "Eğitim ve deneyim" (timeline) and a row to the contact page. Empty texts render nothing.
- * Desktop (from 768 px, owner's review 2026-10-18): two columns. A sticky side column holds the larger
- * portrait, name and title, memberships, the lead and "Randevu Al"; the other column holds the biography
- * and the remaining sections at a reading width. Phones keep the single centred column.
+ * Desktop (from 768 px): a biography / CV page (owner's review 2026-10-18, second round). A sticky side
+ * column holds a large framed portrait, the heading, name and title, memberships, the lead and "Randevu
+ * Al"; beside it `.about-cv` lays every section out open, CV style (a label on the left, the content on
+ * the right): who I am with the quote, why I do this work, the work areas as a tile grid, and education
+ * and experience as a timeline. Phones keep the single centred column with its accordions
+ * (`.about-main`); CSS shows one of the two.
  */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
@@ -17,6 +20,7 @@ import Timeline from '../components/Timeline.astro';
 import Icon from '../components/Icon.astro';
 import type { Lang } from '../lib/settings';
 import { getAbout, getProfile } from '../lib/settings';
+import { EMPTY_IMAGE, portraitImage } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { renderMarkdown } from '../lib/markdown';
 import { pathFor } from '../i18n/routes';
@@ -43,13 +47,26 @@ const areaPairs: ([Tile] | [Tile, Tile])[] = [];
 for (let i = 0; i < areas.length; i += 2) {
   areaPairs.push(areas[i + 1] ? [areas[i], areas[i + 1]] : [areas[i]]);
 }
+// The desktop CV portrait, about 320 px wide. Phones never fetch it (the <source> matches from 768 px
+// and the <img> itself is an empty inline GIF); they keep the small round photo.
+const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) : null;
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container-text inner-page about">
     <div class="about-side">
       <PageHead title={about.heading[lang]}>
-        <RoundPortrait slot="media" photo={profile.photo} alt={profile.photoAlt[lang]} size={96} desktopSize={200} eager />
+        <div slot="media" class="media-wrap">
+          <RoundPortrait class={cvPhoto ? 'phone-only' : undefined} photo={profile.photo} alt={profile.photoAlt[lang]} size={96} eager />
+          {
+            cvPhoto && (
+              <picture class="cv-photo">
+                <source media="(min-width: 768px)" srcset={cvPhoto.srcset ?? cvPhoto.src} sizes="320px" />
+                <img src={EMPTY_IMAGE} width={cvPhoto.width} height={cvPhoto.height} alt={profile.photoAlt[lang]} loading="eager" decoding="async" />
+              </picture>
+            )
+          }
+        </div>
         <p class="who-line">{whoLine}</p>
         {
           memberships.map((org) => (
@@ -112,19 +129,85 @@ for (let i = 0; i < areas.length; i += 2) {
 
       <ListItem icon="chat" title={t(lang, 'contactMe')} subtitle={t(lang, 'contactMeHint')} href={pathFor('contact', lang)} />
     </div>
+
+    <div class="about-cv">
+      {
+        (who || quote) && (
+          <section class="cv-row" aria-labelledby="cv-who">
+            <h2 id="cv-who" class="cv-label">{t(lang, 'whoAmI')}</h2>
+            <div class="cv-body">
+              {who && <div class="md md--cv" set:html={renderMarkdown(who)} />}
+              {quote && (
+                <blockquote class="quote quote--cv">
+                  <p>{quote}</p>
+                </blockquote>
+              )}
+            </div>
+          </section>
+        )
+      }
+
+      {
+        why && (
+          <section class="cv-row" aria-labelledby="cv-why">
+            <h2 id="cv-why" class="cv-label">{t(lang, 'whyThisWork')}</h2>
+            <div class="cv-body md md--cv" set:html={renderMarkdown(why)} />
+          </section>
+        )
+      }
+
+      {
+        areas.length > 0 && (
+          <section class="cv-row" aria-labelledby="cv-areas">
+            <h2 id="cv-areas" class="cv-label">{t(lang, 'areasOfWork')}</h2>
+            <ul class="cv-body cv-areas">
+              {areas.map((a) => (
+                <li>
+                  <Icon name={a.icon} size={20} />
+                  <span>{a.title}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      {
+        about.timeline.length > 0 && (
+          <section class="cv-row" aria-labelledby="cv-edu">
+            <h2 id="cv-edu" class="cv-label">{t(lang, 'education')}</h2>
+            <div class="cv-body">
+              <Timeline lang={lang} items={about.timeline} />
+            </div>
+          </section>
+        )
+      }
+
+      <div class="cv-row cv-row--end">
+        <span class="cv-label" aria-hidden="true"></span>
+        <ListItem class="cv-body" icon="chat" title={t(lang, 'contactMe')} subtitle={t(lang, 'contactMeHint')} href={pathFor('contact', lang)} />
+      </div>
+    </div>
   </div>
 </PageShell>
 
 <style>
-  /* Phones: the side column is the centred head; its button stays hidden (the sticky bar books). */
-  .side-cta {
+  /* Phones: the side column is the centred head; its button stays hidden (the sticky bar books).
+     The desktop CV and its framed portrait stay hidden too. */
+  .side-cta,
+  .about-cv,
+  .cv-photo {
     display: none;
+  }
+
+  .media-wrap {
+    display: contents;
   }
 
   @media (min-width: 768px) {
     .about {
       display: grid;
-      grid-template-columns: minmax(200px, 280px) minmax(0, 40rem);
+      grid-template-columns: minmax(220px, 320px) minmax(0, 46rem);
       justify-content: center;
       align-items: start;
       gap: clamp(2rem, 5vw, 4.5rem);
@@ -144,8 +227,8 @@ for (let i = 0; i < areas.length; i += 2) {
     }
 
     .about-side :global(.page-head .media) {
-      justify-content: flex-start;
-      margin-bottom: var(--space-4);
+      display: block;
+      margin-bottom: var(--space-5);
     }
 
     .about-side :global(.page-head .lead) {
@@ -163,8 +246,98 @@ for (let i = 0; i < areas.length; i += 2) {
       margin-top: var(--space-5);
     }
 
-    .about-main {
-      margin-top: 0;
+    /* The phone column and its small round photo give way to the CV and the framed portrait. */
+    .about-main,
+    .about-side :global(.phone-only) {
+      display: none;
+    }
+
+    .cv-photo {
+      display: block;
+    }
+
+    .cv-photo img {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 5;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+      object-fit: cover;
+      object-position: center 20%;
+    }
+
+    .about-cv {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* One CV row: the label on the left, the content on the right, a hairline between rows. */
+    .cv-row {
+      display: grid;
+      grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr);
+      gap: var(--space-5);
+      padding-block: var(--space-6);
+      border-top: 1px solid var(--line);
+    }
+
+    .cv-row:first-child {
+      padding-top: var(--space-2);
+      border-top: 0;
+    }
+
+    .cv-row--end {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .cv-label {
+      margin: 0;
+      color: var(--link);
+      font-family: var(--font-sans);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      line-height: 1.8;
+      text-transform: uppercase;
+    }
+
+    .md--cv {
+      color: var(--text);
+      font-size: var(--text-base);
+      line-height: 1.7;
+    }
+
+    .quote--cv {
+      margin-top: var(--space-5);
+      background: var(--surface);
+    }
+
+    .cv-areas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+      gap: var(--space-3);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .cv-areas li {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      min-height: 56px;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      font-size: var(--text-sm);
+      font-weight: 600;
+    }
+
+    .cv-areas li :global(svg) {
+      flex: none;
+      color: var(--link);
     }
   }
 

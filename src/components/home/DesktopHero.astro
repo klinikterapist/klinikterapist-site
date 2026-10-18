@@ -1,11 +1,12 @@
 ---
 /**
  * Desktop home intro (spec §5.7): eyebrow, the tagline as the page's h1, intro, "Randevu Al" and
- * "İlk görüşme nasıl geçer?", the membership and response-time line with the wordmark under it. On the right the portrait runs
- * frameless to the window's right edge, top to bottom of the hero, with a big rounded top-left corner
- * and the brand sun rising from its bottom-left corner ("kenara taşan"). The profile's heroStyle only
- * picks the phone header (PortraitHero); every desktop with a photo gets this layout. Without a photo
- * the big sun with a soft halo stands in the same place.
+ * "İlk görüşme nasıl geçer?", and the wordmark under them. On the right the portrait sits inside the
+ * site column (its right edge on the header's), softly rounded on every corner, with the whole brand
+ * sun at its bottom-left corner and the title and name beside it as a handwritten signature (owner's
+ * review 2026-10-18). The profile's heroStyle only picks the phone header (PortraitHero); every
+ * desktop with a photo gets this layout. Without a photo the big sun with a soft halo stands in the
+ * same place.
  */
 import type { Lang } from '../../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../../lib/portrait-image';
@@ -14,6 +15,8 @@ import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
 import Wordmark from '../brand/Wordmark.astro';
+// The signature's handwriting (latin and latin-ext cover ç ğ ı İ ö ş ü); loaded on the home page only.
+import '@fontsource/great-vibes/400.css';
 
 interface Props {
   lang: Lang;
@@ -22,21 +25,19 @@ interface Props {
   eyebrow: string;
   heading: string;
   intro: string;
-  /** Membership organisations already filtered to non-empty names in `lang`. */
-  memberships: string[];
-  /** The contact page's response-time text in `lang` (contact.json); nothing is shown when empty. */
-  responseTime: string;
+  /** The signature on the photo: the profile's title in `lang` (may be empty) and name. */
+  title: string;
+  name: string;
   /** The "first session" link points at the FAQ item `ilk-gorusme`; hidden when that item has no answer. */
   showFirstSession: boolean;
 }
-const { lang, photo, alt, eyebrow, heading, intro, memberships, responseTime, showFirstSession } = Astro.props;
-// The photo box is about 45vw wide (and as tall as the hero, so a square photo is cropped to it):
-// ~480 px at 768, ~550 at 1280, ~720 at 1600; the 1080 px variant only for wide or 2x screens.
+const { lang, photo, alt, eyebrow, heading, intro, title, name, showFirstSession } = Astro.props;
+// The photo box is at most 30rem (480 px) wide, about 40vw on smaller desktops; 2x screens take the
+// 800 or 1080 px variant.
 const img = photo ? await portraitImage(photo, [560, 800, 1080]) : null;
-const sizes = '(max-width: 1279px) 560px, 45vw';
+const sizes = '(max-width: 1199px) 40vw, 480px';
 // Phones never show this hero: the <source> only matches from 768 px, and below that the <img>
 // falls back to an empty inline GIF, so a phone fetches nothing while desktops load it eagerly.
-const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', org)), responseTime].filter(Boolean).join(' · ');
 ---
 
 <section class:list={['desktop-hero', img ? 'desktop-hero--photo' : 'desktop-hero--none']}>
@@ -52,29 +53,25 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
         </a>
         {showFirstSession && <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>}
       </div>
-      {
-        trust && (
-          <p class="trust">
-            <Icon name="shield" size={16} />
-            <span>{trust}</span>
-          </p>
-        )
-      }
       <span class="hero-wordmark">
-        <Wordmark height={22} decorative />
+        <Wordmark height={40} decorative />
       </span>
     </div>
 
     {
       img ? (
-        <div class="art art--bleed">
+        <div class="art art--photo">
           <picture>
             <source media="(min-width: 768px)" srcset={img.srcset ?? img.src} sizes={img.srcset ? sizes : undefined} />
             <img class="photo" src={EMPTY_IMAGE} width={img.width} height={img.height} alt={alt} loading="eager" decoding="async" />
           </picture>
           <span class="sun">
-            <SunMark size={170} />
+            <SunMark size={150} />
           </span>
+          <p class="signature" aria-hidden="true">
+            {title && <span class="sig-title">{title}</span>}
+            <span class="sig-name">{name}</span>
+          </p>
         </div>
       ) : (
         <div class="art art--none">
@@ -88,8 +85,8 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
 
 <style>
   .desktop-hero--photo {
-    /* The photo bleeds to the window edge and the sun sinks below the hero: both are cut off here. */
-    overflow: clip;
+    /* Room under the photo for the part of the sun that hangs below it. */
+    padding-bottom: var(--space-7);
   }
 
   .inner {
@@ -162,59 +159,64 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
     color: var(--text);
   }
 
-  .trust {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: var(--space-5) 0 0;
-    color: var(--muted);
-    font-size: var(--text-xs);
-  }
-
-  /* The klinikterapist wordmark under the trust line: modest, in the theme's accent colour. */
+  /* The klinikterapist wordmark under the buttons, in the theme's accent colour. */
   .hero-wordmark {
     display: block;
-    margin-top: var(--space-4);
+    margin-top: var(--space-7);
     color: var(--link);
     line-height: 0;
   }
 
   .hero-wordmark :global(.wordmark) {
     width: auto;
-    height: 22px;
+    height: clamp(32px, 3vw, 40px);
   }
 
   .art {
     position: relative;
   }
 
-  /* Edge bleed: the box stretches over the hero's full height and, past the container's gutter and
-     side margin, to the window's right edge (any scrollbar overshoot is clipped by the section). */
-  .art--bleed {
-    --sun: clamp(120px, 11vw, 170px);
-    margin-right: calc(-1 * (max(0px, (100vw - var(--max-wide) - 2 * var(--gutter)) / 2) + var(--gutter)));
+  /* Inside the site column: the photo ends on the header's right edge, rounded on every corner. */
+  .art--photo {
+    --sun: clamp(110px, 10vw, 150px);
+    align-self: center;
+    justify-self: end;
+    width: min(100%, 30rem);
+    aspect-ratio: 4 / 5;
+    margin-block: var(--space-7) 0;
   }
 
-  .art--bleed picture {
+  .art--photo picture {
     position: absolute;
     inset: 0;
+    overflow: hidden;
+    border-radius: clamp(1.25rem, 2vw, 2rem);
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* A soft shade at the foot of the photo so the signature reads on any picture. */
+  .art--photo picture::after {
+    content: '';
+    position: absolute;
+    inset: 55% 0 0;
+    background: linear-gradient(to bottom, transparent, rgb(20 24 36 / 0.62));
+    pointer-events: none;
   }
 
   .photo {
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: clamp(120px, 12vw, 180px) 0 0 0;
     background: var(--surface);
     object-fit: cover;
     object-position: center 20%;
   }
 
-  /* Flat, never rotated: rising from the photo's bottom-left corner, partly below the hero. */
+  /* Flat, never rotated and never cut off: the whole sun sits on the photo's bottom-left corner. */
   .sun {
     position: absolute;
-    left: calc(-0.4 * var(--sun));
-    bottom: calc(-0.25 * var(--sun));
+    left: calc(-0.3 * var(--sun));
+    bottom: calc(-0.3 * var(--sun));
     display: block;
     width: var(--sun);
     height: var(--sun);
@@ -224,6 +226,29 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
     display: block;
     width: 100%;
     height: 100%;
+  }
+
+  /* Handwritten title and name beside the sun, on the photo. */
+  .signature {
+    position: absolute;
+    left: calc(0.78 * var(--sun));
+    right: var(--space-4);
+    bottom: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    color: #fff8ec;
+    font-family: 'Great Vibes', 'Segoe Script', cursive;
+    line-height: 1.05;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.45);
+  }
+
+  .sig-title {
+    font-size: clamp(1.25rem, 1.6vw, 1.6rem);
+  }
+
+  .sig-name {
+    font-size: clamp(1.7rem, 2.3vw, 2.3rem);
   }
 
   .art--none {

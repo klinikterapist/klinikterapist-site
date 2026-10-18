@@ -18,7 +18,7 @@ import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
 import Wordmark from '../components/brand/Wordmark.astro';
 import type { HomeCard, Lang } from '../lib/settings';
-import { getContact, getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
+import { getFaq, getHome, getLinks, getProfile, getSeo } from '../lib/settings';
 import { getPosts, pickPopular } from '../lib/posts';
 import { readCount, readsLabel } from '../lib/read-counts';
 import { postThumb } from '../lib/post-image';
@@ -39,7 +39,6 @@ const style = portraitStyle(profile);
 const alt = profile.photoAlt[lang];
 // An empty title leaves just "Online sessions", not " · Online sessions".
 const role = [profile.title[lang].trim(), t(lang, 'onlineSessions')].filter(Boolean).join(' · ');
-const responseTime = getContact().responseTime[lang].trim();
 const intro = profile.intro[lang].trim();
 const memberships = (profile.memberships ?? []).map((m) => m.org[lang].trim()).filter(Boolean);
 
@@ -145,8 +144,8 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       eyebrow={role}
       heading={profile.tagline[lang]}
       intro={intro}
-      memberships={memberships}
-      responseTime={responseTime}
+      title={profile.title[lang].trim()}
+      name={profile.name}
       showFirstSession={hasFirstSession}
     />
 

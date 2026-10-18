@@ -144,15 +144,14 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();
     expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')?.text).toContain('İlk görüşme nasıl geçer?');
     expect(en().querySelector('.home-desk .desktop-hero a[href="/en/faq/#ilk-gorusme"]')).toBeTruthy();
-    expect(hero.querySelector('.trust')?.text).toContain('Türk Psikologlar Derneği üyesi');
-    // The response time is the contact page's (contact.json), not a fixed string.
-    expect(hero.querySelector('.trust')?.text).toContain('Dönüş süresi: 24–48 saat.');
-    expect(en().querySelector('.home-desk .desktop-hero .trust')?.text).toContain('Response time: 24–48 hours.');
+    // No membership / response-time line on the desktop hero (owner's review 2026-10-18).
+    expect(hero.querySelector('.trust')).toBeNull();
+    expect(hero.text).not.toContain('Dönüş süresi');
   });
 
-  it('wordmark directly under the trust line (desktop) and the membership line (phone), decorative', () => {
+  it('wordmark directly under the buttons (desktop) and the membership line (phone), decorative', () => {
     for (const d of [tr(), en()]) {
-      const desk = d.querySelector('.home-desk .desktop-hero .trust')!.nextElementSibling!;
+      const desk = d.querySelector('.home-desk .desktop-hero .actions')!.nextElementSibling!;
       expect(desk.classList.contains('hero-wordmark')).toBe(true);
       const phone = d.querySelector('.home-phone .profile .hero-wordmark')!;
       expect(phone).toBeTruthy();
@@ -171,12 +170,12 @@ describe('home (desktop)', () => {
     expect(bar.hasAttribute('aria-hidden')).toBe(false);
   });
 
-  it('hero portrait: edge-bleed photo for desktops only, with the flat sun at its corner', () => {
+  it('hero portrait: framed photo for desktops only, with the flat sun at its corner and the signature', () => {
     for (const d of [tr(), en()]) {
       const hero = d.querySelector('.home-desk .desktop-hero')!;
-      // heroStyle only picks the phone header: a profile with a photo always gets the bleed on desktop.
+      // heroStyle only picks the phone header: a profile with a photo always gets the framed photo on desktop.
       expect(hero.classList.contains('desktop-hero--photo')).toBe(true);
-      const art = hero.querySelector('.art--bleed')!;
+      const art = hero.querySelector('.art--photo')!;
       const source = art.querySelector('picture > source')!;
       expect(source.getAttribute('media')).toBe('(min-width: 768px)');
       expect(source.getAttribute('srcset')).toBeTruthy();
@@ -192,6 +191,10 @@ describe('home (desktop)', () => {
       expect(sun.getAttribute('aria-hidden')).toBe('true');
       expect(sun.hasAttribute('transform')).toBe(false);
       expect(art.querySelector('.sun-badge')).toBeNull();
+      const sig = art.querySelector('.signature')!;
+      expect(sig.getAttribute('aria-hidden')).toBe('true');
+      expect(sig.querySelector('.sig-name')?.text).toBe('Osman Güneş Özkurt');
+      expect(['Psikolog', 'Psychologist']).toContain(sig.querySelector('.sig-title')?.text);
     }
   });
 
@@ -201,7 +204,7 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('.art--none svg.sun-mark')).toBeTruthy();
     expect(hero.querySelector('img, picture')).toBeNull();
     for (const style of ['background', 'round']) {
-      expect(loadPage(`/ui-kit/portrait/${style}/`).querySelector('.desktop-hero .art--bleed picture img.photo')).toBeTruthy();
+      expect(loadPage(`/ui-kit/portrait/${style}/`).querySelector('.desktop-hero .art--photo picture img.photo')).toBeTruthy();
     }
   });
 

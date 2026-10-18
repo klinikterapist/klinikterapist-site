@@ -318,20 +318,29 @@ describe('inner pages redesign (spec §5.9)', () => {
     );
   });
 
-  it('about: desktop has a sticky side column (portrait, name, memberships, Randevu Al) beside the sections', () => {
+  it('about: desktop has a sticky side column (portrait, name, memberships, Randevu Al) beside the open CV sections', () => {
     for (const [path, appt] of [['/hakkimda/', '/randevu/'], ['/en/about/', '/en/appointment/']] as const) {
       const d = loadPage(path);
       const about = d.querySelector('main .about')!;
-      const [side, main] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
+      const [side, main, cv] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
       expect(side.classList.contains('about-side'), path).toBe(true);
       expect(main.classList.contains('about-main'), path).toBe(true);
+      expect(cv.classList.contains('about-cv'), path).toBe(true);
+      // The CV: every section open (no accordions), a label beside its content.
+      expect(cv.querySelectorAll('details')).toHaveLength(0);
+      expect(cv.querySelectorAll('.cv-row > h2.cv-label').length, path).toBe(4);
+      expect(cv.querySelector('.cv-areas li')).toBeTruthy();
+      expect(cv.querySelectorAll('.timeline li')).toHaveLength(4);
+      expect(cv.querySelector('blockquote')).toBeTruthy();
       expect(side.querySelector('.page-head h1')).toBeTruthy();
       expect(side.querySelector('.page-head .who-line')).toBeTruthy();
       expect(side.querySelector('.page-head .tpd')).toBeTruthy();
       expect(side.querySelector('a.side-cta')?.getAttribute('href')).toBe(appt);
-      // The portrait grows on desktop, with its own size hint.
-      const portrait = side.querySelector('.portrait.portrait--desk')!;
-      expect(portrait.getAttribute('style')).toContain('--size-desk:200px');
+      // Desktop: a large framed portrait (phones fetch nothing for it) in place of the small round one.
+      const big = side.querySelector('picture.cv-photo')!;
+      expect(big.querySelector('source')?.getAttribute('media')).toBe('(min-width: 768px)');
+      expect(big.querySelector('img')?.getAttribute('src')).toMatch(/^data:image\//);
+      expect(side.querySelector('.portrait.phone-only img')).toBeTruthy();
       expect(main.querySelectorAll('details.acc').length).toBeGreaterThan(0);
       expect(main.querySelector('a.list-item[href$="/iletisim/"], a.list-item[href$="/contact/"]')).toBeTruthy();
     }
@@ -343,7 +352,7 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(desk.replace(/@media \(min-height: 700px\)\s*\{\s*\.about-side\s*\{[^}]*\}/, '')).not.toMatch(/sticky/);
     expect(desk).toMatch(/\.side-cta\s*\{[^}]*display:\s*flex/);
     // Phones: the side button is hidden (the sticky booking bar does that job).
-    expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.side-cta\s*\{\s*display:\s*none/);
+    expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.side-cta,\s*\.about-cv,\s*\.cv-photo\s*\{\s*display:\s*none/);
   });
 
   it('about: accordions in order, the first one open', () => {
