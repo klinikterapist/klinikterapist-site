@@ -36,10 +36,15 @@ describe.each(pages)('a11y/perf basics %s', (path) => {
       const first = root.querySelector('main img');
       if (first && first.classList.contains('cover')) expect(first.getAttribute('loading')).toBe('eager');
     }
-    // Only the first image(s) of the page may be eager (LCP candidates); everything else is lazy.
-    const eager = imgs.filter((img) => img.getAttribute('loading') === 'eager');
+    // The desktop home hero photo is the desktop LCP: eager, though it follows the (hidden) phone header
+    // in the markup. A phone never fetches it (its <source> only matches from 768 px).
+    const desktopHero = root.querySelectorAll('.desktop-hero img');
+    desktopHero.forEach((img) => expect(img.getAttribute('loading'), img.outerHTML).toBe('eager'));
+    // Otherwise only the first image(s) of the page may be eager (LCP candidates); everything else is lazy.
+    const rest = imgs.filter((img) => !desktopHero.includes(img));
+    const eager = rest.filter((img) => img.getAttribute('loading') === 'eager');
     expect(eager.length).toBeLessThanOrEqual(2);
-    imgs.slice(eager.length).forEach((img) => expect(img.getAttribute('loading'), img.outerHTML).toBe('lazy'));
+    rest.slice(eager.length).forEach((img) => expect(img.getAttribute('loading'), img.outerHTML).toBe('lazy'));
   });
 
   it('loads nothing from another host', () => {

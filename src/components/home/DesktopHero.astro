@@ -1,18 +1,20 @@
 ---
 /**
  * Desktop home intro (spec §5.7): eyebrow, the tagline as the page's h1, intro, "Randevu Al" and
- * "İlk görüşme nasıl geçer?", the membership and response-time line; on the right the portrait in
- * the chosen style, or the big sun with a soft halo when there is no photo.
+ * "İlk görüşme nasıl geçer?", the membership and response-time line. On the right the portrait runs
+ * frameless to the window's right edge, top to bottom of the hero, with a big rounded top-left corner
+ * and the brand sun rising from its bottom-left corner ("kenara taşan"). The profile's heroStyle only
+ * picks the phone header (PortraitHero); every desktop with a photo gets this layout. Without a photo
+ * the big sun with a soft halo stands in the same place.
  */
 import type { Lang } from '../../lib/settings';
-import { portraitImage, type PortraitStyle } from '../../lib/portrait-image';
+import { portraitImage } from '../../lib/portrait-image';
 import { pathFor } from '../../i18n/routes';
 import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
 
 interface Props {
-  style: PortraitStyle;
   lang: Lang;
   photo?: string | null;
   alt: string;
@@ -22,57 +24,76 @@ interface Props {
   /** Membership organisations already filtered to non-empty names in `lang`. */
   memberships: string[];
 }
-const { style, lang, photo, alt, eyebrow, heading, intro, memberships } = Astro.props;
-const kind: PortraitStyle = style !== 'none' && photo ? style : 'none';
-// Hidden on phones; lazy so a phone never fetches it.
-const img = kind === 'none' ? null : await portraitImage(photo!, kind === 'background' ? [420, 840] : [320, 640]);
-const sizes = kind === 'background' ? '(max-width: 767px) 1px, 420px' : '(max-width: 767px) 1px, 320px';
+const { lang, photo, alt, eyebrow, heading, intro, memberships } = Astro.props;
+// The photo box is about 45vw wide (and as tall as the hero, so a square photo is cropped to it):
+// ~480 px at 768, ~550 at 1280, ~720 at 1600; the 1080 px variant only for wide or 2x screens.
+const img = photo ? await portraitImage(photo, [560, 800, 1080]) : null;
+const sizes = '(max-width: 1279px) 560px, 45vw';
+// Phones never show this hero: the <source> only matches from 768 px, and below that the <img>
+// falls back to an empty inline GIF, so a phone fetches nothing while desktops load it eagerly.
+const EMPTY = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', org)), t(lang, 'responseTime')].join(' · ');
 ---
 
-<section class="desktop-hero container">
-  <div class="text">
-    <p class="eyebrow">{eyebrow}</p>
-    <h1>{heading}</h1>
-    {intro && <p class="lead">{intro}</p>}
-    <div class="actions">
-      <a class="btn big" href={pathFor('appointment', lang)}>
-        <Icon name="calendar" size={18} />
-        {t(lang, 'bookSession')}
-      </a>
-      <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>
+<section class:list={['desktop-hero', img ? 'desktop-hero--photo' : 'desktop-hero--none']}>
+  <div class="inner container">
+    <div class="text">
+      <p class="eyebrow">{eyebrow}</p>
+      <h1>{heading}</h1>
+      {intro && <p class="lead">{intro}</p>}
+      <div class="actions">
+        <a class="btn big" href={pathFor('appointment', lang)}>
+          <Icon name="calendar" size={18} />
+          {t(lang, 'bookSession')}
+        </a>
+        <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>
+      </div>
+      <p class="trust">
+        <Icon name="shield" size={16} />
+        <span>{trust}</span>
+      </p>
     </div>
-    <p class="trust">
-      <Icon name="shield" size={16} />
-      <span>{trust}</span>
-    </p>
-  </div>
 
-  <div class:list={['art', `art--${kind}`]}>
     {
-      kind === 'none' || !img ? (
-        <>
+      img ? (
+        <div class="art art--bleed">
+          <picture>
+            <source media="(min-width: 768px)" srcset={img.srcset ?? img.src} sizes={img.srcset ? sizes : undefined} />
+            <img class="photo" src={EMPTY} width={img.width} height={img.height} alt={alt} loading="eager" decoding="async" />
+          </picture>
+          <span class="sun">
+            <SunMark size={170} />
+          </span>
+        </div>
+      ) : (
+        <div class="art art--none">
           <span class="glow" aria-hidden="true" />
           <SunMark size={300} />
-        </>
-      ) : (
-        <span class="frame">
-          <img src={img.src} srcset={img.srcset} sizes={img.srcset ? sizes : undefined} width={img.width} height={img.height} alt={alt} loading="lazy" decoding="async" />
-          <span class="sun-badge">
-            <SunMark size={kind === 'background' ? 56 : 48} />
-          </span>
-        </span>
+        </div>
       )
     }
   </div>
 </section>
 
 <style>
-  .desktop-hero {
+  .desktop-hero--photo {
+    /* The photo bleeds to the window edge and the sun sinks below the hero: both are cut off here. */
+    overflow: clip;
+  }
+
+  .inner {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: var(--space-5);
-    align-items: center;
+    grid-template-columns: 1.1fr 0.9fr;
+    /* Wider than the sun's overhang into it (0.4 × its width), so the text is never covered. */
+    gap: clamp(4rem, 6vw, 6rem);
+  }
+
+  .desktop-hero--photo .inner {
+    min-height: clamp(30rem, 40vw, 44rem);
+  }
+
+  .text {
+    align-self: center;
     padding-block: var(--space-8) var(--space-7);
   }
 
@@ -141,10 +162,52 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
 
   .art {
     position: relative;
+  }
+
+  /* Edge bleed: the box stretches over the hero's full height and, past the container's gutter and
+     side margin, to the window's right edge (any scrollbar overshoot is clipped by the section). */
+  .art--bleed {
+    --sun: clamp(120px, 11vw, 170px);
+    margin-right: calc(-1 * (max(0px, (100vw - var(--max-wide) - 2 * var(--gutter)) / 2) + var(--gutter)));
+  }
+
+  .art--bleed picture {
+    position: absolute;
+    inset: 0;
+  }
+
+  .photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: clamp(120px, 12vw, 180px) 0 0 0;
+    background: var(--surface);
+    object-fit: cover;
+    object-position: center 20%;
+  }
+
+  /* Flat, never rotated: rising from the photo's bottom-left corner, partly below the hero. */
+  .sun {
+    position: absolute;
+    left: calc(-0.4 * var(--sun));
+    bottom: calc(-0.25 * var(--sun));
+    display: block;
+    width: var(--sun);
+    height: var(--sun);
+  }
+
+  .sun :global(.sun-mark) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .art--none {
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 320px;
+    padding-block: var(--space-8) var(--space-7);
   }
 
   .glow {
@@ -153,48 +216,9 @@ const trust = [...memberships.map((org) => t(lang, 'memberOf').replace('{org}', 
     background: radial-gradient(circle, color-mix(in srgb, var(--sun-halo) 35%, transparent) 0%, transparent 65%);
   }
 
-  .art :global(.sun-mark) {
+  .art--none :global(.sun-mark) {
     position: relative;
-  }
-
-  .frame {
-    position: relative;
-    display: block;
-  }
-
-  .frame img {
-    object-fit: cover;
-    object-position: center 25%;
-  }
-
-  .art--background .frame img {
-    width: min(420px, 100%);
-    aspect-ratio: 4 / 5;
-    border-radius: 28px;
-  }
-
-  .art--round .frame img {
-    width: 320px;
-    height: 320px;
-    border-radius: 50%;
-    box-shadow: 0 0 0 6px var(--surface);
-  }
-
-  .sun-badge {
-    position: absolute;
-    display: flex;
-    padding: 4px;
-    border-radius: 50%;
-    background: var(--bg);
-  }
-
-  .art--background .sun-badge {
-    left: -18px;
-    bottom: 24px;
-  }
-
-  .art--round .sun-badge {
-    right: 8px;
-    bottom: 8px;
+    width: min(300px, 100%);
+    height: auto;
   }
 </style>

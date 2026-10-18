@@ -141,6 +141,40 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('.trust')?.text).toContain('1 iş günü');
   });
 
+  it('hero portrait: edge-bleed photo for desktops only, with the flat sun at its corner', () => {
+    for (const d of [tr(), en()]) {
+      const hero = d.querySelector('.home-desk .desktop-hero')!;
+      // heroStyle only picks the phone header: a profile with a photo always gets the bleed on desktop.
+      expect(hero.classList.contains('desktop-hero--photo')).toBe(true);
+      const art = hero.querySelector('.art--bleed')!;
+      const source = art.querySelector('picture > source')!;
+      expect(source.getAttribute('media')).toBe('(min-width: 768px)');
+      expect(source.getAttribute('srcset')).toBeTruthy();
+      const img = art.querySelector('picture > img.photo')!;
+      // Phones get an inline placeholder (nothing fetched); the alt matches the phone portrait's.
+      expect(img.getAttribute('src')).toMatch(/^data:image\//);
+      expect(img.getAttribute('alt')).toBeTruthy();
+      expect(img.getAttribute('alt')).toBe(d.querySelector('.home-phone .portrait-hero img')?.getAttribute('alt'));
+      expect(Number(img.getAttribute('width'))).toBeGreaterThan(0);
+      expect(Number(img.getAttribute('height'))).toBeGreaterThan(0);
+      expect(img.getAttribute('loading')).toBe('eager');
+      const sun = art.querySelector('.sun > svg.sun-mark')!;
+      expect(sun.getAttribute('aria-hidden')).toBe('true');
+      expect(sun.hasAttribute('transform')).toBe(false);
+      expect(art.querySelector('.sun-badge')).toBeNull();
+    }
+  });
+
+  it('hero without a photo: the big sun alone, no image', () => {
+    const hero = loadPage('/ui-kit/portrait/none/').querySelector('.desktop-hero')!;
+    expect(hero.classList.contains('desktop-hero--none')).toBe(true);
+    expect(hero.querySelector('.art--none svg.sun-mark')).toBeTruthy();
+    expect(hero.querySelector('img, picture')).toBeNull();
+    for (const style of ['background', 'round']) {
+      expect(loadPage(`/ui-kit/portrait/${style}/`).querySelector('.desktop-hero .art--bleed picture img.photo')).toBeTruthy();
+    }
+  });
+
   it('latest three posts and the blog tiles', () => {
     const latest = tr().querySelector('.home-desk .latest')!;
     expect(latest.querySelectorAll('.post-card').length).toBeGreaterThan(0);

@@ -41,7 +41,7 @@ export function ProfilScreen() {
               { value: 'round', label: 'Yuvarlak fotoğraf' },
             ]}
             onChange={(v) => set('heroStyle')(v)}
-            help="Arka planda fotoğraf: fotoğraf sayfanın arkasında sabit durur, kart üzerinden kayar. Yuvarlak fotoğraf: üstte küçük yuvarlak bir portre ve köşesinde güneş rozeti görünür. Fotoğraf yoksa ikisi de güneşli düzene döner."
+            help="Telefondaki görünümü seçer. Arka planda fotoğraf: fotoğraf sayfanın arkasında sabit durur, kart üzerinden kayar. Yuvarlak fotoğraf: üstte küçük yuvarlak bir portre ve köşesinde güneş rozeti görünür. Bilgisayarda fotoğraf her iki seçenekte de sayfanın sağ kenarına kadar uzanır ve köşesinden güneş doğar. Fotoğraf yoksa hepsi güneşli düzene döner."
           />
           <LocalizedField label="Fotoğrafın alt metni" value={p.photoAlt} onChange={set('photoAlt')} issues={file.issues} path="photoAlt" />
           <h3>Mesleki üyelikler</h3>
