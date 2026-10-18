@@ -3,6 +3,9 @@
  * About (spec §5.9): photo (or the sun), "Hakkımda", name and title, membership, the lead sentence;
  * accordions "Ben kimim?" (open), "Bu işi neden yapıyorum?", the work areas as tile pairs,
  * "Eğitim ve deneyim" (timeline) and a row to the contact page. Empty texts render nothing.
+ * Desktop (from 768 px, owner's review 2026-10-18): two columns. A sticky side column holds the larger
+ * portrait, name and title, memberships, the lead and "Randevu Al"; the other column holds the biography
+ * and the remaining sections at a reading width. Phones keep the single centred column.
  */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
@@ -44,21 +47,27 @@ for (let i = 0; i < areas.length; i += 2) {
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container-text inner-page about">
-    <PageHead title={about.heading[lang]}>
-      <RoundPortrait slot="media" photo={profile.photo} alt={profile.photoAlt[lang]} size={96} eager />
-      <p class="who-line">{whoLine}</p>
-      {
-        memberships.map((org) => (
-          <p class="tpd">
-            <Icon name="shield" size={14} />
-            {t(lang, 'memberOf').replace('{org}', org)}
-          </p>
-        ))
-      }
-      {lead && <p class="lead">{lead}</p>}
-    </PageHead>
+    <div class="about-side">
+      <PageHead title={about.heading[lang]}>
+        <RoundPortrait slot="media" photo={profile.photo} alt={profile.photoAlt[lang]} size={96} desktopSize={200} eager />
+        <p class="who-line">{whoLine}</p>
+        {
+          memberships.map((org) => (
+            <p class="tpd">
+              <Icon name="shield" size={14} />
+              {t(lang, 'memberOf').replace('{org}', org)}
+            </p>
+          ))
+        }
+        {lead && <p class="lead">{lead}</p>}
+      </PageHead>
+      <a class="big-cta side-cta" href={pathFor('appointment', lang)}>
+        <Icon name="calendar" size={18} />
+        {t(lang, 'bookSession')}
+      </a>
+    </div>
 
-    <div class="page-stack">
+    <div class="page-stack about-main">
       {
         (who || quote) && (
           <Accordion class="who" title={t(lang, 'whoAmI')} open>
@@ -107,6 +116,55 @@ for (let i = 0; i < areas.length; i += 2) {
 </PageShell>
 
 <style>
+  /* Phones: the side column is the centred head; its button stays hidden (the sticky bar books). */
+  .side-cta {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .about {
+      display: grid;
+      grid-template-columns: minmax(200px, 280px) minmax(0, 40rem);
+      justify-content: center;
+      align-items: start;
+      gap: clamp(2rem, 5vw, 4.5rem);
+      max-width: calc(var(--max-wide) + 2 * var(--gutter));
+    }
+
+    .about-side {
+      position: sticky;
+      top: var(--space-5);
+    }
+
+    .about-side :global(.page-head) {
+      text-align: left;
+    }
+
+    .about-side :global(.page-head .media) {
+      justify-content: flex-start;
+      margin-bottom: var(--space-4);
+    }
+
+    .about-side :global(.page-head .lead) {
+      margin: var(--space-4) 0 0;
+      color: var(--muted);
+      font-size: var(--text-sm);
+    }
+
+    .about-side :global(.page-head .tpd) {
+      display: flex;
+    }
+
+    .side-cta {
+      display: flex;
+      margin-top: var(--space-5);
+    }
+
+    .about-main {
+      margin-top: 0;
+    }
+  }
+
   .areas {
     display: flex;
     flex-direction: column;

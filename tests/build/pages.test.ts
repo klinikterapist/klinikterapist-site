@@ -310,6 +310,32 @@ describe('inner pages redesign (spec §5.9)', () => {
     );
   });
 
+  it('about: desktop has a sticky side column (portrait, name, memberships, Randevu Al) beside the sections', () => {
+    for (const [path, appt] of [['/hakkimda/', '/randevu/'], ['/en/about/', '/en/appointment/']] as const) {
+      const d = loadPage(path);
+      const about = d.querySelector('main .about')!;
+      const [side, main] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
+      expect(side.classList.contains('about-side'), path).toBe(true);
+      expect(main.classList.contains('about-main'), path).toBe(true);
+      expect(side.querySelector('.page-head h1')).toBeTruthy();
+      expect(side.querySelector('.page-head .who-line')).toBeTruthy();
+      expect(side.querySelector('.page-head .tpd')).toBeTruthy();
+      expect(side.querySelector('a.side-cta')?.getAttribute('href')).toBe(appt);
+      // The portrait grows on desktop, with its own size hint.
+      const portrait = side.querySelector('.portrait.portrait--desk')!;
+      expect(portrait.getAttribute('style')).toContain('--size-desk:200px');
+      expect(main.querySelectorAll('details.acc').length).toBeGreaterThan(0);
+      expect(main.querySelector('a.list-item[href$="/iletisim/"], a.list-item[href$="/contact/"]')).toBeTruthy();
+    }
+    const src = readFileSync('src/views/AboutView.astro', 'utf8');
+    const desk = src.slice(src.indexOf('@media (min-width: 768px)'));
+    expect(desk).toMatch(/\.about\s*\{[^}]*display:\s*grid/);
+    expect(desk).toMatch(/\.about-side\s*\{[^}]*position:\s*sticky/);
+    expect(desk).toMatch(/\.side-cta\s*\{[^}]*display:\s*flex/);
+    // Phones: the side button is hidden (the sticky booking bar does that job).
+    expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.side-cta\s*\{\s*display:\s*none/);
+  });
+
   it('about: accordions in order, the first one open', () => {
     expect(summaries('/hakkimda/')).toEqual(['Ben kimim?', 'Bu işi neden yapıyorum?', 'Eğitim ve deneyim']);
     expect(summaries('/en/about/')).toEqual(['Who am I?', 'Why do I do this work?', 'Education and experience']);

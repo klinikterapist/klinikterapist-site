@@ -1,7 +1,8 @@
 ---
 /**
- * Round profile photo for the inner pages and the author box (spec §5.9, §5.8): the photo resized by
- * Astro's image service (portrait-image.ts), or the sun in a surface circle when there is no photo.
+ * Round profile photo for the inner pages and the post's author line (spec §5.9, §5.8): the photo
+ * resized by Astro's image service (portrait-image.ts), or the sun in a surface circle when there is no
+ * photo. `desktopSize` draws it larger from 768 px (the About page's side column), with variants for it.
  */
 import { portraitImage } from '../../lib/portrait-image';
 import SunMark from '../brand/SunMark.astro';
@@ -11,21 +12,26 @@ interface Props {
   alt: string;
   /** Diameter in px. */
   size: number;
+  /** Diameter in px from 768 px on; the phone size otherwise. */
+  desktopSize?: number;
   /** Above the fold: load at once. */
   eager?: boolean;
   class?: string;
 }
-const { photo, alt, size, eager = false, class: className } = Astro.props;
-const img = photo ? await portraitImage(photo, [size, size * 2, size * 3]) : null;
+const { photo, alt, size, desktopSize, eager = false, class: className } = Astro.props;
+const widths = [...new Set([size, size * 2, size * 3, ...(desktopSize ? [desktopSize, desktopSize * 2] : [])])].sort((a, b) => a - b);
+const img = photo ? await portraitImage(photo, widths) : null;
+const sizes = desktopSize ? `(min-width: 768px) ${desktopSize}px, ${size}px` : `${size}px`;
+const style = `--size:${size}px${desktopSize ? `;--size-desk:${desktopSize}px` : ''}`;
 ---
 
-<div class:list={['portrait', { 'portrait--sun': !img }, className]} style={`--size:${size}px`}>
+<div class:list={['portrait', { 'portrait--sun': !img, 'portrait--desk': !!desktopSize }, className]} style={style}>
   {
     img ? (
       <img
         src={img.src}
         srcset={img.srcset}
-        sizes={img.srcset ? `${size}px` : undefined}
+        sizes={img.srcset ? sizes : undefined}
         alt={alt}
         width={size}
         height={size}
@@ -55,5 +61,17 @@ const img = photo ? await portraitImage(photo, [size, size * 2, size * 3]) : nul
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+
+  .portrait :global(.sun-mark) {
+    width: 66%;
+    height: 66%;
+  }
+
+  @media (min-width: 768px) {
+    .portrait--desk {
+      width: var(--size-desk);
+      height: var(--size-desk);
+    }
   }
 </style>
