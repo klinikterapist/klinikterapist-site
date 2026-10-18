@@ -1229,6 +1229,14 @@ textarea.k-input {
   color: inherit;
 }
 
+.ed-body.prose li::marker {
+  color: var(--panel-sage);
+}
+
+.ed-body.prose figcaption {
+  color: var(--p-muted);
+}
+
 .ed-body.prose > * + * {
   margin-top: 1em;
 }

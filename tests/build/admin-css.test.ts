@@ -76,4 +76,12 @@ describe('/admin/ styles', () => {
     // Panel tokens used by the content are pinned to light values inside it.
     expect(view.some((r) => /--p-highlight:\s*var\(--mark-bg\)/.test(r.body))).toBe(true);
   });
+
+  it('the editor body keeps the panel colours for list markers and captions (not the site day pin)', () => {
+    expect(find('.ed-body.prose li::marker').some((r) => /color:\s*var\(--panel-sage\)/.test(r.body))).toBe(true);
+    expect(find('.ed-body.prose figcaption').some((r) => /color:\s*var\(--p-muted\)/.test(r.body))).toBe(true);
+    for (const [editor, prose] of [['.ed-body.prose li::marker', '.prose li::marker'], ['.ed-body.prose figcaption', '.prose figcaption']]) {
+      for (const r of find(prose)) expect(beats(specificity(editor), specificity(r.selector)), `${editor} vs ${r.selector}`).toBe(true);
+    }
+  });
 });
