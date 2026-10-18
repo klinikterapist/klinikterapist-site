@@ -1,3 +1,4 @@
+/// <reference types="google-apps-script" />
 /**
  * Web app entry point. The panel POSTs `{ action, session?, ...params }` as text/plain JSON
  * (a CORS simple request); every answer is JSON with HTTP 200. The site's contact form posts

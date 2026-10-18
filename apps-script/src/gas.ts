@@ -1,3 +1,4 @@
+/// <reference types="google-apps-script" />
 /**
  * The only file that touches Apps Script globals. Everything else takes a `Gas`, so the backend
  * runs under Vitest with an in-memory fake.
