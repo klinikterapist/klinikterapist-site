@@ -48,4 +48,17 @@ describe('Home', () => {
     expect(screen.getByText('Bu ay')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Tümü' }).getAttribute('href')).toBe('#/yazilar/taslaklar');
   });
+
+  it('has no "Yeni yazı" button (the sidebar has it)', async () => {
+    const api = createMockApi();
+    render(
+      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'a@b.c' }, store: createSessionStore(localStorage) }}>
+        <DeployProvider api={api}>
+          <Home />
+        </DeployProvider>
+      </Panel.Provider>,
+    );
+    expect(screen.getByRole('heading', { name: 'Ana sayfa' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Yeni yazı' })).toBeNull();
+  });
 });

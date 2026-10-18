@@ -24,7 +24,7 @@ const ICON_OPTIONS = Object.keys(ICONS).map((k) => ({ value: k, label: k }));
 export function AnaSayfaScreen() {
   const file = useSettingsFile<Home>('src/data/home.json', parseHome, 'Ana sayfa');
   return (
-    <SettingsForm title="Ana sayfa" intro="Randevu butonunun altındaki kartlar: sıra, görünürlük ve metinler." file={file}>
+    <SettingsForm title="Ana sayfa" screen="ana-sayfa" file={file}>
       {(h) => (
         <ListEditor<HomeCard>
           items={h.cards}
@@ -74,7 +74,7 @@ const ICON_NAMES: Record<Link['icon'], string> = {
 export function LinklerScreen() {
   const file = useSettingsFile<Link[]>('src/data/links.json', parseLinks, 'Sosyal ve linkler');
   return (
-    <SettingsForm title="Sosyal ve linkler" intro="Ana sayfadaki ve alt bilgideki sosyal medya simgeleri." file={file}>
+    <SettingsForm title="Sosyal ve linkler" screen="linkler" file={file}>
       {(links) => (
         <ListEditor<Link>
           items={links}
@@ -117,7 +117,7 @@ const TYPE_LABEL: Record<Resource['type'], string> = {
 export function KaynaklarScreen() {
   const file = useSettingsFile<Resources>('src/data/resources.json', parseResources, 'Kaynaklar');
   return (
-    <SettingsForm title="Kaynaklar" file={file}>
+    <SettingsForm title="Kaynaklar" screen="kaynaklar" file={file}>
       {(r) => (
         <>
           <LocalizedField

@@ -51,6 +51,7 @@ export function KategorilerScreen() {
   return (
     <SettingsForm
       title="Kategoriler"
+      screen="kategoriler"
       intro="Blog kategorileri. Bir kategorinin adresini değiştirirseniz eski adres yenisine yönlendirilir. İçinde yazı ya da taslak olan kategori silinemez."
       file={file}
       onSave={save}

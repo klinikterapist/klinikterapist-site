@@ -8,7 +8,7 @@ export function ProfilScreen() {
   const file = useSettingsFile<Profile>('src/data/profile.json', parseProfile, 'Profil');
   const set = <K extends keyof Profile>(k: K) => (v: Profile[K]) => file.setValue((p) => ({ ...p, [k]: v }));
   return (
-    <SettingsForm title="Profil" intro="Ana sayfadaki portre ve tanıtım ile yazıların altındaki yazar kutusu." file={file}>
+    <SettingsForm title="Profil" screen="profil" file={file}>
       {(p) => (
         <>
           <Field label="Ad soyad" value={p.name} onChange={set('name')} error={file.issues.name} />
@@ -42,7 +42,7 @@ export function IletisimScreen() {
   const file = useSettingsFile<Contact>('src/data/contact.json', parseContact, 'İletişim');
   const set = <K extends keyof Contact>(k: K) => (v: Contact[K]) => file.setValue((c) => ({ ...c, [k]: v }));
   return (
-    <SettingsForm title="İletişim" file={file}>
+    <SettingsForm title="İletişim" screen="iletisim" file={file}>
       {(c) => (
         <>
           <LocalizedField label="Giriş metni" value={c.intro} onChange={set('intro')} multiline issues={file.issues} path="intro" />
@@ -60,7 +60,7 @@ export function SeoScreen() {
   const file = useSettingsFile<Seo>('src/data/seo.json', parseSeo, 'SEO genel');
   const set = <K extends keyof Seo>(k: K) => (v: Seo[K]) => file.setValue((s) => ({ ...s, [k]: v }));
   return (
-    <SettingsForm title="SEO genel" intro="Google'da ve paylaşımlarda sitenin geneli için kullanılan bilgiler." file={file}>
+    <SettingsForm title="SEO genel" screen="seo" file={file}>
       {(s) => (
         <>
           <LocalizedField label="Site adı" value={s.siteName} onChange={set('siteName')} issues={file.issues} path="siteName" />

@@ -65,6 +65,15 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Açık mod' })).toBeTruthy();
   });
 
+  it('the theme switch sits at the bottom of the menu', async () => {
+    const store = createSessionStore(localStorage);
+    store.set('s', Date.now() + 3600e3);
+    render(<App api={createMockApi()} store={store} config={config} />);
+    const nav = await screen.findByRole('navigation', { name: 'Panel menüsü' });
+    expect(within(nav).getByRole('button', { name: /Karanlık mod|Açık mod/ })).toBeTruthy();
+    expect(document.querySelector('.panel-tools')).toBeNull();
+  });
+
   it('"Yeni yazı" in the sidebar opens a fresh draft', async () => {
     const store = createSessionStore(localStorage);
     store.set('s', Date.now() + 3600e3);

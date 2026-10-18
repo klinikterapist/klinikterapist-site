@@ -449,8 +449,7 @@ textarea.k-input {
 }
 
 .panel-nav a,
-.panel-nav .linklike,
-.theme-toggle {
+.panel-nav .linklike {
   gap: var(--space-2);
 }
 
@@ -463,25 +462,6 @@ textarea.k-input {
   margin: var(--space-3) 0;
   justify-content: flex-start;
   gap: var(--space-2);
-}
-
-.panel-tools {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--space-3);
-}
-
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--p-border);
-  border-radius: var(--radius-sm);
-  background: var(--p-surface);
-  color: var(--p-text);
-  font: inherit;
-  cursor: pointer;
 }
 
 .nav-group {
@@ -527,6 +507,9 @@ textarea.k-input {
 }
 
 .screen-head h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
 }
 
@@ -1028,12 +1011,6 @@ textarea.k-input {
 .ed-tool:hover:not(:disabled) {
   background: var(--p-selected);
   color: var(--p-heading);
-}
-
-.ed-tool-mark {
-  padding: 0 4px;
-  background: var(--p-highlight);
-  color: var(--p-text);
 }
 
 .ed-block-select {

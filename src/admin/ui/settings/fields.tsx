@@ -5,6 +5,8 @@ import { renderMarkdown } from '../../../lib/markdown';
 import { IMAGE_PRESETS, ImageError, resizeImage } from '../../lib/image';
 import { shortHash } from '../../lib/hash';
 import { Banner, Button, Dialog, Field, MoveButtons, Spinner, move } from '../kit';
+import { Icon } from '../icons';
+import { SETTINGS_SCREENS } from './screens';
 import type { Issues, SettingsFile, Staging } from './useSettingsFile';
 
 export function LocalizedField(props: {
@@ -207,6 +209,8 @@ export function ListEditor<T>(props: {
 /** Screen frame: title, intro, loading/error, the form, and a save bar. */
 export function SettingsForm<T>(props: {
   title: string;
+  /** Id from SETTINGS_SCREENS: supplies the header icon and the default intro. */
+  screen?: string;
   intro?: ReactNode;
   file: SettingsFile<T>;
   onSave?: () => void;
@@ -214,12 +218,17 @@ export function SettingsForm<T>(props: {
 }) {
   const { file } = props;
   const general = Object.entries(file.issues);
+  const meta = SETTINGS_SCREENS.find((x) => x.id === props.screen);
+  const intro = props.intro ?? meta?.intro;
   return (
     <section className="settings" aria-labelledby="settings-screen-title">
       <div className="screen-head">
-        <h2 id="settings-screen-title">{props.title}</h2>
+        <h2 id="settings-screen-title">
+          {meta && <Icon as={meta.icon} size={22} />}
+          {props.title}
+        </h2>
       </div>
-      {props.intro && <p className="settings-intro">{props.intro}</p>}
+      {intro && <p className="settings-intro">{intro}</p>}
       {file.loadError && (
         <Banner tone="error" action={<Button onClick={file.retry}>Tekrar dene</Button>}>
           {file.loadError}

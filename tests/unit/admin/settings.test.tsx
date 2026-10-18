@@ -30,6 +30,13 @@ const json = (api: ReturnType<typeof createMockApi>, path: string) => JSON.parse
 const save = () => fireEvent.click(screen.getByRole('button', { name: 'Kaydet' }));
 
 describe('settings screens', () => {
+  it('Sosyal ve linkler: the header has an icon and a one-line intro', async () => {
+    setup('linkler');
+    const head = (await screen.findByRole('heading', { name: 'Sosyal ve linkler' })).closest('.screen-head')!;
+    expect(head.querySelector('svg')).toBeTruthy();
+    expect(screen.getByText('Sitede görünen sosyal hesaplarınız.')).toBeTruthy();
+  });
+
   it('İletişim: an invalid e-mail is shown under the field and nothing is committed', async () => {
     const api = setup('iletisim');
     const email = await screen.findByLabelText('E-posta adresi');

@@ -38,7 +38,7 @@ export function HakkimdaScreen() {
   const file = useSettingsFile<About>('src/data/about.json', parseAbout, 'Hakkımda');
   const set = <K extends keyof About>(k: K) => (v: About[K]) => file.setValue((a) => ({ ...a, [k]: v }));
   return (
-    <SettingsForm title="Hakkımda" file={file}>
+    <SettingsForm title="Hakkımda" screen="hakkimda" file={file}>
       {(a) => (
         <>
           <LocalizedField label="Sayfa başlığı" value={a.heading} onChange={set('heading')} issues={file.issues} path="heading" />

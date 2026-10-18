@@ -4,24 +4,23 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
-
-const svg = (children: ReactNode) => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {children}
-  </svg>
-);
+import { BookOpenText, Bold, Ellipsis, Highlighter, Image, Italic, Link, List, ListOrdered, Quote, Redo2, Strikethrough, Undo2, Youtube } from '../icons';
 
 const ICON = {
-  undo: svg(<><path d="M9 14 4 9l5-5" /><path d="M4 9h10a6 6 0 0 1 0 12h-3" /></>),
-  redo: svg(<><path d="m15 14 5-5-5-5" /><path d="M20 9H10a6 6 0 0 0 0 12h3" /></>),
-  link: svg(<><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" /><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></>),
-  image: svg(<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-4-4L5 21" /></>),
-  youtube: svg(<><rect x="2" y="5" width="20" height="14" rx="4" /><path d="m10 9 5 3-5 3z" /></>),
-  quote: svg(<><path d="M5 17h4l2-4V7H5v6h3" /><path d="M14 17h4l2-4V7h-6v6h3" /></>),
-  bullets: svg(<><path d="M9 6h12M9 12h12M9 18h12" /><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /></>),
-  numbers: svg(<><path d="M10 6h11M10 12h11M10 18h11" /><path d="M4 5l1-1v4M3.5 14h2l-2 3h2" /></>),
-  book: svg(<><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2Z" /><path d="M12 6v14" /></>),
-  more: svg(<><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></>),
+  undo: <Undo2 size={18} aria-hidden="true" />,
+  redo: <Redo2 size={18} aria-hidden="true" />,
+  link: <Link size={18} aria-hidden="true" />,
+  image: <Image size={18} aria-hidden="true" />,
+  youtube: <Youtube size={18} aria-hidden="true" />,
+  quote: <Quote size={18} aria-hidden="true" />,
+  bullets: <List size={18} aria-hidden="true" />,
+  numbers: <ListOrdered size={18} aria-hidden="true" />,
+  book: <BookOpenText size={18} aria-hidden="true" />,
+  more: <Ellipsis size={18} aria-hidden="true" />,
+  bold: <Bold size={18} aria-hidden="true" />,
+  italic: <Italic size={18} aria-hidden="true" />,
+  strike: <Strikethrough size={18} aria-hidden="true" />,
+  highlight: <Highlighter size={18} aria-hidden="true" />,
 };
 
 export type ToolbarProps = {
@@ -110,10 +109,10 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: Too
         <option value="h2">Alt başlık</option>
         <option value="h3">Küçük alt başlık</option>
       </select>
-      {btn('Kalın', <b>K</b>, () => chain().toggleBold().run(), { active: s.bold })}
-      {btn('İtalik', <i>İ</i>, () => chain().toggleItalic().run(), { active: s.italic })}
-      {btn('Üstü çizili', <s>S</s>, () => chain().toggleStrike().run(), { active: s.strike })}
-      {btn('Vurgula', <mark className="ed-tool-mark">A</mark>, () => chain().toggleHighlight().run(), { active: s.highlight })}
+      {btn('Kalın', ICON.bold, () => chain().toggleBold().run(), { active: s.bold })}
+      {btn('İtalik', ICON.italic, () => chain().toggleItalic().run(), { active: s.italic })}
+      {btn('Üstü çizili', ICON.strike, () => chain().toggleStrike().run(), { active: s.strike })}
+      {btn('Vurgula', ICON.highlight, () => chain().toggleHighlight().run(), { active: s.highlight })}
       {btn('Bağlantı', ICON.link, onLink, { active: s.link })}
       {btn('Görsel', ICON.image, onImage)}
       {btn('YouTube', ICON.youtube, onYoutube)}

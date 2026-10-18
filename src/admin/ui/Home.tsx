@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type DraftSummary } from '../api/types';
 import { dashboard } from '../lib/dashboard';
 import { loadSiteState, type SiteState } from '../lib/posts-repo';
-import { startNewPost } from '../lib/new-post';
-import { go, usePanel } from './context';
+import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
 import { Banner, Button, Spinner } from './kit';
 
@@ -35,9 +34,6 @@ export function Home() {
     <section aria-labelledby="home-title">
       <div className="screen-head">
         <h2 id="home-title">Ana sayfa</h2>
-        <Button variant="primary" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
-          Yeni yazı
-        </Button>
       </div>
       {error && (
         <Banner tone="error" action={<Button onClick={() => setAttempt(attempt + 1)}>Tekrar dene</Button>}>

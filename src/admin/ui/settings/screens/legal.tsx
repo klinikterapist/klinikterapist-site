@@ -4,6 +4,7 @@ import { ApiFailure } from '../../../api/types';
 import { usePanel } from '../../context';
 import { useDeploy } from '../../DeployStatus';
 import { Banner, Button, Spinner } from '../../kit';
+import { Icon, Scale } from '../../icons';
 import { MarkdownField } from '../fields';
 
 const FILES = [
@@ -68,7 +69,10 @@ export function YasalScreen() {
   return (
     <section className="settings" aria-labelledby="legal-title">
       <div className="screen-head">
-        <h2 id="legal-title">Yasal metinler</h2>
+        <h2 id="legal-title">
+          <Icon as={Scale} size={22} />
+          Yasal metinler
+        </h2>
       </div>
       <p className="settings-intro">KVKK metinlerinin hukuki içeriği sizin sorumluluğunuzdadır. Metinler sitede ilgili sayfalarda yayınlanır.</p>
       {error && (
