@@ -141,8 +141,10 @@ describe('home (desktop)', () => {
     expect(tr().querySelectorAll('h1')).toHaveLength(1);
     // Owner's review 2026-10-19: a personal welcome is the headline; the tagline follows it.
     expect(hero.querySelector('p.welcome')?.text.trim()).toBe('Hoş geldiniz');
-    expect(hero.querySelector('h1.greeting')?.text).toBe('Merhaba, ben Psikolog Osman Güneş Özkurt.');
-    expect(en().querySelector('.home-desk .desktop-hero h1.greeting')?.text).toBe("Hello, I'm Psychologist Osman Güneş Özkurt.");
+    // Owner's choice E (2026-10-19): "Merhaba 👋", then "Ben … ." on its own line, both in the h1.
+    expect(hero.querySelector('h1.greeting .hi')?.text).toContain('Merhaba');
+    expect(hero.querySelector('h1.greeting .me')?.text).toBe('Ben Psikolog Osman Güneş Özkurt.');
+    expect(en().querySelector('.home-desk .desktop-hero h1.greeting .me')?.text).toBe("I'm Psychologist Osman Güneş Özkurt.");
     expect(hero.querySelector('p.tagline')?.text).toBe('Daha iyi bir yaşam mümkün.');
     expect(hero.text).toContain('Kendini anlamak');
     expect(hero.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();

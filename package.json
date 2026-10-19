@@ -25,6 +25,7 @@
     "@astrojs/sitemap": "^3.7.4",
     "@fontsource-variable/dm-sans": "^5.3.0",
     "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource/kalam": "^5.3.0",
     "@tiptap/core": "^3.32.0",
     "@tiptap/extension-bubble-menu": "^3.32.0",
     "@tiptap/extension-floating-menu": "^3.32.0",

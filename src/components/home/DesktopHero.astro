@@ -2,9 +2,9 @@
 /**
  * Desktop home intro (spec §5.7; owner's reviews 2026-10-18 and 2026-10-19): on the left the portrait
  * inside the site column, softly rounded on every corner, with the whole brand sun at its
- * bottom-right corner. On the right a personal welcome: a small "Hoş geldiniz", then the greeting
- * "Merhaba, ben Klinik Psikolog Osman Güneş Özkurt." as the page's h1 in the large serif and the text
- * colour, the tagline under it, intro, "Randevu Al" beside "Ön Görüşme" (with its "Ücretsiz" tag) and the wordmark in
+ * bottom-right corner. On the right a personal welcome: a large handwritten "Hoş geldiniz", then the
+ * greeting "Merhaba 👋 / Ben Klinik Psikolog Osman Güneş Özkurt." as the page's h1 in the serif and the
+ * text colour, the tagline under it, intro, "Randevu Al" beside "Ön Görüşme" (with its "Ücretsiz" tag) and the wordmark in
  * the logo's own black/white. Without a photo the big sun with a soft halo stands in the same place.
  */
 import type { Lang } from '../../lib/settings';
@@ -14,6 +14,9 @@ import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
 import Wordmark from '../brand/Wordmark.astro';
+// "Hoş geldiniz" in a notebook handwriting (owner's choice E, 2026-10-19); only this hero loads it.
+import '@fontsource/kalam/latin-700.css';
+import '@fontsource/kalam/latin-ext-700.css';
 
 interface Props {
   lang: Lang;
@@ -26,7 +29,7 @@ interface Props {
   name: string;
 }
 const { lang, photo, alt, heading, intro, title, name } = Astro.props;
-const greeting = t(lang, 'heroGreeting').replace('{who}', [title, name].filter(Boolean).join(' '));
+const who = [title, name].filter(Boolean).join(' ');
 // The photo box is at most 30rem (480 px) wide, about 40vw on smaller desktops; 2x screens take the
 // 800 or 1080 px variant.
 const img = photo ? await portraitImage(photo, [560, 800, 1080]) : null;
@@ -38,11 +41,11 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
 <section class:list={['desktop-hero', img ? 'desktop-hero--photo' : 'desktop-hero--none']}>
   <div class="inner container">
     <div class="text">
-      <p class="welcome">
-        <span class="welcome-rule" aria-hidden="true"></span>
-        {t(lang, 'heroWelcome')}
-      </p>
-      <h1 class="greeting">{greeting}</h1>
+      <p class="welcome">{t(lang, 'heroWelcome')}</p>
+      <h1 class="greeting">
+        <span class="hi">{t(lang, 'heroHi')} <span class="wave" aria-hidden="true">👋</span></span>
+        <span class="me">{t(lang, 'heroMe').replace('{who}', who)}</span>
+      </h1>
       {heading && <p class="tagline">{heading}</p>}
       {intro && <p class="lead">{intro}</p>}
       <div class="actions">
@@ -109,32 +112,59 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     order: -1;
   }
 
-  /* A small "Hoş geldiniz" in the accent colour, led by a short rule. */
+  /*
+   * Owner's choice E (2026-10-19): "Hoş geldiniz" is the largest line, in a slightly tilted notebook
+   * handwriting; "Merhaba 👋" a little smaller; "Ben Klinik Psikolog …" on its own line under it.
+   */
   .welcome {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin: 0 0 var(--space-4);
+    margin: 0;
     color: var(--link);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-family: 'Kalam', 'Segoe Print', 'Bradley Hand', cursive;
+    font-size: clamp(3.4rem, 2rem + 3.6vw, 5.6rem);
+    font-weight: 700;
+    line-height: 1.05;
+    transform: rotate(-2deg);
+    transform-origin: left center;
   }
 
-  .welcome-rule {
-    width: 2.25rem;
-    height: 2px;
-    border-radius: 2px;
-    background: var(--sun-disc);
-  }
-
-  /* The greeting is the page's headline: the large serif in the text colour (cream at night). */
   .greeting {
-    margin: 0 0 var(--space-4);
+    display: grid;
+    gap: var(--space-1);
+    margin: var(--space-4) 0 var(--space-4);
     color: var(--text);
-    font-size: clamp(2.25rem, 1.2rem + 2.3vw, 3.125rem);
-    line-height: 1.08;
+    font-weight: 400;
     text-wrap: balance;
+  }
+
+  .hi {
+    font-size: clamp(2rem, 1.3rem + 1.4vw, 2.5rem);
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  .me {
+    font-size: clamp(1.5rem, 1.1rem + 0.9vw, 1.9rem);
+    line-height: 1.25;
+  }
+
+  .wave {
+    display: inline-block;
+    transform-origin: 70% 70%;
+    animation: wave 2.4s ease-in-out 1s 2;
+  }
+
+  @keyframes wave {
+    0%, 60%, 100% { transform: rotate(0); }
+    10%, 30% { transform: rotate(14deg); }
+    20% { transform: rotate(-8deg); }
+    40% { transform: rotate(-4deg); }
+    50% { transform: rotate(10deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wave {
+      animation: none;
+    }
   }
 
   .tagline {
