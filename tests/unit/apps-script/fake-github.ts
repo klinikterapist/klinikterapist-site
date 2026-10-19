@@ -41,7 +41,9 @@ export class FakeGitHub {
 
   route = (url: string, opts: FetchOpts): FetchResult | undefined => {
     if (!url.startsWith(API) && !url.startsWith('https://api.github.com/')) return undefined;
-    const headers = this.tokenExpiration ? { 'github-authentication-token-expiration': this.tokenExpiration } : {};
+    const headers: Record<string, string> = this.tokenExpiration
+      ? { 'github-authentication-token-expiration': this.tokenExpiration }
+      : {};
     if (this.status !== 200) return json(this.status, { message: 'Bad credentials' }, headers);
     const method = opts.method ?? 'get';
     const body = opts.payload ? JSON.parse(opts.payload) : undefined;

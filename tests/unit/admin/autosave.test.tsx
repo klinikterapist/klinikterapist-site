@@ -11,7 +11,8 @@ afterEach(() => {
   localStorage.clear();
 });
 
-function fakeApi(save: (d: Draft) => Promise<{ rev: number; updatedAt: string }>) {
+type SaveOpts = Parameters<Api['saveDraft']>[1];
+function fakeApi(save: (d: Draft, opts?: SaveOpts) => Promise<{ rev: number; updatedAt: string }>) {
   const saveDraft = vi.fn(save);
   return { api: { saveDraft } as unknown as Api, saveDraft };
 }
@@ -207,7 +208,7 @@ describe('restoring a version (review Focus 5)', () => {
   });
 
   it('a save in flight finishes first, and the restore builds on the newest copy', async () => {
-    const saveDraft = vi.fn((d: Draft) => new Promise<{ rev: number; updatedAt: string }>((res) => setTimeout(() => res({ rev: d.rev + 1, updatedAt: 'x' }), 1000)));
+    const saveDraft = vi.fn((d: Draft, _opts?: SaveOpts) => new Promise<{ rev: number; updatedAt: string }>((res) => setTimeout(() => res({ rev: d.rev + 1, updatedAt: 'x' }), 1000)));
     const api = { saveDraft } as unknown as Api;
     const { result } = renderHook(() => useAutosave(initial(), api));
     type(result, 'Birinci');

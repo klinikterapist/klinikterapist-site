@@ -1,5 +1,5 @@
 import { createHmac, randomUUID } from 'node:crypto';
-import type { FetchOpts, FetchResult, FileLike, FolderLike, Gas, MailMessage } from '../../../apps-script/src/gas';
+import type { FetchOpts, FetchResult, FileKind, FileLike, FolderLike, Gas, MailMessage } from '../../../apps-script/src/gas';
 
 export type Route = (url: string, opts: FetchOpts) => FetchResult | undefined;
 
@@ -20,7 +20,7 @@ export class MemFolder implements FolderLike {
     const f = this.files.get(name);
     return f && !f.trashed ? f : null;
   }
-  createFile(name: string, content: string) {
+  createFile(name: string, content: string, _kind?: FileKind) {
     const f = new MemFile(name, content);
     this.files.set(name, f);
     return f;

@@ -28,7 +28,9 @@ function good(): LangFields {
     description:
       'Kaygı herkesin yaşadığı bir duygudur. Bu yazıda kaygıyı tanımayı, bedendeki izlerini fark etmeyi ve günlük hayatta uygulanabilir adımları ele alıyoruz.',
     focusKeyword: 'kaygı',
+    subtitle: '',
     coverAlt: 'Yaprak',
+    references: [],
     doc: {
       type: 'doc',
       content: [
