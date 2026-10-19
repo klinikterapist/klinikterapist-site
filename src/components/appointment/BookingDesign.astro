@@ -43,6 +43,11 @@ const T = {
     couple: 'Çift Terapisi Seansı',
     coupleMeta: '60 dakika',
     coupleText: 'Partnerinizle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
+    access: 'Erişilebilir Terapi Seansı',
+    accessMeta: '50 dakika',
+    accessBadge: 'Kontenjanlı',
+    accessText: 'Ekonomik durumu elverişli olmayanlar ve üniversite öğrencileri için uygun ücretli bireysel seans. Kontenjan sınırlıdır.',
+    accessMore: 'Ayrıntılar',
     group: 'Grup Terapisi Seansı',
     groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışma.',
     face: 'Yüz Yüze Terapi',
@@ -100,6 +105,11 @@ const T = {
     couple: 'Couple Therapy Session',
     coupleMeta: '60 minutes',
     coupleText: 'Together with your partner: communication, conflict and the relationship itself.',
+    access: 'Accessible Therapy Session',
+    accessMeta: '50 minutes',
+    accessBadge: 'Limited places',
+    accessText: 'A lower-fee individual session for people whose finances do not allow the regular fee, and for university students. Places are limited.',
+    accessMore: 'Details',
     group: 'Group Therapy Session',
     groupText: 'Working together with a small group around similar themes.',
     face: 'Face-to-Face Therapy',
@@ -202,6 +212,18 @@ const notice = pathFor('privacyNotice', lang);
               </span>
               <span class="type-meta"><Icon name="clock" size={15} />{T.coupleMeta}</span>
               <span class="type-text">{T.coupleText}</span>
+            </span>
+          </label>
+          <label class="type">
+            <input type="radio" name="bk-type" value="accessible" data-sum-src="type" data-label={T.access} data-meta={T.accessMeta} />
+            <span class="type-body">
+              <span class="type-top">
+                <b>{T.access}</b>
+                <span class="badge badge-online">{T.online}</span>
+                <span class="badge badge-quota">{T.accessBadge}</span>
+              </span>
+              <span class="type-meta"><Icon name="clock" size={15} />{T.accessMeta}</span>
+              <span class="type-text">{T.accessText} <a class="type-more" href="#erisilebilir-terapi">{T.accessMore}</a></span>
             </span>
           </label>
           <label class="type is-off">
@@ -372,6 +394,17 @@ const notice = pathFor('privacyNotice', lang);
 </script>
 
 <style>
+  /* "Kontenjanlı": a quiet outlined badge in the accent colour. */
+  .badge-quota {
+    border: 1px solid color-mix(in srgb, var(--sun-disc) 70%, transparent);
+    color: var(--link);
+  }
+
+  .type-more {
+    color: var(--link);
+    font-weight: 600;
+  }
+
   /* "İlk kez mi randevu alıyorsunuz?": the way to the free intro call, before the steps. */
   .first-time {
     position: relative;
