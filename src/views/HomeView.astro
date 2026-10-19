@@ -7,7 +7,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PortraitHero from '../components/home/PortraitHero.astro';
 import DesktopHero from '../components/home/DesktopHero.astro';
-import FreeStylePreview from '../components/home/FreeStylePreview.astro';
 import ProcessSteps from '../components/home/ProcessSteps.astro';
 import FaqHello from '../components/home/FaqHello.astro';
 import Accordion from '../components/ui/Accordion.astro';
@@ -97,17 +96,13 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
         <Icon name="booking" size={20} />
         {t(lang, 'bookSession')}
       </a>
-      <span class="pre-wrap">
-        <span class="scribble" aria-hidden="true"><svg class="scribble-arrow" viewBox="0 0 34 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M30 4C22 6 12 12 8 24" /><path d="M4 18l4 7 7-4" /></svg>{t(lang, 'freeScribble')}</span>
-        <a class="pre-cta" href={pathFor('preConsult', lang)}>
-          <span class="pre-ic"><Icon name="talk" size={20} /></span>
-          <span class="pre-lines">
-            <span class="pre-name">{t(lang, 'preConsult')}</span>
-            <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
-          </span>
-          <span class="free-tag">{t(lang, 'freeTag')}</span>
-        </a>
-      </span>
+      <a class="pre-cta" href={pathFor('preConsult', lang)}>
+        <span class="pre-ic"><Icon name="talk" size={20} /></span>
+        <span class="pre-lines">
+          <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
+          <span class="pre-name">{t(lang, 'preConsult')}</span>
+        </span>
+      </a>
 
       <div class="stack">
         <SocialAccordion lang={lang} />
@@ -146,8 +141,6 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       </div>
     </PortraitHero>
   </div>
-
-  {import.meta.env.DEV && <FreeStylePreview />}
 
   <div class="home-desk">
     <DesktopHero
@@ -294,19 +287,16 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     color: var(--btn-text);
   }
 
-  /* "Ön Görüşme" under "Randevu Al": outlined, with a small "Ücretsiz" tag on its corner. */
+  /* "Ön Görüşme" under "Randevu Al" as a small card (owner's choice J, 2026-10-19). */
   .pre-cta {
-    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 52px;
+    gap: 12px;
+    min-height: 66px;
     margin-top: 12px;
-    padding: 14px 16px;
-    border: 1.5px solid color-mix(in srgb, var(--sun-disc) 65%, transparent);
+    padding: 10px 16px 10px 10px;
     border-radius: 16px;
-    background: color-mix(in srgb, var(--sun-halo) 12%, transparent);
+    background: var(--surface);
     color: var(--text);
     font-size: 1.03125rem;
     font-weight: 600;
@@ -314,72 +304,13 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
   }
 
   .pre-cta:hover {
-    background: color-mix(in srgb, var(--sun-halo) 24%, transparent);
+    background: var(--surface-2);
     color: var(--text);
   }
 
-  /* Ways of saying "free" (see DesktopHero): F a handwritten note, J a small card. */
-  .pre-wrap {
-    position: relative;
-    display: block;
-  }
-
-  .pre-ic,
-  .pre-lines {
-    display: contents;
-  }
-
-  .pre-sub,
-  .scribble {
-    display: none;
-  }
-
-  .scribble {
-    position: absolute;
-    top: 4px;
-    right: 14px;
-    z-index: 1;
-    align-items: flex-end;
-    gap: 2px;
-    color: var(--text);
-    font-family: 'Kalam', 'Segoe Print', cursive;
-    font-size: 1.2rem;
-    font-weight: 700;
-    line-height: 1;
-    transform: rotate(-4deg);
-  }
-
-  .scribble :global(.scribble-arrow) {
-    flex: none;
-    width: 26px;
-    height: 22px;
-    margin-bottom: -12px;
-  }
-
-  :global(html[data-free='f']) .pre-wrap {
-    padding-top: 26px;
-  }
-
-  :global(html[data-free='f']) .scribble {
-    display: inline-flex;
-  }
-
-  :global(html[data-free='f']) .free-tag,
-  :global(html[data-free='j']) .free-tag {
-    display: none;
-  }
-
-  :global(html[data-free='j']) .pre-cta {
-    justify-content: flex-start;
-    gap: 12px;
-    min-height: 66px;
-    padding: 10px 16px 10px 10px;
-    border: 0;
-    background: var(--surface);
-  }
-
-  :global(html[data-free='j']) .pre-ic {
+  .pre-ic {
     display: grid;
+    flex: none;
     place-items: center;
     width: 44px;
     height: 44px;
@@ -388,31 +319,16 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     color: var(--link);
   }
 
-  :global(html[data-free='j']) .pre-lines {
+  .pre-lines {
     display: grid;
     line-height: 1.2;
     text-align: left;
   }
 
-  :global(html[data-free='j']) .pre-sub {
-    display: block;
-    order: -1;
+  .pre-sub {
     color: var(--muted);
     font-size: 0.8125rem;
     font-weight: 500;
-  }
-
-  .free-tag {
-    position: absolute;
-    top: -0.65rem;
-    right: 0.9rem;
-    padding: 2px 9px;
-    border-radius: var(--radius-pill);
-    background: var(--sun-disc);
-    color: #1F2E4A;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
   }
 
   .stack,

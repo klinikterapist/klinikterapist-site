@@ -150,7 +150,7 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();
     // Owner's review 2026-10-19: "Ön Görüşme" with a "Ücretsiz" tag replaces "İlk görüşme nasıl geçer?".
     expect(hero.querySelector('a[href="/on-gorusme/"]')?.text).toContain('Ön Görüşme');
-    expect(hero.querySelector('a[href="/on-gorusme/"] .free-tag')?.text).toBe('Ücretsiz');
+    expect(hero.querySelector('a[href="/on-gorusme/"] .pre-sub')?.text).toBe('Ücretsiz · Online');
     expect(en().querySelector('.home-desk .desktop-hero a[href="/en/intro-call/"]')).toBeTruthy();
     expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')).toBeNull();
     // No membership / response-time line on the desktop hero (owner's review 2026-10-18).
