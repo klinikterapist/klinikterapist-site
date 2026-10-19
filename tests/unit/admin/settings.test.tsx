@@ -87,7 +87,8 @@ describe('settings screens: Plan E fields', () => {
     });
     expect(await screen.findByRole('heading', { name: 'Sık sorulan sorular' })).toBeTruthy();
     expect(screen.getByText('Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.')).toBeTruthy();
-    expect(screen.getAllByLabelText('Soru (Türkçe)')).toHaveLength(5);
+    // The form appears after the file loads; under load that can lag behind the heading.
+    expect(await screen.findAllByLabelText('Soru (Türkçe)')).toHaveLength(5);
     fireEvent.click(screen.getByRole('button', { name: 'Soru ekle' }));
     expect(screen.getAllByLabelText('Soru (Türkçe)')).toHaveLength(6);
     fireEvent.change(screen.getAllByLabelText('Soru (Türkçe)')[5], { target: { value: 'Yeni soru?' } });
