@@ -1,8 +1,9 @@
 /**
  * Sends a booking or intro-call request from the step-by-step form (wizard.ts): the calendar shows
- * the free times of `booking.json` (`data-config`), the last step's button posts one text/plain JSON
- * request (`booking.request`) to the panel's Apps Script URL (`data-endpoint`). No cookies, no third
- * party. Without an endpoint the button stays disabled and the e-mail link in the markup is the way.
+ * the times of `booking.json` (`data-config`; holidays closed) with the taken ones marked "Dolu"
+ * (`booking.busy`, read once from the panel's Apps Script URL), and the last step's button posts one
+ * text/plain JSON request (`booking.request`). No cookies, no third party. Without an endpoint the
+ * button stays disabled and the e-mail link in the markup is the way.
  *
  * Markup contract, besides wizard.ts's:
  *   data-kind="session|intro" data-config='{…}' data-endpoint="…" data-messages='{…}' on the root
@@ -12,7 +13,7 @@
  *   message under the button, [data-done] the thank-you panel (hidden), [data-hide-on-done] parts
  *   to hide after sending
  */
-import { timesFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind } from '../../lib/booking-form';
+import { closedOn, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
 import { mountWizard } from './wizard';
 
 export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string };
@@ -27,7 +28,30 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   const messages = JSON.parse(root.dataset.messages ?? '{}') as BookingMessages;
   const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  const wizard = mountWizard(root, { timesFor: (d) => timesFor(cfg[kind], ymd(d), deps.now()) });
+  let busy: BusyInterval[] = [];
+  const typeNow = () => root.querySelector<HTMLInputElement>('input[name="type"]:checked')?.value;
+  const wizard = mountWizard(root, {
+    slotsFor: (d) => slotsFor(cfg, kind, ymd(d), deps.now(), busy, minutesOf(kind, typeNow())),
+    holidayOf: (d) => closedOn(cfg, ymd(d))?.name ?? null,
+  });
+  // A couple session is longer: the taken times depend on the chosen type.
+  root.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', () => wizard.refresh()));
+
+  /** Reads the taken times; a failure leaves the calendar as booking.json alone (the backend checks again). */
+  const loadBusy = async () => {
+    if (!endpoint) return;
+    try {
+      const res = await deps.fetch(`${endpoint}?action=booking.busy`, { credentials: 'omit' });
+      const out = (await res.json()) as { ok?: boolean; data?: { busy?: BusyInterval[] } };
+      if (out?.ok && Array.isArray(out.data?.busy)) {
+        busy = out.data.busy.filter((b) => typeof b?.start === 'number' && typeof b?.end === 'number');
+        wizard.refresh();
+      }
+    } catch {
+      /* keep the template */
+    }
+  };
+  void loadBusy();
 
   const button = root.querySelector<HTMLButtonElement>('[data-submit]');
   const error = root.querySelector<HTMLElement>('[data-submit-error]');
@@ -75,7 +99,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     if (button.disabled) return;
     say('');
     const input = read();
-    const errors = validateBooking(input, cfg, deps.now());
+    const errors = validateBooking(input, cfg, deps.now(), busy);
     if (errors.slot) {
       say(messages.taken);
       return;
@@ -118,8 +142,12 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
         done.hidden = false;
         done.focus();
       }
+    } else if (result === 'taken') {
+      // Someone was quicker: show the calendar again with the fresh taken times.
+      await loadBusy();
+      say(messages.taken);
     } else {
-      say(result === 'taken' ? messages.taken : messages.failed);
+      say(messages.failed);
     }
   });
   return wizard;

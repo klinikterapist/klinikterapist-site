@@ -16,7 +16,7 @@ function setup(props: Record<string, string> = { OWNER_EMAIL: 'merhaba@klinikter
 }
 
 const session = {
-  kind: 'session', type: 'couple', day: '2026-10-22', time: '14:30', name: 'Ayşe Yılmaz', email: 'Ayse@Example.com', phone: '0532 123 45 67', note: 'Akşamları daha uygun.', consent: true, lang: 'tr',
+  kind: 'session', type: 'couple', day: '2026-10-22', time: '15:00', name: 'Ayşe Yılmaz', email: 'Ayse@Example.com', phone: '0532 123 45 67', note: 'Akşamları daha uygun.', consent: true, lang: 'tr',
 };
 const intro = {
   kind: 'intro', day: '2026-10-24', time: '12:00', name: 'Ali Kaya', email: 'ali@example.com', phone: '05321234567', note: '', consent: true,
@@ -30,17 +30,22 @@ describe('booking.request', () => {
     expect(gas.mails).toHaveLength(2);
     const [owner, visitor] = gas.mails;
     expect(owner).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' });
-    expect(owner.subject).toBe('[klinikterapist] Randevu talebi — Ayşe Yılmaz — 22 Ekim 2026, Perşembe 14:30');
+    expect(owner.subject).toBe('[klinikterapist] Randevu talebi — Ayşe Yılmaz — 22 Ekim 2026, Perşembe 15:00');
     expect(owner.body).toContain('Görüşme türü: Çift terapisi');
     expect(owner.body).toContain('Telefon: 0532 123 45 67');
     expect(owner.body).toContain('Not:\nAkşamları daha uygun.');
     expect(visitor).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Talebiniz alındı – klinikterapist.com' });
-    expect(visitor.body).toContain('Çift terapisi, 22 Ekim 2026, Perşembe, 14:30');
+    expect(visitor.body).toContain('Çift terapisi, 22 Ekim 2026, Perşembe, 15:00');
     // Nothing the visitor typed reaches the acknowledgement.
     expect(visitor.body).not.toContain('Ayşe');
     expect(visitor.body).not.toContain('Akşamları');
-    // Nothing is stored.
-    expect(gas.root.folders.size).toBe(0);
+    // Nothing about the person is stored: the calendar keeps the time, length and kind only.
+    const calendar = gas.root.findFolder('randevular')!.findFile('takvim.json')!.read();
+    expect(JSON.parse(calendar).entries).toEqual([
+      { id: expect.any(String), start: Date.parse('2026-10-22T15:00:00+03:00'), minutes: 60, kind: 'session', type: 'couple', status: 'hold', holdUntil: NOW + 24 * 3600e3 },
+    ]);
+    expect(calendar).not.toMatch(/Ayşe|ayse|0532|Akşam/);
+    expect(owner.body).toContain('Takvime işle: https://klinikterapist.com/admin/#/randevular?ekle=2026-10-22T15:00&tur=couple');
   });
 
   it('an intro request lists the topics and age range for the owner; the acknowledgement follows the page language', () => {
@@ -74,8 +79,10 @@ describe('booking.request', () => {
   it('counts two e-mails per request against the contact form limits', () => {
     const { gas, send } = setup();
     const perEmail = Math.floor(CONTACT_RATE.perEmail / 2);
-    for (let i = 0; i < perEmail; i++) expect(send(session).ok).toBe(true);
-    expect(send(session)).toMatchObject({ ok: false, error: { code: 'bad_request' } });
+    // Different free times: a request holds its time, so the same time twice would be taken.
+    const times = ['10:00', '13:30', '16:30', '18:00'];
+    for (let i = 0; i < perEmail; i++) expect(send({ ...session, time: times[i] }).ok).toBe(true);
+    expect(send({ ...session, time: times[perEmail] })).toMatchObject({ ok: false, error: { code: 'bad_request', message: expect.stringContaining('çok fazla') } });
     expect(gas.mails).toHaveLength(perEmail * 2);
   });
 

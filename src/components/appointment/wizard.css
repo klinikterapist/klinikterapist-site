@@ -811,3 +811,42 @@
 .wz .done:focus {
   outline: none;
 }
+
+/* A booked time stays visible with "Dolu" over it (owner's decision 2026-10-20). */
+.wz .slot-list .slot.is-taken {
+  display: grid;
+  place-content: center;
+  gap: 0;
+  border-style: dashed;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.wz .slot-list .slot.is-taken:hover {
+  border-color: var(--line);
+}
+
+.wz .slot-list .slot.is-taken .slot-time {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.wz .slot-list .slot.is-taken .slot-taken {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* A day whose times are all booked, and a public holiday. */
+.wz .day.is-full {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.wz .day.is-holiday {
+  color: var(--muted);
+  opacity: 0.55;
+  text-decoration: line-through;
+}

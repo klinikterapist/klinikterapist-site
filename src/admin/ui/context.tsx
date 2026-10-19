@@ -19,12 +19,20 @@ export type Route =
   | { name: 'home' }
   | { name: 'posts'; tab: PostsTab }
   | { name: 'trash' }
+  /** `add`: an appointment to put in the calendar, from the request e-mail's link (`?ekle=YYYY-MM-DDTHH:MM&tur=…`). */
+  | { name: 'calendar'; add: { day: string; time: string; type: string } | null }
   | { name: 'post'; key: string }
   | { name: 'settings'; screen: string };
 
 export function parseRoute(hash: string): Route {
   // A trailing slash (#/yazilar/) goes to the same screen.
-  const path = hash.replace(/^#/, '').replace(/(.)\/+$/, '$1');
+  const [rawPath, query = ''] = hash.replace(/^#/, '').split('?');
+  const path = rawPath.replace(/(.)\/+$/, '$1');
+  if (path === '/randevular') {
+    const q = new URLSearchParams(query);
+    const m = (q.get('ekle') ?? '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
+    return { name: 'calendar', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null };
+  }
   let m = path.match(/^\/yazi\/([a-z0-9-]+)$/);
   if (m) return { name: 'post', key: m[1] };
   m = path.match(/^\/ayarlar\/([a-z-]+)$/);

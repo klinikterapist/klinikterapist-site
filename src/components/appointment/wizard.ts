@@ -26,6 +26,9 @@ const TEXT = {
     pickGroup: 'Devam etmek için en az bir seçenek işaretleyin.',
     pickDay: 'Takvimden bir gün seçin.',
     none: 'Bu gün için boş saat yok.',
+    taken: 'Dolu',
+    full: 'Bu günün bütün saatleri dolu.',
+    holiday: 'Resmi tatil',
     notChosen: 'Seçilmedi',
   },
   en: {
@@ -36,13 +39,18 @@ const TEXT = {
     pickGroup: 'Please tick at least one option to continue.',
     pickDay: 'Pick a day in the calendar.',
     none: 'No free times on this day.',
+    taken: 'Booked',
+    full: 'Every time on this day is booked.',
+    holiday: 'Public holiday',
     notChosen: 'Not chosen',
   },
 } as const;
 
 export interface CalendarOptions {
-  /** Free times for a day (empty: the day is not bookable). */
-  timesFor: (day: Date, today: Date) => string[];
+  /** The day's bookable times, each marked taken or not (empty: the day is not bookable). */
+  slotsFor: (day: Date, today: Date) => { time: string; taken: boolean }[];
+  /** The holiday's name when the day is a public holiday (shown on the greyed-out day). */
+  holidayOf?: (day: Date) => string | null;
 }
 
 export type Wizard = {
@@ -50,6 +58,8 @@ export type Wizard = {
   selection(): { day: string | null; time: string | null };
   /** Opens a step (1-based), e.g. the calendar again when the time was taken. */
   show(step: number): void;
+  /** Draws the calendar again (taken times arrived, or the session type changed its length). */
+  refresh(): void;
 };
 
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -68,6 +78,7 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
   let step = 1;
   let slot: string | null = null;
   let chosen: Date | null = null;
+  let redraw = () => {};
 
   const setSum = (key: string, value: string | null, sub?: string) =>
     root.querySelectorAll<HTMLElement>(`[data-sum="${key}"]`).forEach((el) => {
@@ -171,15 +182,29 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
         slotsTitle.textContent = T.pickDay;
         return;
       }
-      const list = cal.timesFor(chosen, today);
-      slotsTitle.textContent = list.length ? cap(chosen.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })) : T.none;
-      for (const time of list) {
+      const list = cal.slotsFor(chosen, today);
+      // A chosen time that has been taken meanwhile is dropped.
+      if (slot && !list.some((s) => s.time === slot && !s.taken)) {
+        slot = null;
+        setSum('time', null);
+      }
+      const label = cap(chosen.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }));
+      slotsTitle.textContent = !list.length ? T.none : list.every((s) => s.taken) ? `${label}: ${T.full}` : label;
+      for (const { time, taken } of list) {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'slot';
-        b.textContent = time;
+        b.className = taken ? 'slot is-taken' : 'slot';
         b.setAttribute('role', 'radio');
         b.setAttribute('aria-checked', String(time === slot));
+        if (taken) {
+          // Shown, not hidden: the visitor sees the time is booked ("Dolu" over it).
+          b.disabled = true;
+          b.setAttribute('aria-label', `${time}, ${T.taken}`);
+          b.append(Object.assign(document.createElement('span'), { className: 'slot-time', textContent: time }), Object.assign(document.createElement('small'), { className: 'slot-taken', textContent: T.taken }));
+          slots.append(b);
+          continue;
+        }
+        b.textContent = time;
         b.addEventListener('click', () => {
           slots.querySelectorAll('.slot').forEach((s) => s.setAttribute('aria-checked', 'false'));
           b.setAttribute('aria-checked', 'true');
@@ -204,12 +229,21 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
         b.type = 'button';
         b.className = 'day';
         b.textContent = String(n);
-        const free = cal.timesFor(d, today).length > 0;
-        b.disabled = !free;
-        if (free) b.classList.add('has-slots');
+        const list = cal.slotsFor(d, today);
+        const open = list.some((s) => !s.taken);
+        const holiday = cal.holidayOf?.(d) ?? null;
+        // A day whose times are all booked can still be opened to see them marked "Dolu".
+        b.disabled = !list.length;
+        if (open) b.classList.add('has-slots');
+        else if (list.length) b.classList.add('is-full');
+        if (holiday && !list.length) {
+          b.classList.add('is-holiday');
+          b.title = holiday;
+        }
         if (d.getTime() === today.getTime()) b.classList.add('is-today');
         if (chosen && d.getTime() === chosen.getTime()) b.setAttribute('aria-pressed', 'true');
-        b.setAttribute('aria-label', d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }));
+        const name = d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+        b.setAttribute('aria-label', holiday && !list.length ? `${name}, ${T.holiday}: ${holiday}` : list.length && !open ? `${name}, ${T.taken}` : name);
         b.addEventListener('click', () => {
           chosen = d;
           slot = null;
@@ -226,7 +260,7 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
 
     const monthHasFree = (m: Date) => {
       const last = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
-      for (let n = 1; n <= last; n++) if (cal.timesFor(new Date(m.getFullYear(), m.getMonth(), n), today).length) return true;
+      for (let n = 1; n <= last; n++) if (cal.slotsFor(new Date(m.getFullYear(), m.getMonth(), n), today).some((s) => !s.taken)) return true;
       return false;
     };
     if (!monthHasFree(month)) month = new Date(month.getFullYear(), month.getMonth() + 1, 1);
@@ -239,6 +273,10 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
       month = new Date(month.getFullYear(), month.getMonth() + 1, 1);
       drawMonth();
     });
+    redraw = () => {
+      drawMonth();
+      drawSlots();
+    };
     drawMonth();
     drawSlots();
     setSum('day', null);
@@ -247,5 +285,5 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
 
   syncSources();
   show(1, false);
-  return { selection: () => ({ day: chosen ? ymd(chosen) : null, time: slot }), show: (n) => show(n) };
+  return { selection: () => ({ day: chosen ? ymd(chosen) : null, time: slot }), show: (n) => show(n), refresh: () => redraw() };
 }

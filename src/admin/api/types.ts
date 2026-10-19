@@ -99,6 +99,21 @@ export type DraftSummary = {
 /** A deleted draft in the panel's trash: removed for good at `purgeAt` (30 days after `deletedAt`). */
 export type TrashItem = DraftSummary & { deletedAt: string; purgeAt: string };
 
+/**
+ * One taken time in the booking calendar: times, length and kind only (no names). `hold`: a request's
+ * 24-hour hold; `confirmed`: put in the calendar by the owner.
+ */
+export type CalendarEntry = {
+  id: string;
+  /** Epoch ms. */
+  start: number;
+  minutes: number;
+  kind: 'session' | 'intro';
+  type?: string;
+  status: 'hold' | 'confirmed';
+  holdUntil?: number;
+};
+
 /** One snapshot of a draft (the stored copy as it was before a later save). */
 export type VersionSummary = { name: string; rev: number; savedAt: string };
 
@@ -132,6 +147,11 @@ export interface Api {
   statsSummary(range: { from: string; to: string }): Promise<StatsSummary>;
   /** Makes sure the backend's hourly trigger (planned publishing) exists. */
   ensureTriggers(): Promise<void>;
+  /** The booking calendar, soonest first. */
+  calendarList(): Promise<{ entries: CalendarEntry[] }>;
+  /** Puts an appointment in the calendar (`day` YYYY-MM-DD, `time` HH:MM, Istanbul). */
+  calendarAdd(input: { day: string; time: string; kind: 'session' | 'intro'; type?: string }): Promise<{ entry: CalendarEntry }>;
+  calendarRemove(id: string): Promise<void>;
 }
 
 export class ApiFailure extends Error {
@@ -168,4 +188,7 @@ export const ACTIONS = {
   getImage: 'images.get',
   statsSummary: 'stats.summary',
   ensureTriggers: 'admin.triggers',
+  calendarList: 'calendar.list',
+  calendarAdd: 'calendar.add',
+  calendarRemove: 'calendar.remove',
 } as const satisfies Record<keyof Api, string>;

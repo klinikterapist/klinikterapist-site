@@ -12,7 +12,8 @@ import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
-import { sendBooking } from './booking';
+import { bookingBusy, config as bookingConfig, sendBooking } from './booking';
+import { addConfirmed, listEntries, removeEntry } from './calendar';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 
@@ -50,6 +51,17 @@ export const ACTIONS: Record<string, Handler> = {
   'images.put': (gas, p) => putImage(gas, p),
   'images.get': (gas, p) => getImage(gas, p),
   'stats.summary': (gas, p) => statsSummary(gas, p),
+  'calendar.list': (gas) => listEntries(gas),
+  'calendar.add': (gas, p) => {
+    const out = addConfirmed(gas, bookingConfig(gas), p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'calendar.remove': (gas, p) => {
+    removeEntry(gas, p);
+    gas.cache.put('booking.busy', '', 1);
+    return {};
+  },
   'admin.triggers': (gas) => {
     gas.triggers.ensureHourly('hourly');
     return {};
@@ -106,6 +118,15 @@ export function hourly() {
 }
 
 export function doGet(e?: { parameter?: Record<string, string> }) {
+  if (e?.parameter?.action === 'booking.busy') {
+    let out: ApiResponse;
+    try {
+      out = ok(bookingBusy(realGas()));
+    } catch {
+      out = fail(new ApiError('internal', INTERNAL_MESSAGE));
+    }
+    return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+  }
   if (e?.parameter?.action === 'stats.reads') {
     let out: ApiResponse;
     try {

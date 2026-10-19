@@ -3,8 +3,9 @@
  * Seeded with the real settings files and the fixture posts. Never shipped: the panel only
  * imports it behind `import.meta.env.DEV`.
  */
-import { ApiFailure, type Api, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
+import { ApiFailure, type Api, type CalendarEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
+import { minutesOf, slotInstant } from '../../lib/booking-form';
 
 const data = import.meta.glob('/src/data/**/*.{json,md}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const posts = import.meta.glob('/tests/fixtures/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -32,6 +33,8 @@ export type MockState = {
   scheduleErrors: Map<string, string>;
   /** How many times the panel asked for the hourly trigger. */
   triggerCalls: number;
+  /** The booking calendar. */
+  calendar: CalendarEntry[];
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
@@ -46,7 +49,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0 };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [] };
   let head = 1;
   let status: SiteStatus = { state: 'success', commitSha: 'c1', url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' };
   let pollsSinceCommit = 0;
@@ -218,6 +221,21 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         return { days, since: all.since };
       }),
     ensureTriggers: () => wait(() => void state.triggerCalls++),
+    calendarList: () => wait(() => ({ entries: [...state.calendar].sort((a, b) => a.start - b.start) })),
+    calendarAdd: ({ day, time, kind, type }) =>
+      wait(() => {
+        const start = slotInstant(day, time);
+        const minutes = minutesOf(kind, type);
+        const end = (e: CalendarEntry) => e.start + (e.minutes + 30) * 60e3;
+        if (state.calendar.some((e) => e.status === 'confirmed' && e.start < start + (minutes + 30) * 60e3 && start < end(e))) {
+          throw new ApiFailure('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
+        }
+        state.calendar = state.calendar.filter((e) => !(e.status === 'hold' && e.start < start + (minutes + 30) * 60e3 && start < end(e)));
+        const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start, minutes, kind, ...(type ? { type } : {}), status: 'confirmed' };
+        state.calendar.push(entry);
+        return { entry };
+      }),
+    calendarRemove: (id) => wait(() => void (state.calendar = state.calendar.filter((e) => e.id !== id))),
   };
 }
 

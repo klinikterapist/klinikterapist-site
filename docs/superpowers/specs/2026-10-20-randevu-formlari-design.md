@@ -34,6 +34,15 @@
 - **Açık rıza metni:** Sahip şimdilik uygun buldu. Site tamamlanınca diğer hukuki metinlerle birlikte avukatına gösterecek.
 - **Ön görüşme ilk adımı:** Sahibin isteğiyle eski dile döndü ("Görüşme kimin için?", "Kendim için / Bireysel terapiyi düşünüyorum"). Yeni seçenekler de aynı birinci tekil dille yazıldı: "Kendim için, uygun ücretle", "Bir gruba katılmak istiyorum", "Yüz yüze görüşmek istiyorum".
 
+## Dolu saatler ve tatiller (sahibin tasarımı, 20 Ekim 2026; uygulandı)
+
+- **Saatler (eski hâli + akşam):** Hafta içi 10.00, 11.00, 13.30, 15.00, 16.30, 18.00, akşam 19.00, 19.20, 19.50, 20.20, 20.50, 21.10 (son seans 22.00'de biter). Hafta sonu ön görüşme 10.00–12.00 ve 13.30–15.30, yarım saatte bir.
+- **Kural:** Bir randevu süresi kadar (bireysel 50, çift 60, erişilebilir 50, ön görüşme 30 dakika) ve ardından 30 dakika dinlenme payı kadar yer tutar. Çakışan saatler takvimde gizlenmez; üzerinde **"Dolu"** yazar ve seçilemez. Bütün saatleri dolu olan gün üstü çizili görünür, ama açılıp dolu saatler görülebilir.
+- **Talep 24 saat tutar** (sahibin seçimi). Gelen talep o saati 24 saat "Dolu" yapar. Sahip onaylamazsa saat kendiliğinden açılır.
+- **Onay:** Sahibe giden e-postada "Takvime işle" bağlantısı var. Bağlantı paneli açar (`#/randevular?ekle=…`), tek düğmeyle onaylanır. Panelde "Randevu takvimi" ekranı var: dolu saatler, onay, silme ve elle ekleme. Onaylı iki randevu çakışamaz.
+- **Tatiller:** Resmi tatiller ve bayramlar kapalı. Arife günleri 13.00'ten sonra kapalı (sahibin seçimi). `booking.json` içinde `closed` listesinde 2026'nın kalanı ve 2027'nin tamamı var. Liste her yıl güncellenmeli; dini bayram tarihleri Diyanet takviminden kontrol edilir.
+- **Gizlilik:** Takvim dosyası (`Drive: Klinikterapist Panel/randevular/takvim.json`) yalnızca başlangıç saati, süre ve tür tutar. Sitenin okuduğu `booking.busy` yalnızca dolu zaman aralıklarını verir, türü bile vermez.
+
 ## Sahibe açık sorular
 
 1. **Açık rıza metni** (ön görüşmede konu seçilince). Taslak: "Seçtiğim konuların ve yazdığım notun, ön görüşmeyi hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt'a e-postayla iletilmesine açık rıza veriyorum." Uygun mu? Yoksa konu sorusu tamamen kaldırılsın mı? (En az veri ilkesine göre kaldırmak da bir seçenek.)

@@ -72,5 +72,8 @@ export function createHttpApi(
     getImage: (key, name) => call(ACTIONS.getImage, { key, name }),
     statsSummary: (range) => call(ACTIONS.statsSummary, range),
     ensureTriggers: () => call(ACTIONS.ensureTriggers, {}).then(() => undefined),
+    calendarList: () => call(ACTIONS.calendarList),
+    calendarAdd: (input) => call(ACTIONS.calendarAdd, input),
+    calendarRemove: (id) => call(ACTIONS.calendarRemove, { id }).then(() => undefined),
   };
 }

@@ -10,13 +10,32 @@ export type BookingKind = 'session' | 'intro';
 
 /** One kind's weekly template: weekday (0 = Sunday … 6 = Saturday) → `HH:MM` start times. */
 export type Availability = { weekdays: Partial<Record<'0' | '1' | '2' | '3' | '4' | '5' | '6', string[]>>; minNoticeHours: number; weeksAhead: number };
-export type BookingConfig = Record<BookingKind, Availability>;
+/** A public holiday: closed all day, or from `from` on (a bayram eve closes at 13:00). */
+export type ClosedDay = { date: string; name: string; from?: string };
+export type BookingConfig = {
+  session: Availability;
+  intro: Availability;
+  /** Rest after every appointment, in minutes: a booking holds its length plus this. */
+  restMinutes: number;
+  closed: ClosedDay[];
+};
 
 export const SESSION_TYPES = [
-  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy' },
-  { id: 'couple', tr: 'Çift terapisi', en: 'Couples therapy' },
-  { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session' },
+  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50 },
+  { id: 'couple', tr: 'Çift terapisi', en: 'Couples therapy', minutes: 60 },
+  { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session', minutes: 50 },
 ] as const;
+
+export const INTRO_MINUTES = 30;
+
+/** How long an appointment lasts (without the rest). */
+export function minutesOf(kind: BookingKind, type?: string): number {
+  if (kind === 'intro') return INTRO_MINUTES;
+  return SESSION_TYPES.find((t) => t.id === type)?.minutes ?? SESSION_TYPES[0].minutes;
+}
+
+/** A taken stretch of time, epoch ms, the rest included: `[start, end)`. */
+export type BusyInterval = { start: number; end: number };
 
 /** Who the intro call is for (the owner's own wording); the owner's e-mail names the therapy it points to. */
 export const INTRO_FOR = [
@@ -91,7 +110,7 @@ export type BookingInput = {
 };
 
 export type BookingField = 'type' | 'slot' | 'name' | 'email' | 'phone' | 'note' | 'consent' | 'forWhom' | 'topics' | 'age' | 'healthConsent';
-export type BookingErrors = Partial<Record<BookingField, 'required' | 'invalid' | 'tooLong'>>;
+export type BookingErrors = Partial<Record<BookingField, 'required' | 'invalid' | 'tooLong' | 'taken'>>;
 
 const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -101,16 +120,42 @@ const HOUR = 3600 * 1000;
 /** The instant of an Istanbul wall time. */
 export const slotInstant = (day: string, time: string) => Date.parse(`${day}T${time}:00+03:00`);
 
-/** Free start times of `day` (`YYYY-MM-DD`) for a kind, at `now` (epoch ms): the template minus too-soon and too-far ones. */
-export function timesFor(av: Availability, day: string, now: number): string[] {
+/** The holiday on `day`, if any. */
+export const closedOn = (cfg: Pick<BookingConfig, 'closed'>, day: string): ClosedDay | null => cfg.closed.find((c) => c.date === day) ?? null;
+
+/**
+ * Bookable start times of `day` (`YYYY-MM-DD`) for a kind, at `now` (epoch ms): the weekly template
+ * minus holidays, a bayram eve's afternoon, and too-soon and too-far times. Taken times stay in.
+ */
+export function timesFor(cfg: BookingConfig, kind: BookingKind, day: string, now: number): string[] {
   if (!DAY_RE.test(day)) return [];
+  const av = cfg[kind];
+  const holiday = closedOn(cfg, day);
+  if (holiday && !holiday.from) return [];
   const weekday = String(new Date(`${day}T12:00:00Z`).getUTCDay()) as keyof Availability['weekdays'];
   const earliest = now + av.minNoticeHours * HOUR;
   const latest = now + av.weeksAhead * 7 * 24 * HOUR;
   return (av.weekdays[weekday] ?? []).filter((t) => {
     if (!TIME_RE.test(t)) return false;
+    if (holiday?.from && t >= holiday.from) return false;
     const at = slotInstant(day, t);
     return at >= earliest && at <= latest;
+  });
+}
+
+/** The stretch an appointment at `day time` holds: its length plus the rest. */
+export function holdOf(day: string, time: string, minutes: number, restMinutes: number): BusyInterval {
+  const start = slotInstant(day, time);
+  return { start, end: start + (minutes + restMinutes) * 60 * 1000 };
+}
+
+export const overlaps = (a: BusyInterval, b: BusyInterval) => a.start < b.end && b.start < a.end;
+
+/** The day's bookable times, each marked taken ("Dolu") when it would overlap a booking. */
+export function slotsFor(cfg: BookingConfig, kind: BookingKind, day: string, now: number, busy: BusyInterval[], minutes = minutesOf(kind)): { time: string; taken: boolean }[] {
+  return timesFor(cfg, kind, day, now).map((time) => {
+    const mine = holdOf(day, time, minutes, cfg.restMinutes);
+    return { time, taken: busy.some((b) => overlaps(mine, b)) };
   });
 }
 
@@ -118,13 +163,14 @@ export function timesFor(av: Availability, day: string, now: number): string[] {
 const phoneDigits = (s: string) => (/^\+?[\d\s().-]+$/.test(s) ? s.replace(/\D/g, '').length : -1);
 
 /** Every rule; the form shows them inline and the backend runs the same check. */
-export function validateBooking(input: BookingInput, cfg: BookingConfig, now: number): BookingErrors {
+export function validateBooking(input: BookingInput, cfg: BookingConfig, now: number, busy: BusyInterval[] = []): BookingErrors {
   const errors: BookingErrors = {};
   const name = input.name.trim();
   const email = input.email.trim();
   const phone = input.phone.trim();
   if (input.kind === 'session' && !SESSION_TYPES.some((t) => t.id === input.type)) errors.type = 'required';
-  if (!timesFor(cfg[input.kind], input.day, now).includes(input.time)) errors.slot = 'invalid';
+  if (!timesFor(cfg, input.kind, input.day, now).includes(input.time)) errors.slot = 'invalid';
+  else if (busy.some((b) => overlaps(holdOf(input.day, input.time, minutesOf(input.kind, input.type), cfg.restMinutes), b))) errors.slot = 'taken';
   if (!name) errors.name = 'required';
   else if (name.length > BOOKING_LIMITS.nameMax) errors.name = 'tooLong';
   if (!email) errors.email = 'required';

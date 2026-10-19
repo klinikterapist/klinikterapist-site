@@ -6,12 +6,15 @@
  * only the chosen kind, day and time, so the form cannot be used to send someone else free text.
  *
  * The free times come from `src/data/booking.json` in the repository (cached for 10 minutes), the
- * same file the site builds its calendar from.
+ * same file the site builds its calendar from; taken times from the booking calendar (calendar.ts).
+ * A request holds its time for 24 hours; the owner's e-mail has a link that opens the panel to put
+ * it in the calendar for good.
  */
 import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 import { read } from './github';
 import { HONEYPOT, allowSend } from './contact';
+import { activeEntries, addHold, busyOf } from './calendar';
 import { parseBooking } from '../../src/lib/schemas';
 import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
@@ -28,7 +31,7 @@ const CONFIG_TTL = 10 * 60;
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
-function config(gas: Gas): BookingConfig {
+export function config(gas: Gas): BookingConfig {
   const cached = gas.cache.get(CONFIG_CACHE);
   if (cached) {
     try {
@@ -69,6 +72,8 @@ function inputOf(p: Record<string, unknown>): BookingInput {
   };
 }
 
+const PANEL_URL = 'https://klinikterapist.com/admin/';
+
 function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: string; body: string } {
   const name = oneLine(i.name);
   const when = `${formatDay(i.day, 'tr')}, ${i.time} (Türkiye saati)`;
@@ -93,8 +98,11 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
     `Gönderim: ${new Date(now).toISOString()}`,
     '',
     ...(i.note.trim() ? ['Not:', i.note.trim(), ''] : []),
+    'Bu saat 24 saat boyunca sitede "Dolu" görünüyor. Onaylarsanız takvime işleyin, yoksa 24 saat sonra kendiliğinden açılır:',
+    `Takvime işle: ${PANEL_URL}#/randevular?ekle=${i.day}T${i.time}&tur=${i.kind === 'intro' ? 'intro' : i.type}`,
+    '',
     '—',
-    'Bu bir taleptir; saat dolu olabilir. Yanıtla dediğinizde e-posta danışana gider; onayı ya da başka bir saat önerisini oradan yazabilirsiniz.',
+    'Yanıtla dediğinizde e-posta danışana gider; onayı ya da başka bir saat önerisini oradan yazabilirsiniz.',
     'Site bu bilgileri saklamaz; yalnızca bu e-postada bulunur.',
   ].join('\n');
   const label = i.kind === 'session' ? 'Randevu talebi' : 'Ön görüşme talebi';
@@ -138,6 +146,26 @@ function visitorMail(i: BookingInput, lang: BookingLang): { subject: string; bod
   };
 }
 
+const BUSY_CACHE = 'booking.busy';
+
+/**
+ * `booking.busy` (public GET): the taken stretches from now on, rest included, as epoch ms — no
+ * kinds, no names. The site's calendar marks the times that would overlap them "Dolu".
+ */
+export function bookingBusy(gas: Gas): { busy: { start: number; end: number }[] } {
+  const cached = gas.cache.get(BUSY_CACHE);
+  if (cached) {
+    try {
+      return JSON.parse(cached) as { busy: { start: number; end: number }[] };
+    } catch {
+      /* compute again */
+    }
+  }
+  const out = { busy: busyOf(activeEntries(gas, gas.now()), config(gas).restMinutes) };
+  gas.cache.put(BUSY_CACHE, JSON.stringify(out), 60);
+  return out;
+}
+
 export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true } {
   if (str(p[HONEYPOT]).trim()) return { sent: true };
 
@@ -146,14 +174,22 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
 
   const input = inputOf(p);
   const now = gas.now();
-  const errors = validateBooking(input, config(gas), now);
-  if (errors.slot && Object.keys(errors).length === 1) throw badRequest(TAKEN);
-  if (Object.keys(errors).length > 0) throw badRequest(INVALID);
+  const cfg = config(gas);
+  const plain = validateBooking(input, cfg, now);
+  if (Object.keys(plain).length > (plain.slot ? 1 : 0)) throw badRequest(INVALID);
+  if (plain.slot) throw badRequest(TAKEN);
 
   const email = input.email.trim().toLowerCase();
   const lang: BookingLang = p.lang === 'en' ? 'en' : 'tr';
   // Two e-mails per request: count both against the shared limits.
   if (!allowSend(gas, email, 2)) throw badRequest(TOO_MANY);
+  // Checked again under the lock, so two visitors cannot take the same time at once.
+  gas.withLock(() => {
+    const busy = busyOf(activeEntries(gas, now), cfg.restMinutes);
+    if (validateBooking(input, cfg, now, busy).slot) throw badRequest(TAKEN);
+    addHold(gas, now, input.day, input.time, input.kind, input.kind === 'session' ? input.type : undefined);
+  });
+  gas.cache.put(BUSY_CACHE, '', 1);
 
   const o = ownerMail(input, lang, now);
   gas.mail.send({ to: owner, replyTo: email, subject: o.subject, body: o.body, name: 'klinikterapist.com randevu formu' });

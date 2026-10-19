@@ -197,7 +197,13 @@ const availabilitySchema = z.object({
   minNoticeHours: z.number().min(0).max(24 * 14),
   weeksAhead: z.number().int().min(1).max(26),
 });
-export const bookingSchema = z.object({ session: availabilitySchema, intro: availabilitySchema });
+const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Tarih YYYY-AA-GG biçiminde olmalı.');
+export const bookingSchema = z.object({
+  session: availabilitySchema,
+  intro: availabilitySchema,
+  restMinutes: z.number().int().min(0).max(120),
+  closed: z.array(z.object({ date: daySchema, name: z.string().min(1), from: hhmm.optional() })),
+});
 
 const seoSchema = z.object({
   siteName: localized,

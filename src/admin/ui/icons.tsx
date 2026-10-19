@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 export {
   BookOpen,
   BookOpenText,
+  CalendarDays,
   Bold,
   CircleCheck as CheckCircle2, // Lucide 1.x renamed it
   CircleCheck,
