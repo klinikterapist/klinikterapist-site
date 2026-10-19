@@ -20,6 +20,10 @@
 - **Bağlantıyı danışana sahip kendisi gönderir.** Panel bağlantıyı gösterir, sahip kopyalayıp kendi e-postasıyla yollar. Talepler sahibe etiketle gelir ("D-7Q3K saat değişikliği istiyor"). Sahip danışana Gmail'den kendisi yanıt verir.
 - **Kapanış:** Sahip panelde "Terapi sona erdi" dediğinde kayıt hemen silinir ve bağlantı çalışmaz olur. Ayrıca 90 gün boyunca hiç randevusu olmayan kayıt da otomatik silinir (önerildi).
 
+## Durum (20 Ekim 2026)
+
+Panel tarafı yapıldı: Randevular › Danışanlar (numara ve haftalık seans), talepten "Randevu takibine geçir", "Terapi sona erdi". Kalan iş, **danışana açılan gizli sayfa** (kodlu bağlantı, iptal ve saat değişikliği talebi, sonlandırma talebi). Bunun için aşağıdaki T2 ve T5 görevleri, yeni `Client` kaydına bir kod özeti eklenerek uygulanacak.
+
 ## Kararlar (öneri)
 
 1. **Kod:** 32 bayt rastgele değer (`Utilities.getUuid` iki kez + HMAC), base64url, yaklaşık 43 karakter. Drive'da kodun kendisi değil, **HMAC özeti** saklanır. Drive dosyası ele geçse bile bağlantılar üretilemez.

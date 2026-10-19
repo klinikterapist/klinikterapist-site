@@ -3,7 +3,7 @@
  * Seeded with the real settings files and the fixture posts. Never shipped: the panel only
  * imports it behind `import.meta.env.DEV`.
  */
-import { ApiFailure, type Api, type CalendarEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
+import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
 import { minutesOf, slotInstant } from '../../lib/booking-form';
 
@@ -35,11 +35,15 @@ export type MockState = {
   triggerCalls: number;
   /** The booking calendar. */
   calendar: CalendarEntry[];
+  requests: BookingRequest[];
+  clients: Client[];
+  /** E-mails the owner sent from Talepler. */
+  sent: { to: string; subject: string; body: string }[];
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
 
-export function createMockApi(opts: { latency?: number; seed?: Record<string, string>; now?: () => number; stats?: StatsSummary } = {}): Api & { state: MockState } {
+export function createMockApi(opts: { latency?: number; seed?: Record<string, string>; now?: () => number; stats?: StatsSummary; demoRequests?: boolean } = {}): Api & { state: MockState } {
   const files = new Map<string, File>();
   const put = (path: string, content: string, encoding: Encoding) => files.set(path, { content, encoding, sha: sha(content) });
   if (opts.seed) {
@@ -49,7 +53,9 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [] };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [] };
+  if (opts.demoRequests) state.requests.push(...demoRequests((opts.now ?? Date.now)()));
+  let clientSeq = 0;
   let head = 1;
   let status: SiteStatus = { state: 'success', commitSha: 'c1', url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' };
   let pollsSinceCommit = 0;
@@ -236,7 +242,65 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         return { entry };
       }),
     calendarRemove: (id) => wait(() => void (state.calendar = state.calendar.filter((e) => e.id !== id))),
+    requestsList: () => wait(() => ({ requests: [...state.requests].sort((a, b) => a.createdAt - b.createdAt) })),
+    requestDecide: ({ id, decision, subject, body }) =>
+      wait(() => {
+        const r = state.requests.find((x) => x.id === id);
+        if (!r) throw new ApiFailure('not_found', 'Bu talep bulunamadı.');
+        if (!subject.trim() || !body.trim()) throw new ApiFailure('bad_request', 'E-postanın konusu ve metni boş olamaz.');
+        state.sent.push({ to: r.email, subject, body });
+        if (decision === 'approve') {
+          const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'confirmed' };
+          state.calendar = [...state.calendar.filter((e) => e.id !== r.holdId), entry];
+          state.requests = state.requests.map((x) => (x.id === id ? { ...x, status: 'approved', calendarId: entry.id } : x));
+        } else {
+          state.calendar = state.calendar.filter((e) => e.id !== r.holdId && e.id !== r.calendarId);
+          state.requests = state.requests.filter((x) => x.id !== id);
+        }
+      }),
+    requestToClient: ({ id, weekday, time, since }) =>
+      wait(() => {
+        const r = state.requests.find((x) => x.id === id);
+        if (!r) throw new ApiFailure('not_found', 'Bu talep bulunamadı.');
+        if (r.status !== 'approved') throw new ApiFailure('bad_request', 'Önce talebi onaylayın.');
+        const session = r.kind === 'session';
+        if (!session && (weekday === undefined || !time || !since)) throw new ApiFailure('bad_request', 'Haftalık seans günü, saati ve başlangıç tarihi gerekli.');
+        const type = session ? (r.type ?? 'individual') : (r.forWhom ?? 'individual');
+        const client: Client = {
+          id: Math.random().toString(36).slice(2, 10),
+          number: `D-${String(++clientSeq).padStart(3, '0')}`,
+          type,
+          weekday: session ? new Date(`${r.day}T12:00:00Z`).getUTCDay() : weekday!,
+          time: session ? r.time : time!,
+          minutes: minutesOf('session', type),
+          since: session ? r.day : since!,
+        };
+        if (session) state.calendar = state.calendar.filter((e) => e.id !== r.calendarId);
+        state.clients.push(client);
+        state.requests = state.requests.filter((x) => x.id !== id);
+        return { client };
+      }),
+    clientsList: () => wait(() => ({ clients: [...state.clients].sort((a, b) => a.number.localeCompare(b.number)) })),
+    clientEnd: (id) => wait(() => void (state.clients = state.clients.filter((c) => c.id !== id))),
   };
+}
+
+/** Two made-up requests (a session and an intro call), so Talepler has something to show in dev. */
+function demoRequests(now: number): BookingRequest[] {
+  const day = (n: number) => {
+    const d = new Date(now + n * 24 * 3600e3);
+    while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+  const weekend = (() => {
+    const d = new Date(now + 3 * 24 * 3600e3);
+    while (d.getUTCDay() !== 6) d.setUTCDate(d.getUTCDate() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  return [
+    { id: 'demo-1', createdAt: now - 3 * 3600e3, kind: 'session', type: 'individual', day: day(3), time: '19:20', name: 'Ayşe Örnek', email: 'ayse@example.com', phone: '0532 000 00 00', note: 'Akşam saatleri benim için daha uygun.', lang: 'tr', status: 'pending', holdId: 'demo-hold-1' },
+    { id: 'demo-2', createdAt: now - 3600e3, kind: 'intro', day: weekend, time: '11:00', name: 'Mehmet Deneme', email: 'mehmet@example.com', phone: '0533 000 00 00', note: '', lang: 'tr', forWhom: 'couple', topics: [2, 3], before: 'no', age: 2, status: 'pending', holdId: 'demo-hold-2' },
+  ];
 }
 
 /** Deterministic demo counts for the last 120 days, so the dashboard has something to show in dev. */

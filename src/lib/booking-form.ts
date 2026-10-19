@@ -151,6 +151,26 @@ export function holdOf(day: string, time: string, minutes: number, restMinutes: 
 
 export const overlaps = (a: BusyInterval, b: BusyInterval) => a.start < b.end && b.start < a.end;
 
+/** A client's weekly session (Randevu takibi): same weekday and time every week from `since` on. */
+export type WeeklySlot = { weekday: number; time: string; minutes: number; since: string };
+
+/** The stretches the weekly sessions hold between `from` and `to` (epoch ms), rest included. */
+export function weeklyBusy(slots: WeeklySlot[], restMinutes: number, from: number, to: number): BusyInterval[] {
+  const out: BusyInterval[] = [];
+  const DAY = 24 * HOUR;
+  // Istanbul days: shift by +3 h so the UTC date is the Istanbul date.
+  for (let t = from - DAY; t <= to + DAY; t += DAY) {
+    const day = new Date(t + 3 * HOUR).toISOString().slice(0, 10);
+    const weekday = new Date(`${day}T12:00:00Z`).getUTCDay();
+    for (const s of slots) {
+      if (s.weekday !== weekday || day < s.since) continue;
+      const hold = holdOf(day, s.time, s.minutes, restMinutes);
+      if (hold.end > from && hold.start < to) out.push(hold);
+    }
+  }
+  return out;
+}
+
 /** The day's bookable times, each marked taken ("Dolu") when it would overlap a booking. */
 export function slotsFor(cfg: BookingConfig, kind: BookingKind, day: string, now: number, busy: BusyInterval[], minutes = minutesOf(kind)): { time: string; taken: boolean }[] {
   return timesFor(cfg, kind, day, now).map((time) => {

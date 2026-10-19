@@ -43,6 +43,16 @@
 - **Tatiller:** Resmi tatiller ve bayramlar kapalı. Arife günleri 13.00'ten sonra kapalı (sahibin seçimi). `booking.json` içinde `closed` listesinde 2026'nın kalanı ve 2027'nin tamamı var. Liste her yıl güncellenmeli; dini bayram tarihleri Diyanet takviminden kontrol edilir.
 - **Gizlilik:** Takvim dosyası (`Drive: Klinikterapist Panel/randevular/takvim.json`) yalnızca başlangıç saati, süre ve tür tutar. Sitenin okuduğu `booking.busy` yalnızca dolu zaman aralıklarını verir, türü bile vermez.
 
+## Panelde Talepler, Takvim, Danışanlar (sahibin tasarımı, 20 Ekim 2026; uygulandı)
+
+- **Değişen karar:** Talepler artık panelde görünüyor, bu yüzden kişinin bilgileri karar verilene kadar Drive'da saklanıyor (`randevular/talepler.json`). Sahibin seçimi: reddedilen ya da iptal edilen talepler e-posta gidince silinir; onaylananlar "Randevu takibine geçir" denince silinir; hiçbir talep 30 günden uzun tutulmaz.
+- **Talepler sekmesi:** Her talepte Onayla, Uygun değilim ve İptal et düğmeleri var. Her biri kişiye özel, sayfanın dilinde hazır bir e-posta açar ("Sayın Ad Soyad, … tarihinde … talebiniz onaylanmıştır"; ön görüşmede konular da yazar). Sahip metni düzeltip gönderir. "Uygun değilim" e-postası kişiyi sitedeki takvime yönlendirir.
+- **Randevu takibine geçir:** Randevu talebinde kişinin seçtiği gün ve saat haftalık seans olur. Ön görüşmede sahip gün, saat ve ilk seans tarihini seçer. Kişinin bütün bilgileri silinir, yerine D-001, D-002 … numarası verilir (`randevular/danisanlar.json`). Haftalık seans her hafta takvimi doldurur; sitede o saatler "Dolu" görünür.
+- **Takvim sekmesi:** Aylık görünümde her günün doluluk oranı ve ayın tatilleri küçük notla görünür. Bir güne tıklanınca o günün randevuları ve haftalık seansları listelenir. Elle ekleme de burada.
+- **Danışanlar sekmesi:** Danışan numarası ve haftalık seans görünür; "Terapi sona erdi" ile danışan kaldırılır.
+- **Sitede:** Takvimin altında o ayın tatilleri küçük yazıyla yer alır.
+- **Aydınlatma paragrafı (güncel taslak):** "Randevu ve ön görüşme talepleri: Formda yazdığınız bilgiler talebinizi yanıtlamak amacıyla bana e-postayla iletilir ve yanıtlanana kadar, en fazla 30 gün, Google hesabımda saklanır. Talebiniz reddedilir ya da iptal edilirse hemen silinir. Terapiye başladığınızda adınız ve iletişim bilgileriniz bu sistemden silinir; randevularınız yalnızca bir danışan numarasıyla takip edilir." (Avukat onayı bekliyor.)
+
 ## Sahibe açık sorular
 
 1. **Açık rıza metni** (ön görüşmede konu seçilince). Taslak: "Seçtiğim konuların ve yazdığım notun, ön görüşmeyi hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt'a e-postayla iletilmesine açık rıza veriyorum." Uygun mu? Yoksa konu sorusu tamamen kaldırılsın mı? (En az veri ilkesine göre kaldırmak da bir seçenek.)

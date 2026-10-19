@@ -73,7 +73,7 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
         </Button>
         <ul>
           {link('#/yazilar', 'Yazılar', FileText)}
-          {link('#/randevular', 'Randevu takvimi', CalendarDays)}
+          {link('#/randevular', 'Randevular', CalendarDays)}
           {link('#/cop-kutusu', 'Çöp kutusu', Trash2)}
         </ul>
         <p className="nav-group">Site ayarları</p>

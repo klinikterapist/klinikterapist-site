@@ -75,5 +75,10 @@ export function createHttpApi(
     calendarList: () => call(ACTIONS.calendarList),
     calendarAdd: (input) => call(ACTIONS.calendarAdd, input),
     calendarRemove: (id) => call(ACTIONS.calendarRemove, { id }).then(() => undefined),
+    requestsList: () => call(ACTIONS.requestsList),
+    requestDecide: (input) => call(ACTIONS.requestDecide, input).then(() => undefined),
+    requestToClient: (input) => call(ACTIONS.requestToClient, input),
+    clientsList: () => call(ACTIONS.clientsList),
+    clientEnd: (id) => call(ACTIONS.clientEnd, { id }).then(() => undefined),
   };
 }

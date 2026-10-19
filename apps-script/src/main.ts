@@ -14,6 +14,7 @@ import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, lis
 import { sendContact } from './contact';
 import { bookingBusy, config as bookingConfig, sendBooking } from './booking';
 import { addConfirmed, listEntries, removeEntry } from './calendar';
+import { decideRequest, endClient, listClients, listRequests, requestToClient } from './requests';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 
@@ -61,6 +62,23 @@ export const ACTIONS: Record<string, Handler> = {
     removeEntry(gas, p);
     gas.cache.put('booking.busy', '', 1);
     return {};
+  },
+  'requests.list': (gas) => listRequests(gas),
+  'requests.decide': (gas, p) => {
+    const out = decideRequest(gas, bookingConfig(gas), p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'requests.toClient': (gas, p) => {
+    const out = requestToClient(gas, bookingConfig(gas), p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'clients.list': (gas) => listClients(gas),
+  'clients.end': (gas, p) => {
+    const out = endClient(gas, p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
   },
   'admin.triggers': (gas) => {
     gas.triggers.ensureHourly('hourly');

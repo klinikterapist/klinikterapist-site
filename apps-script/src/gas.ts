@@ -142,6 +142,8 @@ function toResult(res: GoogleAppsScript.URL_Fetch.HTTPResponse): FetchResult {
   return { code: res.getResponseCode(), text: res.getContentText(), headers };
 }
 
+let lockDepth = 0;
+
 export function realGas(): Gas {
   const props = PropertiesService.getScriptProperties();
   const cache = CacheService.getScriptCache();
@@ -155,12 +157,17 @@ export function realGas(): Gas {
     },
     props: { get: (k) => props.getProperty(k), set: (k, v) => void props.setProperty(k, v), del: (k) => void props.deleteProperty(k) },
     cache: { get: (k) => cache.get(k), put: (k, v, ttl) => cache.put(k, v, ttl) },
+    // Re-entrant: an inner withLock (a calendar change inside a request's lock) must not release
+    // the outer lock early, which LockService would do.
     withLock(fn) {
+      if (lockDepth > 0) return fn();
       const lock = LockService.getScriptLock();
       lock.waitLock(30000);
+      lockDepth++;
       try {
         return fn();
       } finally {
+        lockDepth--;
         lock.releaseLock();
       }
     },

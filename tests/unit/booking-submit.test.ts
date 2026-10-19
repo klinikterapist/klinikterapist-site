@@ -15,7 +15,7 @@ function markup(endpoint: string | null) {
     <section data-step="1"><h2>Tür</h2><input type="radio" name="type" value="individual" checked /></section>
     <section data-step="2" data-need="slot" hidden><h2>Gün</h2>
       <button data-cal-prev></button><span data-cal-title></span><button data-cal-next></button>
-      <div data-cal-days></div><p data-slots-title></p><div data-slots></div>
+      <div data-cal-days></div><ul data-cal-note hidden></ul><p data-slots-title></p><div data-slots></div>
       <p data-step-error hidden></p></section>
     <section data-step="3" hidden><h2>Bilgiler</h2>
       <input name="name" required /><input name="email" type="email" required /><input name="phone" required />
@@ -76,6 +76,11 @@ describe('mountBookingForm', () => {
     // Bayramı); the 28th is the eve: open in the morning.
     expect(free).toEqual(['21', '22', '23', '26', '27', '28', '30']);
     expect(document.querySelector('.day.is-holiday')?.getAttribute('aria-label')).toContain('Resmi tatil: Cumhuriyet Bayramı');
+    // The month's holidays in small type under the calendar.
+    expect([...document.querySelectorAll('[data-cal-note] li')].map((li) => li.textContent)).toEqual([
+      '28 Ekim: Cumhuriyet Bayramı arifesi (13.00’ten sonra kapalı)',
+      '29 Ekim: Cumhuriyet Bayramı (kapalı)',
+    ]);
   });
 
   it('marks the times a booking holds as "Dolu", read from booking.busy', async () => {

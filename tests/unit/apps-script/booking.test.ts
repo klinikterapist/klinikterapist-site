@@ -45,7 +45,7 @@ describe('booking.request', () => {
       { id: expect.any(String), start: Date.parse('2026-10-22T15:00:00+03:00'), minutes: 60, kind: 'session', type: 'couple', status: 'hold', holdUntil: NOW + 24 * 3600e3 },
     ]);
     expect(calendar).not.toMatch(/Ayşe|ayse|0532|Akşam/);
-    expect(owner.body).toContain('Takvime işle: https://klinikterapist.com/admin/#/randevular?ekle=2026-10-22T15:00&tur=couple');
+    expect(owner.body).toContain('Talepler: https://klinikterapist.com/admin/#/randevular');
   });
 
   it('an intro request lists the topics and age range for the owner; the acknowledgement follows the page language', () => {

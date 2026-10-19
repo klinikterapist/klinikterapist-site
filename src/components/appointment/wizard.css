@@ -850,3 +850,18 @@
   opacity: 0.55;
   text-decoration: line-through;
 }
+
+/* The month's holidays, in small type under the calendar. */
+.wz .cal-note {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+.wz .cal-note li::before {
+  content: '• ';
+}

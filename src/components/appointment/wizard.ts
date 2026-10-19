@@ -51,6 +51,8 @@ export interface CalendarOptions {
   slotsFor: (day: Date, today: Date) => { time: string; taken: boolean }[];
   /** The holiday's name when the day is a public holiday (shown on the greyed-out day). */
   holidayOf?: (day: Date) => string | null;
+  /** Short lines about the month's holidays, shown under the calendar (owner's request 2026-10-20). */
+  holidaysIn?: (month: Date) => string[];
 }
 
 export type Wizard = {
@@ -256,6 +258,12 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
         days.append(b);
       }
       prev.disabled = month <= new Date(today.getFullYear(), today.getMonth(), 1);
+      const note = root.querySelector<HTMLElement>('[data-cal-note]');
+      if (note) {
+        const lines = cal.holidaysIn?.(month) ?? [];
+        note.replaceChildren(...lines.map((l) => Object.assign(document.createElement('li'), { textContent: l })));
+        note.hidden = !lines.length;
+      }
     };
 
     const monthHasFree = (m: Date) => {

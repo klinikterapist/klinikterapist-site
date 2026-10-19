@@ -33,6 +33,16 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   const wizard = mountWizard(root, {
     slotsFor: (d) => slotsFor(cfg, kind, ymd(d), deps.now(), busy, minutesOf(kind, typeNow())),
     holidayOf: (d) => closedOn(cfg, ymd(d))?.name ?? null,
+    holidaysIn: (m) => {
+      const prefix = ymd(m).slice(0, 7);
+      return cfg.closed
+        .filter((c) => c.date.startsWith(prefix))
+        .map((c) => {
+          const day = new Date(`${c.date}T12:00:00Z`).toLocaleDateString(lang === 'en' ? 'en-GB' : 'tr-TR', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+          const when = c.from ? (lang === 'en' ? `closed from ${c.from.replace(':', '.')}` : `${c.from.replace(':', '.')}’ten sonra kapalı`) : lang === 'en' ? 'closed' : 'kapalı';
+          return `${day}: ${c.name} (${when})`;
+        });
+    },
   });
   // A couple session is longer: the taken times depend on the chosen type.
   root.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', () => wizard.refresh()));

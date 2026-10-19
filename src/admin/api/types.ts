@@ -114,6 +114,39 @@ export type CalendarEntry = {
   holdUntil?: number;
 };
 
+/**
+ * A request sent from the site's booking or intro-call form, kept in the owner's Drive until the
+ * owner decides (owner's decision 2026-10-20): declined or cancelled ones are deleted when the
+ * e-mail goes; approved ones when the person moves to Randevu takibi; any of them after 30 days.
+ */
+export type BookingRequest = {
+  id: string;
+  createdAt: number;
+  kind: 'session' | 'intro';
+  type?: string;
+  day: string;
+  time: string;
+  name: string;
+  email: string;
+  phone: string;
+  note: string;
+  lang: 'tr' | 'en';
+  forWhom?: string;
+  topics?: number[];
+  before?: 'yes' | 'no' | '';
+  age?: number;
+  status: 'pending' | 'approved';
+  /** The 24-hour hold the request put in the calendar. */
+  holdId: string;
+  /** The calendar entry made when it was approved. */
+  calendarId?: string;
+};
+
+export type RequestDecision = 'approve' | 'unavailable' | 'cancel';
+
+/** A client in Randevu takibi: a number and a weekly session, nothing that names them. */
+export type Client = { id: string; number: string; type: string; weekday: number; time: string; minutes: number; since: string };
+
 /** One snapshot of a draft (the stored copy as it was before a later save). */
 export type VersionSummary = { name: string; rev: number; savedAt: string };
 
@@ -152,6 +185,15 @@ export interface Api {
   /** Puts an appointment in the calendar (`day` YYYY-MM-DD, `time` HH:MM, Istanbul). */
   calendarAdd(input: { day: string; time: string; kind: 'session' | 'intro'; type?: string }): Promise<{ entry: CalendarEntry }>;
   calendarRemove(id: string): Promise<void>;
+  /** Requests from the site, oldest first. */
+  requestsList(): Promise<{ requests: BookingRequest[] }>;
+  /** Sends the owner's (edited) e-mail to the person and applies the decision. */
+  requestDecide(input: { id: string; decision: RequestDecision; subject: string; body: string }): Promise<void>;
+  /** Moves an approved request to Randevu takibi: its personal data is deleted, a client number is made. */
+  requestToClient(input: { id: string; weekday?: number; time?: string; since?: string }): Promise<{ client: Client }>;
+  clientsList(): Promise<{ clients: Client[] }>;
+  /** Therapy ended: the client and their weekly session are removed. */
+  clientEnd(id: string): Promise<void>;
 }
 
 export class ApiFailure extends Error {
@@ -191,4 +233,9 @@ export const ACTIONS = {
   calendarList: 'calendar.list',
   calendarAdd: 'calendar.add',
   calendarRemove: 'calendar.remove',
+  requestsList: 'requests.list',
+  requestDecide: 'requests.decide',
+  requestToClient: 'requests.toClient',
+  clientsList: 'clients.list',
+  clientEnd: 'clients.end',
 } as const satisfies Record<keyof Api, string>;

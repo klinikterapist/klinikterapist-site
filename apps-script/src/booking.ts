@@ -14,7 +14,8 @@ import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 import { read } from './github';
 import { HONEYPOT, allowSend } from './contact';
-import { activeEntries, addHold, busyOf } from './calendar';
+import { addHold } from './calendar';
+import { allBusy, saveRequest } from './requests';
 import { parseBooking } from '../../src/lib/schemas';
 import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
@@ -98,8 +99,8 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
     `Gönderim: ${new Date(now).toISOString()}`,
     '',
     ...(i.note.trim() ? ['Not:', i.note.trim(), ''] : []),
-    'Bu saat 24 saat boyunca sitede "Dolu" görünüyor. Onaylarsanız takvime işleyin, yoksa 24 saat sonra kendiliğinden açılır:',
-    `Takvime işle: ${PANEL_URL}#/randevular?ekle=${i.day}T${i.time}&tur=${i.kind === 'intro' ? 'intro' : i.type}`,
+    'Bu saat 24 saat boyunca sitede "Dolu" görünüyor. Panelde Talepler ekranından onaylayın ya da yanıtlayın; karar vermezseniz saat 24 saat sonra kendiliğinden açılır:',
+    `Talepler: ${PANEL_URL}#/randevular`,
     '',
     '—',
     'Yanıtla dediğinizde e-posta danışana gider; onayı ya da başka bir saat önerisini oradan yazabilirsiniz.',
@@ -161,7 +162,7 @@ export function bookingBusy(gas: Gas): { busy: { start: number; end: number }[] 
       /* compute again */
     }
   }
-  const out = { busy: busyOf(activeEntries(gas, gas.now()), config(gas).restMinutes) };
+  const out = { busy: allBusy(gas, config(gas), gas.now()) };
   gas.cache.put(BUSY_CACHE, JSON.stringify(out), 60);
   return out;
 }
@@ -185,9 +186,9 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   if (!allowSend(gas, email, 2)) throw badRequest(TOO_MANY);
   // Checked again under the lock, so two visitors cannot take the same time at once.
   gas.withLock(() => {
-    const busy = busyOf(activeEntries(gas, now), cfg.restMinutes);
-    if (validateBooking(input, cfg, now, busy).slot) throw badRequest(TAKEN);
-    addHold(gas, now, input.day, input.time, input.kind, input.kind === 'session' ? input.type : undefined);
+    if (validateBooking(input, cfg, now, allBusy(gas, cfg, now)).slot) throw badRequest(TAKEN);
+    const hold = addHold(gas, now, input.day, input.time, input.kind, input.kind === 'session' ? input.type : undefined);
+    saveRequest(gas, input, lang, hold.id);
   });
   gas.cache.put(BUSY_CACHE, '', 1);
 

@@ -15,7 +15,7 @@ export default function AdminRoot() {
     const store = createSessionStore(window.localStorage);
     if (import.meta.env.DEV && new URLSearchParams(location.search).has('mock')) {
       import('../api/mock').then(({ createMockApi }) =>
-        setReady({ api: createMockApi({ latency: 300 }), store, config: { ...ADMIN_CONFIG, apiUrl: MOCK_API_URL, googleClientId: 'mock' } }),
+        setReady({ api: createMockApi({ latency: 300, demoRequests: true }), store, config: { ...ADMIN_CONFIG, apiUrl: MOCK_API_URL, googleClientId: 'mock' } }),
       );
       return;
     }
