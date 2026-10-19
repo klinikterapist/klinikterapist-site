@@ -84,8 +84,10 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions) {
     const h = panels[n - 1].querySelector<HTMLElement>('h2');
     h?.setAttribute('tabindex', '-1');
     h?.focus({ preventScroll: true });
-    const top = root.getBoundingClientRect().top + window.scrollY - 16;
-    if (window.scrollY > top) window.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    // Bring the stepper to the top of the screen, so the new step is what the visitor sees.
+    const anchor = root.querySelector('.stepper') ?? root;
+    const top = anchor.getBoundingClientRect().top + window.scrollY - 12;
+    if (Math.abs(window.scrollY - top) > 8) window.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   };
 
   /** Checks the current step; shows the message and marks the fields when something is missing. */

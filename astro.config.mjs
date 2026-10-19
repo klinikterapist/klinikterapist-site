@@ -16,6 +16,9 @@ export default defineConfig({
   site,
   trailingSlash: 'always',
   build: { format: 'directory' },
+  // Astro's own icon bar at the bottom of dev pages sat on top of the booking form's sticky
+  // "Devam" button, and a tap there opened its tools instead (owner's report 2026-10-19).
+  devToolbar: { enabled: false },
   markdown: { processor: satteri({ mdastPlugins: [figurePlugin] }) },
   i18n: {
     locales: ['tr', 'en'],

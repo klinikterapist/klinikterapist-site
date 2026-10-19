@@ -177,6 +177,12 @@
   font-weight: 600;
 }
 
+/* The site has no global [hidden] rule, so every element given a display needs its own. */
+.wz .step-error[hidden],
+.wz [data-step][hidden] {
+  display: none;
+}
+
 /* Choice cards: big tappable rows, the native radio kept for keyboard and screen readers. */
 .wz .types {
   display: grid;
@@ -417,7 +423,8 @@
   transform: translateX(-50%);
 }
 
-.wz .cal-days .day[aria-pressed='true'] {
+.wz .cal-days .day[aria-pressed='true'],
+.wz .cal-days .day[aria-pressed='true']:hover {
   background: var(--btn-bg);
   color: var(--btn-text);
 }
