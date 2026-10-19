@@ -1,5 +1,10 @@
 name: Deploy to GitHub Pages
 
+# Where the built site goes: GitHub Pages (default) or Cloudflare Pages once the repository
+# variable DEPLOY_TARGET is set to "cloudflare" (secrets CLOUDFLARE_API_TOKEN and
+# CLOUDFLARE_ACCOUNT_ID; see docs/kurulum/cloudflare-gecis.md). The build stays here either way,
+# so the panel's "Yayında" check (it watches this workflow) keeps working.
+
 on:
   push:
     branches: [main]
@@ -34,6 +39,7 @@ jobs:
       - name: Launch check - fails while placeholders remain (yer tutucu kontrolu)
         run: npm run check:launch
       - uses: actions/configure-pages@v6
+        if: vars.DEPLOY_TARGET != 'cloudflare'
       - name: Read counts (never fails the build)
         run: node scripts/fetch-read-counts.mjs
       - name: Build site
@@ -41,11 +47,19 @@ jobs:
         env:
           SITE_URL: https://klinikterapist.com
       - uses: actions/upload-pages-artifact@v5
+        if: vars.DEPLOY_TARGET != 'cloudflare'
         with:
           path: dist
+      - name: Deploy to Cloudflare Pages
+        if: vars.DEPLOY_TARGET == 'cloudflare' && github.ref == 'refs/heads/main'
+        run: npx --yes wrangler@4.146.0 pages deploy dist --project-name=klinikterapist --branch=main --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy:
     needs: build
+    if: vars.DEPLOY_TARGET != 'cloudflare'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
