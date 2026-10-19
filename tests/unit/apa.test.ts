@@ -146,6 +146,16 @@ describe('citationText', () => {
     expect(citationText(cite(['b']), [b, a], 'en')).toBe('(Ray, 2004b)');
     expect(citationText(cite(['a']), [b, a], 'en')).toBe('(Ray, 2004a)');
   });
+  it('same surname, different first authors: initials, not 2014a/b (APA 8.20)', () => {
+    const jt: Reference = { id: 'jt', type: 'book', authors: [{ family: 'Taylor', given: 'Jean M.' }, { family: 'Neimeyer', given: 'R.' }], year: 2014, title: 'Grief' };
+    const tt: Reference = { id: 'tt', type: 'book', authors: [{ family: 'Taylor', given: 'Tom' }], year: 2014, title: 'Loss' };
+    const refs = [jt, tt];
+    expect(citationText(cite(['jt']), refs, 'en')).toBe('(J. M. Taylor & Neimeyer, 2014)');
+    expect(citationText(cite(['tt']), refs, 'en')).toBe('(T. Taylor, 2014)');
+    expect(citationText(cite(['jt', 'tt']), refs, 'tr')).toBe('(J. M. Taylor ve Neimeyer, 2014; T. Taylor, 2014)');
+    // one Taylor alone: no initials
+    expect(citationText(cite(['tt']), [tt], 'en')).toBe('(Taylor, 2014)');
+  });
   it('no author uses the title; organisation author in full', () => {
     const t: Reference = { id: 't', type: 'book', authors: [], year: 2022, title: 'Mental health' };
     const o: Reference = { id: 'o', type: 'book', authors: [{ literal: 'American Psychiatric Association' }], year: 2013, title: 'DSM' };

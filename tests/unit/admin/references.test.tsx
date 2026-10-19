@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { PostEditor } from '../../../src/admin/ui/editor/PostEditor';
-import { Citation, canRemoveReference } from '../../../src/admin/ui/editor/Citation';
+import { Citation, adoptCitedReferences, canRemoveReference } from '../../../src/admin/ui/editor/Citation';
 import { placeMenu } from '../../../src/admin/ui/editor/CitationMenu';
 import { Editor as CoreEditor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -475,5 +475,17 @@ describe('invalid citations in a stored draft (Task 10 carry-over)', () => {
     await waitFor(() => expect(editorText()).toContain('(Ray, 2004)'));
     expect(editorText()).toContain('[geçersiz atıf]');
     expect(screen.getByText(/kelime · /)).toBeTruthy();
+  });
+});
+
+describe('adoptCitedReferences', () => {
+  const ray: Reference = { id: 'ray2004', type: 'article', authors: [{ family: 'Ray', given: 'O.' }], year: 2004, title: 'Mind' };
+  const doc: JSONContent = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: false } }] }] };
+  it('a citation pasted from the other language takes its reference along', () => {
+    expect(adoptCitedReferences(doc, [], [ray])).toEqual([ray]);
+  });
+  it('nothing to do when the reference is already here or nowhere', () => {
+    expect(adoptCitedReferences(doc, [ray], [ray])).toBeNull();
+    expect(adoptCitedReferences(doc, [], [])).toBeNull();
   });
 });

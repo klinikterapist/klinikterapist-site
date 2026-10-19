@@ -21,7 +21,8 @@ export type Route =
   | { name: 'settings'; screen: string };
 
 export function parseRoute(hash: string): Route {
-  const path = hash.replace(/^#/, '');
+  // A trailing slash (#/yazilar/) goes to the same screen.
+  const path = hash.replace(/^#/, '').replace(/(.)\/+$/, '$1');
   let m = path.match(/^\/yazi\/([a-z0-9-]+)$/);
   if (m) return { name: 'post', key: m[1] };
   m = path.match(/^\/ayarlar\/([a-z-]+)$/);

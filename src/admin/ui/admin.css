@@ -624,15 +624,29 @@ textarea.k-input {
     align-items: start;
   }
 
+  /* A column, so the theme switch and "Çıkış yap" (ul.nav-end) sit at the bottom on tall screens. */
   .panel-nav {
     position: sticky;
     top: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
     max-height: 100vh;
     overflow-y: auto;
     border-right: 1px solid var(--p-border);
     border-bottom: 0;
+  }
+
+  .panel-nav > * {
+    flex-shrink: 0;
+  }
+
+  .panel-nav > ul:has(+ .nav-end) {
+    margin-bottom: var(--space-4);
+  }
+
+  .panel-nav > .nav-end {
+    margin-top: auto !important;
   }
 
   .panel-main {
@@ -1460,6 +1474,15 @@ textarea.k-input {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Finger-sized on touch screens (iPhone): 44 × 44, as Apple recommends. */
+@media (pointer: coarse) {
+  .ed-tool,
+  .lang-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 .ed-tool:disabled {

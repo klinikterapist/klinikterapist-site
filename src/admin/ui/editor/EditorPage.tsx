@@ -28,6 +28,7 @@ import { PreviewDialog } from './PreviewDialog';
 import { clearBackup, readBackup, useAutosave, type AutosaveStatus } from './useAutosave';
 import { scoreTone, SeoPanel, useDebounced } from './SeoPanel';
 import { VersionsDialog } from './VersionsDialog';
+import { adoptCitedReferences } from './Citation';
 import { restoreLang } from '../../lib/versions';
 
 type Loaded = { draft: Draft; live: LoadedPost | null; categories: Category[]; siteName: Record<Lang, string> | null; others: LoadedPost[]; restore: Draft | null; inDrive: boolean };
@@ -159,7 +160,16 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const words = useMemo(() => countWords(markdown), [markdown]);
   const minutes = useMemo(() => readingTime(markdown), [markdown]);
 
-  const onLang = useCallback((patch: Partial<LangFields>) => update((d) => ({ ...d, [lang]: { ...d[lang], ...patch } })), [lang, update]);
+  const onLang = useCallback(
+    (patch: Partial<LangFields>) =>
+      update((d) => {
+        const next = { ...d[lang], ...patch };
+        // A citation pasted from the other language brings its reference along.
+        const adopted = patch.doc ? adoptCitedReferences(next.doc, next.references, d[lang === 'tr' ? 'en' : 'tr'].references) : null;
+        return { ...d, [lang]: adopted ? { ...next, references: adopted } : next };
+      }),
+    [lang, update],
+  );
   const keywordsOf = useCallback((l: Lang) => loaded.others.map((p) => p[l].fm.focusKeyword).filter(Boolean), [loaded.others]);
   const otherKeywords = useMemo(() => keywordsOf(lang), [keywordsOf, lang]);
   // Scores for the rail dot and the checklist; debounced like the SEO panel.

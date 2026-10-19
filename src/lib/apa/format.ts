@@ -52,7 +52,10 @@ export function sentenceCase(title: string, lang?: Lang): string {
 
 /* ---------- years, disambiguation ---------- */
 
-const authorKey = (ref: Reference) => (ref.authors.length ? ref.authors.map(familyOf).join('|') : ref.title);
+const initialsOf = (p: Person) => ('given' in p && p.given ? initials(p.given) : '');
+/** Same people: surname and initials (APA 8.19–8.20; J. Taylor and T. Taylor are two authors, not 2014a/b). */
+const authorKey = (ref: Reference) =>
+  ref.authors.length ? ref.authors.map((p) => `${familyOf(p)}/${initialsOf(p)}`).join('|') : ref.title;
 const sameAuthorYear = (a: Reference, b: Reference) => authorKey(a) === authorKey(b) && a.year === b.year;
 
 /** `a`, `b`… when several references share first author(s) and year; ordered by title. */
@@ -74,14 +77,26 @@ function yearLabel(ref: Reference, refs: Reference[], lang: Lang): string {
 
 /* ---------- in-text citations ---------- */
 
-function citeAuthor(ref: Reference, t: Terms, narrative: boolean): string {
+/**
+ * APA 8.20: when first authors of different references share a surname but not initials, the first
+ * author's initials are written in every citation of those references (`J. M. Taylor & Neimeyer, 2015`).
+ */
+function firstAuthor(ref: Reference, refs: Reference[]): string {
+  const first = ref.authors[0];
+  const ini = initialsOf(first);
+  const clash = ini && refs.some((r) => r.authors[0] && familyOf(r.authors[0]) === familyOf(first) && initialsOf(r.authors[0]) && initialsOf(r.authors[0]) !== ini);
+  return clash ? `${ini} ${familyOf(first)}` : familyOf(first);
+}
+
+function citeAuthor(ref: Reference, refs: Reference[], t: Terms, narrative: boolean): string {
   const n = ref.authors.length;
   if (n === 0) return ref.title;
-  if (n === 1) return familyOf(ref.authors[0]);
+  const first = firstAuthor(ref, refs);
+  if (n === 1) return first;
   if (n === 2) {
-    return `${familyOf(ref.authors[0])} ${narrative ? t.andNarrative : t.and} ${familyOf(ref.authors[1])}`;
+    return `${first} ${narrative ? t.andNarrative : t.and} ${familyOf(ref.authors[1])}`;
   }
-  return `${familyOf(ref.authors[0])} ${t.etAl}`;
+  return `${first} ${t.etAl}`;
 }
 
 function locatorText(loc: NonNullable<CiteItem['locator']>, t: Terms): string {
@@ -130,7 +145,7 @@ export function citationText(c: Citation, refs: Reference[], lang: Lang): string
     const key = authorKey(ref);
     const group = byKey.get(key);
     if (group) group.parts.push(part);
-    else byKey.set(key, { author: citeAuthor(ref, t, c.narrative), parts: [part] });
+    else byKey.set(key, { author: citeAuthor(ref, refs, t, c.narrative), parts: [part] });
   }
   const groups = [...byKey.values()];
 

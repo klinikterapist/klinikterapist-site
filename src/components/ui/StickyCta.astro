@@ -39,6 +39,9 @@ const after = mode === 'afterTopCta';
       }
     };
     addEventListener('scroll', update, { passive: true });
+    // Turning the phone or coming back to the page (back button) moves the button without a scroll.
+    addEventListener('resize', update, { passive: true });
+    addEventListener('pageshow', update);
     update();
   }
 </script>

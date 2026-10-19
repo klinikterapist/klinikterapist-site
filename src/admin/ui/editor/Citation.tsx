@@ -37,6 +37,17 @@ export function citedIdsInDoc(doc: JSONContent, out = new Set<string>()): Set<st
   return out;
 }
 
+/**
+ * References are kept per language, so a citation copied from the other language's text cites an id
+ * this language does not have. Those references are taken over from the other language; null when
+ * nothing is missing (or the other language does not have it either).
+ */
+export function adoptCitedReferences(doc: JSONContent, own: Reference[], other: Reference[]): Reference[] | null {
+  const missing = [...citedIdsInDoc(doc)].filter((id) => !own.some((r) => r.id === id));
+  const adopted = other.filter((r) => missing.includes(r.id));
+  return adopted.length ? [...own, ...adopted] : null;
+}
+
 /** A reference may be removed from the post only while no citation in the doc uses it. */
 export function canRemoveReference(doc: JSONContent, id: string): boolean {
   return !citedIdsInDoc(doc).has(id);

@@ -76,7 +76,19 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference, onErr
       quote: e.isActive('blockquote'),
       bullets: e.isActive('bulletList'),
       numbers: e.isActive('orderedList'),
-      block: e.isActive('heading', { level: 2 }) ? 'h2' : e.isActive('heading', { level: 3 }) ? 'h3' : 'p',
+      block: e.isActive('heading', { level: 2 })
+        ? 'h2'
+        : e.isActive('heading', { level: 3 })
+          ? 'h3'
+          : e.isActive('bulletList')
+            ? 'ul'
+            : e.isActive('orderedList')
+              ? 'ol'
+              : e.isActive('blockquote')
+                ? 'quote'
+                : e.isActive('callout')
+                  ? 'callout'
+                  : 'p',
       canUndo: e.can().undo(),
       canRedo: e.can().redo(),
     }),
@@ -99,7 +111,11 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference, onErr
   const chain = () => editor.chain().focus();
 
   const setBlock = (value: string) => {
-    if (value === 'p') chain().setParagraph().run();
+    // "Paragraf" inside a list, quote or callout makes it a plain paragraph again.
+    if (value === 'p' && s.block === 'ul') chain().toggleBulletList().run();
+    else if (value === 'p' && s.block === 'ol') chain().toggleOrderedList().run();
+    else if (value === 'p' && (s.block === 'quote' || s.block === 'callout')) chain().setParagraph().lift(s.block === 'quote' ? 'blockquote' : 'callout').run();
+    else if (value === 'p') chain().setParagraph().run();
     else chain().setHeading({ level: value === 'h2' ? 2 : 3 }).run();
   };
 
@@ -111,6 +127,11 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference, onErr
         <option value="p">Paragraf</option>
         <option value="h2">Alt başlık</option>
         <option value="h3">Küçük alt başlık</option>
+        {/* Shown only to name where the cursor is; not something to pick. */}
+        {s.block === 'ul' && <option value="ul" disabled>Madde listesi</option>}
+        {s.block === 'ol' && <option value="ol" disabled>Numaralı liste</option>}
+        {s.block === 'quote' && <option value="quote" disabled>Alıntı</option>}
+        {s.block === 'callout' && <option value="callout" disabled>Vurgu kutusu</option>}
       </select>
       {btn('Kalın', ICON.bold, () => chain().toggleBold().run(), { active: s.bold })}
       {btn('İtalik', ICON.italic, () => chain().toggleItalic().run(), { active: s.italic })}
