@@ -6,14 +6,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type Draft, type LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
-import { isoDay, LANG_LABEL, normalizeDraft } from '../../lib/draft';
+import { LANG_LABEL, normalizeDraft } from '../../lib/draft';
 import { EDITOR_FIELDS, publishChecklist, type ChecklistItem } from '../../lib/checklist';
 import { runSeoChecks } from '../../lib/seo-check';
 import { docToMarkdown } from '../../lib/markdown';
 import { UnknownReferenceError, citedIds, renderReferencesSection } from '../../../lib/citations';
 import { countWords, readingTime } from '../../../lib/readingTime';
 import { liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
-import { PublishError, buildPublishChangeset, buildUnpublishChangeset } from '../../lib/publish';
+import { PublishError, buildUnpublishChangeset } from '../../lib/publish';
 import { go, usePanel } from '../context';
 import { useDeploy } from '../DeployStatus';
 import { Banner, Button, Dialog, Spinner } from '../kit';
@@ -31,7 +31,7 @@ import { scoreTone, SeoPanel, useDebounced } from './SeoPanel';
 import { VersionsDialog } from './VersionsDialog';
 import { adoptCitedReferences } from './Citation';
 import { restoreLang } from '../../lib/versions';
-import { frameAttrsOf } from '../../../lib/figure-frame';
+import { publishDraft, repoImagesOf } from '../../lib/publish-flow';
 
 type Loaded = { draft: Draft; live: LoadedPost | null; categories: Category[]; siteName: Record<Lang, string> | null; others: LoadedPost[]; restore: Draft | null; inDrive: boolean };
 
@@ -42,21 +42,6 @@ const STATUS_TEXT: Record<AutosaveStatus, string> = {
   çakışma: 'Başka bir cihazda daha yeni bir kopya var',
   silinmiş: 'Bu taslak başka bir cihazda yayınlanmış ya da silinmiş',
 };
-
-function figureNames(d: Draft): Set<string> {
-  const out = new Set<string>();
-  const walk = (n: { type?: string; attrs?: Record<string, unknown>; content?: unknown[] }) => {
-    if (n.type === 'figure' && typeof n.attrs?.src === 'string' && n.attrs.src.replace(/^\.\//, '')) out.add(n.attrs.src.replace(/^\.\//, ''));
-    const orig = n.type === 'figure' ? frameAttrsOf(n.attrs).orig : null;
-    if (orig) out.add(orig);
-    (n.content as (typeof n)[] | undefined)?.forEach(walk);
-  };
-  walk(d.tr.doc);
-  walk(d.en.doc);
-  if (d.cover) out.add(d.cover);
-  if (d.cover && d.coverOriginal) out.add(d.coverOriginal);
-  return out;
-}
 
 export function EditorPage({ postKey }: { postKey: string }) {
   const { api } = usePanel();
@@ -139,15 +124,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
   /** A `data-field` to scroll to and focus once the panel or language it lives in has rendered. */
   const [focusField, setFocusField] = useState<string | null>(null);
 
-  const repoImages = useMemo(
-    () =>
-      new Map(
-        (loaded.live?.files ?? [])
-          .filter((f) => !f.path.endsWith('.md'))
-          .map((f) => [f.path.slice(`src/content/posts/${loaded.live!.key}/`.length), f.path]),
-      ),
-    [loaded.live],
-  );
+  const repoImages = useMemo(() => repoImagesOf(loaded.live), [loaded.live]);
   const images = useMemo(() => new ImageStore(api, loaded.draft.key, repoImages), [api, loaded.draft.key, repoImages]);
 
   useEffect(() => {
@@ -246,30 +223,10 @@ function Editing({ loaded }: { loaded: Loaded }) {
     setStale(false);
     try {
       if (!(await auto.saveNow())) throw new PublishError('Taslak kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.');
-      const site = await loadSiteState(api);
-      const live = site.posts.find((p) => p.key === draft.key) ?? null;
-      const imgs = await images.forPublish(figureNames(draft));
-      // "Yine de yayınla": the owner chose to replace the version published elsewhere.
-      const toPublish = force && live ? { ...draft, base: { tr: live.tr.sha, en: live.en.sha } } : draft;
-      const cs = buildPublishChangeset({
-        draft: toPublish,
-        live,
-        allLive: site.posts,
-        redirects: site.redirects,
-        categories: site.categories.list,
-        images: imgs,
-        today: isoDay(new Date()),
-      });
-      const { commitSha } = await api.commit({
-        message: `${live ? 'Yazı güncellendi' : 'Yazı yayınlandı'}: ${draft.tr.title}`,
-        writes: cs.writes,
-        deletes: cs.deletes,
-      });
-      auto.stop();
-      await api.deleteDraft(draft.key).catch(() => {});
+      const { commitSha, notices } = await publishDraft(api, draft, { now: new Date(), force, images, onCommitted: () => auto.stop() });
       clearBackup(draft.key, window.localStorage);
       deploy.track(commitSha);
-      setDone({ kind: 'published', urls: { tr: postPath(draft.tr.slug, 'tr'), en: postPath(draft.en.slug, 'en') }, notices: cs.notices });
+      setDone({ kind: 'published', urls: { tr: postPath(draft.tr.slug, 'tr'), en: postPath(draft.en.slug, 'en') }, notices });
     } catch (e) {
       if (e instanceof PublishError && e.code === 'stale') setStale(true);
       else setMessage(e instanceof PublishError || e instanceof ApiFailure ? e.message : 'Yayınlanamadı. Değişiklikleriniz taslakta duruyor; tekrar deneyin.');
