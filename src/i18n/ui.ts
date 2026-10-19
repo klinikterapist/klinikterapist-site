@@ -33,7 +33,7 @@ export const STRINGS = {
   heroWelcome: { tr: 'Hoş geldiniz', en: 'Welcome' },
   brandTitle: { tr: 'klinikterapist nedir?', en: 'What is klinikterapist?' },
   cookiePrefs: { tr: 'Çerez tercihleri', en: 'Cookie preferences' },
-  preConsult: { tr: 'Ön Görüşme Randevusu Al', en: 'Book an Intro Call' },
+  preConsult: { tr: 'Ön Görüşme', en: 'Intro Call' },
   freeTag: { tr: 'Ücretsiz', en: 'Free' },
   freeIntroBadge: { tr: 'Ücretsiz ön görüşme', en: 'Free intro call' },
   freeIntroBadgeHint: { tr: '25 dakika · online', en: '25 minutes · online' },
