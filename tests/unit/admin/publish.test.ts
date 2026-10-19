@@ -24,7 +24,7 @@ const lang = (title: string, slug: string, images: string[] = []): LangFields =>
   title, subtitle: '', references: [], seoTitle: '', slug, slugTouched: true, description: 'Açıklama', focusKeyword: 'kelime', coverAlt: 'Kapak', doc: doc(...images),
 });
 const draft = (over: Partial<Draft> = {}): Draft => ({
-  key: 'taslak-x', rev: 3, updatedAt: '', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17',
+  key: 'taslak-x', rev: 3, updatedAt: '', published: false, category: 'terapi', cover: null, coverOriginal: null, coverCrop: null, publishedAt: '2026-10-17',
   tr: lang('Kaygı', 'kaygi'), en: lang('Anxiety', 'anxiety'), ...over,
 });
 const livePost = (key: string, trSlug: string, enSlug: string, extra: { path: string; sha: string }[] = []): LivePost => ({
@@ -183,6 +183,47 @@ describe('buildPublishChangeset — live post', () => {
     const d = draft({ key: 'kaygi', published: true, cover: 'cover.webp' });
     const cs = buildPublishChangeset({ ...base, draft: d, live: live2, allLive: [live2], images: new Map([['cover.webp', { base64: 'TkVX', inRepo: false }]]) });
     expect(cs.writes.find((w) => w.path.endsWith('cover.webp'))?.expectSha).toBe('s-cover');
+  });
+});
+
+describe('buildPublishChangeset — cropped cover', () => {
+  const area = { x: 0, y: 21.88, w: 100, h: 56.25 };
+
+  it('publishing a cropped cover commits both the cover and its original', () => {
+    const images = new Map([
+      ['cover.webp', { base64: 'Q09WRVI=', inRepo: false }],
+      ['cover-orig.webp', { base64: 'T1JJRw==', inRepo: false }],
+    ]);
+    const d = draft({ cover: 'cover.webp', coverOriginal: 'cover-orig.webp', coverCrop: area });
+    const cs = buildPublishChangeset({ ...base, draft: d, live: null, images });
+    expect(paths(cs.writes)).toEqual(expect.arrayContaining(['src/content/posts/kaygi/cover.webp', 'src/content/posts/kaygi/cover-orig.webp']));
+    const tr = cs.writes.find((w) => w.path.endsWith('tr.md'))!.content;
+    expect(tr).toContain('coverCrop: "0,21.88,100,56.25"');
+    expect(parsePost(tr).fm).toMatchObject({ cover: './cover.webp', coverOriginal: './cover-orig.webp', coverCrop: '0,21.88,100,56.25' });
+  });
+
+  it('re-publishing a live post keeps the original', () => {
+    const live = livePost('kaygi', 'kaygi', 'anxiety', [
+      { path: 'src/content/posts/kaygi/cover.webp', sha: 's-c' },
+      { path: 'src/content/posts/kaygi/cover-orig.webp', sha: 's-o' },
+    ]);
+    const images = new Map([
+      ['cover.webp', { base64: 'TkVX', inRepo: false }],
+      ['cover-orig.webp', { base64: 'T1JJRw==', inRepo: true }],
+    ]);
+    const d = draft({ key: 'kaygi', published: true, cover: 'cover.webp', coverOriginal: 'cover-orig.webp', coverCrop: { ...area, y: 10 } });
+    const cs = buildPublishChangeset({ ...base, draft: d, live, allLive: [live], images });
+    expect(cs.deletes).toEqual([]);
+    expect(cs.writes.find((w) => w.path.endsWith('/cover.webp'))?.expectSha).toBe('s-c');
+    expect(paths(cs.writes)).not.toContain('src/content/posts/kaygi/cover-orig.webp');
+  });
+
+  it('a cover without crop data writes neither key', () => {
+    const images = new Map([['cover.webp', { base64: 'Q09WRVI=', inRepo: false }]]);
+    const cs = buildPublishChangeset({ ...base, draft: draft({ cover: 'cover.webp' }), live: null, images });
+    const tr = cs.writes.find((w) => w.path.endsWith('tr.md'))!.content;
+    expect(tr).not.toContain('coverOriginal');
+    expect(tr).not.toContain('coverCrop');
   });
 });
 

@@ -2,16 +2,15 @@
  * Ayarlar panel: publish status and the settings shared by both languages (category, date, cover).
  * The publish checklist has its own panel.
  */
-import { useEffect, useRef, useState } from 'react';
 import type { Draft, LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { LANG_LABEL } from '../../lib/draft';
 import { HELP } from '../../lib/help-texts';
-import { IMAGE_PRESETS, ImageError, resizeImage } from '../../lib/image';
 import { Button, Field, Select, Toggle } from '../kit';
 import type { ImageStore } from './images';
+import { useCover } from './CoverBlock';
 
-export type SharedPatch = Partial<Pick<Draft, 'category' | 'cover' | 'publishedAt' | 'featured'>>;
+export type SharedPatch = Partial<Pick<Draft, 'category' | 'cover' | 'coverOriginal' | 'coverCrop' | 'publishedAt' | 'featured'>>;
 
 export function SettingsPanel(props: {
   draft: Draft;
@@ -27,36 +26,8 @@ export function SettingsPanel(props: {
   onLang: (patch: Partial<LangFields>) => void;
 }) {
   const { draft, categories, images } = props;
-  const [cover, setCover] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let alive = true;
-    if (draft.cover) images.url(draft.cover).then((u) => alive && setCover(u));
-    else setCover(null);
-    return () => {
-      alive = false;
-    };
-  }, [draft.cover, images, props.coverVersion]);
-
-  const upload = async (file: File | undefined) => {
-    if (!file) return;
-    setBusy(true);
-    props.onError(null);
-    try {
-      const img = await resizeImage(file, IMAGE_PRESETS.cover);
-      const name = `cover.${img.ext}`;
-      await images.add(name, img.base64);
-      props.onShared({ cover: name });
-      props.onCoverUploaded();
-    } catch (e) {
-      props.onError(e instanceof ImageError ? e.message : 'Kapak görseli yüklenemedi. Tekrar deneyin.');
-    } finally {
-      setBusy(false);
-      if (input.current) input.current.value = '';
-    }
-  };
+  // The same actions as the cover block under the subtitle.
+  const cover = useCover({ draft, images, coverVersion: props.coverVersion, onShared: props.onShared, onCoverUploaded: props.onCoverUploaded, onError: props.onError });
 
   return (
     <div className="rail-panel-body">
@@ -84,18 +55,23 @@ export function SettingsPanel(props: {
         <Toggle label="Öne çıkan yazı" checked={!!draft.featured} onChange={(featured) => props.onShared({ featured: featured || undefined })} />
         <div className="k-field">
           <span className="k-label">Kapak görseli</span>
-          {cover && <img className="cover-preview" src={cover} alt="" />}
+          {cover.url && <img className="cover-preview" src={cover.url} alt="" />}
           <div className="row">
-            <Button busy={busy} data-field="cover" onClick={() => input.current?.click()}>
+            {draft.cover && (
+              <Button disabled={cover.busy} onClick={cover.adjust}>
+                Kapağı ayarla
+              </Button>
+            )}
+            <Button busy={cover.busy} data-field="cover" onClick={cover.pick}>
               {draft.cover ? 'Kapağı değiştir' : 'Kapak görseli ekle'}
             </Button>
             {draft.cover && (
-              <Button variant="ghost" onClick={() => props.onShared({ cover: null })}>
+              <Button variant="ghost" onClick={cover.remove}>
                 Kapağı kaldır
               </Button>
             )}
           </div>
-          <input ref={input} type="file" accept="image/*" hidden onChange={(e) => upload(e.target.files?.[0])} />
+          {cover.elements}
         </div>
         {draft.cover && (
           <Field

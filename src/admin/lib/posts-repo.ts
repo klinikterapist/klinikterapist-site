@@ -1,6 +1,7 @@
 /** Loading what is live in the repo, and turning it into editable drafts and list rows. */
 import type { Api, Draft, DraftSummary, LangFields } from '../api/types';
 import { parseCategories, parseRedirects, parseSeo, type Category, type Lang } from '../../lib/schemas';
+import { parseCrop } from '../../lib/crop-area';
 import { normalizeDraft } from './draft';
 import { parsePost, type PostFrontmatter } from './frontmatter';
 import { markdownToDoc } from './markdown';
@@ -102,6 +103,8 @@ export function liveToDraft(p: LoadedPost): Draft {
     published: true,
     category: p.tr.fm.category,
     cover: p.tr.fm.cover ? p.tr.fm.cover.replace(/^\.\//, '') : null,
+    coverOriginal: p.tr.fm.coverOriginal ? p.tr.fm.coverOriginal.replace(/^\.\//, '') : null,
+    coverCrop: p.tr.fm.coverCrop ? parseCrop(p.tr.fm.coverCrop) : null,
     publishedAt: p.tr.fm.publishedAt,
     ...(p.tr.fm.featured ? { featured: true } : {}),
     base: { tr: p.tr.sha, en: p.en.sha },

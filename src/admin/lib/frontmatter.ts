@@ -16,6 +16,10 @@ export type PostFrontmatter = {
   /** Relative image path, `./cover.webp`. */
   cover?: string;
   coverAlt?: string;
+  /** The uncropped cover, `./cover-orig.webp`; never shown on the site. */
+  coverOriginal?: string;
+  /** The cover's frame in the original, `x,y,w,h` in percent. */
+  coverCrop?: string;
   /** `YYYY-MM-DD` */
   publishedAt: string;
   updatedAt?: string;
@@ -23,7 +27,7 @@ export type PostFrontmatter = {
   featured?: boolean;
 };
 
-const ORDER = ['title', 'subtitle', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'publishedAt', 'updatedAt', 'references', 'featured'] as const;
+const ORDER = ['title', 'subtitle', 'seoTitle', 'description', 'slug', 'focusKeyword', 'category', 'cover', 'coverAlt', 'coverOriginal', 'coverCrop', 'publishedAt', 'updatedAt', 'references', 'featured'] as const;
 const DATES = new Set(['publishedAt', 'updatedAt']);
 
 export function serializePost(fm: PostFrontmatter, body: string): string {
@@ -58,6 +62,8 @@ export function parsePost(text: string): { fm: PostFrontmatter; body: string } {
   if (raw.seoTitle) fm.seoTitle = String(raw.seoTitle);
   if (raw.cover) fm.cover = String(raw.cover);
   if (raw.coverAlt) fm.coverAlt = String(raw.coverAlt);
+  if (raw.coverOriginal) fm.coverOriginal = String(raw.coverOriginal);
+  if (raw.coverCrop) fm.coverCrop = String(raw.coverCrop);
   const updated = day(raw.updatedAt);
   if (updated) fm.updatedAt = updated;
   if (raw.featured === true) fm.featured = true;

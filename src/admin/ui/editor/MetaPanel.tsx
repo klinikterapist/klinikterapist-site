@@ -73,7 +73,7 @@ export function MetaPanel(props: { draft: Draft; lang: Lang; images: ImageStore;
     return () => {
       alive = false;
     };
-  }, [draft.cover, images]);
+  }, [draft.cover, draft.coverCrop, images]);
 
   const slugProblem = f.slug ? slugError(f.slug, lang) : null;
   const title = (f.seoTitle || f.title).trim();

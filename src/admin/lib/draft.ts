@@ -4,6 +4,7 @@ import type { Draft, LangFields } from '../api/types';
 import type { Lang } from '../../lib/schemas';
 import { slugError } from '../../lib/schemas';
 import { slugify } from '../../lib/slug';
+import { formatCrop, parseCrop } from '../../lib/crop-area';
 import { sanitizeCiteItems } from '../../lib/citations';
 import type { CiteItem } from '../../lib/apa';
 
@@ -52,7 +53,8 @@ const normalizeLang = (v: unknown): LangFields => {
 /** Fill the fields older drafts lack. Apply on every path a draft enters the editor. */
 export function normalizeDraft(d: unknown): Draft {
   const x = d as Draft;
-  return { ...x, tr: normalizeLang(x.tr), en: normalizeLang(x.en) };
+  const crop = x.coverCrop && typeof x.coverCrop === 'object' ? parseCrop(formatCrop(x.coverCrop)) : null;
+  return { ...x, coverOriginal: typeof x.coverOriginal === 'string' ? x.coverOriginal : null, coverCrop: crop, tr: normalizeLang(x.tr), en: normalizeLang(x.en) };
 }
 
 /** Local calendar day, `YYYY-MM-DD`. */
@@ -70,6 +72,8 @@ export function newDraft(now: Date): Draft {
     published: false,
     category: '',
     cover: null,
+    coverOriginal: null,
+    coverCrop: null,
     publishedAt: isoDay(now),
     tr: emptyLang(),
     en: emptyLang(),

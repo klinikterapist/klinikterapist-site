@@ -8,7 +8,7 @@ const lang = (t: string): LangFields => ({
   references: [{ id: t, type: 'journal' } as never],
 });
 const draft = (rev: number, tr: string, en: string, extra: Partial<Draft> = {}): Draft => ({
-  key: 'k', rev, updatedAt: 'u', published: true, category: 'terapi', cover: 'cover.webp', publishedAt: '2026-10-01', tr: lang(tr), en: lang(en), ...extra,
+  key: 'k', rev, updatedAt: 'u', published: true, category: 'terapi', cover: 'cover.webp', coverOriginal: null, coverCrop: null, publishedAt: '2026-10-01', tr: lang(tr), en: lang(en), ...extra,
 });
 
 describe('restoreLang', () => {

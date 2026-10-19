@@ -35,6 +35,20 @@ describe('serializePost / parsePost', () => {
     expect(bare).toContain('\n---\n\nx\n');
   });
 
+  it('round-trips the cover original and crop right after coverAlt; a file without them has neither key', () => {
+    const cropped = { ...fm, coverOriginal: './cover-orig.webp', coverCrop: '0,21.88,100,56.25' };
+    const text = serializePost(cropped, 'x\n');
+    expect(text).toContain('coverAlt: "Yaprak"\ncoverOriginal: "./cover-orig.webp"\ncoverCrop: "0,21.88,100,56.25"\npublishedAt');
+    expect(parsePost(text).fm).toEqual(cropped);
+    expect(() => postFrontmatterSchema(['duygular']).parse(parsePost(text).fm)).not.toThrow();
+    const plain = parsePost(serializePost(fm, 'x\n')).fm;
+    expect('coverOriginal' in plain || 'coverCrop' in plain).toBe(false);
+  });
+
+  it('the build schema refuses a malformed coverCrop', () => {
+    expect(() => postFrontmatterSchema(['duygular']).parse({ ...fm, coverCrop: '10,10,95,10' })).toThrow();
+  });
+
   it('the output passes the build schema', () => {
     const { fm: back } = parsePost(serializePost(fm, 'x\n'));
     expect(() => postFrontmatterSchema(['duygular']).parse(back)).not.toThrow();

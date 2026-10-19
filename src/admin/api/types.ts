@@ -6,6 +6,7 @@
 import type { StatsSummary } from '../../lib/stats-wire';
 import type { JSONContent } from '@tiptap/core';
 import type { Reference } from '../../lib/apa/types';
+import type { CropArea } from '../../lib/crop-area';
 
 export type ErrorCode =
   | 'unauthorized'
@@ -67,6 +68,10 @@ export type Draft = {
   category: string;
   /** Image name of the cover (`cover.webp`), or null. */
   cover: string | null;
+  /** The uncropped upload kept next to the cover (`cover-orig.webp`), so the crop can be changed; null for older covers. */
+  coverOriginal: string | null;
+  /** The 16:9 frame chosen in "Kapağı ayarla", in percent of the original; null = centred. */
+  coverCrop: CropArea | null;
   /** `YYYY-MM-DD`, shared by both languages. */
   publishedAt: string;
   /** Shown as a featured post on the site; omitted (not false) when off. */

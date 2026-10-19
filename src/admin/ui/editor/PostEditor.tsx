@@ -1,5 +1,5 @@
 /**
- * Writing surface for one language: a fixed toolbar, a big title, then the body.
+ * Writing surface for one language: a fixed toolbar, a big title, the subtitle, the 16:9 cover, then the body.
  */
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -8,7 +8,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
 import { Placeholder } from '@tiptap/extensions';
-import type { LangFields } from '../../api/types';
+import type { Draft, LangFields } from '../../api/types';
 import type { Lang } from '../../../lib/schemas';
 import { autoSlug, LANG_LABEL } from '../../lib/draft';
 import { parseYoutubeId } from '../../lib/youtube';
@@ -17,6 +17,7 @@ import { Button, Dialog, Field } from '../kit';
 import { Callout, Figure, Youtube } from './nodes';
 import type { ImageStore } from './images';
 import { Toolbar } from './Toolbar';
+import { CoverBlock, type CoverPatch } from './CoverBlock';
 import { DropCap } from './dropcap';
 import { Citation, citationAtCursor, citedRefs, syncCitationRefs, type CitationAttrs } from './Citation';
 import { CitationEditDialog, CitationMenu, type MenuAction } from './CitationMenu';
@@ -83,6 +84,8 @@ export function PostEditor(props: {
   toolbarHost?: HTMLElement | null;
   /** For the DOI lookup; tests pass a stub. */
   fetchFn?: typeof fetch;
+  /** The shared cover, shown under the subtitle; left out, there is no cover block. */
+  cover?: { draft: Pick<Draft, 'cover' | 'coverOriginal' | 'coverCrop'>; coverVersion: number; onShared: (patch: CoverPatch) => void; onCoverUploaded: () => void };
 }) {
   const { lang, fields, onChange, images, onError, toolbarHost } = props;
   const editor = useTiptap(lang, fields.doc, fields.references, images, (doc) => onChange({ doc }));
@@ -243,6 +246,7 @@ export function PostEditor(props: {
         value={fields.subtitle}
         onChange={(e) => onChange({ subtitle: e.target.value.replace(/\n/g, ' ') })}
       />
+      {props.cover && <CoverBlock {...props.cover} images={images} onError={onError} lang={lang} alt={fields.coverAlt} />}
       <EditorContent editor={editor} />
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       {uploading && <p className="ed-muted" role="status">Görsel küçültülüp yükleniyor…</p>}

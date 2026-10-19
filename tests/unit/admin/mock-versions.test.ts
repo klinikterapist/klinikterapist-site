@@ -6,7 +6,7 @@ const lang = (title: string) => ({
   title, subtitle: '', seoTitle: '', slug: '', slugTouched: false, description: '', focusKeyword: '', coverAlt: '', doc: { type: 'doc' as const }, references: [],
 });
 const draft = (rev: number, title: string): Draft => ({
-  key: 'k', rev, updatedAt: '', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17', tr: lang(title), en: lang('T'),
+  key: 'k', rev, updatedAt: '', published: false, category: 'terapi', cover: null, coverOriginal: null, coverCrop: null, publishedAt: '2026-10-17', tr: lang(title), en: lang('T'),
 });
 
 describe('mock snapshots', () => {

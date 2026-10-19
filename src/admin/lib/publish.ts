@@ -4,6 +4,7 @@
  */
 import type { JSONContent } from '@tiptap/core';
 import type { CommitDelete, CommitWrite, Draft } from '../api/types';
+import { formatCrop } from '../../lib/crop-area';
 import { parseCategories, postFrontmatterSchema, type Category, type Lang, type Redirect } from '../../lib/schemas';
 import { categoryPath, pathFor, postPath } from '../../i18n/routes';
 import { canPublish, describeMissing } from './draft';
@@ -101,6 +102,8 @@ export function buildPublishChangeset(input: {
       focusKeyword: f.focusKeyword.trim(),
       category: draft.category,
       ...(draft.cover ? { cover: `./${draft.cover}`, coverAlt: f.coverAlt.trim() } : {}),
+      ...(draft.cover && draft.coverOriginal ? { coverOriginal: `./${draft.coverOriginal}` } : {}),
+      ...(draft.cover && draft.coverCrop ? { coverCrop: formatCrop(draft.coverCrop) } : {}),
       publishedAt: draft.publishedAt,
       ...(live ? { updatedAt: input.today } : {}),
       ...(f.references.length ? { references: f.references } : {}),
@@ -125,6 +128,7 @@ export function buildPublishChangeset(input: {
   // Images: upload new or replaced ones, delete the ones no longer used.
   const used = figureNames(draft.en.doc, figureNames(draft.tr.doc, new Set()));
   if (draft.cover) used.add(draft.cover);
+  if (draft.cover && draft.coverOriginal) used.add(draft.coverOriginal);
   const repoFiles = new Map((live?.files ?? []).map((f) => [f.path, f.sha]));
   for (const name of used) {
     const img = input.images.get(name);

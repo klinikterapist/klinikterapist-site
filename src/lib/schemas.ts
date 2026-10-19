@@ -1,5 +1,6 @@
 import { z } from 'astro/zod';
 import { referenceSchema } from './apa/types';
+import { parseCrop } from './crop-area';
 
 /**
  * Settings and post schemas, shared by the build (`settings.ts`, `content.config.ts`) and the
@@ -240,6 +241,12 @@ export function postFrontmatterSchema(categoryIds: string[]) {
     }),
     cover: z.string().optional(),
     coverAlt: z.string().optional(),
+    /** The uncropped cover the panel keeps for "Kapağı ayarla"; a plain string, so the build never copies it. */
+    coverOriginal: z.string().optional(),
+    coverCrop: z
+      .string()
+      .refine((s) => parseCrop(s) !== null, { message: 'coverCrop "x,y,w,h" biçiminde, yüzde olarak olmalı.' })
+      .optional(),
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
     references: z.array(referenceSchema).optional(),

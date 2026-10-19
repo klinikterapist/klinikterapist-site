@@ -1280,6 +1280,78 @@ textarea.k-input {
   outline: none;
 }
 
+/* The cover under the subtitle: the site's fixed 16:9; its buttons show on hover and focus, always on touch. */
+.ed-cover {
+  position: relative;
+  margin: var(--space-4) 0 0;
+}
+
+.ed-cover-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--p-selected);
+}
+
+.ed-cover-actions {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.ed-cover:hover .ed-cover-actions,
+.ed-cover:focus-within .ed-cover-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .ed-cover-actions {
+    position: static;
+    margin-top: var(--space-2);
+    opacity: 1;
+  }
+}
+
+.ed-cover-actions .k-btn-ghost {
+  background: var(--p-surface);
+}
+
+.ed-cover-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 12rem;
+  margin-top: var(--space-4);
+  border: 2px dashed var(--p-border);
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--p-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ed-cover-empty:hover,
+.ed-cover-empty:focus-visible {
+  border-color: var(--p-accent);
+  color: var(--p-text);
+}
+
+.ed-cover-hint {
+  font-size: var(--text-sm);
+}
+
 /* The editor body also carries .prose (lists, figures, links as on the site). In the built page
    prose.css can come after this file, so every editor rule is .ed-body.prose …: one class more than
    prose.css, whatever the order (the panel's dark theme must win over the site's light colours). */
@@ -1541,7 +1613,7 @@ textarea.k-input {
 .cover-preview {
   display: block;
   width: 100%;
-  max-height: 12rem;
+  aspect-ratio: 16 / 9;
   margin: var(--space-1) 0 var(--space-2);
   border-radius: var(--radius-sm);
   object-fit: cover;

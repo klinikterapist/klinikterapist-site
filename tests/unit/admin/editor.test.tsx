@@ -162,6 +162,35 @@ describe('EditorPage', () => {
     expect(screen.queryByLabelText(/Kapak görselinin alt metni/)).toBeNull();
   });
 
+  it('the cover shows under the subtitle', async () => {
+    setup({ ...base(), cover: 'cover.jpg', tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    const subtitle = await screen.findByLabelText('Alt başlık (Türkçe)');
+    const cover = document.querySelector('figure.ed-cover')!;
+    const body = document.querySelector('.ProseMirror')!;
+    expect(cover).toBeTruthy();
+    expect(subtitle.compareDocumentPosition(cover) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(cover.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(cover as HTMLElement).getByRole('button', { name: 'Kapağı ayarla' })).toBeTruthy();
+    expect(within(cover as HTMLElement).getByRole('button', { name: 'Değiştir' })).toBeTruthy();
+  });
+
+  it('without a cover there is an "Kapak görseli ekle" drop zone', async () => {
+    setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
+    await screen.findByLabelText('Alt başlık (Türkçe)');
+    expect(document.querySelector('figure.ed-cover')).toBeNull();
+    expect(document.querySelector('button.ed-cover-empty')?.textContent).toContain('Kapak görseli ekle');
+  });
+
+  it('"Kaldır" on the cover block clears the cover and its crop', async () => {
+    const initial = { ...base(), cover: 'cover.webp', coverOriginal: 'cover-orig.webp', coverCrop: { x: 0, y: 10, w: 100, h: 56.25 }, tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') };
+    setup(initial);
+    await screen.findByLabelText('Alt başlık (Türkçe)');
+    fireEvent.click(within(document.querySelector('figure.ed-cover') as HTMLElement).getByRole('button', { name: 'Kaldır' }));
+    expect(document.querySelector('figure.ed-cover')).toBeNull();
+    const saved = JSON.parse(localStorage.getItem(`kt-draft-${initial.key}`) ?? 'null');
+    expect(saved).toMatchObject({ cover: null, coverOriginal: null, coverCrop: null });
+  });
+
   it('Ayarlar has an "Öne çıkan yazı" toggle that sets featured', async () => {
     localStorage.setItem('panel.rail', 'settings');
     const initial = { ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') };

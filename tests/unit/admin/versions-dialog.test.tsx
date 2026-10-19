@@ -24,7 +24,7 @@ const lang = (title: string, text: string): LangFields => ({
   title, subtitle: '', seoTitle: '', slug: 's', slugTouched: false, description: 'D', focusKeyword: 'k', coverAlt: '', doc: para(text), references: [],
 });
 const draft = (rev: number, tr: string, en: string): Draft => ({
-  key: 'k1', rev, updatedAt: '2026-10-17T10:00:00.000Z', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17', tr: lang(tr, `${tr} metni`), en: lang(en, `${en} metni`),
+  key: 'k1', rev, updatedAt: '2026-10-17T10:00:00.000Z', published: false, category: 'terapi', cover: null, coverOriginal: null, coverCrop: null, publishedAt: '2026-10-17', tr: lang(tr, `${tr} metni`), en: lang(en, `${en} metni`),
 });
 
 const NOW = new Date(2026, 9, 17, 16, 0);

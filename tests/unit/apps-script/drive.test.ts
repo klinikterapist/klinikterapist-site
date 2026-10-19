@@ -8,7 +8,7 @@ const lang = (title: string) => ({
   title, seoTitle: '', slug: '', slugTouched: false, description: '', subtitle: '', focusKeyword: '', coverAlt: '', references: [], doc: { type: 'doc', content: [] },
 });
 const draft = (over: Partial<Draft> = {}): Draft => ({
-  key: 'taslak-abc', rev: 0, updatedAt: '', published: false, category: 'terapi', cover: null, publishedAt: '2026-10-17',
+  key: 'taslak-abc', rev: 0, updatedAt: '', published: false, category: 'terapi', cover: null, coverOriginal: null, coverCrop: null, publishedAt: '2026-10-17',
   tr: lang('Başlık'), en: lang('Title'), ...over,
 });
 

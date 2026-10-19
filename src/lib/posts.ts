@@ -15,6 +15,8 @@ export type PostData = {
   category: string;
   cover?: unknown;
   coverAlt?: string;
+  coverOriginal?: string;
+  coverCrop?: string;
   publishedAt: Date;
   updatedAt?: Date;
   references?: Reference[];

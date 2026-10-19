@@ -22,6 +22,7 @@ import { PostEditor } from './PostEditor';
 import { EditorTopBar, type MoreAction } from './EditorTopBar';
 import { MetaPanel } from './MetaPanel';
 import { SettingsPanel } from './SettingsPanel';
+import type { CoverPatch } from './CoverBlock';
 import { ChecklistPanel } from './ChecklistPanel';
 import { RailPanelFrame, SHEET_BELOW, SideRail, useNarrow, useRailPanel } from './SideRail';
 import { PreviewDialog } from './PreviewDialog';
@@ -50,6 +51,7 @@ function figureNames(d: Draft): Set<string> {
   walk(d.tr.doc);
   walk(d.en.doc);
   if (d.cover) out.add(d.cover);
+  if (d.cover && d.coverOriginal) out.add(d.coverOriginal);
   return out;
 }
 
@@ -112,6 +114,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const [lang, setLang] = useState<Lang>('tr');
   const [version, setVersion] = useState(0);
   const [coverVersion, setCoverVersion] = useState(0);
+  const bumpCover = useCallback(() => setCoverVersion((v) => v + 1), []);
+  const onCover = useCallback((patch: CoverPatch) => update((d) => ({ ...d, ...patch })), [update]);
   const [restore, setRestore] = useState(loaded.restore);
   const [message, setMessage] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<null | 'publish' | 'unpublish' | 'delete'>(null);
@@ -409,7 +413,16 @@ function Editing({ loaded }: { loaded: Loaded }) {
       <div className={`editor-grid ${rail && !narrow ? 'has-panel' : ''}`}>
         <div className="editor-main">
           <div aria-label={LANG_LABEL[lang]}>
-            <PostEditor key={`${lang}-${version}`} lang={lang} fields={draft[lang]} onChange={onLang} images={images} onError={setMessage} toolbarHost={toolbarHost} />
+            <PostEditor
+              key={`${lang}-${version}`}
+              lang={lang}
+              fields={draft[lang]}
+              onChange={onLang}
+              images={images}
+              onError={setMessage}
+              toolbarHost={toolbarHost}
+              cover={{ draft, coverVersion, onShared: onCover, onCoverUploaded: bumpCover }}
+            />
           </div>
           {referencesHtml && <div className="editor-references" dangerouslySetInnerHTML={{ __html: referencesHtml }} />}
         </div>
@@ -423,7 +436,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
                 images={images}
                 coverVersion={coverVersion}
                 onShared={(patch) => update((d) => ({ ...d, ...patch }))}
-                onCoverUploaded={() => setCoverVersion((v) => v + 1)}
+                onCoverUploaded={bumpCover}
                 onError={setMessage}
                 lang={lang}
                 onLang={onLang}

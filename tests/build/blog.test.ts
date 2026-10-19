@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { allPages, DIST, DIST_NO_POSTS, loadPage } from './load';
 
 // The brief reads `dist/…`; build tests read the fixture build in `DIST` (dist-test).
 const distText = (file: string) => readFileSync(join(DIST, file), 'utf8');
+const listFiles = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? listFiles(join(dir, e.name)) : [join(dir, e.name)]));
+const allCss = () => listFiles(join(DIST, '_astro')).filter((f) => f.endsWith('.css')).map((f) => readFileSync(f, 'utf8')).join('\n');
 
 describe('blog', () => {
   it('post page: hreflang, language switch, JSON-LD, author box, og, categories, RSS, redirects', () => {
@@ -377,6 +380,13 @@ describe('post page redesign (spec §5.8)', () => {
     expect(img.getAttribute('loading')).toBe('eager');
     expect(img.getAttribute('fetchpriority')).toBe('high');
     expect(img.getAttribute('src')).toMatch(/^\/_astro\//);
+  });
+
+  it('the cover is shown at 16:9, and the uncropped original never reaches the build', () => {
+    const css = allCss();
+    expect(css).toMatch(/\.cover-wrap[^{},]*(\.cover|img)\{[^}]*aspect-ratio:16\/9/);
+    for (const page of allPages()) expect(loadPage(page).toString()).not.toMatch(/-orig\.(webp|jpg)/);
+    expect(listFiles(DIST).filter((f) => /-orig\.|cover-orig/.test(f))).toEqual([]);
   });
 
   it('Kaynakça is an accordion holding the references list, closed by default, above the share buttons', () => {

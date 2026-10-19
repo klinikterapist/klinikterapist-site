@@ -69,6 +69,12 @@ describe('autoSlug', () => {
 });
 
 describe('normalizeDraft', () => {
+  it('keeps a valid cover crop and drops a broken one', () => {
+    const area = { x: 0, y: 21.88, w: 100, h: 56.25 };
+    expect(normalizeDraft(draft({ cover: 'cover.webp', coverOriginal: 'cover-orig.webp', coverCrop: area })).coverCrop).toEqual(area);
+    expect(normalizeDraft({ ...draft(), coverCrop: { x: 'a' } }).coverCrop).toBeNull();
+  });
+
   it('fills subtitle and references that old drafts lack, and keeps existing ones', () => {
     const old = JSON.parse(JSON.stringify(draft()));
     delete old.tr.subtitle; delete old.tr.references; delete old.en.subtitle; delete old.en.references;
@@ -76,6 +82,8 @@ describe('normalizeDraft', () => {
     expect(n.tr.subtitle).toBe('');
     expect(n.en.references).toEqual([]);
     expect(n.tr.title).toBe('Başlık');
+    expect(n.coverOriginal).toBeNull();
+    expect(n.coverCrop).toBeNull();
     const kept = normalizeDraft(draft({ tr: complete({ subtitle: 'Alt' }) }));
     expect(kept.tr.subtitle).toBe('Alt');
   });
