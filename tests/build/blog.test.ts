@@ -7,7 +7,14 @@ import { allPages, DIST, DIST_NO_POSTS, loadPage } from './load';
 const distText = (file: string) => readFileSync(join(DIST, file), 'utf8');
 const listFiles = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? listFiles(join(dir, e.name)) : [join(dir, e.name)]));
-const allCss = () => listFiles(join(DIST, '_astro')).filter((f) => f.endsWith('.css')).map((f) => readFileSync(f, 'utf8')).join('\n');
+/** Every stylesheet a built page uses: linked files and inline <style> blocks. */
+const pageCss = (path: string) => {
+  const d = loadPage(path);
+  return [
+    ...d.querySelectorAll('link[rel=stylesheet]').map((l) => readFileSync(join(DIST, l.getAttribute('href')!.replace(/^\//, '')), 'utf8')),
+    ...d.querySelectorAll('style').map((s) => s.textContent),
+  ].join('\n');
+};
 
 describe('blog', () => {
   it('post page: hreflang, language switch, JSON-LD, author box, og, categories, RSS, redirects', () => {
@@ -148,6 +155,21 @@ describe('blog', () => {
       expect(yt?.getAttribute('href'), path).toBe('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
       expect(d.toString(), path).not.toContain('<iframe');
     }
+  });
+
+  it('a shaped figure keeps its wrapper with shape and size only; the original is never referenced', () => {
+    const d = loadPage('/blog/ornek-zengin/');
+    const wrap = d.querySelector('.prose div.figure[data-shape="circle"][data-size="md"]');
+    expect(wrap?.querySelector('figure > img')).not.toBeNull();
+    expect(wrap?.querySelector('figure > figcaption')?.textContent.trim()).toBe('Adaçayı yeşili bir yaprak');
+    expect(wrap?.hasAttribute('data-crop')).toBe(false);
+    expect(wrap?.hasAttribute('data-orig')).toBe(false);
+    for (const img of d.querySelectorAll('img')) expect(`${img.getAttribute('src')} ${img.getAttribute('srcset') ?? ''}`).not.toContain('-orig');
+    // The English page has the same image without a wrapper.
+    expect(loadPage('/en/blog/rich-example/').querySelector('.prose div.figure')).toBeNull();
+    const css = pageCss('/blog/ornek-zengin/');
+    expect(css).toMatch(/\.prose \.figure\[data-shape=["']?circle["']?\] img\{[^}]*border-radius:50%/);
+    expect(css).toMatch(/\.prose \.figure\[data-size=["']?md["']?\]\{[^}]*max-width:66%/);
   });
 
   it('drop cap: an empty span starts the paragraph and the built CSS styles its first letter', () => {
@@ -383,8 +405,7 @@ describe('post page redesign (spec §5.8)', () => {
   });
 
   it('the cover is shown at 16:9, and the uncropped original never reaches the build', () => {
-    const css = allCss();
-    expect(css).toMatch(/\.cover-wrap[^{},]*(\.cover|img)\{[^}]*aspect-ratio:16\/9/);
+    expect(pageCss(POST)).toMatch(/\.cover-wrap \.cover\{[^}]*aspect-ratio:16\/9/);
     for (const page of allPages()) expect(loadPage(page).toString()).not.toMatch(/-orig\.(webp|jpg)/);
     expect(listFiles(DIST).filter((f) => /-orig\.|cover-orig/.test(f))).toEqual([]);
   });

@@ -145,6 +145,53 @@
   height: auto;
 }
 
+/* Body image shape and size, set in the panel (`<div class="figure" data-shape data-size>`). The
+   image file is already cropped to the shape; the ratio here only keeps a stray file in line. */
+.prose .figure[data-size='md'] {
+  max-width: 66%;
+  margin-inline: auto;
+}
+
+.prose .figure[data-size='sm'] {
+  max-width: 33%;
+  margin-inline: auto;
+}
+
+@media (max-width: 559px) {
+  .prose .figure[data-size='sm'] {
+    max-width: 50%;
+  }
+}
+
+.prose .figure[data-shape] img {
+  object-fit: cover;
+}
+
+.prose .figure[data-shape='rect'] img {
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius-sm);
+}
+
+.prose .figure[data-shape='rect-portrait'] img {
+  aspect-ratio: 2 / 3;
+  border-radius: var(--radius-sm);
+}
+
+.prose .figure[data-shape='square'] img {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+}
+
+.prose .figure[data-shape='pill'] img {
+  aspect-ratio: 2;
+  border-radius: 9999px;
+}
+
+.prose .figure[data-shape='circle'] img {
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
 .prose figcaption {
   margin-top: var(--space-2);
   font-family: var(--font-sans);

@@ -9,7 +9,11 @@ publishedAt: 2026-01-15
 
 <span class="dropcap"></span>Bu yazı, panelin ürettiği biçimleri sınamak için var.
 
+<div class="figure" data-shape="circle" data-size="md" data-crop="12.5,0,75,100" data-orig="./gorsel-orig.webp">
+
 ![Yaprak çizimi](./gorsel.webp "Adaçayı yeşili bir yaprak")
+
+</div>
 
 <aside class="callout">
 

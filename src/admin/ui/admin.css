@@ -3598,3 +3598,32 @@ html[data-theme='dark'] {
   min-height: 44px;
   accent-color: var(--p-accent);
 }
+
+/* "Görseli düzenle": shape, direction and size chips under the crop. */
+.chip-row {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.chip-row-label {
+  color: var(--p-muted);
+  font-size: var(--text-sm);
+}
+
+.chip-row-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (pointer: coarse) {
+  .chip-row .chip {
+    min-height: 44px;
+  }
+}
+
+.ed-figure-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}

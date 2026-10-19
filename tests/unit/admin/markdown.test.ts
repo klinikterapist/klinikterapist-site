@@ -114,7 +114,7 @@ describe('docToMarkdown ⇄ markdownToDoc', () => {
     expect(types).toEqual(['paragraph', 'figure', 'callout', 'youtube']);
     expect(markdownToDoc(body).content![0].attrs).toEqual({ dropCap: true });
     const fig = markdownToDoc(body).content![1];
-    expect(fig.attrs).toEqual({ src: './gorsel.webp', alt: 'Yaprak çizimi', caption: 'Adaçayı yeşili bir yaprak' });
+    expect(fig.attrs).toEqual({ src: './gorsel.webp', alt: 'Yaprak çizimi', caption: 'Adaçayı yeşili bir yaprak', shape: 'circle', size: 'md', crop: '12.5,0,75,100', orig: 'gorsel-orig.webp' });
   });
 
   it('turns unknown HTML into literal text instead of dropping or rendering it', () => {

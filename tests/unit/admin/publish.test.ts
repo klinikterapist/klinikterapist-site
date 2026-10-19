@@ -227,6 +227,37 @@ describe('buildPublishChangeset — cropped cover', () => {
   });
 });
 
+describe('buildPublishChangeset — shaped figure', () => {
+  const shaped = (src: string): LangFields => ({
+    ...lang('Kaygı', 'kaygi'),
+    doc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Metin.' }] }, { type: 'figure', attrs: { src: `./${src}`, alt: 'A', caption: '', shape: 'circle', size: 'md', crop: '10,0,80,80', orig: 'foto-orig.webp' } }] },
+  });
+
+  it('a cropped figure commits its original and keeps it on re-publish', () => {
+    const images = new Map([
+      ['foto.webp', { base64: 'Rk9UTw==', inRepo: false }],
+      ['foto-orig.webp', { base64: 'T1JJRw==', inRepo: false }],
+    ]);
+    const first = buildPublishChangeset({ ...base, draft: draft({ tr: shaped('foto.webp') }), live: null, images });
+    expect(paths(first.writes)).toEqual(expect.arrayContaining(['src/content/posts/kaygi/foto.webp', 'src/content/posts/kaygi/foto-orig.webp']));
+    expect(first.writes.find((w) => w.path.endsWith('tr.md'))!.content).toContain('data-orig="./foto-orig.webp"');
+
+    // Only the crop changed: the new file replaces the old one, the original stays.
+    const live = livePost('kaygi', 'kaygi', 'anxiety', [
+      { path: 'src/content/posts/kaygi/foto.webp', sha: 's-f' },
+      { path: 'src/content/posts/kaygi/foto-orig.webp', sha: 's-o' },
+    ]);
+    const again = new Map([
+      ['foto.webp', { base64: 'WUVOSQ==', inRepo: false }],
+      ['foto-orig.webp', { base64: 'T1JJRw==', inRepo: true }],
+    ]);
+    const cs = buildPublishChangeset({ ...base, draft: draft({ key: 'kaygi', published: true, tr: shaped('foto.webp') }), live, allLive: [live], images: again });
+    expect(cs.deletes).toEqual([]);
+    expect(cs.writes.find((w) => w.path.endsWith('/foto.webp'))).toMatchObject({ content: 'WUVOSQ==', expectSha: 's-f' });
+    expect(paths(cs.writes)).not.toContain('src/content/posts/kaygi/foto-orig.webp');
+  });
+});
+
 describe('buildUnpublishChangeset', () => {
   it('deletes every file and sends both addresses to the blog index', () => {
     const live = livePost('kaygi', 'kaygi', 'anxiety', [{ path: 'src/content/posts/kaygi/cover.webp', sha: 's-c' }]);

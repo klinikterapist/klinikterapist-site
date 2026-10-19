@@ -36,9 +36,11 @@ export function normalizeLink(input: string): string | null {
   return SAFE_LINK.test(v) ? v : null;
 }
 
-function useTiptap(lang: Lang, doc: JSONContent, references: Reference[], images: ImageStore, onDoc: (doc: JSONContent) => void) {
+function useTiptap(lang: Lang, doc: JSONContent, references: Reference[], images: ImageStore, onDoc: (doc: JSONContent) => void, onError: (m: string | null) => void) {
   const onDocRef = useRef(onDoc);
   onDocRef.current = onDoc;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
   return useEditor(
     {
       extensions: [
@@ -50,7 +52,7 @@ function useTiptap(lang: Lang, doc: JSONContent, references: Reference[], images
           link: { openOnClick: false, autolink: true, defaultProtocol: 'https', isAllowedUri: (url) => SAFE_LINK.test(url) },
         }),
         Placeholder.configure({ placeholder: lang === 'tr' ? 'Yazmaya başlayın…' : 'Start writing in English…' }),
-        Figure.configure({ resolveUrl: (src) => images.url(src) }),
+        Figure.configure({ resolveUrl: (src) => images.url(src), store: images, onError: (m) => onErrorRef.current(m) }),
         Highlight,
         Youtube,
         Callout,
@@ -88,7 +90,7 @@ export function PostEditor(props: {
   cover?: { draft: Pick<Draft, 'cover' | 'coverOriginal' | 'coverCrop'>; coverVersion: number; onShared: (patch: CoverPatch) => void; onCoverUploaded: () => void };
 }) {
   const { lang, fields, onChange, images, onError, toolbarHost } = props;
-  const editor = useTiptap(lang, fields.doc, fields.references, images, (doc) => onChange({ doc }));
+  const editor = useTiptap(lang, fields.doc, fields.references, images, (doc) => onChange({ doc }), onError);
   const [ask, setAsk] = useState<Ask | null>(null);
   const [cite, setCite] = useState<CiteUi | null>(null);
   const closeCite = useCallback(() => setCite(null), []);
@@ -193,10 +195,15 @@ export function PostEditor(props: {
     setUploading(true);
     onError(null);
     try {
+      // The original first (kept for "Düzenle"), then the body image as before; then "Görseli düzenle" opens.
+      const orig = await resizeImage(f, IMAGE_PRESETS.original);
       const img = await resizeImage(f, IMAGE_PRESETS.body);
       const name = fileNameFor(f.name.replace(/\.[^.]+$/, ''), images.names(), img.ext);
+      const origName = fileNameFor(`${name.replace(/\.[^.]+$/, '')}-orig`, new Set([...images.names(), name]), orig.ext);
+      await images.add(origName, orig.base64);
       await images.add(name, img.base64);
-      editor.chain().focus().insertContent({ type: 'figure', attrs: { src: `./${name}`, alt: '', caption: '' } }).run();
+      editor.storage.figure.openFor = `./${name}`;
+      editor.chain().focus().insertContent({ type: 'figure', attrs: { src: `./${name}`, alt: '', caption: '', orig: origName } }).run();
     } catch (e) {
       onError(e instanceof ImageError ? e.message : (e as Error).message || 'Görsel yüklenemedi. Tekrar deneyin.');
     } finally {

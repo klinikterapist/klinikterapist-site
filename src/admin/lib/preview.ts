@@ -15,6 +15,7 @@ import { t, tCount } from '../../i18n/ui';
 import categories from '../../data/categories.json';
 import profile from '../../data/profile.json';
 import { loneImageCaption } from '../../lib/markdown-figure';
+import { FRAME_CLOSE, parseFrameOpen, publicFrameOpen } from '../../lib/figure-frame';
 import { SAFE_LINK } from '../../lib/safe-link';
 import type { Draft } from '../api/types';
 import { docToMarkdown } from './markdown';
@@ -42,6 +43,8 @@ function img(url: string | null, alt: string, cls = ''): string {
 }
 
 function bodyHtml(markdown: string, imageUrl: (name: string) => string | null): string {
+  // A `</div>` is only let through to close a figure wrapper that was opened.
+  let openFrames = 0;
   const md = new Marked({
     async: false,
     gfm: true,
@@ -49,6 +52,15 @@ function bodyHtml(markdown: string, imageUrl: (name: string) => string | null): 
       html({ text }: Tokens.HTML | Tokens.Tag) {
         const tag = text.trim();
         if (PLAIN_TAGS.has(tag) || CITE_OPEN.test(tag)) return text;
+        const frame = parseFrameOpen(tag);
+        if (frame) {
+          openFrames++;
+          return `${publicFrameOpen(frame)}\n`;
+        }
+        if (tag === FRAME_CLOSE && openFrames > 0) {
+          openFrames--;
+          return `${FRAME_CLOSE}\n`;
+        }
         const yt = tag.match(YOUTUBE);
         if (yt) return `<div class="youtube" data-id="${yt[1]}"><a href="https://www.youtube.com/watch?v=${yt[1]}">${escapeHtml(yt[2])}</a></div>`;
         return escapeHtml(text);

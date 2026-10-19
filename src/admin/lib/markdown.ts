@@ -7,6 +7,7 @@ import { Lexer, type Token, type Tokens } from 'marked';
 import type { Lang } from '../../lib/schemas';
 import { bibliography, citationText, type CiteItem, type Reference } from '../../lib/apa';
 import { CITE_OPEN, UnknownReferenceError, parseCiteAttr, sanitizeCiteItems, writeCiteAttr } from '../../lib/citations';
+import { FRAME_CLOSE, frameAttrsOf, frameOpen, isPlainFrame, parseFrameOpen } from '../../lib/figure-frame';
 
 type Mark = NonNullable<JSONContent['marks']>[number];
 
@@ -176,7 +177,10 @@ function block(node: JSONContent, ctx: Ctx): string | null {
       const { src = '', alt = '', caption = '' } = node.attrs ?? {};
       const altText = String(alt).replace(/[\\[\]]/g, '\\$&');
       const title = caption ? ` "${String(caption).replace(/[\\"]/g, '\\$&')}"` : '';
-      return `![${altText}](${escapeHref(String(src))}${title})`;
+      const image = `![${altText}](${escapeHref(String(src))}${title})`;
+      // Shape, size and crop live in a wrapper; a plain figure is written exactly as before.
+      const frame = frameAttrsOf(node.attrs);
+      return isPlainFrame(frame) ? image : `${frameOpen(frame)}\n\n${image}\n\n${FRAME_CLOSE}`;
     }
     case 'youtube': {
       const id = String(node.attrs?.id ?? '');
@@ -342,6 +346,18 @@ function blockTokens(tokens: Token[]): JSONContent[] {
         if (yt) {
           out.push({ type: 'youtube', attrs: { id: yt[1] } });
           break;
+        }
+        const frame = parseFrameOpen(raw);
+        if (frame) {
+          // The wrapper holds exactly one image paragraph; anything else falls back to text.
+          const end = tokens.findIndex((t, j) => j > i && t.type === 'html' && (t as Tokens.HTML).text.trim() === FRAME_CLOSE);
+          const inner = end > i ? tokens.slice(i + 1, end).filter((t) => t.type !== 'space') : [];
+          const img = inner.length === 1 && inner[0].type === 'paragraph' ? loneImage((inner[0] as Tokens.Paragraph).tokens) : null;
+          if (img) {
+            out.push({ type: 'figure', attrs: { src: decodeURI(img.href), alt: img.text, caption: img.title ?? '', ...frame } });
+            i = end;
+            break;
+          }
         }
         if (raw === CALLOUT_OPEN) {
           const end = tokens.findIndex((t, j) => j > i && t.type === 'html' && (t as Tokens.HTML).text.trim() === CALLOUT_CLOSE);

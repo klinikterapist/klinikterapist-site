@@ -31,6 +31,7 @@ import { scoreTone, SeoPanel, useDebounced } from './SeoPanel';
 import { VersionsDialog } from './VersionsDialog';
 import { adoptCitedReferences } from './Citation';
 import { restoreLang } from '../../lib/versions';
+import { frameAttrsOf } from '../../../lib/figure-frame';
 
 type Loaded = { draft: Draft; live: LoadedPost | null; categories: Category[]; siteName: Record<Lang, string> | null; others: LoadedPost[]; restore: Draft | null; inDrive: boolean };
 
@@ -46,6 +47,8 @@ function figureNames(d: Draft): Set<string> {
   const out = new Set<string>();
   const walk = (n: { type?: string; attrs?: Record<string, unknown>; content?: unknown[] }) => {
     if (n.type === 'figure' && typeof n.attrs?.src === 'string' && n.attrs.src.replace(/^\.\//, '')) out.add(n.attrs.src.replace(/^\.\//, ''));
+    const orig = n.type === 'figure' ? frameAttrsOf(n.attrs).orig : null;
+    if (orig) out.add(orig);
     (n.content as (typeof n)[] | undefined)?.forEach(walk);
   };
   walk(d.tr.doc);

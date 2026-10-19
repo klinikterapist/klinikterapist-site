@@ -5,6 +5,7 @@
 import type { JSONContent } from '@tiptap/core';
 import type { CommitDelete, CommitWrite, Draft } from '../api/types';
 import { formatCrop } from '../../lib/crop-area';
+import { frameAttrsOf } from '../../lib/figure-frame';
 import { parseCategories, postFrontmatterSchema, type Category, type Lang, type Redirect } from '../../lib/schemas';
 import { categoryPath, pathFor, postPath } from '../../i18n/routes';
 import { canPublish, describeMissing } from './draft';
@@ -43,6 +44,9 @@ function figureNames(doc: JSONContent, out: Set<string>): Set<string> {
   if (doc.type === 'figure') {
     const src = String(doc.attrs?.src ?? '');
     if (src.startsWith('./')) out.add(src.slice(2));
+    // The uncropped original of a shaped figure is committed too, so its crop can be changed later.
+    const { orig } = frameAttrsOf(doc.attrs);
+    if (orig) out.add(orig);
   }
   doc.content?.forEach((c) => figureNames(c, out));
   return out;

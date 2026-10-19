@@ -5,6 +5,7 @@
  * optimizes it.
  */
 import type { MdastPluginDefinition } from 'satteri';
+import { parseFrameOpen, publicFrameOpen } from './figure-frame';
 
 type Child = { type: string; value?: string; title?: string | null };
 
@@ -17,6 +18,12 @@ export function loneImageCaption(children: readonly Child[]): string | null {
 
 export const figurePlugin: MdastPluginDefinition = {
   name: 'post-figure',
+  // A figure wrapper reaches visitors with its shape and size only: the crop and the original's
+  // name are for the panel (the original is never built or served).
+  html(node, ctx) {
+    const frame = parseFrameOpen(String(node.value ?? '').trim());
+    if (frame) ctx.setProperty(node, 'value', publicFrameOpen(frame));
+  },
   paragraph(node, ctx) {
     const caption = loneImageCaption(node.children as Child[]);
     if (caption === null) return;
