@@ -19,5 +19,8 @@ export function dashboard(live: LivePost[], drafts: DraftSummary[], now: Date) {
     if (tr && !en) incomplete.push({ key: d.key, title: tr, missing: 'en' });
     else if (en && !tr) incomplete.push({ key: d.key, title: en, missing: 'tr' });
   }
-  return { lastLive, recentDrafts, publishedThisMonth: live.filter((p) => publishedAt(p).startsWith(month)).length, incomplete };
+  // Planned posts in the order they go live; the ones whose publish failed (retried hourly) apart.
+  const scheduled = drafts.filter((d) => d.scheduledAt).sort((a, b) => Date.parse(a.scheduledAt!) - Date.parse(b.scheduledAt!));
+  const scheduleErrors = scheduled.filter((d) => d.scheduleError);
+  return { lastLive, recentDrafts, publishedThisMonth: live.filter((p) => publishedAt(p).startsWith(month)).length, incomplete, scheduled, scheduleErrors };
 }

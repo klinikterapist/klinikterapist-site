@@ -13,9 +13,11 @@ export function usePanel(): PanelContext {
   return ctx;
 }
 
+export type PostsTab = 'live' | 'drafts' | 'planned';
+
 export type Route =
   | { name: 'home' }
-  | { name: 'posts'; tab: 'live' | 'drafts' }
+  | { name: 'posts'; tab: PostsTab }
   | { name: 'trash' }
   | { name: 'post'; key: string }
   | { name: 'settings'; screen: string };
@@ -29,6 +31,7 @@ export function parseRoute(hash: string): Route {
   if (m) return { name: 'settings', screen: m[1] };
   if (path === '/yazilar') return { name: 'posts', tab: 'live' };
   if (path === '/yazilar/taslaklar') return { name: 'posts', tab: 'drafts' };
+  if (path === '/yazilar/planlanan') return { name: 'posts', tab: 'planned' };
   if (path === '/cop-kutusu') return { name: 'trash' };
   return { name: 'home' };
 }

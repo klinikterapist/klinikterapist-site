@@ -11,8 +11,9 @@ import { Ellipsis, Icon } from '../icons';
 import { Button } from '../kit';
 import { LangButtons } from './LangButtons';
 
-/** The one place the publish button's label is decided. */
-export function publishLabel(d: Pick<Draft, 'published'>): string {
+/** The one place the publish button's label is decided: a future date and time plan the post instead. */
+export function publishLabel(d: Pick<Draft, 'published'>, planning = false): string {
+  if (planning) return 'Planla';
   return d.published ? 'Değişiklikleri yayınla' : 'Yayınla';
 }
 
@@ -96,6 +97,8 @@ export function EditorTopBar(props: {
   onPreview: () => void;
   onPublish: () => void;
   publishing: boolean;
+  /** A future date and time is set: the button plans instead of publishing. */
+  planning?: boolean;
   more: MoreAction[];
 }) {
   return (
@@ -106,7 +109,7 @@ export function EditorTopBar(props: {
         <LangButtons checklist={props.checklist} lang={props.lang} onLang={props.onLang} />
         <Button onClick={props.onPreview}>Önizle</Button>
         <Button variant="primary" busy={props.publishing} onClick={props.onPublish}>
-          {publishLabel(props.draft)}
+          {publishLabel(props.draft, props.planning)}
         </Button>
         {props.more.length > 0 && <MoreMenu actions={props.more} />}
       </div>

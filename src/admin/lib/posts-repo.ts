@@ -113,13 +113,24 @@ export function liveToDraft(p: LoadedPost): Draft {
   });
 }
 
-export type PostStatus = 'taslak' | 'yayında' | 'yayında-değişiklik-var';
-export type PostRow = { key: string; title: string; titleEn: string; category: string; status: PostStatus; updatedAt: string };
+const triggered = new WeakSet<Api>();
+
+/** Asks the backend once per session for its hourly trigger, which publishes planned posts. Errors are ignored. */
+export function ensureTriggersOnce(api: Api): void {
+  if (triggered.has(api)) return;
+  triggered.add(api);
+  api.ensureTriggers().catch(() => triggered.delete(api));
+}
+
+export type PostStatus = 'taslak' | 'yayında' | 'yayında-değişiklik-var' | 'planlandı';
+/** `live`: a version of the post is on the site; `scheduledAt`: when a planned draft goes live. */
+export type PostRow = { key: string; title: string; titleEn: string; category: string; status: PostStatus; updatedAt: string; live: boolean; scheduledAt: string | null };
 
 export const STATUS_LABEL: Record<PostStatus, string> = {
   taslak: 'Taslak',
   yayında: 'Yayında',
   'yayında-değişiklik-var': 'Yayında · kaydedilmemiş değişiklik',
+  planlandı: 'Planlandı',
 };
 
 export function mergeList(live: LivePost[], drafts: DraftSummary[]): PostRow[] {
@@ -132,8 +143,10 @@ export function mergeList(live: LivePost[], drafts: DraftSummary[]): PostRow[] {
       title: d.title.tr.trim() || d.title.en.trim() || 'Başlıksız taslak',
       titleEn: d.title.en,
       category: d.category,
-      status: isLive ? 'yayında-değişiklik-var' : 'taslak',
+      status: d.scheduledAt ? 'planlandı' : isLive ? 'yayında-değişiklik-var' : 'taslak',
       updatedAt: d.updatedAt,
+      live: isLive,
+      scheduledAt: d.scheduledAt ?? null,
     });
   }
   for (const p of live) {
@@ -145,6 +158,8 @@ export function mergeList(live: LivePost[], drafts: DraftSummary[]): PostRow[] {
       category: p.tr.fm.category,
       status: 'yayında',
       updatedAt: p.tr.fm.updatedAt ?? p.tr.fm.publishedAt,
+      live: true,
+      scheduledAt: null,
     });
   }
   return rows;

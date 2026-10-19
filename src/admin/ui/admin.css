@@ -711,6 +711,25 @@ textarea.k-input {
   color: var(--p-ok-text);
 }
 
+.plan-box {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--p-warn-bg);
+  color: var(--p-warn-text);
+}
+
+.plan-box p {
+  margin: 0;
+}
+
+.badge-planned {
+  background: var(--p-warn-bg);
+  color: var(--p-warn-text);
+}
+
 /* EmptyState: icon, one calm sentence, optional action. */
 .k-empty {
   display: grid;

@@ -63,6 +63,33 @@ export function isoDay(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** Shown wherever a post is planned (the hourly backend run publishes it). */
+export const PLAN_HINT = 'Planlanan saatten sonraki bir saat içinde yayınlanır.';
+
+/** Turkey has used a fixed +03:00 (no daylight saving) since 2016. */
+const ISTANBUL_OFFSET = '+03:00';
+const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+
+/** Istanbul wall time → instant: `('2026-10-24', '09:00')` → `'2026-10-24T09:00:00+03:00'`. */
+export function istanbulIso(day: string, time: string): string {
+  return `${day}T${time}:00${ISTANBUL_OFFSET}`;
+}
+
+export const isFuture = (iso: string, now: Date) => Date.parse(iso) > now.getTime();
+
+/** An instant's Istanbul day and `HH:MM`. */
+export function istanbulParts(iso: string): { day: string; time: string } {
+  const t = new Date(Date.parse(iso) + 3 * 3600e3).toISOString();
+  return { day: t.slice(0, 10), time: t.slice(11, 16) };
+}
+
+/** `'2026-10-24T09:00:00+03:00'` → `'24 Ekim 2026, 09.00'`. */
+export function formatSchedule(iso: string): string {
+  const { day, time } = istanbulParts(iso);
+  const [y, m, d] = day.split('-').map(Number);
+  return `${d} ${MONTHS_TR[m - 1]} ${y}, ${time.replace(':', '.')}`;
+}
+
 export function newDraft(now: Date): Draft {
   const random = Math.random().toString(36).slice(2, 6).padEnd(4, '0');
   return {

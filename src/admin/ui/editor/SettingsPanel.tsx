@@ -4,7 +4,7 @@
  */
 import type { Draft, LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
-import { LANG_LABEL } from '../../lib/draft';
+import { LANG_LABEL, PLAN_HINT, formatSchedule, istanbulIso } from '../../lib/draft';
 import { HELP } from '../../lib/help-texts';
 import { Button, Field, Select, Toggle } from '../kit';
 import type { ImageStore } from './images';
@@ -24,6 +24,12 @@ export function SettingsPanel(props: {
   /** The active language: the cover's alt text is written per language. */
   lang: Lang;
   onLang: (patch: Partial<LangFields>) => void;
+  /** Time of day for a planned publish (`HH:MM`, Istanbul); empty = publish at once. */
+  planTime?: string;
+  onPlanTime?: (time: string) => void;
+  /** The date and time are in the future: Yayınla plans the post. */
+  planning?: boolean;
+  onCancelPlan?: () => void;
 }) {
   const { draft, categories, images } = props;
   // The same actions as the cover block under the subtitle.
@@ -33,7 +39,13 @@ export function SettingsPanel(props: {
     <div className="rail-panel-body">
       <div className="rail-panel-head">
         <h3>Ayarlar</h3>
-        {draft.published ? <p className="badge badge-live">Yayında</p> : <p className="badge">Taslak</p>}
+        {draft.scheduledAt ? (
+          <p className="badge badge-planned">Planlandı</p>
+        ) : draft.published ? (
+          <p className="badge badge-live">Yayında</p>
+        ) : (
+          <p className="badge">Taslak</p>
+        )}
       </div>
       <p className="k-hint">Bu ayarlar iki dil için ortaktır.</p>
       <div className="stack">
@@ -50,8 +62,31 @@ export function SettingsPanel(props: {
           type="date"
           value={draft.publishedAt}
           onChange={(publishedAt) => publishedAt && props.onShared({ publishedAt })}
-          hint="Yazıda görünen tarih. Yazı, Yayınla'ya bastığınızda yayınlanır."
+          hint={props.planning ? 'Yazıda görünen tarih; yazı bu gün, aşağıdaki saatte yayına girer.' : "Yazıda görünen tarih. Yazı, Yayınla'ya bastığınızda yayınlanır."}
         />
+        {props.onPlanTime && (
+          <Field
+            label="Yayın saati (isteğe bağlı)"
+            field="planTime"
+            type="time"
+            value={props.planTime ?? ''}
+            onChange={props.onPlanTime}
+            hint={props.planning ? PLAN_HINT : 'İleri bir gün ve saat seçerseniz Yayınla düğmesi Planla olur.'}
+          />
+        )}
+        {draft.scheduledAt && (
+          <div className="plan-box" role="status">
+            <p>
+              <b>Planlandı:</b> {formatSchedule(draft.scheduledAt)}
+            </p>
+            {props.planTime && istanbulIso(draft.publishedAt, props.planTime) !== draft.scheduledAt && (
+              <p className="k-hint">Yeni gün ya da saati kaydetmek için Planla'ya basın.</p>
+            )}
+            <Button variant="ghost" onClick={props.onCancelPlan}>
+              Planlamayı iptal et
+            </Button>
+          </div>
+        )}
         <Toggle label="Öne çıkan yazı" checked={!!draft.featured} onChange={(featured) => props.onShared({ featured: featured || undefined })} />
         <div className="k-field">
           <span className="k-label">Kapak görseli</span>

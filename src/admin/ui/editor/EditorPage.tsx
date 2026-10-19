@@ -6,13 +6,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type Draft, type LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
-import { LANG_LABEL, normalizeDraft } from '../../lib/draft';
+import { LANG_LABEL, PLAN_HINT, formatSchedule, isFuture, istanbulIso, istanbulParts, normalizeDraft } from '../../lib/draft';
 import { EDITOR_FIELDS, publishChecklist, type ChecklistItem } from '../../lib/checklist';
 import { runSeoChecks } from '../../lib/seo-check';
 import { docToMarkdown } from '../../lib/markdown';
 import { UnknownReferenceError, citedIds, renderReferencesSection } from '../../../lib/citations';
 import { countWords, readingTime } from '../../../lib/readingTime';
-import { liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
+import { ensureTriggersOnce, liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
 import { PublishError, buildUnpublishChangeset } from '../../lib/publish';
 import { go, usePanel } from '../context';
 import { useDeploy } from '../DeployStatus';
@@ -99,6 +99,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
   const deploy = useDeploy();
   const auto = useAutosave(loaded.draft, api);
   const { draft, update } = auto;
+  // The time of day for a planned publish (Istanbul, `HH:MM`); empty = publish at once.
+  const [planTime, setPlanTime] = useState(() => (loaded.draft.scheduledAt ? istanbulParts(loaded.draft.scheduledAt).time : ''));
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const planAt = planTime ? istanbulIso(draft.publishedAt, planTime) : null;
+  const planning = !!planAt && isFuture(planAt, new Date());
   const [lang, setLang] = useState<Lang>('tr');
   const [version, setVersion] = useState(0);
   const [coverVersion, setCoverVersion] = useState(0);
@@ -189,6 +194,40 @@ function Editing({ loaded }: { loaded: Loaded }) {
       setRail(item.panel);
     }
     setFocusField(item.field);
+  };
+
+  // A planned draft whose publish failed: the backend keeps the reason in the drafts list.
+  useEffect(() => {
+    if (!loaded.draft.scheduledAt) return;
+    let alive = true;
+    api
+      .listDrafts()
+      .then(({ drafts }) => alive && setScheduleError(drafts.find((d) => d.key === loaded.draft.key)?.scheduleError ?? null))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [api, loaded.draft.key, loaded.draft.scheduledAt]);
+
+  /** Planla: saves the plan; the backend's hourly run publishes the last saved copy. Nothing is committed here. */
+  const plan = async () => {
+    if (!planAt) return;
+    setBusy(true);
+    setMessage(null);
+    ensureTriggersOnce(api);
+    update((d) => ({ ...d, scheduledAt: planAt }));
+    const ok = await auto.saveNow();
+    setBusy(false);
+    setConfirm(null);
+    if (!ok) setMessage('Plan kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.');
+    else setScheduleError(null);
+  };
+
+  const cancelPlan = async () => {
+    update((d) => ({ ...d, scheduledAt: null }));
+    setPlanTime('');
+    setScheduleError(null);
+    if (!(await auto.saveNow())) setMessage('Değişiklik kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.');
   };
 
   const onPublish = () => {
@@ -332,6 +371,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
         onPreview={() => setPreviewing(true)}
         onPublish={onPublish}
         publishing={busy && confirm === 'publish'}
+        planning={planning}
         more={more}
       />
 
@@ -367,6 +407,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
         </Banner>
       )}
       {message && <Banner tone="error">{message}</Banner>}
+      {scheduleError && draft.scheduledAt && <Banner tone="warning">{`Planlanan yayın yapılamadı, tekrar denenecek. ${scheduleError}`}</Banner>}
 
       <div className="editor-toolbar-slot" ref={setToolbarHost} />
 
@@ -397,6 +438,10 @@ function Editing({ loaded }: { loaded: Loaded }) {
                 coverVersion={coverVersion}
                 onShared={(patch) => update((d) => ({ ...d, ...patch }))}
                 onCoverUploaded={bumpCover}
+                planTime={planTime}
+                onPlanTime={setPlanTime}
+                planning={planning}
+                onCancelPlan={cancelPlan}
                 onError={setMessage}
                 lang={lang}
                 onLang={onLang}
@@ -423,7 +468,27 @@ function Editing({ loaded }: { loaded: Loaded }) {
 
       {versioning && <VersionsDialog api={api} draftKey={draft.key} lang={lang} onRestore={restoreVersion} onClose={closeVersions} />}
       {previewing && <PreviewDialog draft={draft} lang={lang} images={images} onClose={closePreview} />}
-      {confirm === 'publish' && (
+      {confirm === 'publish' && planning && planAt && (
+        <Dialog
+          title="Planlansın mı?"
+          history
+          onClose={() => !busy && setConfirm(null)}
+          actions={
+            <>
+              <Button onClick={() => setConfirm(null)} disabled={busy}>
+                Vazgeç
+              </Button>
+              <Button variant="primary" busy={busy} onClick={plan}>
+                Evet, planla
+              </Button>
+            </>
+          }
+        >
+          <p>{`Yazı ${formatSchedule(planAt)}'da yayına girecek.`}</p>
+          <p className="k-hint">{PLAN_HINT} O ana kadar metin yalnızca taslakta durur; düzenlemeye devam edebilirsiniz, son kaydedilen hâli yayınlanır.</p>
+        </Dialog>
+      )}
+      {confirm === 'publish' && !planning && (
         <Dialog
           title="Yayınlansın mı?"
           history

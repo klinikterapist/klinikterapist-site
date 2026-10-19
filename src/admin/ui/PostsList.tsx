@@ -1,17 +1,21 @@
-/** Posts: live and draft, with search, category filter and status. */
+/** Posts: live, draft and planned, with search, category filter and status. */
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type DraftSummary } from '../api/types';
 import type { Category } from '../../lib/schemas';
 import { startNewPost } from '../lib/new-post';
 import { STATUS_LABEL, cachedDrafts, loadDrafts, loadSiteState, mergeList, type PostRow, type SiteState } from '../lib/posts-repo';
-import { go, usePanel } from './context';
+import { formatSchedule } from '../lib/draft';
+import { go, usePanel, type PostsTab } from './context';
 import { FileText, Search } from './icons';
 import { Banner, Button, EmptyState, Field, Select, Spinner } from './kit';
 
 
+/** Drafts tab: new drafts and unsaved edits of live posts; planned ones have their own tab. */
+const inDrafts = (r: PostRow) => r.status === 'taslak' || r.status === 'yayında-değişiklik-var';
+
 const fold = (s: string) => s.toLocaleLowerCase('tr-TR').replace(/i̇/g, 'i');
 
-export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
+export function PostsList({ tab }: { tab: PostsTab }) {
   const { api } = usePanel();
   const [rows, setRows] = useState<PostRow[] | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -41,19 +45,22 @@ export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
 
   const counts = useMemo(
     () => ({
-      live: (rows ?? []).filter((r) => r.status !== 'taslak').length,
-      drafts: (rows ?? []).filter((r) => r.status !== 'yayında').length,
+      live: (rows ?? []).filter((r) => r.live).length,
+      drafts: (rows ?? []).filter(inDrafts).length,
+      planned: (rows ?? []).filter((r) => r.status === 'planlandı').length,
     }),
     [rows],
   );
 
   const shown = useMemo(() => {
     const q = fold(query.trim());
-    const inTab = (r: PostRow) => (tab === 'live' ? r.status !== 'taslak' : r.status !== 'yayında');
+    const inTab = (r: PostRow) => (tab === 'live' ? r.live : tab === 'planned' ? r.status === 'planlandı' : inDrafts(r));
     const list = (rows ?? []).filter(
       (r) => inTab(r) && (!category || r.category === category) && (!q || fold(`${r.title} ${r.titleEn}`).includes(q)),
     );
     const dir = sort === 'newest' ? -1 : 1;
+    // Planned posts in the order they go live.
+    if (tab === 'planned') return list.sort((a, b) => Date.parse(a.scheduledAt!) - Date.parse(b.scheduledAt!));
     return list.sort((a, b) => dir * a.updatedAt.localeCompare(b.updatedAt));
   }, [rows, tab, query, category, sort]);
 
@@ -77,6 +84,9 @@ export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
         </a>
         <a className={`tab ${tab === 'drafts' ? 'is-active' : ''}`} href="#/yazilar/taslaklar" aria-current={tab === 'drafts' ? 'page' : undefined}>
           {`Taslaklar ${counts.drafts}`}
+        </a>
+        <a className={`tab ${tab === 'planned' ? 'is-active' : ''}`} href="#/yazilar/planlanan" aria-current={tab === 'planned' ? 'page' : undefined}>
+          {`Planlanan ${counts.planned}`}
         </a>
       </nav>
       <div className="filters">
@@ -117,7 +127,7 @@ export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
       )}
       {rows && rows.length > 0 && shown.length === 0 && (
         <EmptyState icon={query || category ? Search : FileText}>
-          {query || category ? 'Aramanıza uyan yazı yok.' : tab === 'drafts' ? 'Taslak yok.' : 'Yayında yazı yok.'}
+          {query || category ? 'Aramanıza uyan yazı yok.' : tab === 'drafts' ? 'Taslak yok.' : tab === 'planned' ? 'Planlanmış yazı yok.' : 'Yayında yazı yok.'}
         </EmptyState>
       )}
       {shown.length > 0 && (
@@ -127,7 +137,9 @@ export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
               <a className="post-row" href={`#/yazi/${r.key}`}>
                 <span className="post-row-title">{r.title}</span>
                 <span className="post-row-meta">
-                  <span className={`badge ${r.status === 'taslak' ? '' : 'badge-live'}`}>{STATUS_LABEL[r.status]}</span>
+                  <span className={`badge ${r.status === 'taslak' ? '' : r.status === 'planlandı' ? 'badge-planned' : 'badge-live'}`}>
+                    {r.scheduledAt ? `${STATUS_LABEL[r.status]} · ${formatSchedule(r.scheduledAt)}` : STATUS_LABEL[r.status]}
+                  </span>
                   <span>{label(r.category)}</span>
                   {r.updatedAt && <span>{new Date(r.updatedAt).toLocaleDateString('tr-TR')}</span>}
                 </span>

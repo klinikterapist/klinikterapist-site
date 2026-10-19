@@ -5,7 +5,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type DraftSummary } from '../api/types';
 import { dashboard } from '../lib/dashboard';
-import { cachedDrafts, loadDrafts, loadSiteState, type SiteState } from '../lib/posts-repo';
+import { formatSchedule } from '../lib/draft';
+import { cachedDrafts, ensureTriggersOnce, loadDrafts, loadSiteState, type SiteState } from '../lib/posts-repo';
 import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
 import { CheckCircle2, FileText, Inbox } from './icons';
@@ -30,6 +31,7 @@ export function Home() {
     Promise.all([loadSiteState(api, { onCached: (site) => draftsBefore && alive && setData({ site, drafts: draftsBefore }) }), loadDrafts(api)])
       .then(([site, drafts]) => {
         if (alive) setData({ site, drafts });
+        if (drafts.some((x) => x.scheduledAt)) ensureTriggersOnce(api);
       })
       .catch((e) => alive && setError(e instanceof ApiFailure ? e.message : 'Özet yüklenemedi. Tekrar deneyin.'));
     return () => {
@@ -53,6 +55,15 @@ export function Home() {
       {/* Statistics load at the same time as the posts; post titles fill in when they arrive. */}
       <StatsPanel posts={data?.site.posts ?? NO_POSTS} />
       {!d && !error && <Spinner label="Özet yükleniyor…" />}
+      {d && d.scheduleErrors.length > 0 && (
+        <Banner tone="warning">
+          {d.scheduleErrors.map((x) => (
+            <p key={x.key}>
+              <a href={`#/yazi/${x.key}`}>{x.title.tr.trim() || x.title.en.trim() || 'Başlıksız taslak'}</a>: planlanan yayın yapılamadı, tekrar denenecek. {x.scheduleError}
+            </p>
+          ))}
+        </Banner>
+      )}
       {d && <h3 className="home-section-title">Çalışma alanı</h3>}
       {d && (
         <div className="home-grid">
@@ -87,6 +98,22 @@ export function Home() {
               </ul>
             )}
           </article>
+          {d.scheduled.length > 0 && (
+            <article className="home-card" aria-labelledby="hc-planned">
+              <div className="home-card-head">
+                <h3 id="hc-planned">Planlanan</h3>
+                <a href="#/yazilar/planlanan">Tümü</a>
+              </div>
+              <ul className="home-list">
+                {d.scheduled.slice(0, 5).map((x) => (
+                  <li key={x.key}>
+                    <a href={`#/yazi/${x.key}`}>{x.title.tr.trim() || x.title.en.trim() || 'Başlıksız taslak'}</a>
+                    <span className="home-card-meta"> · {formatSchedule(x.scheduledAt!)}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+          )}
           <article className="home-card" aria-labelledby="hc-month">
             <h3 id="hc-month">Bu ay</h3>
             <p className="home-big">{d.publishedThisMonth} yazı yayınlandı</p>
