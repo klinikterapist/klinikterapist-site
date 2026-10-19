@@ -290,6 +290,12 @@
   background: #3fa66b;
 }
 
+/* "Kontenjanlı": a quiet outlined badge in the accent colour (booking and intro call). */
+.wz .badge-quota {
+  border: 1px solid color-mix(in srgb, var(--sun-disc) 70%, transparent);
+  color: var(--link);
+}
+
 .wz .badge-soon {
   border: 1px solid var(--line);
   color: var(--muted);

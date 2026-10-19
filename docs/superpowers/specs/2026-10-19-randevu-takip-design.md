@@ -13,6 +13,13 @@
 - Her talep **size e-postayla** gelir ve panelde yeni **"Talepler"** ekranında görünür. "Onayla" ya da "Başka saat öner" dediğinizde danışana e-posta gider.
 - Kayıtlar **yalnızca sizin Google Drive'ınızda** tutulur. GitHub'a ve siteye hiçbir zaman gitmez. Sahibin kendi hasta numaraları sisteme girmez.
 
+## Sahibin yanıtı (20 Ekim 2026)
+
+"Sayfa seanslar sürdükçe açık kalır, terapi bitince kapanır. Kişisel bilgi tutulmaz; kişilere kod verilir." Buna göre kararlar şöyle değişti:
+- **E-posta saklanmaz.** Kayıtta ad, e-posta ve telefon yok. Yalnızca kod özeti, sahibin göreceği kısa rastgele bir etiket (örneğin `D-7Q3K`, hasta numarası değil), sıradaki randevu saati ve talepler var.
+- **Bağlantıyı danışana sahip kendisi gönderir.** Panel bağlantıyı gösterir, sahip kopyalayıp kendi e-postasıyla yollar. Talepler sahibe etiketle gelir ("D-7Q3K saat değişikliği istiyor"). Sahip danışana Gmail'den kendisi yanıt verir.
+- **Kapanış:** Sahip panelde "Terapi sona erdi" dediğinde kayıt hemen silinir ve bağlantı çalışmaz olur. Ayrıca 90 gün boyunca hiç randevusu olmayan kayıt da otomatik silinir (önerildi).
+
 ## Kararlar (öneri)
 
 1. **Kod:** 32 bayt rastgele değer (`Utilities.getUuid` iki kez + HMAC), base64url, yaklaşık 43 karakter. Drive'da kodun kendisi değil, **HMAC özeti** saklanır. Drive dosyası ele geçse bile bağlantılar üretilemez.

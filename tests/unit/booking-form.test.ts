@@ -11,7 +11,7 @@ const session = (over: Partial<BookingInput> = {}): BookingInput => ({
   kind: 'session', type: 'individual', day: '2026-10-22', time: '10:00', name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, ...over,
 });
 const intro = (over: Partial<BookingInput> = {}): BookingInput => ({
-  ...session({ kind: 'intro', type: undefined, day: '2026-10-24' }), forWhom: 'me', topics: [0, 3], before: 'no', age: 2, healthConsent: true, ...over,
+  ...session({ kind: 'intro', type: undefined, day: '2026-10-24', time: '11:00' }), forWhom: 'individual', topics: [0, 3], before: 'no', age: 2, healthConsent: true, ...over,
 });
 
 describe('booking.json', () => {
@@ -31,8 +31,8 @@ describe('timesFor', () => {
   });
   it('drops times inside the notice period and beyond the window', () => {
     // Tomorrow: only times at least 24 hours away.
-    expect(timesFor(cfg.session, '2026-10-21', NOW)).toEqual(['10:00', '11:00', '13:30', '15:00', '16:30', '18:00', '19:30']);
-    expect(timesFor(cfg.session, '2026-10-21', NOW + 3600e3 * 2)).toEqual(['13:30', '15:00', '16:30', '18:00', '19:30']);
+    expect(timesFor(cfg.session, '2026-10-21', NOW)).toEqual(['10:00', '11:30', '14:30', '16:00', '17:30']);
+    expect(timesFor(cfg.session, '2026-10-21', NOW + 3600e3 * 2)).toEqual(['14:30', '16:00', '17:30']);
     expect(timesFor(cfg.session, '2026-10-20', NOW)).toEqual([]);
     expect(timesFor(cfg.session, '2026-12-08', NOW)).toEqual([]);
     expect(timesFor(cfg.session, 'yarın', NOW)).toEqual([]);

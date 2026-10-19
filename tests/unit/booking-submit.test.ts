@@ -32,12 +32,12 @@ function markup(endpoint: string | null) {
 
 const $ = <T extends Element = HTMLElement>(s: string) => document.querySelector<T>(s)!;
 
-/** Walks the steps: Thursday 22 October 2026 at 13:30, then the details. */
+/** Walks the steps: Thursday 22 October 2026 at 14:30, then the details. */
 function fill() {
   $('[data-next]').click();
   const day = [...document.querySelectorAll<HTMLButtonElement>('.day')].find((b) => b.textContent === '22')!;
   day.click();
-  [...document.querySelectorAll<HTMLButtonElement>('.slot')].find((b) => b.textContent === '13:30')!.click();
+  [...document.querySelectorAll<HTMLButtonElement>('.slot')].find((b) => b.textContent === '14:30')!.click();
   $('[data-next]').click();
   $<HTMLInputElement>('[name=name]').value = 'Ayşe Yılmaz';
   $<HTMLInputElement>('[name=email]').value = 'ayse@example.com';
@@ -84,7 +84,7 @@ describe('mountBookingForm', () => {
     expect(url).toBe('https://api.example/exec');
     expect(init.credentials).toBe('omit');
     expect(JSON.parse(String(init.body))).toEqual({
-      action: 'booking.request', kind: 'session', type: 'individual', day: '2026-10-22', time: '13:30',
+      action: 'booking.request', kind: 'session', type: 'individual', day: '2026-10-22', time: '14:30',
       name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, hp_field: '', lang: 'tr',
     });
     expect($('[data-step="4"]').hidden).toBe(true);

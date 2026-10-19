@@ -985,6 +985,23 @@ textarea.k-input {
   box-shadow: var(--k-shadow-1);
 }
 
+/* In the editor the sticky toolbar holds the top of the screen and the footer the bottom: the rail
+   and its panel stop below the one and above the other (owner's review 2026-10-20). */
+.editor-page {
+  --ed-top: calc(3.5rem + var(--space-3));
+  --ed-bottom: 4rem;
+}
+
+.editor-page .side-rail,
+.editor-page .rail-panel {
+  top: var(--ed-top);
+}
+
+.editor-page .rail-panel {
+  max-height: calc(100vh - var(--ed-top) - var(--ed-bottom));
+  max-height: calc(100dvh - var(--ed-top) - var(--ed-bottom));
+}
+
 .rail-panel-body h3 {
   margin: 0 0 var(--k-space-3);
   font-size: var(--text-lg);

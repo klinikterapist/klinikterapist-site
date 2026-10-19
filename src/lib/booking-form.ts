@@ -18,9 +18,11 @@ export const SESSION_TYPES = [
   { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session' },
 ] as const;
 
+/** The intro call asks which kind of therapy the visitor is thinking of (the same kinds as booking). */
 export const INTRO_FOR = [
-  { id: 'me', tr: 'Kendim için', en: 'For myself' },
-  { id: 'couple', tr: 'Partnerimle birlikte', en: 'With my partner' },
+  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy' },
+  { id: 'couple', tr: 'Çift terapisi', en: 'Couples therapy' },
+  { id: 'accessible', tr: 'Erişilebilir terapi', en: 'Accessible therapy' },
 ] as const;
 
 export const INTRO_TOPICS = {
@@ -54,9 +56,10 @@ export const INTRO_TOPICS = {
   ],
 } as const;
 
+/** Adolescents, adults and older adults (owner's answer 2026-10-20); under 12 is not offered. */
 export const AGE_RANGES = {
-  tr: ['18 yaşından küçük (veli ya da vasi onayıyla)', '18–24', '25–34', '35–44', '45–54', '55 ve üzeri'],
-  en: ['Under 18 (with a parent’s or guardian’s consent)', '18–24', '25–34', '35–44', '45–54', '55 and over'],
+  tr: ['12–17 (veli ya da vasi onayıyla)', '18–24', '25–34', '35–44', '45–54', '55–64', '65 ve üzeri'],
+  en: ['12–17 (with a parent’s or guardian’s consent)', '18–24', '25–34', '35–44', '45–54', '55–64', '65 and over'],
 } as const;
 
 export const BOOKING_LIMITS = { nameMax: 100, emailMax: 254, phoneMin: 10, phoneMax: 20, noteMax: 500 } as const;

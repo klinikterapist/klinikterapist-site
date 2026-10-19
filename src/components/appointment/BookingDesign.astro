@@ -221,7 +221,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             </span>
           </label>
           <label class="type">
-            <input type="radio" name="bk-type" value="couple" data-sum-src="type" data-label={T.couple} data-meta={T.coupleMeta} />
+            <input type="radio" name="type" value="couple" data-sum-src="type" data-label={T.couple} data-meta={T.coupleMeta} />
             <span class="type-body">
               <span class="type-top">
                 <b>{T.couple}</b>
@@ -232,7 +232,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             </span>
           </label>
           <label class="type">
-            <input type="radio" name="bk-type" value="accessible" data-sum-src="type" data-label={T.access} data-meta={T.accessMeta} />
+            <input type="radio" name="type" value="accessible" data-sum-src="type" data-label={T.access} data-meta={T.accessMeta} />
             <span class="type-body">
               <span class="type-top">
                 <b>{T.access}</b>
@@ -244,7 +244,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             </span>
           </label>
           <label class="type is-off">
-            <input type="radio" name="bk-type" value="group" disabled />
+            <input type="radio" name="type" value="group" disabled />
             <span class="type-body">
               <span class="type-top">
                 <b>{T.group}</b>
@@ -254,7 +254,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             </span>
           </label>
           <label class="type is-off">
-            <input type="radio" name="bk-type" value="face" disabled />
+            <input type="radio" name="type" value="face" disabled />
             <span class="type-body">
               <span class="type-top">
                 <b>{T.face}</b>
@@ -411,12 +411,6 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
 </script>
 
 <style>
-  /* "Kontenjanlı": a quiet outlined badge in the accent colour. */
-  .badge-quota {
-    border: 1px solid color-mix(in srgb, var(--sun-disc) 70%, transparent);
-    color: var(--link);
-  }
-
   .type-more {
     color: var(--link);
     font-weight: 600;

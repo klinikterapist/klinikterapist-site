@@ -25,10 +25,18 @@
 7. **Yaş aralığı** (ön görüşme): bugünkü tasarımdaki seçenekler aynen kaldı ("18 yaşından küçük (veli ya da vasi onayıyla)" dahil). Yaş aralığı yalnızca size giden e-postada yazar. 18 yaş altının engellenip engellenmeyeceği 4. soruya bağlı.
 8. **Site tarafı:** Form, adres (`ADMIN_CONFIG.apiUrl`) tanımlıysa gönderir. Değilse ya da hata olursa e-posta bağlantısını gösterir (bugünkü gibi). Çerez yok, üçüncü taraf yok.
 
+## Sahibin yanıtları (20 Ekim 2026)
+
+- **Saklama:** Talep e-postaları 30 gün tutulur. Site zaten hiçbir şey saklamıyor; e-postaları 30 gün sonra sahip siler. Gmail'de otomatik silme ileride eklenebilir, ama bunun için ayrı bir izin gerekir. Aydınlatma paragrafındaki "yasal saklama süreleri boyunca" ifadesi "30 gün" oldu.
+- **Yaş:** Ergen, yetişkin ve yaşlı danışanlar. Seçenekler: 12–17 (veli ya da vasi onayıyla), 18–24, 25–34, 35–44, 45–54, 55–64, 65 ve üzeri. 12 yaş altı seçeneği yok.
+- **Saatler:** Hafta içi 10.00–19.00 arası çalışılıyor. Öğle arası 13.00–14.30. Seanslar arasında en az 40 dakika var. Seanslar 50–60 dakika sürdüğü için başlangıç saatleri 10.00, 11.30, 14.30, 16.00 ve 17.30 (son seans en geç 18.30'da biter). Hafta sonu 11.00–16.00 arası öğle arası olmadan ön görüşme yapılıyor. Ön görüşmeler 25–30 dakika sürdüğü için saatler 11.00, 12.00, 13.00, 14.00 ve 15.00 (önerildi, onay bekliyor).
+- **Ön görüşme türleri:** "Görüşme kimin için?" sorusu "Hangi görüşmeyi düşünüyorsunuz?" oldu. Seçenekler randevu sayfasındaki gibi: Bireysel, Çift, Erişilebilir (kontenjanlı; ekonomik durumu elverişli olmayanlar ve öğrenciler için). Grup ("Yakında") ve Yüz yüze ("Şu an uygun değil") görünüyor ama seçilemiyor.
+- **Açık rıza metni:** Sahibe gösterildi, yanıt bekleniyor.
+
 ## Sahibe açık sorular
 
 1. **Açık rıza metni** (ön görüşmede konu seçilince). Taslak: "Seçtiğim konuların ve yazdığım notun, ön görüşmeyi hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt'a e-postayla iletilmesine açık rıza veriyorum." Uygun mu? Yoksa konu sorusu tamamen kaldırılsın mı? (En az veri ilkesine göre kaldırmak da bir seçenek.)
-2. **Aydınlatma ve Gizlilik metinlerine eklenecek paragraf.** Taslak: "Randevu ve ön görüşme talepleri: Formda yazdığınız ad, e-posta, telefon, seçtiğiniz gün/saat ve (varsa) not ile konu seçimleri, talebinizi yanıtlamak amacıyla bana e-postayla iletilir. Site bu bilgileri saklamaz. E-postalar Google Workspace hesabımda, görüşme ilişkisi sona erdikten sonra yasal saklama süreleri boyunca tutulur." Saklama süresini siz belirleyin.
+2. **Aydınlatma ve Gizlilik metinlerine eklenecek paragraf.** Taslak: "Randevu ve ön görüşme talepleri: Formda yazdığınız ad, e-posta, telefon, seçtiğiniz gün/saat ve (varsa) not ile konu seçimleri, talebinizi yanıtlamak amacıyla bana e-postayla iletilir. Site bu bilgileri saklamaz. Talep e-postaları Google Workspace hesabımda 30 gün tutulur, sonra silinir." (Süre sahibin yanıtıyla 30 gün oldu; metnin son onayı bekleniyor.)
 3. **Google Takvim.** Dolu saatler takvimden okunsun ve formda kapansın mı? Bunun için Apps Script'e takvim izni verilir ve yalnızca "dolu/boş" bilgisi okunur. Etkinlik adları okunmaz.
 4. **Yaş sınırı:** Hangi yaş grubuyla çalışıyorsunuz? (Notta da açık karar olarak duruyor.)
 5. **Geç iptal kuralı** ve **çift terapisinde bireysel görüşme** metinleri (randevu sayfası, notta açık karar).

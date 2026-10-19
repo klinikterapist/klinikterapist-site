@@ -4,7 +4,7 @@
  */
 import type { Draft, LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
-import { LANG_LABEL, PLAN_HINT, formatSchedule, istanbulIso } from '../../lib/draft';
+import { LANG_LABEL, PLAN_HINT, PLAN_TIMES, formatSchedule, istanbulIso } from '../../lib/draft';
 import { HELP } from '../../lib/help-texts';
 import { Button, Field, Select, Toggle } from '../kit';
 import type { ImageStore } from './images';
@@ -65,14 +65,21 @@ export function SettingsPanel(props: {
           hint={props.planning ? 'Yazıda görünen tarih; yazı bu gün, aşağıdaki saatte yayına girer.' : "Yazıda görünen tarih. Yazı, Yayınla'ya bastığınızda yayınlanır."}
         />
         {props.onPlanTime && (
-          <Field
-            label="Yayın saati (isteğe bağlı)"
-            field="planTime"
-            type="time"
-            value={props.planTime ?? ''}
-            onChange={props.onPlanTime}
-            hint={props.planning ? PLAN_HINT : 'İleri bir gün ve saat seçerseniz Yayınla düğmesi Planla olur.'}
-          />
+          <div>
+            <Select
+              label="Yayın saati (isteğe bağlı)"
+              field="planTime"
+              value={props.planTime ?? ''}
+              options={[
+                { value: '', label: 'Saat seçme: Yayınla’ya basınca yayınlansın' },
+                // A plan made with an older, free time still shows as it is.
+                ...(props.planTime && !PLAN_TIMES.some((t) => t.value === props.planTime) ? [{ value: props.planTime, label: props.planTime.replace(':', '.') }] : []),
+                ...PLAN_TIMES,
+              ]}
+              onChange={props.onPlanTime}
+            />
+            <p className="k-hint">{props.planning ? PLAN_HINT : 'İleri bir gün ve saat seçerseniz Yayınla düğmesi Planla olur.'}</p>
+          </div>
         )}
         {draft.scheduledAt && (
           <div className="plan-box" role="status">

@@ -41,11 +41,20 @@ const T = {
     steps: ['Sizi tanıyalım', 'Gün ve saat', 'Bilgileriniz', 'Onay'],
     s1: 'Sizi tanıyalım',
     s1Hint: 'Birkaç kısa soru. Ayrıntıları görüşmede konuşacağız; burada yalnızca genel bir fikir edinmek istiyorum.',
-    forWhom: 'Görüşme kimin için?',
-    me: 'Kendim için',
-    meText: 'Bireysel terapiyi düşünüyorum.',
-    couple: 'Partnerimle birlikte',
-    coupleText: 'Çift terapisini düşünüyoruz.',
+    forWhom: 'Hangi görüşmeyi düşünüyorsunuz?',
+    me: 'Bireysel terapi',
+    meText: 'Kendim için; birebir ve düzenli görüşmeler.',
+    couple: 'Çift terapisi',
+    coupleText: 'Partnerimle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
+    access: 'Erişilebilir terapi',
+    accessBadge: 'Kontenjanlı',
+    accessText: 'Ekonomik durumu elverişli olmayanlar ve üniversite öğrencileri için uygun ücretli bireysel görüşme.',
+    group: 'Grup terapisi',
+    groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışma.',
+    face: 'Yüz yüze terapi',
+    faceText: 'Şu an yalnızca online görüşme yapıyorum.',
+    soon: 'Yakında',
+    off: 'Şu an uygun değil',
     reasons: 'Terapide üzerinde çalışmak istediğiniz konular neler?',
     reasonsHint: 'Birden fazla seçebilirsiniz. Emin değilseniz son seçeneği işaretlemeniz yeterli.',
     before: 'Daha önce psikolojik destek aldınız mı?',
@@ -75,7 +84,7 @@ const T = {
     type: 'Görüşme',
     intro: 'Ücretsiz ön görüşme',
     introMeta: '25–30 dakika · Online',
-    forLabel: 'Kimin için',
+    forLabel: 'Görüşme',
     topicLabel: 'Konu',
     when: 'Tarih',
     time: 'Saat',
@@ -104,11 +113,20 @@ const T = {
     steps: ['About you', 'Day and time', 'Your details', 'Confirm'],
     s1: 'About you',
     s1Hint: 'A few short questions. We will talk about the details in the call; here I only want a general picture.',
-    forWhom: 'Who is the call for?',
-    me: 'For myself',
-    meText: 'I am thinking of individual therapy.',
-    couple: 'With my partner',
-    coupleText: 'We are thinking of couple therapy.',
+    forWhom: 'Which kind of therapy are you thinking of?',
+    me: 'Individual therapy',
+    meText: 'For myself; regular one-to-one sessions.',
+    couple: 'Couples therapy',
+    coupleText: 'With my partner; communication, conflicts and the relationship itself.',
+    access: 'Accessible therapy',
+    accessBadge: 'Limited places',
+    accessText: 'Individual sessions at a reduced fee for people on a tight budget and university students.',
+    group: 'Group therapy',
+    groupText: 'Working together with a small group who come with similar topics.',
+    face: 'Face-to-face therapy',
+    faceText: 'For now I only work online.',
+    soon: 'Coming soon',
+    off: 'Not available now',
     reasons: 'What would you like to work on in therapy?',
     reasonsHint: 'You can choose more than one. If you are not sure, the last option is enough.',
     before: 'Have you had psychological support before?',
@@ -138,7 +156,7 @@ const T = {
     type: 'Session',
     intro: 'Free intro call',
     introMeta: '25–30 minutes · Online',
-    forLabel: 'For',
+    forLabel: 'Therapy',
     topicLabel: 'Topic',
     when: 'Date',
     time: 'Time',
@@ -188,7 +206,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
         <p class="q" id="pc-for">{T.forWhom} <span class="req" aria-hidden="true">*</span></p>
         <div class="types" role="radiogroup" aria-labelledby="pc-for">
           <label class="type">
-            <input type="radio" name="forWhom" value="me" data-sum-src="for" data-label={T.me} checked />
+            <input type="radio" name="forWhom" value="individual" data-sum-src="for" data-label={T.me} checked />
             <span class="type-body">
               <b>{T.me}</b>
               <span class="type-text">{T.meText}</span>
@@ -199,6 +217,36 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             <span class="type-body">
               <b>{T.couple}</b>
               <span class="type-text">{T.coupleText}</span>
+            </span>
+          </label>
+          <label class="type">
+            <input type="radio" name="forWhom" value="accessible" data-sum-src="for" data-label={T.access} />
+            <span class="type-body">
+              <span class="type-top">
+                <b>{T.access}</b>
+                <span class="badge badge-quota">{T.accessBadge}</span>
+              </span>
+              <span class="type-text">{T.accessText}</span>
+            </span>
+          </label>
+          <label class="type is-off">
+            <input type="radio" name="forWhom" value="group" disabled />
+            <span class="type-body">
+              <span class="type-top">
+                <b>{T.group}</b>
+                <span class="badge badge-soon">{T.soon}</span>
+              </span>
+              <span class="type-text">{T.groupText}</span>
+            </span>
+          </label>
+          <label class="type is-off">
+            <input type="radio" name="forWhom" value="face" disabled />
+            <span class="type-body">
+              <span class="type-top">
+                <b>{T.face}</b>
+                <span class="badge badge-soon">{T.off}</span>
+              </span>
+              <span class="type-text">{T.faceText}</span>
             </span>
           </label>
         </div>

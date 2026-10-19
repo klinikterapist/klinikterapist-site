@@ -407,6 +407,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
         </Banner>
       )}
       {message && <Banner tone="error">{message}</Banner>}
+      {flagMissing && blocked && (
+        <Banner tone="warning">
+          {planning ? 'Planlamadan' : 'Yayınlamadan'} önce Kontrol listesinde sarı işaretli eksikleri tamamlayın. Bir maddeye dokunursanız ilgili alana gidersiniz.
+        </Banner>
+      )}
       {scheduleError && draft.scheduledAt && <Banner tone="warning">{`Planlanan yayın yapılamadı, tekrar denenecek. ${scheduleError}`}</Banner>}
 
       <div className="editor-toolbar-slot" ref={setToolbarHost} />

@@ -66,6 +66,21 @@ export function isoDay(d: Date): string {
 /** Shown wherever a post is planned (the hourly backend run publishes it). */
 export const PLAN_HINT = 'Planlanan saatten sonraki bir saat içinde yayınlanır.';
 
+/**
+ * The publish times the panel offers (owner's review 2026-10-20: a few good hours, not every minute).
+ * Morning commute and start of work, late morning, lunch break, afternoon break, after work, evening.
+ */
+export const PLAN_TIMES = [
+  { value: '08:00', label: '08.00 · sabah, işe giderken' },
+  { value: '09:00', label: '09.00 · iş başında' },
+  { value: '11:00', label: '11.00 · öğleden önce' },
+  { value: '12:30', label: '12.30 · öğle arası' },
+  { value: '15:00', label: '15.00 · ikindi molası' },
+  { value: '18:00', label: '18.00 · iş çıkışı' },
+  { value: '20:00', label: '20.00 · akşam' },
+  { value: '21:00', label: '21.00 · akşam, en yoğun saat' },
+] as const;
+
 /** Turkey has used a fixed +03:00 (no daylight saving) since 2016. */
 const ISTANBUL_OFFSET = '+03:00';
 const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];

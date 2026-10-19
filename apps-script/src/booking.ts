@@ -77,7 +77,7 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
       ? [`Görüşme türü: ${SESSION_TYPES.find((t) => t.id === i.type)!.tr}`]
       : [
           'Ücretsiz ön görüşme talebi',
-          `Kimin için: ${INTRO_FOR.find((f) => f.id === i.forWhom)!.tr}`,
+          `Düşündüğü görüşme: ${INTRO_FOR.find((f) => f.id === i.forWhom)!.tr}`,
           `Konular: ${(i.topics ?? []).map((t) => INTRO_TOPICS.tr[t]).join(', ')}`,
           `Daha önce destek aldı mı: ${i.before === 'yes' ? 'Evet' : i.before === 'no' ? 'Hayır' : 'Belirtmedi'}`,
           `Yaş aralığı: ${AGE_RANGES.tr[i.age!]}`,

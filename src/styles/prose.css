@@ -61,12 +61,13 @@
 }
 
 .prose h2 {
-  margin: 2.2em 0 0;
+  /* A little air before a new section, not a gap (owner's review 2026-10-20). */
+  margin: 1.5em 0 0;
   font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
 }
 
 .prose h3 {
-  margin: 1.8em 0 0;
+  margin: 1.35em 0 0;
   font-size: var(--text-lg);
 }
 
@@ -136,7 +137,8 @@
 }
 
 .prose figure {
-  margin-inline: 0;
+  /* The block spacing (`.prose > * + *`) is enough; the browser's own figure margin doubled it. */
+  margin: 0;
 }
 
 .prose figure img {

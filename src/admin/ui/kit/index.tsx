@@ -1,5 +1,6 @@
 /** Small UI building blocks shared by the panel screens. */
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon, type LucideIcon } from '../icons';
 import { useHistoryLayer } from '../history-layer';
 
@@ -191,14 +192,17 @@ function DialogFrame({ title, children, actions, onClose }: DialogProps) {
       prev?.focus?.();
     };
   }, [onClose]);
-  return (
+  // On top of everything: opened from a sticky panel, the dialog would otherwise sit under the
+  // editor's sticky toolbar and footer (owner's review 2026-10-20).
+  return createPortal(
     <div className="k-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="k-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
         <h2 id={titleId}>{title}</h2>
         <div className="k-dialog-body">{children}</div>
         <div className="k-dialog-actions">{actions}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
