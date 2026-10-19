@@ -2,7 +2,7 @@
  * Drafts and draft images in the owner's Drive (spec §8.4): `Klinikterapist Panel/taslaklar/<key>.json`
  * and `Klinikterapist Panel/gorseller/<key>/<name>`. Nothing here touches GitHub.
  */
-import type { Draft, DraftSummary, VersionSummary } from '../../src/admin/api/types';
+import type { Draft, DraftSummary, TrashItem, VersionSummary } from '../../src/admin/api/types';
 import type { FolderLike, Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 
@@ -109,6 +109,7 @@ export function saveDraft(gas: Gas, p: { draft?: unknown; snapshot?: unknown }):
     const text = JSON.stringify(next);
     if (file) file.write(text);
     else folder.createFile(`${draft.key}.json`, text, 'json');
+    changeList(gas, (list) => [...list.filter((d) => d.key !== next.key), summary(next)]);
     return { rev: next.rev, updatedAt: next.updatedAt };
   });
 }
@@ -142,25 +143,136 @@ export function getVersion(gas: Gas, p: { key?: unknown; name?: unknown }): { dr
   }
 }
 
+const summary = (d: Draft): DraftSummary => ({
+  key: d.key,
+  rev: d.rev,
+  updatedAt: d.updatedAt,
+  published: d.published,
+  category: d.category,
+  title: { tr: d.tr.title, en: d.en.title },
+});
+
+/**
+ * The drafts list is kept in the script cache, so opening the panel does not read every draft file
+ * from Drive. Every change below (save, delete, restore) updates or drops it inside its lock.
+ */
+const LIST_CACHE = 'drafts.list';
+const LIST_TTL = 6 * 60 * 60;
+
+function cachedList(gas: Gas): DraftSummary[] | null {
+  const raw = gas.cache.get(LIST_CACHE);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as DraftSummary[];
+  } catch {
+    return null;
+  }
+}
+
+function changeList(gas: Gas, change: (list: DraftSummary[]) => DraftSummary[]): void {
+  const list = cachedList(gas);
+  if (list) gas.cache.put(LIST_CACHE, JSON.stringify(change(list)), LIST_TTL);
+}
+
+const sorted = (list: DraftSummary[]) => [...list].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
 export function listDrafts(gas: Gas): { drafts: DraftSummary[] } {
+  const cached = cachedList(gas);
+  if (cached) return { drafts: sorted(cached) };
   const folder = sub(gas, 'taslaklar', false);
-  const drafts = (folder?.listFiles() ?? [])
-    .filter((f) => f.getName().endsWith('.json'))
-    .map((f): DraftSummary => {
-      const d = JSON.parse(f.read()) as Draft;
-      return { key: d.key, rev: d.rev, updatedAt: d.updatedAt, published: d.published, category: d.category, title: { tr: d.tr.title, en: d.en.title } };
-    })
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const drafts = sorted(
+    (folder?.listFiles() ?? []).filter((f) => f.getName().endsWith('.json')).map((f) => summary(JSON.parse(f.read()) as Draft)),
+  );
+  gas.cache.put(LIST_CACHE, JSON.stringify(drafts), LIST_TTL);
   return { drafts };
 }
 
-/** Moves the draft and its images to Drive trash (recoverable for 30 days). */
-export function deleteDraft(gas: Gas, p: { key?: unknown }): Record<string, never> {
+/** Deleted drafts wait here for 30 days (owner's request 2026-10-19), then go for good. */
+const TRASH = 'cop-kutusu';
+const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
+type TrashFile = { deletedAt: string; draft: Draft };
+
+/** Drops the draft's images and snapshots too (Drive trash, which Google empties on its own). */
+function removeForGood(gas: Gas, k: string): void {
+  sub(gas, TRASH, false)?.findFile(`${k}.json`)?.trash();
+  imageFolder(gas, k, false)?.trash();
+  versionFolder(gas, k, false)?.trash();
+}
+
+/**
+ * Deletes a draft. With `trash` (the owner's "Taslağı sil") it goes to the panel's trash for 30
+ * days, images and snapshots kept; without it (after publishing, or when edits to a live post are
+ * dropped automatically) it is removed right away, as before.
+ */
+export function deleteDraft(gas: Gas, p: { key?: unknown; trash?: unknown }): Record<string, never> {
   const k = key(p.key);
   gas.withLock(() => {
-    sub(gas, 'taslaklar', false)?.findFile(`${k}.json`)?.trash();
-    imageFolder(gas, k, false)?.trash();
-    versionFolder(gas, k, false)?.trash();
+    const file = sub(gas, 'taslaklar', false)?.findFile(`${k}.json`);
+    if (p.trash === true && file) {
+      const item: TrashFile = { deletedAt: new Date(gas.now()).toISOString(), draft: JSON.parse(file.read()) as Draft };
+      const bin = sub(gas, TRASH, true);
+      const old = bin.findFile(`${k}.json`);
+      if (old) old.write(JSON.stringify(item));
+      else bin.createFile(`${k}.json`, JSON.stringify(item), 'json');
+      file.trash();
+    } else {
+      file?.trash();
+      imageFolder(gas, k, false)?.trash();
+      versionFolder(gas, k, false)?.trash();
+    }
+    changeList(gas, (list) => list.filter((d) => d.key !== k));
+  });
+  return {};
+}
+
+/** The trash, newest first; anything older than 30 days is removed for good on the way. */
+export function listTrash(gas: Gas): { items: TrashItem[] } {
+  return gas.withLock(() => {
+    const now = gas.now();
+    const items: TrashItem[] = [];
+    for (const f of sub(gas, TRASH, false)?.listFiles() ?? []) {
+      let t: TrashFile;
+      try {
+        t = JSON.parse(f.read()) as TrashFile;
+      } catch {
+        continue;
+      }
+      const purgeAt = Date.parse(t.deletedAt) + TRASH_KEEP_MS;
+      if (now >= purgeAt) {
+        removeForGood(gas, t.draft.key);
+        continue;
+      }
+      items.push({ ...summary(t.draft), deletedAt: t.deletedAt, purgeAt: new Date(purgeAt).toISOString() });
+    }
+    items.sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+    return { items };
+  });
+}
+
+export function restoreTrash(gas: Gas, p: { key?: unknown }): { draft: DraftSummary } {
+  const k = key(p.key);
+  return gas.withLock(() => {
+    const file = sub(gas, TRASH, false)?.findFile(`${k}.json`);
+    if (!file) throw new ApiError('not_found', 'Bu yazı çöp kutusunda bulunamadı. 30 günü geçtiği için silinmiş olabilir.');
+    const drafts = sub(gas, 'taslaklar', true);
+    if (drafts.findFile(`${k}.json`)) {
+      throw new ApiError('conflict', 'Aynı yazının açık bir taslağı var. Önce o taslağı silin ya da yayınlayın.');
+    }
+    const t = JSON.parse(file.read()) as TrashFile;
+    drafts.createFile(`${k}.json`, JSON.stringify(t.draft), 'json');
+    file.trash();
+    changeList(gas, (list) => [...list.filter((d) => d.key !== k), summary(t.draft)]);
+    return { draft: summary(t.draft) };
+  });
+}
+
+export function purgeTrash(gas: Gas, p: { key?: unknown }): Record<string, never> {
+  const k = key(p.key);
+  gas.withLock(() => {
+    if (!sub(gas, TRASH, false)?.findFile(`${k}.json`)) {
+      throw new ApiError('not_found', 'Bu yazı çöp kutusunda bulunamadı.');
+    }
+    removeForGood(gas, k);
   });
   return {};
 }

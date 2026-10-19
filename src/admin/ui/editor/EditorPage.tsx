@@ -288,7 +288,7 @@ function Editing({ loaded }: { loaded: Loaded }) {
     setBusy(true);
     try {
       auto.stop();
-      await api.deleteDraft(draft.key);
+      await api.deleteDraft(draft.key, { trash: true });
       clearBackup(draft.key, window.localStorage);
       setDone({ kind: 'deleted' });
     } catch (e) {
@@ -330,6 +330,11 @@ function Editing({ loaded }: { loaded: Loaded }) {
           </>
         )}
         {done.kind === 'unpublished' && <p>Yazı sitede görünmeyecek; içeriği taslaklarda duruyor. Eski adresler blog sayfasına yönlendirilir.</p>}
+        {done.kind === 'deleted' && (
+          <p>
+            Çöp kutusuna taşındı. 30 gün içinde <a href="#/cop-kutusu">Çöp kutusu</a> ekranından geri alabilirsiniz.
+          </p>
+        )}
         <Button variant="primary" onClick={() => go('#/yazilar')}>
           Yazılara dön
         </Button>
@@ -495,8 +500,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
         >
           <p>
             {loaded.live
-              ? 'Yayındaki yazı olduğu gibi kalır; kaydedilmemiş değişiklikler silinir.'
-              : "Taslak Drive'daki çöp kutusuna taşınır (30 gün içinde oradan geri alınabilir)."}
+              ? 'Yayındaki yazı olduğu gibi kalır. Atılan değişiklikler çöp kutusuna taşınır; 30 gün içinde oradan geri alabilirsiniz.'
+              : 'Taslak çöp kutusuna taşınır. 30 gün içinde oradan geri alabilirsiniz; sonra kalıcı olarak silinir.'}
           </p>
         </Dialog>
       )}

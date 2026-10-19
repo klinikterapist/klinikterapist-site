@@ -37,6 +37,7 @@ export {
   Sun,
   Tag,
   Tags,
+  Trash2,
   Undo2,
   UserRound,
   SquarePlay as Youtube, // Lucide 1.x dropped brand icons; a play square stands in

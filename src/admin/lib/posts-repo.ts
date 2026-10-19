@@ -17,12 +17,19 @@ export type SiteState = {
 
 const POST_FILE = /^src\/content\/posts\/([a-z0-9-]+)\/(tr|en)\.md$/;
 
-export async function loadSiteState(api: Api): Promise<SiteState> {
-  const { files } = await api.tree();
+/**
+ * The last loaded state, so returning to Home or Posts shows it at once (`onCached`) while a fresh
+ * copy loads. Every call still fetches; the cached copy is only ever shown first.
+ */
+const lastState = new WeakMap<Api, SiteState>();
+
+/** What is live: one `site.snapshot` call (the tree plus every post and data file, read at once). */
+export async function loadSiteState(api: Api, opts: { onCached?: (s: SiteState) => void } = {}): Promise<SiteState> {
+  const cached = lastState.get(api);
+  if (cached && opts.onCached) opts.onCached(cached);
+  const { files, contents } = await api.snapshot();
   const postPaths = files.filter((f) => POST_FILE.test(f.path)).map((f) => f.path);
-  const wanted = [...postPaths, 'src/data/redirects.json', 'src/data/categories.json', 'src/data/seo.json'].filter((p) => files.some((f) => f.path === p));
-  const read = wanted.length ? (await api.read(wanted)).files : [];
-  const byPath = new Map(read.map((f) => [f.path, f]));
+  const byPath = new Map(contents.map((f) => [f.path, f]));
 
   const keys = [...new Set(postPaths.map((p) => p.match(POST_FILE)![1]))];
   const posts: LoadedPost[] = [];
@@ -51,13 +58,26 @@ export async function loadSiteState(api: Api): Promise<SiteState> {
   } catch {
     siteName = null;
   }
-  return {
+  const state: SiteState = {
     posts,
     redirects: { list: r ? parseRedirects(JSON.parse(r.content)) : [], sha: r?.sha ?? '' },
     categories: { list: c ? parseCategories(JSON.parse(c.content)) : [], sha: c?.sha ?? '' },
     siteName,
   };
+  lastState.set(api, state);
+  return state;
 }
+
+/** The drafts list from the last visit to Home or Posts, per API client (shown with the cached state). */
+const lastDrafts = new WeakMap<Api, DraftSummary[]>();
+
+export async function loadDrafts(api: Api): Promise<DraftSummary[]> {
+  const { drafts } = await api.listDrafts();
+  lastDrafts.set(api, drafts);
+  return drafts;
+}
+
+export const cachedDrafts = (api: Api): DraftSummary[] | null => lastDrafts.get(api) ?? null;
 
 function langFields(fm: PostFrontmatter, body: string): LangFields {
   return {

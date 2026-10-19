@@ -1,12 +1,13 @@
 /** Posts: live and draft, with search, category filter and status. */
 import { useEffect, useMemo, useState } from 'react';
-import { ApiFailure } from '../api/types';
+import { ApiFailure, type DraftSummary } from '../api/types';
 import type { Category } from '../../lib/schemas';
 import { startNewPost } from '../lib/new-post';
-import { STATUS_LABEL, loadSiteState, mergeList, type PostRow } from '../lib/posts-repo';
+import { STATUS_LABEL, cachedDrafts, loadDrafts, loadSiteState, mergeList, type PostRow, type SiteState } from '../lib/posts-repo';
 import { go, usePanel } from './context';
 import { FileText, Search } from './icons';
 import { Banner, Button, EmptyState, Field, Select, Spinner } from './kit';
+
 
 const fold = (s: string) => s.toLocaleLowerCase('tr-TR').replace(/i̇/g, 'i');
 
@@ -23,11 +24,14 @@ export function PostsList({ tab }: { tab: 'live' | 'drafts' }) {
   useEffect(() => {
     let alive = true;
     setError(null);
-    Promise.all([loadSiteState(api), api.listDrafts()])
-      .then(([site, { drafts }]) => {
-        if (!alive) return;
-        setCategories(site.categories.list);
-        setRows(mergeList(site.posts, drafts));
+    const show = (site: SiteState, drafts: DraftSummary[]) => {
+      setCategories(site.categories.list);
+      setRows(mergeList(site.posts, drafts));
+    };
+    const draftsBefore = cachedDrafts(api);
+    Promise.all([loadSiteState(api, { onCached: (site) => draftsBefore && alive && show(site, draftsBefore) }), loadDrafts(api)])
+      .then(([site, drafts]) => {
+        if (alive) show(site, drafts);
       })
       .catch((e) => alive && setError(e instanceof ApiFailure ? e.message : 'Yazılar yüklenemedi. Tekrar deneyin.'));
     return () => {

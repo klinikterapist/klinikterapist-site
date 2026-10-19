@@ -86,6 +86,9 @@ export type DraftSummary = {
   title: { tr: string; en: string };
 };
 
+/** A deleted draft in the panel's trash: removed for good at `purgeAt` (30 days after `deletedAt`). */
+export type TrashItem = DraftSummary & { deletedAt: string; purgeAt: string };
+
 /** One snapshot of a draft (the stored copy as it was before a later save). */
 export type VersionSummary = { name: string; rev: number; savedAt: string };
 
@@ -97,6 +100,8 @@ export interface Api {
   logout(): Promise<void>;
   tree(): Promise<{ headSha: string; files: TreeEntry[] }>;
   read(paths: string[]): Promise<{ files: RepoFile[] }>;
+  /** The tree plus every post and the data files the posts screens need, in one call. */
+  snapshot(): Promise<{ headSha: string; files: TreeEntry[]; contents: RepoFile[] }>;
   commit(input: { message: string; writes: CommitWrite[]; deletes: CommitDelete[] }): Promise<{ commitSha: string }>;
   status(): Promise<SiteStatus>;
   listDrafts(): Promise<{ drafts: DraftSummary[] }>;
@@ -106,7 +111,11 @@ export interface Api {
   /** Snapshots of a draft, newest first. */
   listVersions(key: string): Promise<{ versions: VersionSummary[] }>;
   getVersion(key: string, name: string): Promise<{ draft: Draft }>;
-  deleteDraft(key: string): Promise<void>;
+  /** `trash`: keep it in the panel's trash for 30 days (the owner's "Taslağı sil"). */
+  deleteDraft(key: string, opts?: { trash?: boolean }): Promise<void>;
+  listTrash(): Promise<{ items: TrashItem[] }>;
+  restoreTrash(key: string): Promise<{ draft: DraftSummary }>;
+  purgeTrash(key: string): Promise<void>;
   putImage(key: string, name: string, base64: string): Promise<void>;
   getImage(key: string, name: string): Promise<{ base64: string }>;
   /** The page counter's day counts for [from, to] (Istanbul days, `YYYY-MM-DD`). */
@@ -131,6 +140,7 @@ export const ACTIONS = {
   logout: 'auth.logout',
   tree: 'site.tree',
   read: 'site.read',
+  snapshot: 'site.snapshot',
   commit: 'site.commit',
   status: 'site.status',
   listDrafts: 'drafts.list',
@@ -139,6 +149,9 @@ export const ACTIONS = {
   listVersions: 'drafts.versions',
   getVersion: 'drafts.version',
   deleteDraft: 'drafts.delete',
+  listTrash: 'trash.list',
+  restoreTrash: 'trash.restore',
+  purgeTrash: 'trash.purge',
   putImage: 'images.put',
   getImage: 'images.get',
   statsSummary: 'stats.summary',

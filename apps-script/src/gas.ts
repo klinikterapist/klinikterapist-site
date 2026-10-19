@@ -39,6 +39,8 @@ export interface DriveLike {
 
 export interface Gas {
   fetch(url: string, opts?: FetchOpts): FetchResult;
+  /** Several requests at once (UrlFetchApp.fetchAll); results in the same order. */
+  fetchAll(requests: { url: string; opts?: FetchOpts }[]): FetchResult[];
   props: { get(key: string): string | null; set(key: string, value: string): void; del(key: string): void };
   cache: { get(key: string): string | null; put(key: string, value: string, ttlSec: number): void };
   withLock<T>(fn: () => T): T;
@@ -122,21 +124,32 @@ class GasFolder implements FolderLike {
   }
 }
 
+function toParams(opts: FetchOpts): GoogleAppsScript.URL_Fetch.URLFetchRequestOptions {
+  return {
+    method: opts.method ?? 'get',
+    headers: opts.headers,
+    payload: opts.payload,
+    contentType: opts.payload === undefined ? undefined : 'application/json',
+    muteHttpExceptions: true,
+  };
+}
+
+function toResult(res: GoogleAppsScript.URL_Fetch.HTTPResponse): FetchResult {
+  const headers: Record<string, string> = {};
+  for (const [k, v] of Object.entries(res.getAllHeaders() as Record<string, unknown>)) headers[k.toLowerCase()] = String(v);
+  return { code: res.getResponseCode(), text: res.getContentText(), headers };
+}
+
 export function realGas(): Gas {
   const props = PropertiesService.getScriptProperties();
   const cache = CacheService.getScriptCache();
   return {
     fetch(url, opts = {}) {
-      const res = UrlFetchApp.fetch(url, {
-        method: opts.method ?? 'get',
-        headers: opts.headers,
-        payload: opts.payload,
-        contentType: opts.payload === undefined ? undefined : 'application/json',
-        muteHttpExceptions: true,
-      });
-      const headers: Record<string, string> = {};
-      for (const [k, v] of Object.entries(res.getAllHeaders() as Record<string, unknown>)) headers[k.toLowerCase()] = String(v);
-      return { code: res.getResponseCode(), text: res.getContentText(), headers };
+      return toResult(UrlFetchApp.fetch(url, toParams(opts)));
+    },
+    fetchAll(requests) {
+      if (requests.length === 0) return [];
+      return UrlFetchApp.fetchAll(requests.map((r) => ({ url: r.url, ...toParams(r.opts ?? {}) }))).map(toResult);
     },
     props: { get: (k) => props.getProperty(k), set: (k, v) => void props.setProperty(k, v), del: (k) => void props.deleteProperty(k) },
     cache: { get: (k) => cache.get(k), put: (k, v, ttl) => cache.put(k, v, ttl) },

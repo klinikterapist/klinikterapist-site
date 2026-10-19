@@ -5,12 +5,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type DraftSummary } from '../api/types';
 import { dashboard } from '../lib/dashboard';
-import { loadSiteState, type SiteState } from '../lib/posts-repo';
+import { cachedDrafts, loadDrafts, loadSiteState, type SiteState } from '../lib/posts-repo';
 import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
 import { CheckCircle2, FileText, Inbox } from './icons';
 import { Banner, Button, EmptyState, Spinner } from './kit';
 import { StatsPanel } from './home/StatsPanel';
+
+const NO_POSTS: SiteState['posts'] = [];
 
 const SITE_LABEL = { ok: 'Sitede yayında', updating: 'Site güncelleniyor…', failed: 'Yayın başarısız oldu' } as const;
 
@@ -24,8 +26,11 @@ export function Home() {
   useEffect(() => {
     let alive = true;
     setError(null);
-    Promise.all([loadSiteState(api), api.listDrafts()])
-      .then(([site, { drafts }]) => alive && setData({ site, drafts }))
+    const draftsBefore = cachedDrafts(api);
+    Promise.all([loadSiteState(api, { onCached: (site) => draftsBefore && alive && setData({ site, drafts: draftsBefore }) }), loadDrafts(api)])
+      .then(([site, drafts]) => {
+        if (alive) setData({ site, drafts });
+      })
       .catch((e) => alive && setError(e instanceof ApiFailure ? e.message : 'Özet yüklenemedi. Tekrar deneyin.'));
     return () => {
       alive = false;
@@ -45,8 +50,9 @@ export function Home() {
           {error}
         </Banner>
       )}
+      {/* Statistics load at the same time as the posts; post titles fill in when they arrive. */}
+      <StatsPanel posts={data?.site.posts ?? NO_POSTS} />
       {!d && !error && <Spinner label="Özet yükleniyor…" />}
-      {d && data && <StatsPanel posts={data.site.posts} />}
       {d && <h3 className="home-section-title">Çalışma alanı</h3>}
       {d && (
         <div className="home-grid">

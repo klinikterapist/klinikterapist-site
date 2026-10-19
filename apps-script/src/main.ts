@@ -9,8 +9,8 @@ import type { ApiResponse } from '../../src/admin/api/types';
 import { realGas, type Gas } from './gas';
 import { checkSession, issueSession, logout, verifyIdToken } from './auth';
 import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
-import { commit, read, status, tree } from './github';
-import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listVersions, putImage, saveDraft } from './drive';
+import { commit, read, snapshot, status, tree } from './github';
+import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
 import { recordHit, statsReads, statsSummary } from './stats';
 
@@ -32,6 +32,7 @@ export const ACTIONS: Record<string, Handler> = {
   },
   'site.tree': (gas) => tree(gas),
   'site.read': (gas, p) => read(gas, p),
+  'site.snapshot': (gas) => snapshot(gas),
   'site.commit': (gas, p) => commit(gas, p),
   'site.status': (gas) => status(gas),
   'drafts.list': (gas) => listDrafts(gas),
@@ -40,6 +41,9 @@ export const ACTIONS: Record<string, Handler> = {
   'drafts.versions': (gas, p) => listVersions(gas, p),
   'drafts.version': (gas, p) => getVersion(gas, p),
   'drafts.delete': (gas, p) => deleteDraft(gas, p),
+  'trash.list': (gas) => listTrash(gas),
+  'trash.restore': (gas, p) => restoreTrash(gas, p),
+  'trash.purge': (gas, p) => purgeTrash(gas, p),
   'images.put': (gas, p) => putImage(gas, p),
   'images.get': (gas, p) => getImage(gas, p),
   'stats.summary': (gas, p) => statsSummary(gas, p),

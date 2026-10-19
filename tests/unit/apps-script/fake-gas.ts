@@ -71,6 +71,9 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
       }
       return json(404, { message: 'Not Found' });
     },
+    fetchAll(requests) {
+      return requests.map((r) => gas.fetch(r.url, r.opts));
+    },
     props: { get: (k) => props.get(k) ?? null, set: (k, v) => void props.set(k, v), del: (k) => void props.delete(k) },
     cache: {
       get: (k) => {

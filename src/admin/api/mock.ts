@@ -26,7 +26,11 @@ export type MockState = {
   /** Snapshots by draft key, oldest first. `at` is epoch ms. */
   versions: Map<string, { name: string; at: number; draft: Draft }[]>;
   commits: { message: string; writes: CommitWrite[]; deletes: CommitDelete[] }[];
+  /** The panel's trash: deleted drafts by key, `deletedAt` in epoch ms. */
+  trash: Map<string, { deletedAt: number; draft: Draft }>;
 };
+
+const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function createMockApi(opts: { latency?: number; seed?: Record<string, string>; now?: () => number; stats?: StatsSummary } = {}): Api & { state: MockState } {
   const files = new Map<string, File>();
@@ -38,12 +42,18 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [] };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map() };
   let head = 1;
   let status: SiteStatus = { state: 'success', commitSha: 'c1', url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' };
   let pollsSinceCommit = 0;
 
   const clock = opts.now ?? Date.now;
+  /** A draft gone for good: trash entry, snapshots and images. */
+  const purge = (key: string) => {
+    state.trash.delete(key);
+    state.versions.delete(key);
+    for (const k of [...state.images.keys()]) if (k.startsWith(`${key}/`)) state.images.delete(k);
+  };
 
   const wait = <T>(v: () => T): Promise<T> =>
     new Promise((resolve, reject) =>
@@ -69,6 +79,12 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
           return { path, ...f };
         }),
       })),
+    snapshot: () =>
+      wait(() => {
+        const list = [...files].map(([path, f]) => ({ path, sha: f.sha, size: f.content.length }));
+        const wanted = /^src\/content\/posts\/[a-z0-9-]+\/(tr|en)\.md$|^src\/data\/(redirects|categories|seo)\.json$/;
+        return { headSha: `c${head}`, files: list, contents: list.filter((f) => wanted.test(f.path)).map((f) => ({ path: f.path, ...files.get(f.path)! })) };
+      }),
     commit: (input) =>
       wait(() => {
         for (const w of input.writes) if ((files.get(w.path)?.sha ?? null) !== w.expectSha) throw new ApiFailure('conflict', `"${w.path}" başka bir yerde değişmiş.`);
@@ -131,11 +147,48 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         if (!v) throw new ApiFailure('not_found', 'Bu sürüm bulunamadı. 30 günden eski sürümler silinir.');
         return { draft: structuredClone(v.draft) };
       }),
-    deleteDraft: (key) =>
+    deleteDraft: (key, o) =>
       wait(() => {
+        const d = state.drafts.get(key);
         state.drafts.delete(key);
-        state.versions.delete(key);
-        for (const k of [...state.images.keys()]) if (k.startsWith(`${key}/`)) state.images.delete(k);
+        if (o?.trash && d) {
+          state.trash.set(key, { deletedAt: clock(), draft: d });
+          return;
+        }
+        purge(key);
+      }),
+    listTrash: () =>
+      wait(() => {
+        const now = clock();
+        for (const [k, t] of state.trash) if (now - t.deletedAt >= TRASH_KEEP_MS) purge(k);
+        const items = [...state.trash.values()]
+          .map(({ deletedAt, draft: d }) => ({
+            key: d.key,
+            rev: d.rev,
+            updatedAt: d.updatedAt,
+            published: d.published,
+            category: d.category,
+            title: { tr: d.tr.title, en: d.en.title },
+            deletedAt: new Date(deletedAt).toISOString(),
+            purgeAt: new Date(deletedAt + TRASH_KEEP_MS).toISOString(),
+          }))
+          .sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+        return { items };
+      }),
+    restoreTrash: (key) =>
+      wait(() => {
+        const t = state.trash.get(key);
+        if (!t) throw new ApiFailure('not_found', 'Bu yazı çöp kutusunda bulunamadı. 30 günü geçtiği için silinmiş olabilir.');
+        if (state.drafts.has(key)) throw new ApiFailure('conflict', 'Aynı yazının açık bir taslağı var. Önce o taslağı silin ya da yayınlayın.');
+        state.drafts.set(key, t.draft);
+        state.trash.delete(key);
+        const d = t.draft;
+        return { draft: { key: d.key, rev: d.rev, updatedAt: d.updatedAt, published: d.published, category: d.category, title: { tr: d.tr.title, en: d.en.title } } };
+      }),
+    purgeTrash: (key) =>
+      wait(() => {
+        if (!state.trash.has(key)) throw new ApiFailure('not_found', 'Bu yazı çöp kutusunda bulunamadı.');
+        purge(key);
       }),
     putImage: (key, name, base64) => wait(() => void state.images.set(`${key}/${name}`, base64)),
     getImage: (key, name) =>

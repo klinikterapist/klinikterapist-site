@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listVersions, putImage, saveDraft } from '../../../apps-script/src/drive';
+import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from '../../../apps-script/src/drive';
 import { ApiError } from '../../../apps-script/src/respond';
 import type { Draft } from '../../../src/admin/api/types';
 import { fakeGas } from './fake-gas';
@@ -214,5 +214,93 @@ describe('draft snapshots', () => {
     expect(saveDraft(gas, { draft: { ...restored, rev } }).rev).toBe(rev + 1);
     expect(getDraft(gas, { key: 'taslak-abc' }).draft.tr.title).toBe('v1');
     expect(errorOf(() => saveDraft(gas, { draft: restored })).code).toBe('conflict');
+  });
+});
+
+describe('trash (Çöp kutusu)', () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  it('"Taslağı sil" keeps the draft in the trash; it leaves the drafts list', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    deleteDraft(gas, { key: 'taslak-abc', trash: true });
+    expect(listDrafts(gas).drafts).toEqual([]);
+    const { items } = listTrash(gas);
+    expect(items).toHaveLength(1);
+    expect(items[0].title.tr).toBe('Başlık');
+    expect(items[0].deletedAt).toBe(new Date(gas.now()).toISOString());
+    expect(Date.parse(items[0].purgeAt) - Date.parse(items[0].deletedAt)).toBe(30 * DAY);
+  });
+
+  it('restoring brings the draft back with its text, and empties the trash entry', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    deleteDraft(gas, { key: 'taslak-abc', trash: true });
+    expect(restoreTrash(gas, { key: 'taslak-abc' }).draft.title.tr).toBe('Başlık');
+    expect(getDraft(gas, { key: 'taslak-abc' }).draft.tr.title).toBe('Başlık');
+    expect(listDrafts(gas).drafts.map((d) => d.key)).toEqual(['taslak-abc']);
+    expect(listTrash(gas).items).toEqual([]);
+  });
+
+  it('will not restore over an open draft with the same key', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    deleteDraft(gas, { key: 'taslak-abc', trash: true });
+    saveDraft(gas, { draft: draft() });
+    expect(errorOf(() => restoreTrash(gas, { key: 'taslak-abc' })).code).toBe('conflict');
+  });
+
+  it('keeps images while in the trash; "Kalıcı sil" removes them too', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    putImage(gas, { key: 'taslak-abc', name: 'kapak.webp', base64: 'QUJD' });
+    deleteDraft(gas, { key: 'taslak-abc', trash: true });
+    expect(getImage(gas, { key: 'taslak-abc', name: 'kapak.webp' }).base64).toBe('QUJD');
+    purgeTrash(gas, { key: 'taslak-abc' });
+    expect(listTrash(gas).items).toEqual([]);
+    expect(errorOf(() => getImage(gas, { key: 'taslak-abc', name: 'kapak.webp' })).code).toBe('not_found');
+  });
+
+  it('removes anything older than 30 days for good when the trash is listed', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    putImage(gas, { key: 'taslak-abc', name: 'kapak.webp', base64: 'QUJD' });
+    deleteDraft(gas, { key: 'taslak-abc', trash: true });
+    gas.clock.now += 29 * DAY;
+    expect(listTrash(gas).items).toHaveLength(1);
+    gas.clock.now += 1 * DAY;
+    expect(listTrash(gas).items).toEqual([]);
+    expect(errorOf(() => getImage(gas, { key: 'taslak-abc', name: 'kapak.webp' })).code).toBe('not_found');
+  });
+
+  it('a delete without trash (after publishing) skips the trash, as before', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    deleteDraft(gas, { key: 'taslak-abc' });
+    expect(listTrash(gas).items).toEqual([]);
+  });
+});
+
+describe('drafts list cache', () => {
+  it('serves the list from the cache, kept current by saves and deletes', () => {
+    const gas = fakeGas();
+    saveDraft(gas, { draft: draft() });
+    expect(listDrafts(gas).drafts.map((d) => d.title.tr)).toEqual(['Başlık']);
+    // A second draft and an edit go through saveDraft, which updates the cached list.
+    saveDraft(gas, { draft: draft({ key: 'taslak-xyz', tr: lang('İkinci') }) });
+    gas.clock.now += 1000;
+    saveDraft(gas, { draft: draft({ rev: 1, tr: lang('Yeni başlık') }) });
+    const reads: string[] = [];
+    for (const f of gas.root.findFolder('taslaklar')!.listFiles()) {
+      const read = f.read.bind(f);
+      f.read = () => {
+        reads.push(f.getName());
+        return read();
+      };
+    }
+    expect(listDrafts(gas).drafts.map((d) => d.title.tr)).toEqual(['Yeni başlık', 'İkinci']);
+    expect(reads).toEqual([]);
+    deleteDraft(gas, { key: 'taslak-xyz', trash: true });
+    expect(listDrafts(gas).drafts.map((d) => d.key)).toEqual(['taslak-abc']);
   });
 });

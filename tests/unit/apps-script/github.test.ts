@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { commit, read, status, tree } from '../../../apps-script/src/github';
+import { commit, read, snapshot, status, tree } from '../../../apps-script/src/github';
 import { ApiError } from '../../../apps-script/src/respond';
 import { fakeGas } from './fake-gas';
 import { FakeGitHub } from './fake-github';
@@ -156,5 +156,40 @@ describe('status', () => {
   it('no runs is unknown, and the token expiry is reported', () => {
     const { gas } = setup();
     expect(status(gas)).toEqual({ state: 'unknown', commitSha: null, url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' });
+  });
+});
+
+describe('snapshot (one call for the posts screens)', () => {
+  it('returns the tree and the text of every post and data file the screens need', () => {
+    const gh = new FakeGitHub({
+      ...seed,
+      'src/content/posts/eski/en.md': '---\ntitle: "Old"\n---\nText\n',
+      'src/data/categories.json': '[]\n',
+      'src/data/seo.json': '{}\n',
+    });
+    const gas = fakeGas({ props, routes: [gh.route] });
+    const s = snapshot(gas);
+    expect(s.headSha).toBe('c0');
+    expect(s.files.some((f) => f.path === 'src/content/posts/eski/cover.webp')).toBe(true);
+    expect(s.contents.map((f) => f.path).sort()).toEqual([
+      'src/content/posts/eski/en.md',
+      'src/content/posts/eski/tr.md',
+      'src/data/categories.json',
+      'src/data/seo.json',
+    ]);
+    expect(s.contents.find((f) => f.path === 'src/content/posts/eski/tr.md')?.content).toContain('title: "Eski"');
+  });
+
+  it('reads the head and its tree together, and all files together, not one by one', () => {
+    const { gas } = setup();
+    const batches: number[] = [];
+    const original = gas.fetchAll.bind(gas);
+    gas.fetchAll = (reqs) => {
+      batches.push(reqs.length);
+      return original(reqs);
+    };
+    snapshot(gas);
+    // One batch for head + tree, one for the file contents: two round trips in all.
+    expect(batches).toEqual([2, 1]);
   });
 });

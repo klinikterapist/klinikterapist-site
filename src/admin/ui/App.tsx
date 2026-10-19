@@ -8,6 +8,7 @@ import { DeployProvider } from './DeployStatus';
 import { Login } from './Login';
 import { Shell } from './Shell';
 import { Home } from './Home';
+import { TrashPage } from './TrashPage';
 import { PostsList } from './PostsList';
 import { EditorPage } from './editor/EditorPage';
 import { SettingsPage } from './settings/SettingsPage';
@@ -50,6 +51,8 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <SettingsPage key={route.screen} screen={route.screen} />
             ) : route.name === 'home' ? (
               <Home />
+            ) : route.name === 'trash' ? (
+              <TrashPage />
             ) : (
               <PostsList tab={route.tab} />
             )}

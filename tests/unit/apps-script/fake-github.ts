@@ -51,9 +51,10 @@ export class FakeGitHub {
     if (method === 'get' && path === '/git/ref/heads/main') return json(200, { object: { sha: this.head } });
     let m = path.match(/^\/git\/commits\/(\w+)$/);
     if (method === 'get' && m) return json(200, { sha: m[1], tree: { sha: `t-${m[1]}` } });
-    m = path.match(/^\/git\/trees\/t-(\w+)\?recursive=1$/);
+    // A tree by its commit's tree sha (`t-<commit>`), or by branch name (the head's tree).
+    m = path.match(/^\/git\/trees\/(t-\w+|main)\?recursive=1$/);
     if (method === 'get' && m) {
-      const c = this.commits.find((x) => x.sha === m![1])!;
+      const c = this.commits.find((x) => (m![1] === 'main' ? x.sha === this.head : `t-${x.sha}` === m![1]))!;
       return json(200, {
         truncated: false,
         tree: [...c.files].map(([p, b]) => ({ path: p, type: 'blob', sha: FakeGitHub.sha(b), size: Buffer.from(b, 'base64').length })),

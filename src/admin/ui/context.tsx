@@ -16,7 +16,7 @@ export function usePanel(): PanelContext {
 export type Route =
   | { name: 'home' }
   | { name: 'posts'; tab: 'live' | 'drafts' }
- 
+  | { name: 'trash' }
   | { name: 'post'; key: string }
   | { name: 'settings'; screen: string };
 
@@ -28,6 +28,7 @@ export function parseRoute(hash: string): Route {
   if (m) return { name: 'settings', screen: m[1] };
   if (path === '/yazilar') return { name: 'posts', tab: 'live' };
   if (path === '/yazilar/taslaklar') return { name: 'posts', tab: 'drafts' };
+  if (path === '/cop-kutusu') return { name: 'trash' };
   return { name: 'home' };
 }
 

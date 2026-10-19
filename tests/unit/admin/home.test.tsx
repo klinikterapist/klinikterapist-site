@@ -41,8 +41,9 @@ describe('Home', () => {
         </DeployProvider>
       </Panel.Provider>,
     );
-    expect(await screen.findByText('Kaygı ile yaşamak')).toBeTruthy();
-    expect(screen.getByText('Son yayınlanan')).toBeTruthy();
+    // The statistics now load alongside the posts, so the title can also appear in "En çok okunan".
+    expect(await screen.findByText('Son yayınlanan')).toBeTruthy();
+    expect(screen.getAllByText('Kaygı ile yaşamak').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Bağlanma').length).toBeGreaterThan(0);
     expect(screen.getByText(/İngilizcesi yok/)).toBeTruthy();
     expect(screen.getByText('Bu ay')).toBeTruthy();

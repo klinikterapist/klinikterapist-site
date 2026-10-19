@@ -50,6 +50,7 @@ export function createHttpApi(
     },
     tree: () => call(ACTIONS.tree),
     read: (paths) => call(ACTIONS.read, { paths }),
+    snapshot: () => call(ACTIONS.snapshot),
     commit: (input) => call(ACTIONS.commit, input),
     status: () => call(ACTIONS.status),
     listDrafts: () => call(ACTIONS.listDrafts),
@@ -57,8 +58,13 @@ export function createHttpApi(
     saveDraft: (draft, opts) => call(ACTIONS.saveDraft, { draft, snapshot: opts?.snapshot === true }),
     listVersions: (key) => call(ACTIONS.listVersions, { key }),
     getVersion: (key, name) => call(ACTIONS.getVersion, { key, name }),
-    deleteDraft: async (key) => {
-      await call(ACTIONS.deleteDraft, { key });
+    deleteDraft: async (key, opts) => {
+      await call(ACTIONS.deleteDraft, { key, ...(opts?.trash ? { trash: true } : {}) });
+    },
+    listTrash: () => call(ACTIONS.listTrash),
+    restoreTrash: (key) => call(ACTIONS.restoreTrash, { key }),
+    purgeTrash: async (key) => {
+      await call(ACTIONS.purgeTrash, { key });
     },
     putImage: async (key, name, base64) => {
       await call(ACTIONS.putImage, { key, name, base64 });

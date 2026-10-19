@@ -64,36 +64,99 @@ function headTree(gas: Gas, cfg: Cfg) {
   return { head, treeSha, blobs };
 }
 
-export function tree(gas: Gas): { headSha: string; files: TreeEntry[] } {
-  const cfg = config(gas);
-  const { head, blobs } = headTree(gas, cfg);
-  const files = [...blobs.values()]
-    .filter((e) => TREE_PREFIXES.some((p) => e.path.startsWith(p)))
-    .map((e) => ({ path: e.path, sha: e.sha, size: e.size ?? 0 }));
-  return { headSha: head, files };
+const headers = (cfg: Cfg, accept = 'application/vnd.github+json') => ({
+  Authorization: `Bearer ${cfg.token}`,
+  Accept: accept,
+  'X-GitHub-Api-Version': '2022-11-28',
+});
+
+/**
+ * The branch head and its file tree in one round trip (two requests at once). Reading only: a
+ * commit still uses `headTree`, whose tree is guaranteed to belong to the head it returns.
+ */
+function headTreeFast(gas: Gas, cfg: Cfg) {
+  const base = `https://api.github.com/repos/${cfg.repo}`;
+  const [ref, tree] = gas.fetchAll([
+    { url: `${base}/git/ref/heads/${cfg.branch}`, opts: { headers: headers(cfg) } },
+    { url: `${base}/git/trees/${encodeURIComponent(cfg.branch)}?recursive=1`, opts: { headers: headers(cfg) } },
+  ]);
+  for (const res of [ref, tree]) {
+    if (res.code === 401) throw new ApiError('github_token', TOKEN_MESSAGE);
+    if (res.code < 200 || res.code >= 300) {
+      gas.log(`GitHub head/tree → ${res.code}`);
+      throw new ApiError('github', DOWN_MESSAGE);
+    }
+  }
+  const head = (JSON.parse(ref.text) as { object: { sha: string } }).object.sha;
+  const t = JSON.parse(tree.text) as GitTree;
+  if (t.truncated) gas.log('GitHub tree truncated');
+  const blobs = new Map(t.tree.filter((e) => e.type === 'blob').map((e) => [e.path, e]));
+  return { head, blobs };
 }
 
+export function tree(gas: Gas): { headSha: string; files: TreeEntry[] } {
+  const cfg = config(gas);
+  const { head, blobs } = headTreeFast(gas, cfg);
+  return { headSha: head, files: listed(blobs) };
+}
+
+const listed = (blobs: Map<string, { path: string; sha: string; size?: number }>): TreeEntry[] =>
+  [...blobs.values()]
+    .filter((e) => TREE_PREFIXES.some((p) => e.path.startsWith(p)))
+    .map((e) => ({ path: e.path, sha: e.sha, size: e.size ?? 0 }));
+
 const isBinary = (path: string) => /\.(webp|jpg)$/.test(path);
+
+/** The given files at `head`, fetched all at once. */
+function readAt(gas: Gas, cfg: Cfg, head: string, blobs: Map<string, { sha: string }>, paths: string[]): RepoFile[] {
+  const base = `https://api.github.com/repos/${cfg.repo}`;
+  const entries = paths.map((path) => {
+    const entry = blobs.get(path);
+    if (!entry) throw new ApiError('not_found', `Dosya bulunamadı: ${path}`);
+    return { path, sha: entry.sha };
+  });
+  const results = gas.fetchAll(
+    entries.map(({ path, sha }) =>
+      isBinary(path)
+        ? { url: `${base}/git/blobs/${sha}`, opts: { headers: headers(cfg) } }
+        : { url: `${base}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${head}`, opts: { headers: headers(cfg, 'application/vnd.github.raw+json') } },
+    ),
+  );
+  return entries.map(({ path, sha }, i) => {
+    const res = results[i];
+    if (res.code === 401) throw new ApiError('github_token', TOKEN_MESSAGE);
+    if (res.code !== 200) {
+      gas.log(`GitHub read ${path} → ${res.code}`);
+      throw new ApiError('github', DOWN_MESSAGE);
+    }
+    if (isBinary(path)) {
+      return { path, sha, content: (JSON.parse(res.text) as { content: string }).content.replace(/\s/g, ''), encoding: 'base64' };
+    }
+    return { path, sha, content: res.text, encoding: 'utf8' };
+  });
+}
 
 export function read(gas: Gas, p: { paths?: unknown }): { files: RepoFile[] } {
   if (!Array.isArray(p.paths) || p.paths.length === 0) throw badRequest();
   const paths = p.paths.map(checkPath);
   const cfg = config(gas);
-  const { head, blobs } = headTree(gas, cfg);
-  const files = paths.map((path): RepoFile => {
-    const entry = blobs.get(path);
-    if (!entry) throw new ApiError('not_found', `Dosya bulunamadı: ${path}`);
-    if (isBinary(path)) {
-      const blob = callJson<{ content: string }>(gas, cfg, `/git/blobs/${entry.sha}`);
-      return { path, sha: entry.sha, content: blob.content.replace(/\s/g, ''), encoding: 'base64' };
-    }
-    const res = call(gas, cfg, `/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${head}`, {
-      accept: 'application/vnd.github.raw+json',
-    });
-    if (res.code !== 200) throw new ApiError('github', DOWN_MESSAGE);
-    return { path, sha: entry.sha, content: res.text, encoding: 'utf8' };
-  });
-  return { files };
+  const { head, blobs } = headTreeFast(gas, cfg);
+  return { files: readAt(gas, cfg, head, blobs, paths) };
+}
+
+const SNAPSHOT_FILE = /^src\/content\/posts\/[a-z0-9-]+\/(tr|en)\.md$/;
+const SNAPSHOT_DATA = ['src/data/redirects.json', 'src/data/categories.json', 'src/data/seo.json'];
+
+/**
+ * Everything the posts screens need in one call: the tree, and the text of every post and of the
+ * three data files they use. Replaces `site.tree` followed by `site.read` (two calls, one file at a
+ * time), which made the panel's home and posts screens slow.
+ */
+export function snapshot(gas: Gas): { headSha: string; files: TreeEntry[]; contents: RepoFile[] } {
+  const cfg = config(gas);
+  const { head, blobs } = headTreeFast(gas, cfg);
+  const wanted = [...blobs.keys()].filter((path) => SNAPSHOT_FILE.test(path) || SNAPSHOT_DATA.includes(path));
+  return { headSha: head, files: listed(blobs), contents: readAt(gas, cfg, head, blobs, wanted) };
 }
 
 type CommitInput = { message?: unknown; writes?: unknown; deletes?: unknown };
