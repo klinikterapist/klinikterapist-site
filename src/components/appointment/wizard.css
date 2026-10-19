@@ -785,3 +785,23 @@
     justify-content: center;
   }
 }
+
+/* Honeypot: off screen for people, still in the form for bots. */
+.wz .hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* After sending: the thank-you card in place of the steps. */
+.wz .done h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wz .done:focus {
+  outline: none;
+}

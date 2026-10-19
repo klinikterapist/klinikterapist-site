@@ -65,10 +65,11 @@ function dayCounter(gas: Gas, day: number): Counter {
 }
 
 /**
- * Checks every limit first and counts the send in all of them only when none is reached, so a refused
- * address never uses up the site-wide allowance.
+ * Checks every limit first and counts the send (`cost` e-mails) in all of them only when none would
+ * be passed, so a refused address never uses up the site-wide allowance. Shared by the contact form
+ * and the booking forms.
  */
-function allow(gas: Gas, email: string): boolean {
+export function allowSend(gas: Gas, email: string, cost = 1): boolean {
   const now = gas.now();
   const hour = Math.floor(now / HOUR_MS);
   // A keyed hash keeps the cache key short (CacheService keys are at most 250 characters) and keeps
@@ -81,8 +82,8 @@ function allow(gas: Gas, email: string): boolean {
   ];
   return gas.withLock(() => {
     const counts = limits.map(([c]) => c.read());
-    if (limits.some(([, max], i) => counts[i] >= max)) return false;
-    limits.forEach(([c], i) => c.write(counts[i] + 1));
+    if (limits.some(([, max], i) => counts[i] + cost > max)) return false;
+    limits.forEach(([c], i) => c.write(counts[i] + cost));
     return true;
   });
 }
@@ -108,7 +109,7 @@ export function sendContact(gas: Gas, p: Record<string, unknown>): { sent: true 
   const topic = topicLabel(input.topic, 'tr');
   const lang = p.lang === 'en' ? 'en' : 'tr';
 
-  if (!allow(gas, email)) throw badRequest(TOO_MANY);
+  if (!allowSend(gas, email)) throw badRequest(TOO_MANY);
 
   const body = [
     `Ad Soyad: ${name}`,

@@ -1,6 +1,7 @@
 import { z } from 'astro/zod';
 import { referenceSchema } from './apa/types';
 import { parseCrop } from './crop-area';
+import type { BookingConfig } from './booking-form';
 
 /**
  * Settings and post schemas, shared by the build (`settings.ts`, `content.config.ts`) and the
@@ -189,6 +190,15 @@ const faqSchema = z
   .array(z.object({ id: slugSchema, q: localized, a: localized }))
   .superRefine((items, ctx) => rejectDuplicates(items, (f) => f.id, ['id'], ctx, 'Soru kimliği (id)'));
 
+/** Booking and intro-call free times (booking.json): a weekly template per kind, Istanbul times. */
+const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Saat SS:DD biçiminde olmalı, örneğin 09:30.');
+const availabilitySchema = z.object({
+  weekdays: z.record(z.string().regex(/^[0-6]$/, 'Gün 0 (pazar) ile 6 (cumartesi) arasında bir sayı olmalı.'), z.array(hhmm)),
+  minNoticeHours: z.number().min(0).max(24 * 14),
+  weeksAhead: z.number().int().min(1).max(26),
+});
+export const bookingSchema = z.object({ session: availabilitySchema, intro: availabilitySchema });
+
 const seoSchema = z.object({
   siteName: localized,
   defaultDescription: localized,
@@ -288,6 +298,7 @@ export const parseCategories = (raw: unknown): Category[] => parse(categoriesSch
 export const parseFaq = (raw: unknown): Faq => parse(faqSchema, raw, 'faq.json');
 export const parseSeo = (raw: unknown): Seo => parse(seoSchema, raw, 'seo.json');
 export const parseRedirects = (raw: unknown): Redirect[] => parse(redirectsSchema, raw, 'redirects.json');
+export const parseBooking = (raw: unknown): BookingConfig => parse(bookingSchema, raw, 'booking.json') as BookingConfig;
 
 /** Text of a timeline period in the page language. */
 export function periodText(period: Period, lang: Lang): string {

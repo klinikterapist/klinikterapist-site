@@ -1,7 +1,8 @@
 /**
  * Step-by-step form for the booking and intro call designs (owner's review 2026-10-19): one step on
  * screen at a time, "Geri" / "Devam" at the bottom (sticky on phones), the stepper on top. A step's
- * required fields are checked before moving on. Design preview only: nothing is sent anywhere.
+ * required fields are checked before moving on. Sending is booking-submit.ts's job; this file only
+ * moves between steps and keeps the chosen day and time (`selection()`).
  *
  * Markup contract (inside `root`):
  *   [data-step-dot="n"]      stepper items
@@ -44,7 +45,16 @@ export interface CalendarOptions {
   timesFor: (day: Date, today: Date) => string[];
 }
 
-export function mountWizard(root: HTMLElement, cal: CalendarOptions) {
+export type Wizard = {
+  /** The chosen calendar day (`YYYY-MM-DD`) and time, or null. */
+  selection(): { day: string | null; time: string | null };
+  /** Opens a step (1-based), e.g. the calendar again when the time was taken. */
+  show(step: number): void;
+};
+
+const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+export function mountWizard(root: HTMLElement, cal: CalendarOptions): Wizard {
   const lang: Lang = root.dataset.lang === 'en' ? 'en' : 'tr';
   const T = TEXT[lang];
   const locale = lang === 'en' ? 'en-GB' : 'tr-TR';
@@ -57,6 +67,7 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions) {
   const nav = root.querySelector<HTMLElement>('[data-nav]')!;
   let step = 1;
   let slot: string | null = null;
+  let chosen: Date | null = null;
 
   const setSum = (key: string, value: string | null, sub?: string) =>
     root.querySelectorAll<HTMLElement>(`[data-sum="${key}"]`).forEach((el) => {
@@ -153,7 +164,6 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions) {
     today.setHours(0, 0, 0, 0);
     // Open on the first month that has a free day (a weekend-only calendar late in a month).
     let month = new Date(today.getFullYear(), today.getMonth(), 1);
-    let chosen: Date | null = null;
 
     const drawSlots = () => {
       slots.replaceChildren();
@@ -237,4 +247,5 @@ export function mountWizard(root: HTMLElement, cal: CalendarOptions) {
 
   syncSources();
   show(1, false);
+  return { selection: () => ({ day: chosen ? ymd(chosen) : null, time: slot }), show: (n) => show(n) };
 }

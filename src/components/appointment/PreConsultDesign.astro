@@ -4,11 +4,15 @@
  * as the booking design (wizard.ts), for the intro call only. Steps: what brings you (who it is for,
  * the topics, earlier support, a short note), a weekend day and time (intro calls are on Saturdays
  * and Sundays only, 25–30 minutes), your details (name, e-mail, phone and age range are required),
- * confirm. Only the look: the times are made up in the browser and the last button sends nothing.
- * Shown on the dev server (or with `BOOKING_DESIGN=1`) only (PreConsultView).
+ * confirm. The calendar shows the free times of booking.json and the last button sends the request
+ * (booking-submit.ts, `booking.request`). Picked topics are health-related, so an explicit consent box
+ * is required (wording waits for the owner's approval). Shown on the dev server (or with
+ * `BOOKING_DESIGN=1`) only (PreConsultView).
  */
 import type { Lang } from '../../lib/settings';
-import { getProfile } from '../../lib/settings';
+import { getBooking, getProfile } from '../../lib/settings';
+import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
+import { AGE_RANGES, INTRO_TOPICS } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
@@ -21,10 +25,19 @@ interface Props {
 const { lang, email } = Astro.props;
 const profile = getProfile();
 const role = profile.title[lang].trim();
+const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
+const config = JSON.stringify(getBooking());
 
 const T = {
   tr: {
-    preview: 'Tasarım önizlemesi: talep formu henüz çalışmıyor, gösterilen gün ve saatler örnektir.',
+    preview: 'Önizleme: bu form yalnızca önizlemede görünür. Panel adresi tanımlıysa talep gerçekten gönderilir.',
+    healthConsent: 'Seçtiğim konuların ve yazdığım notun, ön görüşmeyi hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt’a e-postayla iletilmesine açık rıza veriyorum.',
+    sending: 'Gönderiliyor…',
+    invalid: 'Bazı bilgiler eksik ya da hatalı. Lütfen önceki adımlara dönüp kontrol edin.',
+    taken: 'Seçtiğiniz saat artık uygun değil. Lütfen takvimden başka bir saat seçin.',
+    failed: 'Talep gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da e-posta ile yazın.',
+    doneTitle: 'Talebiniz alındı',
+    doneText: 'Size kısa bir alındı e-postası gönderdim. Saati onaylamak ve görüşme bağlantısını iletmek için en kısa sürede e-postayla dönüş yapacağım.',
     steps: ['Sizi tanıyalım', 'Gün ve saat', 'Bilgileriniz', 'Onay'],
     s1: 'Sizi tanıyalım',
     s1Hint: 'Birkaç kısa soru. Ayrıntıları görüşmede konuşacağız; burada yalnızca genel bir fikir edinmek istiyorum.',
@@ -35,20 +48,6 @@ const T = {
     coupleText: 'Çift terapisini düşünüyoruz.',
     reasons: 'Terapide üzerinde çalışmak istediğiniz konular neler?',
     reasonsHint: 'Birden fazla seçebilirsiniz. Emin değilseniz son seçeneği işaretlemeniz yeterli.',
-    topics: [
-      'Kaygı ve stres',
-      'Mutsuzluk, isteksizlik',
-      'İlişki sorunları',
-      'Aile ilişkileri',
-      'Özgüven',
-      'Yas ve kayıp',
-      'Zorlayıcı bir yaşam olayı',
-      'İş ya da okul',
-      'Uyku',
-      'Kendimi daha iyi tanımak',
-      'Başka bir konu',
-      'Görüşmede konuşmayı tercih ederim',
-    ],
     before: 'Daha önce psikolojik destek aldınız mı?',
     yes: 'Evet',
     no: 'Hayır',
@@ -68,7 +67,6 @@ const T = {
     phone: 'Telefon',
     age: 'Yaş aralığınız',
     agePick: 'Seçin',
-    ages: ['18 yaşından küçük (veli ya da vasi onayıyla)', '18–24', '25–34', '35–44', '45–54', '55 ve üzeri'],
     consentA: 'Aydınlatma metnini',
     consentB: ' okudum.',
     s4: 'Özet ve onay',
@@ -95,7 +93,14 @@ const T = {
     secure: 'Bilgileriniz yalnızca bu görüşme için kullanılır.',
   },
   en: {
-    preview: 'Design preview: the request form is not live yet; the days and times shown are examples.',
+    preview: 'Preview: this form shows in the preview only. With the panel address set, the request is really sent.',
+    healthConsent: 'I give my explicit consent for the topics I chose and my note to be sent by e-mail to Clinical Psychologist Osman Güneş Özkurt to prepare the intro call.',
+    sending: 'Sending…',
+    invalid: 'Some details are missing or wrong. Please go back and check the earlier steps.',
+    taken: 'The time you chose is no longer free. Please pick another time in the calendar.',
+    failed: 'The request could not be sent. Please try again a little later or write by e-mail.',
+    doneTitle: 'Your request has been received',
+    doneText: 'I have sent you a short acknowledgement by e-mail. I will reply soon to confirm the time and send the call link.',
     steps: ['About you', 'Day and time', 'Your details', 'Confirm'],
     s1: 'About you',
     s1Hint: 'A few short questions. We will talk about the details in the call; here I only want a general picture.',
@@ -106,20 +111,6 @@ const T = {
     coupleText: 'We are thinking of couple therapy.',
     reasons: 'What would you like to work on in therapy?',
     reasonsHint: 'You can choose more than one. If you are not sure, the last option is enough.',
-    topics: [
-      'Anxiety and stress',
-      'Low mood, lack of drive',
-      'Relationship problems',
-      'Family relationships',
-      'Self-esteem',
-      'Grief and loss',
-      'A difficult life event',
-      'Work or school',
-      'Sleep',
-      'Knowing myself better',
-      'Something else',
-      'I would rather talk about it in the call',
-    ],
     before: 'Have you had psychological support before?',
     yes: 'Yes',
     no: 'No',
@@ -139,7 +130,6 @@ const T = {
     phone: 'Phone',
     age: 'Your age range',
     agePick: 'Choose',
-    ages: ['Under 18 (with a parent’s or guardian’s consent)', '18–24', '25–34', '35–44', '45–54', '55 and over'],
     consentA: 'I have read the ',
     consentB: 'privacy notice.',
     s4: 'Summary and confirm',
@@ -167,15 +157,16 @@ const T = {
   },
 }[lang];
 const notice = pathFor('privacyNotice', lang);
+const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed });
 ---
 
-<div class="wz preconsult" data-preconsult data-lang={lang}>
-  <p class="preview-note" role="note">
+<div class="wz preconsult" data-preconsult data-lang={lang} data-kind="intro" data-config={config} data-endpoint={endpoint} data-messages={messages}>
+  <p class="preview-note" role="note" data-hide-on-done>
     <Icon name="alert" size={16} />
     {T.preview}
   </p>
 
-  <ol class="stepper">
+  <ol class="stepper" data-hide-on-done>
     {
       T.steps.map((s, i) => (
         <li data-step-dot={i + 1} class:list={[{ 'is-current': i === 0 }]}>
@@ -190,21 +181,21 @@ const notice = pathFor('privacyNotice', lang);
 
   <div class="wz-grid">
     <div class="wz-main">
-      <section class="card" data-step="1" data-need="group:pc-topic" aria-labelledby="pc-s1">
+      <section class="card" data-step="1" data-need="group:topics" aria-labelledby="pc-s1">
         <h2 id="pc-s1">{T.s1}</h2>
         <p class="card-hint">{T.s1Hint}</p>
 
         <p class="q" id="pc-for">{T.forWhom} <span class="req" aria-hidden="true">*</span></p>
         <div class="types" role="radiogroup" aria-labelledby="pc-for">
           <label class="type">
-            <input type="radio" name="pc-for" value="me" data-sum-src="for" data-label={T.me} checked />
+            <input type="radio" name="forWhom" value="me" data-sum-src="for" data-label={T.me} checked />
             <span class="type-body">
               <b>{T.me}</b>
               <span class="type-text">{T.meText}</span>
             </span>
           </label>
           <label class="type">
-            <input type="radio" name="pc-for" value="couple" data-sum-src="for" data-label={T.couple} />
+            <input type="radio" name="forWhom" value="couple" data-sum-src="for" data-label={T.couple} />
             <span class="type-body">
               <b>{T.couple}</b>
               <span class="type-text">{T.coupleText}</span>
@@ -216,9 +207,9 @@ const notice = pathFor('privacyNotice', lang);
         <p class="card-hint">{T.reasonsHint}</p>
         <div class="chips" role="group" aria-labelledby="pc-topics">
           {
-            T.topics.map((topic) => (
+            INTRO_TOPICS[lang].map((topic, i) => (
               <label class="chip">
-                <input type="checkbox" name="pc-topic" value={topic} data-sum-src="topic" data-label={topic} />
+                <input type="checkbox" name="topics" value={i} data-sum-src="topic" data-label={topic} />
                 <span>{topic}</span>
               </label>
             ))
@@ -227,13 +218,13 @@ const notice = pathFor('privacyNotice', lang);
 
         <p class="q" id="pc-before">{T.before}</p>
         <div class="chips" role="radiogroup" aria-labelledby="pc-before">
-          <label class="chip"><input type="radio" name="pc-before" value="yes" /><span>{T.yes}</span></label>
-          <label class="chip"><input type="radio" name="pc-before" value="no" /><span>{T.no}</span></label>
+          <label class="chip"><input type="radio" name="before" value="yes" /><span>{T.yes}</span></label>
+          <label class="chip"><input type="radio" name="before" value="no" /><span>{T.no}</span></label>
         </div>
 
         <label class="field note">
           <span>{T.note}</span>
-          <textarea rows="3" maxlength="500"></textarea>
+          <textarea name="note" rows="3" maxlength="500"></textarea>
           <small>{T.noteHint}</small>
         </label>
         <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
@@ -271,25 +262,33 @@ const notice = pathFor('privacyNotice', lang);
         <div class="fields">
           <label class="field">
             <span>{T.name} <span class="req" aria-hidden="true">*</span></span>
-            <input type="text" autocomplete="name" required data-sum-src="name" />
+            <input type="text" name="name" autocomplete="name" required maxlength="100" data-sum-src="name" />
           </label>
           <label class="field">
             <span>{T.age} <span class="req" aria-hidden="true">*</span></span>
-            <select required>
+            <select name="age" required>
               <option value="">{T.agePick}</option>
-              {T.ages.map((a) => <option>{a}</option>)}
+              {AGE_RANGES[lang].map((a, i) => <option value={i}>{a}</option>)}
             </select>
           </label>
           <label class="field">
             <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
-            <input type="email" autocomplete="email" inputmode="email" required data-sum-src="contact" />
+            <input type="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" data-sum-src="contact" />
           </label>
           <label class="field">
             <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
-            <input type="tel" autocomplete="tel" inputmode="tel" required minlength="10" data-sum-src="contact" />
+            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required minlength="10" maxlength="20" data-sum-src="contact" />
+          </label>
+          <label class="hp" aria-hidden="true">
+            <span>Website</span>
+            <input type="text" name="hp_field" tabindex="-1" autocomplete="off" />
           </label>
           <label class="consent field-wide">
-            <input type="checkbox" required />
+            <input type="checkbox" name="healthConsent" value="1" required />
+            <span>{T.healthConsent} <span class="req" aria-hidden="true"> *</span></span>
+          </label>
+          <label class="consent field-wide">
+            <input type="checkbox" name="consent" value="1" required />
             <span>
               {lang === 'tr' ? <><a href={notice}>{T.consentA}</a>{T.consentB}</> : <>{T.consentA}<a href={notice}>{T.consentB}</a></>}
               <span class="req" aria-hidden="true"> *</span>
@@ -299,7 +298,7 @@ const notice = pathFor('privacyNotice', lang);
         <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
       </section>
 
-      <section class="card" data-step="4" aria-labelledby="pc-s4" hidden>
+      <section class="card" data-step="4" aria-labelledby="pc-s4" data-hide-on-done hidden>
         <h2 id="pc-s4">{T.s4}</h2>
         <p class="card-hint">{T.s4Hint}</p>
         <div class="summary-card">
@@ -321,17 +320,23 @@ const notice = pathFor('privacyNotice', lang);
             <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
             <div class="total"><dt>{T.price}</dt><dd>{T.free}</dd></div>
           </dl>
-          <button type="button" class="submit" disabled aria-describedby="pc-soon">
+          <button type="button" class="submit" disabled aria-describedby="pc-soon" data-submit>
             <Icon name="send" size={18} />
             {T.submit}
           </button>
-          <p class="soon" id="pc-soon">{T.soonMail} <a href={`mailto:${email}`}>{email}</a></p>
+          <p class="step-error" data-submit-error role="alert" tabindex="-1" hidden></p>
+          <p class="soon" id="pc-soon" data-soon>{T.soonMail} <a href={`mailto:${email}`}>{email}</a></p>
           <button type="button" class="edit-link" data-goto="1">{T.edit}</button>
           <ul class="assure">
             <li><Icon name="heart" size={15} />{T.noObligation}</li>
             <li><Icon name="shield" size={15} />{T.secure}</li>
           </ul>
         </div>
+      </section>
+
+      <section class="card done" data-done tabindex="-1" aria-labelledby="pc-done" hidden>
+        <h2 id="pc-done"><Icon name="send" size={22} /> {T.doneTitle}</h2>
+        <p>{T.doneText}</p>
       </section>
 
       <div class="wz-nav" data-nav>
@@ -367,19 +372,9 @@ const notice = pathFor('privacyNotice', lang);
 </div>
 
 <script>
-  import { mountWizard } from './wizard';
+  import { mountBookingForm } from './booking-submit';
 
-  // Example availability: Saturdays and Sundays only, 30-minute rows; a few taken per day.
-  const ALL = ['10:00', '10:30', '11:00', '11:30', '12:00', '13:30', '14:00', '14:30', '15:00', '15:30'];
-  for (const root of document.querySelectorAll<HTMLElement>('[data-preconsult]')) {
-    mountWizard(root, {
-      timesFor: (d, today) => {
-        const wd = d.getDay();
-        if ((wd !== 0 && wd !== 6) || d <= today) return [];
-        return ALL.filter((_, i) => (d.getDate() * 5 + i * 3) % 4 !== 0);
-      },
-    });
-  }
+  for (const root of document.querySelectorAll<HTMLElement>('[data-preconsult]')) mountBookingForm(root);
 </script>
 
 <style>

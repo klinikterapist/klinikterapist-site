@@ -12,6 +12,7 @@ import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
+import { sendBooking } from './booking';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 
@@ -21,6 +22,7 @@ type Handler = (gas: Gas, p: Params) => unknown;
 /** Actions anyone may call without a session: the contact form, the page counter and read counts. */
 export const PUBLIC_ACTIONS: Record<string, Handler> = {
   'contact.send': (gas, p) => sendContact(gas, p),
+  'booking.request': (gas, p) => sendBooking(gas, p),
   'stats.hit': (gas, p) => recordHit(gas, p),
   'stats.reads': (gas) => statsReads(gas),
 };
