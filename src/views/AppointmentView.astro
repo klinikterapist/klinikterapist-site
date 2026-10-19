@@ -10,6 +10,7 @@ import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import BookingDesign from '../components/appointment/BookingDesign.astro';
 import Accordion from '../components/ui/Accordion.astro';
+import { bookingInfo } from '../components/appointment/booking-info';
 import type { Lang } from '../lib/settings';
 import { getContact } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
@@ -25,43 +26,7 @@ const { meta, alternatePaths } = pageMeta('appointment', lang, title, t(lang, 'a
 const { email } = getContact();
 const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 
-// "Erişilebilir terapi seansı" explained under the session types (owner's request 2026-10-19).
-const ACCESS = {
-  tr: {
-    q: 'Erişilebilir terapi seansı nedir, kimler yararlanabilir?',
-    intro: [
-      'Psikolojik desteğin yalnızca ödeme gücü olanlara açık olmaması gerektiğine inanıyorum. Erişilebilir terapi seansı, bu yüzden oluşturduğum uygun ücretli bir bireysel terapi seçeneğidir.',
-      'Seanslar bireysel ve online yapılır, 50 dakika sürer. Özen, yöntem ve gizlilik açısından diğer seanslardan hiçbir farkı yoktur; değişen yalnızca ücrettir.',
-    ],
-    whoTitle: 'Kimler yararlanabilir?',
-    who: [
-      'Ekonomik durumu, terapinin düzenli ücretini karşılamaya elverişli olmayan kişiler.',
-      'Terapi süreci devam ederken iş kaybı gibi nedenlerle ekonomik zorluk yaşamaya başlayan danışanlar. Amaç, başlamış bir sürecin maddi nedenlerle yarıda kalmamasıdır.',
-      'Üniversite öğrencileri.',
-    ],
-    quotaTitle: 'Kontenjan nasıl belirlenir?',
-    quota: 'Bu seanslar için ayırdığım yer sınırlıdır. Kontenjanı ve bu seçenekten kimlerin yararlanacağını, başvuruları değerlendirerek ben belirlerim. Kontenjan dolu olduğunda sizi bekleme listesine alabilir ya da uygun kurum ve kaynaklara yönlendirebilirim.',
-    howTitle: 'Nasıl başvurulur?',
-    how: 'Randevu formunda "Erişilebilir Terapi Seansı" seçeneğini işaretlemeniz yeterli. Ücret ve ayrıntıları e-postayla iletirim. Bu konuyu konuşmak sizi zorlamasın; durumunuzu paylaşmanız, size en uygun yolu birlikte bulmamızı sağlar.',
-  },
-  en: {
-    q: 'What is an accessible therapy session, and who can use it?',
-    intro: [
-      'I believe psychological support should not be open only to those who can afford it. The accessible therapy session is a lower-fee individual therapy option I created for that reason.',
-      'Sessions are individual and online and last 50 minutes. In care, method and confidentiality they are no different from other sessions; only the fee changes.',
-    ],
-    whoTitle: 'Who can use it?',
-    who: [
-      'People whose finances do not allow the regular therapy fee.',
-      'Clients who face financial difficulty during therapy, for example after losing their job. The aim is that a process already under way does not stop for financial reasons.',
-      'University students.',
-    ],
-    quotaTitle: 'How are places decided?',
-    quota: 'The number of places I set aside for these sessions is limited. I decide the number of places and who can use this option after reviewing the requests. When places are full, I may add you to a waiting list or refer you to suitable services and resources.',
-    howTitle: 'How do I ask for it?',
-    how: 'Just choose "Accessible Therapy Session" in the booking form. I send the fee and details by e-mail. Please do not let this conversation hold you back; sharing your situation helps us find the best way forward together.',
-  },
-}[lang];
+const info = bookingInfo(lang);
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design}>
@@ -70,18 +35,26 @@ const ACCESS = {
       <div class="container inner-page appointment-design">
         <PageHead title={title} />
         <BookingDesign lang={lang} email={email} />
-        <div class="access-faq">
-          <Accordion id="erisilebilir-terapi" title={ACCESS.q} icon="heart">
-            {ACCESS.intro.map((p) => <p>{p}</p>)}
-            <h3>{ACCESS.whoTitle}</h3>
-            <ul>
-              {ACCESS.who.map((p) => <li>{p}</li>)}
-            </ul>
-            <h3>{ACCESS.quotaTitle}</h3>
-            <p>{ACCESS.quota}</p>
-            <h3>{ACCESS.howTitle}</h3>
-            <p>{ACCESS.how}</p>
-          </Accordion>
+        <div class="booking-info">
+          {
+            [
+              { title: info.typesTitle, items: info.types },
+              { title: info.faqTitle, items: info.faq },
+            ].map((group) => (
+              <section>
+                <h2>{group.title}</h2>
+                <div class="page-stack">
+                  {group.items.map((item) => (
+                    <Accordion id={item.id} title={item.q} icon={item.icon} name="booking-info">
+                      {item.body.map((b) =>
+                        typeof b === 'string' ? <p>{b}</p> : 'h' in b ? <h3>{b.h}</h3> : <ul>{b.ul.map((li) => <li>{li}</li>)}</ul>,
+                      )}
+                    </Accordion>
+                  ))}
+                </div>
+              </section>
+            ))
+          }
         </div>
       </div>
     ) : (
@@ -113,31 +86,38 @@ const ACCESS = {
 </script>
 
 <style>
-  .access-faq {
+  .booking-info {
+    display: grid;
+    gap: var(--space-7);
     max-width: 44rem;
-    margin: var(--space-7) auto 0;
+    margin: var(--space-8) auto 0;
   }
 
-  .access-faq :global(.acc) {
+  .booking-info h2 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xl);
+  }
+
+  .booking-info :global(.acc) {
     scroll-margin-top: var(--space-4);
   }
 
-  .access-faq p,
-  .access-faq li {
+  .booking-info p,
+  .booking-info li {
     color: var(--muted);
     line-height: 1.6;
   }
 
-  .access-faq p {
+  .booking-info p {
     margin: 0 0 var(--space-3);
   }
 
-  .access-faq h3 {
+  .booking-info h3 {
     margin: var(--space-4) 0 var(--space-2);
     font-size: var(--text-base);
   }
 
-  .access-faq ul {
+  .booking-info ul {
     display: grid;
     gap: var(--space-2);
     margin: 0;
