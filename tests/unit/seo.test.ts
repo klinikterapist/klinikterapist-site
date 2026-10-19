@@ -48,6 +48,7 @@ describe('buildMeta', () => {
       'og:description': 'd',
       'og:url': 'https://example.com/en/about/',
       'og:image': 'https://example.com/images/x.jpg',
+      'og:image:alt': 'Hakkımda',
       'og:type': 'article',
       'og:locale': 'en_US',
       'og:locale:alternate': 'tr_TR',
@@ -56,6 +57,21 @@ describe('buildMeta', () => {
     });
     expect(buildMeta(about).og['og:type']).toBe('website');
     expect(buildMeta(about).og['og:locale']).toBe('tr_TR');
+  });
+
+  it('gives the default image its size and the site name as alt text', () => {
+    const og = buildMeta(about).og;
+    expect(og['og:image:width']).toBe('1200');
+    expect(og['og:image:height']).toBe('630');
+    expect(og['og:image:alt']).toBe(site('tr'));
+  });
+
+  it('passes a given image size and alt text through; no size when unknown', () => {
+    const og = buildMeta({ ...about, image: '/c.jpg', imageSize: { width: 1200, height: 800 }, imageAlt: 'Kapak' }).og;
+    expect(og).toMatchObject({ 'og:image:width': '1200', 'og:image:height': '800', 'og:image:alt': 'Kapak' });
+    const unknown = buildMeta({ ...about, image: '/c.jpg', imageAlt: '  ' }).og;
+    expect(unknown['og:image:width']).toBeUndefined();
+    expect(unknown['og:image:alt']).toBe('Hakkımda');
   });
 
   it('keeps absolute image URLs as they are', () => {

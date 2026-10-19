@@ -21,6 +21,11 @@ describe('blog', () => {
     expect(ld.some(x => x['@type'] === 'BreadcrumbList')).toBe(true);
     expect(tr.querySelector('.byline a.byline-author')?.getAttribute('href')).toBe('/hakkimda/');
     expect(tr.querySelector('meta[property="og:type"]')?.getAttribute('content')).toBe('article');
+    // the cover's share image carries its real size, so cards show it without fetching it first
+    const ogW = Number(tr.querySelector('meta[property="og:image:width"]')?.getAttribute('content'));
+    const ogH = Number(tr.querySelector('meta[property="og:image:height"]')?.getAttribute('content'));
+    expect(ogW).toBeGreaterThan(0); expect(ogW).toBeLessThanOrEqual(1200); expect(ogH).toBeGreaterThan(0);
+    expect(tr.querySelector('meta[property="og:image:alt"]')?.getAttribute('content')).toBeTruthy();
     expect(loadPage('/blog/kategori/zihinsel-saglik/').querySelector('h1')).not.toBeNull();
     expect(loadPage('/en/blog/category/mental-health/').querySelector('html')?.getAttribute('lang')).toBe('en');
     expect(distText('rss.xml')).toContain('<language>tr</language>');

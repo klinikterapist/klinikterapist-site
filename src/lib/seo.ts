@@ -19,6 +19,10 @@ export type MetaInput = {
   path: string;
   alternates: { tr: string; en: string };
   image?: string;
+  /** Pixel size of `image`, when known (the default image's size is filled in here). */
+  imageSize?: { width: number; height: number };
+  /** Text for `og:image:alt`; the page title when not given (the site name for the default image). */
+  imageAlt?: string;
   type?: 'website' | 'article';
   /** Author line (`name, title`) for the `author` meta; posts only. */
   author?: string;
@@ -26,6 +30,8 @@ export type MetaInput = {
 
 const OG_LOCALE: Record<Lang, string> = { tr: 'tr_TR', en: 'en_US' };
 const HOME_PATHS = new Set(['/', '/en/']);
+/** Size of `public/og-default.jpg`. */
+const DEFAULT_IMAGE_SIZE = { width: 1200, height: 630 };
 
 /** Absolute URL on this site (from `SITE`); already-absolute URLs pass through. */
 export function absoluteUrl(pathOrUrl: string): string {
@@ -39,6 +45,8 @@ export function buildMeta(input: MetaInput): Meta {
   const title = HOME_PATHS.has(input.path) ? siteName : `${input.title} | ${siteName}`;
   const canonical = absoluteUrl(input.path);
   const other: Lang = input.lang === 'tr' ? 'en' : 'tr';
+  const imageSize = input.image ? input.imageSize : DEFAULT_IMAGE_SIZE;
+  const imageAlt = input.imageAlt?.trim() || (input.image ? input.title : siteName);
   return {
     title,
     description: input.description,
@@ -54,6 +62,10 @@ export function buildMeta(input: MetaInput): Meta {
       'og:description': input.description,
       'og:url': canonical,
       'og:image': absoluteUrl(input.image ?? seo.ogImage),
+      ...(imageSize
+        ? { 'og:image:width': String(imageSize.width), 'og:image:height': String(imageSize.height) }
+        : {}),
+      'og:image:alt': imageAlt,
       'og:type': input.type ?? 'website',
       'og:locale': OG_LOCALE[input.lang],
       'og:locale:alternate': OG_LOCALE[other],

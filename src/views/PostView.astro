@@ -43,7 +43,10 @@ const translationUrl = absoluteUrl(alternatePaths[translation.lang]);
 
 const cover = data.cover as ImageMetadata | undefined;
 // Share image: a JPEG rendition of the cover (widest support); the default from seo.json otherwise.
-const shareImage = cover ? (await getImage({ src: cover, width: 1200, format: 'jpg' })).src : undefined;
+// Never wider than the original, so the size given to share cards matches the file.
+const shareWidth = cover ? Math.min(1200, cover.width) : 0;
+const shareImage = cover ? (await getImage({ src: cover, width: shareWidth, format: 'jpg' })).src : undefined;
+const shareSize = cover ? { width: shareWidth, height: Math.round((shareWidth * cover.height) / cover.width) } : undefined;
 
 const profile = getProfile();
 const role = profile.title[lang].trim();
@@ -55,6 +58,8 @@ const meta = buildMeta({
   path,
   alternates: alternatePaths,
   image: shareImage,
+  imageSize: shareSize,
+  imageAlt: data.coverAlt ?? data.title,
   type: 'article',
 });
 meta.og['article:author'] = absoluteUrl(pathFor('about', lang));
