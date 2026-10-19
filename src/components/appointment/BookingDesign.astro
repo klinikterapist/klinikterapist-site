@@ -36,15 +36,16 @@ const T = {
     online: 'Online',
     soon: 'Yakında',
     off: 'Şu an uygun değil',
-    individual: 'Bireysel terapi seansı',
+    close: 'Kapat',
+    individual: 'Bireysel Terapi Seansı',
     individualMeta: '50 dakika',
     individualText: 'Kendi gündeminizle, birebir ve düzenli görüşmeler.',
-    couple: 'Çift terapisi seansı',
+    couple: 'Çift Terapisi Seansı',
     coupleMeta: '60 dakika',
     coupleText: 'Partnerinizle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
-    group: 'Grup terapisi seansı',
+    group: 'Grup Terapisi Seansı',
     groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışma.',
-    face: 'Yüz yüze terapi',
+    face: 'Yüz Yüze Terapi',
     faceText: 'Şu an yalnızca online görüşme yapıyorum.',
     s2: 'Gün ve saat seçin',
     s2Hint: 'Boş saati olan günler renkli görünür.',
@@ -92,15 +93,16 @@ const T = {
     online: 'Online',
     soon: 'Coming soon',
     off: 'Not available now',
-    individual: 'Individual therapy session',
+    close: 'Close',
+    individual: 'Individual Therapy Session',
     individualMeta: '50 minutes',
     individualText: 'One-to-one, regular sessions around what you bring.',
-    couple: 'Couple therapy session',
+    couple: 'Couple Therapy Session',
     coupleMeta: '60 minutes',
     coupleText: 'Together with your partner: communication, conflict and the relationship itself.',
-    group: 'Group therapy session',
+    group: 'Group Therapy Session',
     groupText: 'Working together with a small group around similar themes.',
-    face: 'Face-to-face therapy',
+    face: 'Face-to-Face Therapy',
     faceText: 'For now I only work online.',
     s2: 'Choose a day and time',
     s2Hint: 'Days with free times are coloured.',
@@ -147,14 +149,19 @@ const notice = pathFor('privacyNotice', lang);
     {T.preview}
   </p>
 
-  <a class="first-time" href={pathFor('preConsult', lang)}>
-    <span class="ft-icon"><Icon name="talk" size={26} /></span>
-    <span class="ft-body">
-      <b>{T.firstTitle}</b>
-      <span>{T.firstText}</span>
-      <span class="ft-cta">{T.firstCta} <Icon name="arrow" size={16} /></span>
-    </span>
-  </a>
+  <div class="first-time" data-first-time>
+    <a class="ft-link" href={pathFor('preConsult', lang)}>
+      <span class="ft-icon"><Icon name="talk" size={26} /></span>
+      <span class="ft-body">
+        <b>{T.firstTitle}</b>
+        <span>{T.firstText}</span>
+        <span class="ft-cta">{T.firstCta} <Icon name="arrow" size={16} /></span>
+      </span>
+    </a>
+    <button type="button" class="ft-close" data-first-time-close aria-label={T.close}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
 
   <ol class="stepper">
     {
@@ -346,6 +353,11 @@ const notice = pathFor('privacyNotice', lang);
 <script>
   import { mountWizard } from './wizard';
 
+  // The way to the intro call can be closed; it comes back when the page is opened again.
+  document.querySelectorAll<HTMLElement>('[data-first-time]').forEach((box) =>
+    box.querySelector('[data-first-time-close]')?.addEventListener('click', () => box.remove()),
+  );
+
   // Example availability: weekdays, not today; a varying set of times per day.
   const ALL = ['10:00', '11:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
   for (const root of document.querySelectorAll<HTMLElement>('[data-booking]')) {
@@ -362,19 +374,48 @@ const notice = pathFor('privacyNotice', lang);
 <style>
   /* "İlk kez mi randevu alıyorsunuz?": the way to the free intro call, before the steps. */
   .first-time {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-5);
+    position: relative;
     border: 1.5px solid color-mix(in srgb, var(--sun-disc) 60%, transparent);
     border-radius: var(--radius-lg);
     background: color-mix(in srgb, var(--sun-halo) 16%, transparent);
+  }
+
+  .first-time:has(.ft-link:hover) {
+    background: color-mix(in srgb, var(--sun-halo) 26%, transparent);
+  }
+
+  .ft-link {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    padding: var(--space-4) calc(var(--space-5) + 36px) var(--space-4) var(--space-5);
+    border-radius: inherit;
     color: var(--text);
     text-decoration: none;
   }
 
-  .first-time:hover {
-    background: color-mix(in srgb, var(--sun-halo) 26%, transparent);
+  .ft-link:hover {
+    color: var(--text);
+  }
+
+  /* × in the top-right corner. */
+  .ft-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .ft-close:hover {
+    background: color-mix(in srgb, var(--text) 10%, transparent);
     color: var(--text);
   }
 
@@ -410,8 +451,8 @@ const notice = pathFor('privacyNotice', lang);
   }
 
   @media (max-width: 479px) {
-    .first-time {
-      padding: var(--space-4);
+    .ft-link {
+      padding: var(--space-4) calc(var(--space-4) + 32px) var(--space-4) var(--space-4);
     }
 
     .ft-icon {

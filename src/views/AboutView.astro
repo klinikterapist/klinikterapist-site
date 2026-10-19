@@ -18,6 +18,8 @@ import TilePair from '../components/ui/TilePair.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import Timeline from '../components/Timeline.astro';
 import Icon from '../components/Icon.astro';
+import SunMark from '../components/brand/SunMark.astro';
+import Wordmark from '../components/brand/Wordmark.astro';
 import type { Lang } from '../lib/settings';
 import { getAbout, getProfile } from '../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../lib/portrait-image';
@@ -34,12 +36,14 @@ const about = getAbout();
 const profile = getProfile();
 const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], about.lead[lang]);
 
-const whoLine = [profile.name, profile.title[lang].trim()].filter(Boolean).join(' · ');
+// Owner's review 2026-10-19: the title on its own line under the name.
+const role = profile.title[lang].trim();
 const memberships = (profile.memberships ?? []).map((m) => m.org[lang].trim()).filter(Boolean);
 const lead = about.lead[lang].trim();
 const who = about.whoAmI[lang].trim();
 const why = about.whyThisWork[lang].trim();
 const quote = about.quote[lang].trim();
+const brand = about.brand[lang].trim();
 
 type Tile = { title: string; icon: string };
 const areas = about.areas.map((a) => ({ title: a.label[lang].trim(), icon: a.icon })).filter((a) => a.title);
@@ -75,7 +79,10 @@ const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter
             )
           }
         </div>
-        <p class="who-line">{whoLine}</p>
+        <p class="who-line">
+          <span class="who-name">{profile.name}</span>
+          {role && <span class="who-role">{role}</span>}
+        </p>
         {
           memberships.map((org) => (
             <p class="tpd">
@@ -110,6 +117,18 @@ const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter
         why && (
           <Accordion class="why" title={t(lang, 'whyThisWork')}>
             <div class="md" set:html={renderMarkdown(why)} />
+          </Accordion>
+        )
+      }
+
+      {
+        brand && (
+          <Accordion class="brand" title={t(lang, 'brandTitle')}>
+            <div class="brand-logo" aria-hidden="true">
+              <SunMark size={64} />
+              <Wordmark height={30} decorative />
+            </div>
+            <div class="md" set:html={renderMarkdown(brand)} />
           </Accordion>
         )
       }
@@ -186,6 +205,21 @@ const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter
           <section class="cv-row" aria-labelledby="cv-why">
             <h2 id="cv-why" class="cv-label">{t(lang, 'whyThisWork')}</h2>
             <div class="cv-body md md--cv" set:html={renderMarkdown(why)} />
+          </section>
+        )
+      }
+
+      {
+        brand && (
+          <section class="cv-row" aria-labelledby="cv-brand">
+            <h2 id="cv-brand" class="cv-label">{t(lang, 'brandTitle')}</h2>
+            <div class="cv-body">
+              <div class="brand-logo brand-logo--cv" aria-hidden="true">
+                <SunMark size={84} />
+                <Wordmark height={40} decorative />
+              </div>
+              <div class="md md--cv" set:html={renderMarkdown(brand)} />
+            </div>
           </section>
         )
       }
@@ -285,10 +319,33 @@ const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter
   }
 
   .who-line {
+    display: grid;
+    gap: 2px;
     margin: 0;
     color: var(--muted);
     font-size: var(--text-sm);
     line-height: 1.5;
+  }
+
+  .who-role {
+    color: var(--link);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  /* The logo above the brand story: the sun beside the wordmark, in the text colour. */
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    color: var(--text);
+  }
+
+  .brand-logo :global(.wordmark) {
+    width: auto;
   }
 
   .tpd {

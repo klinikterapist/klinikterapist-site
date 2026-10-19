@@ -31,6 +31,7 @@ export const STRINGS = {
   heroHi: { tr: 'Merhaba', en: 'Hello' },
   heroMe: { tr: 'Ben {who}.', en: "I'm {who}." },
   heroWelcome: { tr: 'Hoş geldiniz', en: 'Welcome' },
+  brandTitle: { tr: 'klinikterapist nedir?', en: 'What is klinikterapist?' },
   cookiePrefs: { tr: 'Çerez tercihleri', en: 'Cookie preferences' },
   preConsult: { tr: 'Ön Görüşme', en: 'Intro Call' },
   freeTag: { tr: 'Ücretsiz', en: 'Free' },

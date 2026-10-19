@@ -29,7 +29,7 @@ const T = {
     lead: 'Terapiye başlamadan önce 25–30 dakikalık, ücretsiz bir online görüşmeyle tanışalım. Ön görüşmeler cumartesi ve pazar günleri yapılır.',
     facts: [
       ['clock', '25–30 dakika'],
-      ['calendar', 'Cumartesi ve pazar'],
+      ['calendar', 'Cumartesi ve Pazar'],
       ['laptop', 'Online'],
       ['heart', 'Ücretsiz, bağlayıcı değil'],
     ],
@@ -40,13 +40,25 @@ const T = {
       'Ön görüşme, herhangi bir ücret ödemeden önce benimle tanışmanız, çalışma biçimimi görmeniz ve aklınızdaki soruları sormanız için var. Bir terapi seansı değildir; tanı konmaz, tedavi başlamaz.',
       'Görüşmenin sonunda bu çalışmanın ihtiyacınıza uygun olup olmadığına birlikte karar veririz. Gerekirse sizi daha uygun bir uzmana ya da kuruma yönlendiririm. Devam etme zorunluluğunuz yoktur.',
     ],
-    whatTitle: 'Ön görüşmede neler konuşuruz?',
+    introTitle: 'Terapide ön görüşme nedir?',
+    introText: 'Ön görüşme, terapiye başlamadan önce yaptığımız 25–30 dakikalık, ücretsiz ve online bir tanışma görüşmesidir. Bir terapi seansı değildir; amacı birbirimizi tanımak ve size nasıl yardımcı olabileceğimi birlikte değerlendirmektir.',
+    whatTitle: 'Bu görüşmede',
     what: [
       'Sizi başvurmaya yönelten konuyu ve beklentilerinizi kısaca dinlerim.',
-      'Nasıl çalıştığımı, görüşmelerin sıklığını, süresini ve gizlilik ilkelerini anlatırım.',
-      'Sorularınızı yanıtlarım; ücretler ve ayrıntılar daha sonra e-postayla iletilir.',
-      'Birlikte bir sonraki adıma karar veririz.',
+      'Nasıl çalıştığımı, seansların sıklığını ve süresini, gizlilik ilkelerini anlatırım.',
+      'Sorularınızı yanıtlarım; ardından sizin için doğru adıma birlikte karar veririz.',
     ],
+    needTitle: 'Online görüşme için neye ihtiyacınız var?',
+    need: [
+      ['home', 'Rahatça konuşabileceğiniz, sessiz ve kimsenin sizi duymayacağı bir ortam'],
+      ['laptop', 'İnternete bağlı, kameralı bir telefon, tablet ya da bilgisayar'],
+      ['podcast', 'Kulaklık (zorunlu değil ama önerilir)'],
+      ['mail', 'Görüşme bağlantısını önceden e-postayla gönderirim'],
+    ],
+    moreA: 'Ücretsiz olmasının nedeni, yaş sınırı, psikolog ile psikiyatrist farkı gibi diğer soruların cevapları ',
+    moreLink: 'sayfanın devamında',
+    moreB: '.',
+    start: 'Ön Görüşme Talep Et',
     faqTitle: 'Sık sorulan sorular',
     faq: [
       {
@@ -104,13 +116,25 @@ const T = {
       'The intro call is there so you can meet me, see how I work and ask your questions before paying anything. It is not a therapy session: no diagnosis is made and no treatment starts.',
       'At the end we decide together whether this work suits your needs. If needed, I refer you to a better-suited specialist or service. You are under no obligation to continue.',
     ],
-    whatTitle: 'What do we talk about?',
+    introTitle: 'What is an intro call in therapy?',
+    introText: 'The intro call is a free, 25–30 minute online conversation before therapy starts. It is not a therapy session; its aim is to get to know each other and assess together how I can help you.',
+    whatTitle: 'In this call',
     what: [
       'I briefly listen to what brings you here and what you hope for.',
       'I explain how I work, how often and how long sessions are, and the principles of confidentiality.',
-      'I answer your questions; fees and details follow by e-mail.',
-      'We decide on the next step together.',
+      'I answer your questions; then we decide together on the right next step for you.',
     ],
+    needTitle: 'What do you need for an online call?',
+    need: [
+      ['home', 'A quiet, private place where you can talk freely'],
+      ['laptop', 'A phone, tablet or computer with a camera and internet'],
+      ['podcast', 'Headphones (not required, but recommended)'],
+      ['mail', 'I send the call link by e-mail beforehand'],
+    ],
+    moreA: 'Why it is free, whether there is an age limit, the difference between a psychologist and a psychiatrist and other questions are answered ',
+    moreLink: 'further down this page',
+    moreB: '.',
+    start: 'Ask for an Intro Call',
     faqTitle: 'Common questions',
     faq: [
       {
@@ -174,17 +198,37 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
       }
     </ul>
 
-    {
-      design ? (
-        <PreConsultDesign lang={lang} email={email} />
-      ) : (
-        <div class="page-stack">
-          <p class="live-lead">{T.liveLead}</p>
-          <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
-          <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
-        </div>
-      )
-    }
+    <section class="pc-intro" data-pc-intro aria-labelledby="pc-intro-title">
+      <h2 id="pc-intro-title">{T.introTitle}</h2>
+      <p>{T.introText}</p>
+      <h3>{T.whatTitle}</h3>
+      <ul class="what">
+        {T.what.map((p) => <li><Icon name="leaf" size={18} />{p}</li>)}
+      </ul>
+      <h3>{T.needTitle}</h3>
+      <ul class="need">
+        {T.need.map(([icon, p]) => <li><span class="need-ic"><Icon name={icon} size={20} /></span>{p}</li>)}
+      </ul>
+      <p class="more">{T.moreA}<a href="#pc-sorular">{T.moreLink} ↓</a>{T.moreB}</p>
+      <a class="start" href="#pc-form" data-pc-start>
+        <Icon name="talk" size={20} />
+        {T.start}
+      </a>
+    </section>
+
+    <div id="pc-form" class="pc-form" data-pc-form hidden={design}>
+      {
+        design ? (
+          <PreConsultDesign lang={lang} email={email} />
+        ) : (
+          <div class="page-stack">
+            <p class="live-lead">{T.liveLead}</p>
+            <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
+            <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+          </div>
+        )
+      }
+    </div>
 
     <div class="info">
       <section class="why">
@@ -192,14 +236,7 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
         {T.why.map((p) => <p>{p}</p>)}
       </section>
 
-      <section class="what">
-        <h2>{T.whatTitle}</h2>
-        <ol>
-          {T.what.map((p) => <li>{p}</li>)}
-        </ol>
-      </section>
-
-      <section class="pc-faq">
+      <section class="pc-faq" id="pc-sorular">
         <h2>{T.faqTitle}</h2>
         <div class="page-stack">
           {
@@ -220,7 +257,137 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
   </div>
 </PageShell>
 
+<script>
+  // "Ön Görüşme Talep Et": the summary gives way to the step-by-step form (design preview only;
+  // on the live site the form box is not hidden and the link just jumps to the e-mail options).
+  for (const start of document.querySelectorAll<HTMLAnchorElement>('[data-pc-start]')) {
+    const form = document.querySelector<HTMLElement>('[data-pc-form]');
+    const intro = document.querySelector<HTMLElement>('[data-pc-intro]');
+    if (!form?.hidden) continue;
+    start.addEventListener('click', (e) => {
+      e.preventDefault();
+      form.hidden = false;
+      if (intro) intro.hidden = true;
+      form.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      form.querySelector<HTMLElement>('[data-step="1"] h2')?.focus({ preventScroll: true });
+    });
+  }
+</script>
+
 <style>
+  .pc-intro {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 44rem;
+    margin: 0 auto var(--space-6);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .pc-intro[hidden],
+  .pc-form[hidden] {
+    display: none;
+  }
+
+  .pc-form,
+  .pc-faq {
+    scroll-margin-top: var(--space-4);
+  }
+
+  .pc-intro h2 {
+    margin: 0;
+    font-size: var(--text-xl);
+  }
+
+  .pc-intro h3 {
+    margin: var(--space-3) 0 0;
+    font-size: var(--text-base);
+  }
+
+  .pc-intro p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .pc-intro ul {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .what li {
+    display: flex;
+    gap: 10px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .what :global(svg) {
+    flex: none;
+    margin-top: 3px;
+    color: var(--link);
+  }
+
+  .need {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+
+  .need li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    font-size: var(--text-sm);
+    line-height: 1.45;
+  }
+
+  .need-ic {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--sun-halo) 20%, transparent);
+    color: var(--link);
+  }
+
+  .pc-intro .more {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .start {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 54px;
+    margin-top: var(--space-3);
+    border-radius: 16px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .start:hover {
+    background: var(--btn-bg-hover);
+    color: var(--btn-text);
+  }
+
+  @media (max-width: 479px) {
+    .pc-intro {
+      padding: var(--space-4);
+    }
+  }
+
   .facts {
     display: flex;
     flex-wrap: wrap;
@@ -269,39 +436,6 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
     margin: 0 0 var(--space-3);
     color: var(--muted);
     line-height: 1.65;
-  }
-
-  .what ol {
-    display: grid;
-    gap: var(--space-3);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: what;
-  }
-
-  .what li {
-    position: relative;
-    padding-left: 2.5rem;
-    color: var(--muted);
-    line-height: 1.55;
-    counter-increment: what;
-  }
-
-  .what li::before {
-    content: counter(what);
-    position: absolute;
-    top: -2px;
-    left: 0;
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--sun-disc);
-    color: #1f2e4a;
-    font-size: var(--text-sm);
-    font-weight: 700;
   }
 
   .answer {

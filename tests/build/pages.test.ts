@@ -307,13 +307,15 @@ describe('inner pages redesign (spec §5.9)', () => {
     loadPage(path).querySelectorAll('main details.acc > summary .title').map((t) => t.text.trim());
   const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
 
-  it('about: heading on top, then photo, name · title, membership line and lead', () => {
+  it('about: heading on top, then photo, name and title under it, membership line and lead', () => {
     const d = loadPage('/hakkimda/');
     // Owner's review 2026-10-19: the page title is first, centred at the top.
     expect(d.querySelector('main .about > header.about-top h1')?.text).toBe('Hakkımda');
     const head = d.querySelector('main .side-head')!;
     expect(head.querySelector('.portrait img')).toBeTruthy();
-    expect(squash(head.querySelector('.who-line')?.text)).toBe('Osman Güneş Özkurt · Psikolog');
+    // Owner's review 2026-10-19: the title on its own line under the name.
+    expect(squash(head.querySelector('.who-line .who-name')?.text)).toBe('Osman Güneş Özkurt');
+    expect(squash(head.querySelector('.who-line .who-role')?.text)).toBe('Psikolog');
     expect(squash(head.querySelector('.tpd')?.text)).toBe('Türk Psikologlar Derneği üyesi');
     expect(squash(head.querySelector('.lead')?.text)).toBe(fixture('about.json').lead.tr);
     expect(squash(loadPage('/en/about/').querySelector('.side-head .tpd')?.text)).toBe(

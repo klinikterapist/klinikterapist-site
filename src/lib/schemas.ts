@@ -109,6 +109,8 @@ const aboutSchema = z.object({
   whoAmI: localized,
   whyThisWork: localized,
   quote: localized,
+  /** "klinikterapist nedir?": the brand story shown with the logo (owner's review 2026-10-19). */
+  brand: localized.default({ tr: '', en: '' }),
   // `period`: a plain string for language-neutral values ("2016–2020"), or { tr, en } for words ("Devam ediyor").
   timeline: z.array(z.object({ title: localized, detail: localized, period: z.union([z.string(), localized]) })),
   /** Certificates and trainings ("Sertifikalarım"): name, issuing body, year and an optional link to verify it. */

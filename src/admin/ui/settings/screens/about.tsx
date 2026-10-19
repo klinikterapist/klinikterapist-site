@@ -65,6 +65,9 @@ export function HakkimdaScreen() {
           <MarkdownField label="Neden bu iş (Türkçe)" lang="tr" value={a.whyThisWork.tr} onChange={(tr) => set('whyThisWork')({ ...a.whyThisWork, tr })} />
           <MarkdownField label="Neden bu iş (İngilizce)" lang="en" value={a.whyThisWork.en} onChange={(en) => set('whyThisWork')({ ...a.whyThisWork, en })} />
           <LocalizedField label="Alıntı" value={a.quote} onChange={set('quote')} multiline issues={file.issues} path="quote" />
+          <h3>klinikterapist nedir?</h3>
+          <MarkdownField label="Marka hikâyesi (Türkçe)" lang="tr" value={a.brand.tr} onChange={(tr) => set('brand')({ ...a.brand, tr })} />
+          <MarkdownField label="Marka hikâyesi (İngilizce)" lang="en" value={a.brand.en} onChange={(en) => set('brand')({ ...a.brand, en })} />
           <h3>Eğitim ve mesleki gelişim</h3>
           <ListEditor<Step>
             items={a.timeline}
