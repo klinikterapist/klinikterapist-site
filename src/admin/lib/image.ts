@@ -14,6 +14,8 @@ export const IMAGE_PRESETS = {
   /** Not cropped: both home page styles crop the portrait with CSS. */
   profile: { maxW: 1600, maxH: 1600, type: 'image/webp', q: 0.85 },
   resource: { maxW: 400, maxH: 600, type: 'image/webp', q: 0.82 },
+  /** Kept next to a cropped cover or figure (`<name>-orig.<ext>`), so the crop can be changed later. */
+  original: { maxW: 2000, maxH: 2000, type: 'image/webp', q: 0.85 },
   og: { crop: [1200, 630], type: 'image/jpeg', q: 0.85 },
 } as const satisfies Record<string, ImagePreset>;
 
@@ -90,28 +92,64 @@ export async function resizeImage(file: File, preset: ImagePreset): Promise<Resi
     } else {
       out = fitWithin(bitmap.width, bitmap.height, preset.maxW, preset.maxH);
     }
-    const { canvas, encode } = makeCanvas(out.w, out.h);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new ImageError('Bu tarayıcı görseli küçültemedi. Başka bir tarayıcı deneyin.');
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(bitmap, src.sx, src.sy, src.sw, src.sh, 0, 0, out.w, out.h);
-
-    let type: 'image/webp' | 'image/jpeg' = preset.type;
-    let quality = preset.q;
-    let blob = await encode(type, quality);
-    // Safari (every browser on iPhone) cannot encode WebP and returns PNG instead: use JPEG there.
-    if (blob.type !== type && type === 'image/webp') {
-      type = 'image/jpeg';
-      blob = await encode(type, quality);
-    }
-    if (blob.type !== type) throw new ImageError('Bu tarayıcı görseli kaydedemedi. Başka bir tarayıcı deneyin.');
-    while (blob.size > MAX_OUTPUT && quality > 0.5 + 1e-9) {
-      quality = Math.round((quality - 0.1) * 100) / 100;
-      blob = await encode(type, quality);
-    }
-    return { blob, base64: await toBase64(blob), width: out.w, height: out.h, type, ext: type === 'image/jpeg' ? 'jpg' : 'webp' };
+    return await drawAndEncode(bitmap, src, out, preset.type, preset.q);
   } finally {
     bitmap.close();
+  }
+}
+
+type Rect = { sx: number; sy: number; sw: number; sh: number };
+
+/**
+ * Draws `src` of the image onto a canvas of `out` and encodes it. Safari (every browser on iPhone)
+ * cannot encode WebP and returns PNG instead: JPEG is used there. Quality steps down until the
+ * file fits in 1 MB.
+ */
+export async function drawAndEncode(
+  image: CanvasImageSource,
+  src: Rect,
+  out: { w: number; h: number },
+  preferred: 'image/webp' | 'image/jpeg',
+  q: number,
+): Promise<ResizedImage> {
+  const { canvas, encode } = makeCanvas(out.w, out.h);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new ImageError('Bu tarayıcı görseli küçültemedi. Başka bir tarayıcı deneyin.');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, src.sx, src.sy, src.sw, src.sh, 0, 0, out.w, out.h);
+
+  let type = preferred;
+  let quality = q;
+  let blob = await encode(type, quality);
+  if (blob.type !== type && type === 'image/webp') {
+    type = 'image/jpeg';
+    blob = await encode(type, quality);
+  }
+  if (blob.type !== type) throw new ImageError('Bu tarayıcı görseli kaydedemedi. Başka bir tarayıcı deneyin.');
+  while (blob.size > MAX_OUTPUT && quality > 0.5 + 1e-9) {
+    quality = Math.round((quality - 0.1) * 100) / 100;
+    blob = await encode(type, quality);
+  }
+  return { blob, base64: await toBase64(blob), width: out.w, height: out.h, type, ext: type === 'image/jpeg' ? 'jpg' : 'webp' };
+}
+
+/** The MIME type of an image stored as base64, from its first bytes. */
+export function base64Mime(base64: string): string {
+  if (base64.startsWith('/9j/')) return 'image/jpeg';
+  if (base64.startsWith('iVBOR')) return 'image/png';
+  if (base64.startsWith('R0lG')) return 'image/gif';
+  return 'image/webp';
+}
+
+/** Decodes an image kept as base64 (an uploaded original or a committed post image). */
+export async function decodeBase64(base64: string): Promise<ImageBitmap> {
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  try {
+    return await createImageBitmap(new Blob([bytes], { type: base64Mime(base64) }));
+  } catch {
+    throw new ImageError('Bu görsel açılamadı. Lütfen görseli yeniden yükleyin.');
   }
 }
 

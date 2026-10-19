@@ -3488,3 +3488,41 @@ html[data-theme='dark'] {
   color: var(--p-text);
   font-size: var(--text-sm);
 }
+
+/* Crop dialog (cover and body images) */
+.k-dialog:has(.crop-dialog) {
+  width: min(40rem, 100%);
+}
+
+.crop-dialog {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.crop-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: min(55vh, 24rem);
+  overflow: hidden;
+  border-radius: var(--k-radius);
+  background: #1b1b1f;
+  touch-action: none;
+}
+
+.crop-area-pill {
+  border-radius: 9999px;
+}
+
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.crop-zoom input {
+  flex: 1;
+  min-height: 44px;
+  accent-color: var(--p-accent);
+}
