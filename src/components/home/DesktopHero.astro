@@ -53,11 +53,17 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
           <Icon name="booking" size={20} />
           {t(lang, 'bookSession')}
         </a>
-        <a class="ghost pre" href={pathFor('preConsult', lang)}>
-          <Icon name="talk" size={20} />
-          {t(lang, 'preConsult')}
-          <span class="free-tag">{t(lang, 'freeTag')}</span>
-        </a>
+        <span class="pre-wrap">
+          <span class="scribble" aria-hidden="true"><svg class="scribble-arrow" viewBox="0 0 34 30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M30 4C22 6 12 12 8 24" /><path d="M4 18l4 7 7-4" /></svg>{t(lang, 'freeScribble')}</span>
+          <a class="ghost pre" href={pathFor('preConsult', lang)}>
+            <span class="pre-ic"><Icon name="talk" size={20} /></span>
+            <span class="pre-lines">
+              <span class="pre-name">{t(lang, 'preConsult')}</span>
+              <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
+            </span>
+            <span class="free-tag">{t(lang, 'freeTag')}</span>
+          </a>
+        </span>
       </div>
       <span class="hero-wordmark">
         <Wordmark height={56} decorative />
@@ -237,6 +243,94 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     font-weight: 700;
     letter-spacing: 0.03em;
     box-shadow: 0 2px 8px color-mix(in srgb, #000 18%, transparent);
+  }
+
+  /*
+   * Ways of saying "free", previewed on the dev server (FreeStylePreview, owner's review 2026-10-19):
+   * the default corner tag; F a handwritten "ücretsiz!" with an arrow above the button; J a small
+   * card with "Ücretsiz · 25–30 dk · Online" over "Ön Görüşme".
+   */
+  .pre-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .pre-ic,
+  .pre-lines {
+    display: contents;
+  }
+
+  .pre-sub,
+  .scribble {
+    display: none;
+  }
+
+  .scribble {
+    position: absolute;
+    bottom: calc(100% - 4px);
+    left: 52%;
+    align-items: flex-end;
+    gap: 2px;
+    color: var(--text);
+    font-family: 'Kalam', 'Segoe Print', cursive;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    transform: rotate(-4deg);
+  }
+
+  .scribble :global(.scribble-arrow) {
+    flex: none;
+    width: 30px;
+    height: 26px;
+    margin-bottom: -14px;
+  }
+
+  :global(html[data-free='f']) .scribble {
+    display: inline-flex;
+  }
+
+  :global(html[data-free='f']) .free-tag,
+  :global(html[data-free='j']) .free-tag {
+    display: none;
+  }
+
+  :global(html[data-free='f']) .pre {
+    border-color: var(--line);
+  }
+
+  :global(html[data-free='j']) .pre {
+    gap: 12px;
+    min-height: 62px;
+    padding: 8px 22px 8px 10px;
+    border: 0;
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  :global(html[data-free='j']) .pre-ic {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    background: var(--surface-2);
+    color: var(--link);
+  }
+
+  :global(html[data-free='j']) .pre-lines {
+    display: grid;
+    line-height: 1.2;
+    text-align: left;
+  }
+
+  :global(html[data-free='j']) .pre-sub {
+    display: block;
+    order: -1;
+    color: var(--muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
   }
 
   .book :global(.icon),
