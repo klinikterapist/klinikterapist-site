@@ -31,7 +31,8 @@
 - **Yaş:** Ergen, yetişkin ve yaşlı danışanlar. Seçenekler: 12–17 (veli ya da vasi onayıyla), 18–24, 25–34, 35–44, 45–54, 55–64, 65 ve üzeri. 12 yaş altı seçeneği yok.
 - **Saatler:** Hafta içi 10.00–19.00 arası çalışılıyor. Öğle arası 13.00–14.30. Seanslar arasında en az 40 dakika var. Seanslar 50–60 dakika sürdüğü için başlangıç saatleri 10.00, 11.30, 14.30, 16.00 ve 17.30 (son seans en geç 18.30'da biter). Hafta sonu 11.00–16.00 arası öğle arası olmadan ön görüşme yapılıyor. Ön görüşmeler 25–30 dakika sürdüğü için saatler 11.00, 12.00, 13.00, 14.00 ve 15.00 (önerildi, onay bekliyor).
 - **Ön görüşme türleri:** "Görüşme kimin için?" sorusu "Hangi görüşmeyi düşünüyorsunuz?" oldu. Seçenekler randevu sayfasındaki gibi: Bireysel, Çift, Erişilebilir (kontenjanlı; ekonomik durumu elverişli olmayanlar ve öğrenciler için). Grup ("Yakında") ve Yüz yüze ("Şu an uygun değil") görünüyor ama seçilemiyor.
-- **Açık rıza metni:** Sahibe gösterildi, yanıt bekleniyor.
+- **Açık rıza metni:** Sahip şimdilik uygun buldu. Site tamamlanınca diğer hukuki metinlerle birlikte avukatına gösterecek.
+- **Ön görüşme ilk adımı:** Sahibin isteğiyle eski dile döndü ("Görüşme kimin için?", "Kendim için / Bireysel terapiyi düşünüyorum"). Yeni seçenekler de aynı birinci tekil dille yazıldı: "Kendim için, uygun ücretle", "Bir gruba katılmak istiyorum", "Yüz yüze görüşmek istiyorum".
 
 ## Sahibe açık sorular
 

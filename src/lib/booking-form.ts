@@ -18,11 +18,11 @@ export const SESSION_TYPES = [
   { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session' },
 ] as const;
 
-/** The intro call asks which kind of therapy the visitor is thinking of (the same kinds as booking). */
+/** Who the intro call is for (the owner's own wording); the owner's e-mail names the therapy it points to. */
 export const INTRO_FOR = [
-  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy' },
-  { id: 'couple', tr: 'Çift terapisi', en: 'Couples therapy' },
-  { id: 'accessible', tr: 'Erişilebilir terapi', en: 'Accessible therapy' },
+  { id: 'individual', tr: 'Kendim için (bireysel terapi)', en: 'For myself (individual therapy)' },
+  { id: 'couple', tr: 'Partnerimle birlikte (çift terapisi)', en: 'With my partner (couple therapy)' },
+  { id: 'accessible', tr: 'Kendim için, uygun ücretle (erişilebilir terapi)', en: 'For myself, at a reduced fee (accessible therapy)' },
 ] as const;
 
 export const INTRO_TOPICS = {
