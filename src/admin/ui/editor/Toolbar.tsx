@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useEditorState, type Editor } from '@tiptap/react';
+import { DROPCAP_HINT } from './dropcap';
 import { BookOpenText, Bold, Ellipsis, Highlighter, Image, Italic, Link, List, ListOrdered, Quote, Redo2, Strikethrough, Undo2, Youtube } from '../icons';
 
 const ICON = {
@@ -29,9 +30,11 @@ export type ToolbarProps = {
   onImage: () => void;
   onYoutube: () => void;
   onReference: () => void;
+  /** Shows (or with null clears) a message in the editor's message line. */
+  onError?: (message: string | null) => void;
 };
 
-export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: ToolbarProps) {
+export function Toolbar({ editor, onLink, onImage, onYoutube, onReference, onError }: ToolbarProps) {
   const [more, setMore] = useState<{ top: number; right: number } | null>(null);
   const bar = useRef<HTMLDivElement>(null);
   const moreBtn = useRef<HTMLButtonElement>(null);
@@ -161,6 +164,17 @@ export function Toolbar({ editor, onLink, onImage, onYoutube, onReference }: Too
               }}
             >
               Ayraç
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                setMore(null);
+                onError?.(chain().toggleDropCap().run() ? null : DROPCAP_HINT);
+              }}
+            >
+              Büyük baş harf
             </button>
           </div>
         )}

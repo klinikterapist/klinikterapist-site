@@ -31,7 +31,7 @@ const nameOf = (src: string) => {
 };
 
 /** The only tags the editor writes into the Markdown. */
-const PLAIN_TAGS = new Set(['<mark>', '</mark>', '<i>', '</i>', '</cite>', '<aside class="callout">', '</aside>']);
+const PLAIN_TAGS = new Set(['<mark>', '</mark>', '<i>', '</i>', '</cite>', '<aside class="callout">', '</aside>', '<span class="dropcap">', '</span>']);
 const YOUTUBE = /^<div class="youtube" data-id="([A-Za-z0-9_-]{11})"><a href="[^"]*">([^<]*)<\/a><\/div>$/;
 
 export const PREVIEW_MISSING_IMAGE = 'Görsel bulunamadı';

@@ -13,6 +13,8 @@ type Mark = NonNullable<JSONContent['marks']>[number];
 const YOUTUBE_TEXT: Record<Lang, string> = { tr: "Videoyu YouTube'da izleyin", en: 'Watch the video on YouTube' };
 const CALLOUT_OPEN = '<aside class="callout">';
 const CALLOUT_CLOSE = '</aside>';
+const DROPCAP_OPEN = '<span class="dropcap">';
+const DROPCAP_CLOSE = '</span>';
 const YOUTUBE_RE = /^<div class="youtube" data-id="([A-Za-z0-9_-]{11})">[\s\S]*<\/div>\s*$/;
 
 // ---------- doc → Markdown ----------
@@ -142,7 +144,9 @@ function block(node: JSONContent, ctx: Ctx): string | null {
   switch (node.type) {
     case 'paragraph': {
       const text = inline(node.content, ctx);
-      return text.trim() ? escapeLineStart(text) : null;
+      if (!text.trim()) return null;
+      // The drop cap is an empty span right before the first letter (styled with ::first-letter on the site).
+      return (node.attrs?.dropCap === true ? DROPCAP_OPEN + DROPCAP_CLOSE : '') + escapeLineStart(text);
     }
     case 'heading': {
       const level = node.attrs?.level === 3 ? 3 : 2;
@@ -300,7 +304,13 @@ function blockTokens(tokens: Token[]): JSONContent[] {
       case 'paragraph': {
         const img = loneImage((tok as Tokens.Paragraph).tokens);
         if (img) out.push({ type: 'figure', attrs: { src: decodeURI(img.href), alt: img.text, caption: img.title ?? '' } });
-        else out.push(paragraph(inlineTokens((tok as Tokens.Paragraph).tokens)));
+        else {
+          const inl = (tok as Tokens.Paragraph).tokens ?? [];
+          const isTag = (t: Token | undefined, tag: string) => t?.type === 'html' && (t as Tokens.HTML).raw === tag;
+          const dropCap = isTag(inl[0], DROPCAP_OPEN) && isTag(inl[1], DROPCAP_CLOSE);
+          const p = paragraph(inlineTokens(dropCap ? inl.slice(2) : inl));
+          out.push(dropCap ? { ...p, attrs: { dropCap: true } } : p);
+        }
         break;
       }
       case 'text': // tight list items

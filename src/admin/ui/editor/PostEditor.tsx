@@ -17,6 +17,7 @@ import { Button, Dialog, Field } from '../kit';
 import { Callout, Figure, Youtube } from './nodes';
 import type { ImageStore } from './images';
 import { Toolbar } from './Toolbar';
+import { DropCap } from './dropcap';
 import { Citation, citationAtCursor, citedRefs, syncCitationRefs, type CitationAttrs } from './Citation';
 import { CitationEditDialog, CitationMenu, type MenuAction } from './CitationMenu';
 import { ReferenceDialog, ReferenceEditDialog, type InsertRequest } from './ReferenceDialog';
@@ -52,6 +53,7 @@ function useTiptap(lang: Lang, doc: JSONContent, references: Reference[], images
         Highlight,
         Youtube,
         Callout,
+        DropCap,
         Citation.configure({ refs: citedRefs(references, doc, lang), lang }),
       ],
       content: doc,
@@ -209,6 +211,7 @@ export function PostEditor(props: {
           onImage={() => file.current?.click()}
           onYoutube={() => setAsk({ kind: 'youtube', value: '', error: null })}
           onReference={() => setCite({ kind: 'add', join: citationAtCursor(editor) })}
+          onError={onError}
         />,
         toolbarHost,
       )}

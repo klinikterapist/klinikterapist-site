@@ -112,6 +112,7 @@ describe('docToMarkdown ⇄ markdownToDoc', () => {
     const { body } = parsePost(readFileSync('tests/fixtures/content/ornek-zengin/tr.md', 'utf8'));
     const types = markdownToDoc(body).content!.map((n) => n.type);
     expect(types).toEqual(['paragraph', 'figure', 'callout', 'youtube']);
+    expect(markdownToDoc(body).content![0].attrs).toEqual({ dropCap: true });
     const fig = markdownToDoc(body).content![1];
     expect(fig.attrs).toEqual({ src: './gorsel.webp', alt: 'Yaprak çizimi', caption: 'Adaçayı yeşili bir yaprak' });
   });
@@ -213,5 +214,33 @@ describe('citations', () => {
     const doc: JSONContent = { type: 'doc', content: [p(t('kalın', bold), cite([{ id: 'ray2004' }]), t('son', bold))] };
     const md = docToMarkdown(doc, 'tr', [RAY]);
     expect(md).toBe('**kalın**<cite data-refs="ray2004">(Ray, 2004)</cite>**son**\n');
+  });
+});
+
+describe('drop cap', () => {
+  const RAY: Reference = { id: 'ray2004', type: 'article', authors: [{ family: 'Ray', given: 'O.' }], year: 2004, title: 'Mind' };
+  const dc = (...content: JSONContent[]): JSONContent => ({ type: 'paragraph', attrs: { dropCap: true }, content });
+
+  it('drop cap round-trips', () => {
+    const doc: JSONContent = { type: 'doc', content: [dc(t('“Bu gün” dedi.')), p(t('Sonra.'))] };
+    const md = docToMarkdown(doc, 'tr');
+    expect(md).toBe('<span class="dropcap"></span>“Bu gün” dedi.\n\nSonra.\n');
+    expect(markdownToDoc(md).content).toEqual([dc(t('“Bu gün” dedi.')), p(t('Sonra.'))]);
+  });
+
+  it('drop cap before a citation or bold text round-trips', () => {
+    const cited: JSONContent = { type: 'doc', content: [dc({ type: 'citation', attrs: { items: [{ id: 'ray2004' }], narrative: true } }, t(' gösterdi.'))] };
+    const md = docToMarkdown(cited, 'tr', [RAY]);
+    expect(md).toBe('<span class="dropcap"></span><cite data-refs="ray2004" data-narrative>Ray (2004)</cite> gösterdi.\n');
+    expect(markdownToDoc(md).content?.[0]).toMatchObject({ attrs: { dropCap: true }, content: [{ type: 'citation' }, { text: ' gösterdi.' }] });
+    const bolded: JSONContent = { type: 'doc', content: [dc(t('Kaygı', bold), t(' bir duygudur.'))] };
+    const md2 = docToMarkdown(bolded, 'tr');
+    expect(md2).toBe('<span class="dropcap"></span>**Kaygı** bir duygudur.\n');
+    expect(markdownToDoc(md2).content).toEqual([dc(t('Kaygı', bold), t(' bir duygudur.'))]);
+  });
+
+  it('a paragraph without the drop cap writes no span; the span elsewhere stays text', () => {
+    expect(docToMarkdown({ type: 'doc', content: [{ type: 'paragraph', attrs: { dropCap: false }, content: [t('Düz.')] }] }, 'tr')).toBe('Düz.\n');
+    expect(markdownToDoc('Önce <span class="dropcap"></span>sonra.\n').content?.[0].attrs).toBeUndefined();
   });
 });

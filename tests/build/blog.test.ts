@@ -147,6 +147,19 @@ describe('blog', () => {
     }
   });
 
+  it('drop cap: an empty span starts the paragraph and the built CSS styles its first letter', () => {
+    const d = loadPage('/blog/ornek-zengin/');
+    const span = d.querySelector('.prose p > span.dropcap');
+    expect(span?.parentNode.firstChild).toBe(span);
+    expect(span?.parentNode.textContent.trim()).toMatch(/^Bu yazı/);
+    const css = [
+      ...d.querySelectorAll('link[rel=stylesheet]').map((l) => readFileSync(join(DIST, l.getAttribute('href')!.replace(/^\//, '')), 'utf8')),
+      ...d.querySelectorAll('style').map((s) => s.textContent),
+    ].join('\n');
+    // the minifier writes ::first-letter as :first-letter
+    expect(css.replace(/\s+/g, '')).toMatch(/\.prosep:has\(>span\.dropcap:first-child\)::?first-letter\{/);
+  });
+
   it('blog pages advertise their RSS feed', () => {
     expect(loadPage('/blog/').querySelector('link[type="application/rss+xml"]')?.getAttribute('href'))
       .toBe('https://example.com/rss.xml');

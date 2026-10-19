@@ -7,7 +7,7 @@ category: "psikoloji"
 publishedAt: 2026-01-15
 ---
 
-Bu yazı, panelin ürettiği biçimleri sınamak için var.
+<span class="dropcap"></span>Bu yazı, panelin ürettiği biçimleri sınamak için var.
 
 ![Yaprak çizimi](./gorsel.webp "Adaçayı yeşili bir yaprak")
 

@@ -36,8 +36,16 @@
   line-height: 1.7;
 }
 
-/* Drop cap colour hook (navy by day, sunflower by night). The drop cap itself arrives with Panel v3 Plan B. */
-.prose .drop-cap::first-letter {
+/* Owner-placed drop cap (navy by day, sunflower by night): the paragraph starts with an empty
+   <span class="dropcap"></span>. ::first-letter takes a leading quote mark along with the letter, and
+   the span has no text, so screen readers read the word whole. The editor's copy is in admin.css. */
+.prose p:has(> span.dropcap:first-child)::first-letter {
+  float: left;
+  margin: 0.05em 0.08em 0 0;
+  font-family: var(--font-serif);
+  font-size: 3.2em;
+  font-weight: 500;
+  line-height: 0.85;
   color: var(--dropcap);
 }
 

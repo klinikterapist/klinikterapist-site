@@ -46,6 +46,11 @@ describe('renderPreviewHtml', () => {
     expect(html).toMatch(/<img[^>]*src="blob:x\/a"[^>]*alt="Kapak"|<img[^>]*alt="Kapak"[^>]*src="blob:x\/a"/);
   });
 
+  it('keeps the drop cap span at the start of its paragraph', () => {
+    const html = renderPreviewHtml(draftOf({ doc: doc({ type: 'paragraph', attrs: { dropCap: true }, content: [t('Kaygı bir duygudur.')] }) }), 'tr', urls);
+    expect(html).toContain('<p><span class="dropcap"></span>Kaygı bir duygudur.</p>');
+  });
+
   it('renders a callout as aside.callout', () => {
     const html = renderPreviewHtml(draftOf({ doc: doc({ type: 'callout', content: [p(t('Not'))] }) }), 'tr', urls);
     expect(html).toContain('<aside class="callout">');

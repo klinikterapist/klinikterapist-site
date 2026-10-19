@@ -1284,6 +1284,16 @@ textarea.k-input {
   color: inherit;
 }
 
+.ed-body.prose p.dropcap::first-letter {
+  float: left;
+  margin: 0.05em 0.08em 0 0;
+  font-family: var(--font-serif);
+  font-size: 3.2em;
+  font-weight: 500;
+  line-height: 0.85;
+  color: var(--dropcap);
+}
+
 .ed-body.prose li::marker {
   color: var(--p-sun);
 }
