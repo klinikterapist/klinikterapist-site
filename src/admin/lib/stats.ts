@@ -49,6 +49,7 @@ const PAGE_LABELS: [string, string][] = (
     ['resources', 'Kaynaklar'],
     ['contact', 'İletişim'],
     ['appointment', 'Randevu'],
+    ['preConsult', 'Ön görüşme'],
     ['faq', 'Sık sorulan sorular'],
     ['popular', 'Popüler yazılar'],
     ['topics', 'Konular'],

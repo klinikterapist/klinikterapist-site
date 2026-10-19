@@ -20,6 +20,10 @@ export const ICONS = {
   podcast: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>',
   guide: '<path d="M4 5.5l5-2 6 2 5-2v15l-5 2-6-2-5 2z"/><path d="M9 3.5v15M15 5.5v15"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  /** "Randevu Al" (owner's review 2026-10-19): a rounder calendar with a tinted top band and a tick. */
+  booking: '<path d="M3.5 9.5a4 4 0 0 1 4-4h9a4 4 0 0 1 4 4v.5h-17z" fill="currentColor" fill-opacity=".25" stroke="none"/><rect x="3.5" y="5.5" width="17" height="15" rx="4"/><path d="M8 3.5v4M16 3.5v4M9 15l2.2 2.2L15.5 13"/>',
+  /** "Ön Görüşme": two speech bubbles, a short talk. */
+  talk: '<path d="M14.5 4.5h4a2 2 0 0 1 2 2V11a2 2 0 0 1-2 2h-.5v2.5L15.2 13h-.7"/><path d="M3.5 8.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H9l-3.5 3v-3a2 2 0 0 1-2-2z" fill="currentColor" fill-opacity=".18"/><path d="M7 11.5h4.5"/>',
   send: '<path d="M20.5 3.5L3.5 10.5l7 3 3 7z"/><path d="M20.5 3.5l-10 10"/>',
   laptop: '<rect x="5" y="5" width="14" height="10" rx="1.5"/><path d="M2.5 19h19"/>',
   clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',

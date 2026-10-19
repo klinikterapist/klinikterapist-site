@@ -4,7 +4,7 @@
  * inside the site column, softly rounded on every corner, with the whole brand sun at its
  * bottom-right corner. On the right a personal welcome: a small "Hoş geldiniz", then the greeting
  * "Merhaba, ben Klinik Psikolog Osman Güneş Özkurt." as the page's h1 in the large serif and the text
- * colour, the tagline under it, intro, "Randevu Al", the free intro call badge and the wordmark in
+ * colour, the tagline under it, intro, "Randevu Al" beside "Ön Görüşme" (with its "Ücretsiz" tag) and the wordmark in
  * the logo's own black/white. Without a photo the big sun with a soft halo stands in the same place.
  */
 import type { Lang } from '../../lib/settings';
@@ -24,12 +24,8 @@ interface Props {
   /** The greeting: the profile's title in `lang` (may be empty) and name. */
   title: string;
   name: string;
-  /** The "first session" link points at the FAQ item `ilk-gorusme`; hidden when that item has no answer. */
-  showFirstSession: boolean;
-  /** The free intro call badge links to the FAQ item `on-gorusme`; hidden when that item has no answer. */
-  showFreeIntro: boolean;
 }
-const { lang, photo, alt, heading, intro, title, name, showFirstSession, showFreeIntro } = Astro.props;
+const { lang, photo, alt, heading, intro, title, name } = Astro.props;
 const greeting = t(lang, 'heroGreeting').replace('{who}', [title, name].filter(Boolean).join(' '));
 // The photo box is at most 30rem (480 px) wide, about 40vw on smaller desktops; 2x screens take the
 // 800 or 1080 px variant.
@@ -50,22 +46,16 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
       {heading && <p class="tagline">{heading}</p>}
       {intro && <p class="lead">{intro}</p>}
       <div class="actions">
-        <a class="btn big" href={pathFor('appointment', lang)}>
-          <Icon name="calendar" size={18} />
+        <a class="btn big book" href={pathFor('appointment', lang)}>
+          <Icon name="booking" size={20} />
           {t(lang, 'bookSession')}
         </a>
-        {showFirstSession && <a class="ghost" href={`${pathFor('faq', lang)}#ilk-gorusme`}>{t(lang, 'firstSession')}</a>}
+        <a class="ghost pre" href={pathFor('preConsult', lang)}>
+          <Icon name="talk" size={20} />
+          {t(lang, 'preConsult')}
+          <span class="free-tag">{t(lang, 'freeTag')}</span>
+        </a>
       </div>
-      {
-        showFreeIntro && (
-          <a class="free-intro" href={`${pathFor('faq', lang)}#on-gorusme`}>
-            <span class="free-dot" aria-hidden="true" />
-            <b>{t(lang, 'freeIntroBadge')}</b>
-            <span class="free-hint">{t(lang, 'freeIntroBadgeHint')}</span>
-            <Icon name="arrow" size={14} />
-          </a>
-        )
-      }
       <span class="hero-wordmark">
         <Wordmark height={56} decorative />
       </span>
@@ -157,39 +147,6 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     line-height: 1.3;
   }
 
-  /* "Ücretsiz ön görüşme · 25 dakika · online": a soft pill under the buttons. */
-  .free-intro {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
-    margin-top: var(--space-4);
-    padding: 0.5rem 0.95rem;
-    border: 1px solid color-mix(in srgb, var(--sun-disc) 55%, transparent);
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--sun-halo) 18%, transparent);
-    color: var(--text);
-    font-size: var(--text-sm);
-    text-decoration: none;
-  }
-
-  .free-intro:hover {
-    background: color-mix(in srgb, var(--sun-halo) 30%, transparent);
-    color: var(--text);
-  }
-
-  .free-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background: var(--sun-disc);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun-disc) 30%, transparent);
-  }
-
-  .free-hint {
-    color: var(--muted);
-  }
-
   .lead {
     max-width: 34rem;
     margin: 0 0 var(--space-5);
@@ -227,6 +184,45 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
   .ghost:hover {
     background: var(--surface);
     color: var(--text);
+  }
+
+  /* "Ön Görüşme" with a small "Ücretsiz" tag on its top-right corner (owner's review 2026-10-19). */
+  .pre {
+    position: relative;
+    gap: var(--space-2);
+    border-color: color-mix(in srgb, var(--sun-disc) 60%, transparent);
+    font-size: var(--text-base);
+  }
+
+  .free-tag {
+    position: absolute;
+    top: -0.7rem;
+    right: 0.9rem;
+    padding: 2px 9px;
+    border-radius: var(--radius-pill);
+    background: var(--sun-disc);
+    color: #1F2E4A;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    box-shadow: 0 2px 8px color-mix(in srgb, #000 18%, transparent);
+  }
+
+  .book :global(.icon),
+  .pre :global(.icon) {
+    transition: transform 0.25s ease;
+  }
+
+  .book:hover :global(.icon),
+  .pre:hover :global(.icon) {
+    transform: rotate(-8deg) scale(1.08);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .book:hover :global(.icon),
+    .pre:hover :global(.icon) {
+      transform: none;
+    }
   }
 
   /* The klinikterapist wordmark under the buttons, in the logo's own black/white (the text colour). */

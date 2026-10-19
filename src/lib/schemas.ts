@@ -10,13 +10,13 @@ export type Localized = { tr: string; en: string };
 
 export const ROUTE_KEYS = [
   'home', 'about', 'blog', 'category', 'post', 'resources',
-  'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq', 'popular', 'topics',
+  'contact', 'appointment', 'preConsult', 'privacyNotice', 'privacyPolicy', 'faq', 'popular', 'topics',
 ] as const;
 export type RouteKey = (typeof ROUTE_KEYS)[number];
 
 /** Route keys with one fixed page (no slug): the only pages a home card may target. */
 export const PAGE_KEYS = [
-  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'privacyNotice', 'privacyPolicy', 'faq', 'popular', 'topics',
+  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'preConsult', 'privacyNotice', 'privacyPolicy', 'faq', 'popular', 'topics',
 ] as const satisfies readonly RouteKey[];
 
 const localized = z.object({ tr: z.string(), en: z.string() });
@@ -191,6 +191,11 @@ const seoSchema = z.object({
   defaultDescription: localized,
   ogImage: z.string().min(1),
   gscVerification: z.string().optional(),
+  /**
+   * Google Analytics 4 measurement ID (`G-…`). Set only together with the privacy texts that
+   * describe it: Analytics loads only after the visitor accepts the cookie notice (Analytics.astro).
+   */
+  gaId: z.string().regex(/^G-[A-Z0-9]{4,20}$/, 'Google Analytics kimliği "G-" ile başlamalı (ör. G-ABC123XYZ)').optional(),
 });
 
 const redirectsSchema = z

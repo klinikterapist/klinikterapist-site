@@ -53,10 +53,10 @@ describe('author metadata and web app manifest', () => {
 
   it('manifest.webmanifest names the app and has a 512 maskable icon', () => {
     const m = JSON.parse(read('manifest.webmanifest'));
-    expect(m.short_name).toBe('Güneş');
+    expect(m.short_name).toBe('Klinik Terapist');
     expect(m.display).toBe('standalone');
     expect(m.theme_color).toBe('#FBF3E4');
-    expect(m.background_color).toBe('#FBF3E4');
+    expect(m.background_color).toBe('#1F2E4A');
     expect(m.icons.some((i: { sizes: string; purpose?: string }) => i.sizes === '512x512' && i.purpose === 'maskable')).toBe(true);
     for (const i of m.icons) expect(existsSync(join(DIST, i.src))).toBe(true);
   });

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hoş geldiniz: seçenekler</title>
+<!-- Mockup only: the chosen fonts would be self-hosted on the site (fontsource), never loaded from Google. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Dancing+Script:wght@600;700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Great+Vibes&family=Kalam:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #1f2e4a; --surface: #26385a; --text: #f4ebdd; --muted: #b9c4d6; --line: rgb(244 235 221 / .13);
+    --sun: #f6b92b; --sun-soft: #fcd873; --navy: #1f2e4a;
+    --serif: 'Fraunces', Georgia, serif; --sans: 'DM Sans', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); }
+  header.top { padding: 28px 16px 8px; text-align: center; }
+  header.top h1 { margin: 0 0 6px; font-family: var(--serif); font-weight: 600; font-size: 1.6rem; }
+  header.top p { margin: 0 auto; max-width: 46rem; color: var(--muted); line-height: 1.5; }
+  .opt { max-width: 1180px; margin: 28px auto; padding: 0 16px; }
+  .tag { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; font-weight: 700; color: var(--sun-soft); letter-spacing: .02em; }
+  .tag b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--sun); color: var(--navy); font-size: 1.1rem; }
+  .frame { display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(2rem, 5vw, 5rem); align-items: center; padding: clamp(24px, 4vw, 48px); border: 1px solid var(--line); border-radius: 28px; }
+  .photo { position: relative; aspect-ratio: 4/5; max-width: 26rem; border-radius: 24px; background: var(--surface) center 20% / cover no-repeat; box-shadow: 0 4px 16px rgb(0 0 0 / .3); }
+  .photo::after { content: ''; position: absolute; right: -34px; bottom: -34px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, var(--sun) 0 38%, var(--sun-soft) 39% 55%, transparent 56%); }
+  .note { margin: 14px 4px 0; color: var(--muted); font-size: .95rem; line-height: 1.5; }
+  .tagline { margin: 0 0 10px; font-family: var(--serif); font-style: italic; font-size: 1.6rem; color: var(--sun-soft); }
+  .lead { margin: 0 0 24px; max-width: 32rem; color: var(--muted); font-size: 1.1rem; line-height: 1.55; }
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 22px; border-radius: 999px; font-weight: 700; text-decoration: none; }
+  .btn.p { background: var(--sun); color: var(--navy); }
+  .btn.g { position: relative; border: 1px solid rgb(246 185 43 / .6); color: var(--text); }
+  .btn.g i { position: absolute; top: -10px; right: 14px; padding: 2px 9px; border-radius: 999px; background: var(--sun); color: var(--navy); font-size: .7rem; font-style: normal; }
+  .wave { display: inline-block; transform-origin: 70% 70%; animation: wave 2.4s ease-in-out 1s infinite; }
+  @keyframes wave { 0%, 60%, 100% { transform: rotate(0); } 10%, 30% { transform: rotate(14deg); } 20% { transform: rotate(-8deg); } 40% { transform: rotate(-4deg); } 50% { transform: rotate(10deg); } }
+  @media (prefers-reduced-motion: reduce) { .wave { animation: none; } }
+
+  /* A — handwriting, warm */
+  .a .hello { margin: 0; font-family: 'Dancing Script', cursive; font-weight: 700; font-size: clamp(3.6rem, 2rem + 4vw, 6rem); line-height: 1; color: var(--sun); }
+  .a .hi { margin: 18px 0 4px; font-family: var(--serif); font-weight: 500; font-size: clamp(2rem, 1.4rem + 1.4vw, 2.6rem); }
+  .a .me { margin: 0 0 18px; font-family: var(--serif); font-weight: 400; font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem); line-height: 1.25; }
+  .a .me strong { font-weight: 650; }
+
+  /* B — soft italic serif */
+  .b .hello { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 400; font-variation-settings: 'SOFT' 100, 'WONK' 1; font-size: clamp(3.8rem, 2rem + 4.6vw, 6.5rem); line-height: .95; letter-spacing: -.01em; }
+  .b .hello::after { content: '.'; color: var(--sun); }
+  .b .hi { margin: 22px 0 6px; font-size: clamp(1.6rem, 1.2rem + 1vw, 2.1rem); font-weight: 500; }
+  .b .me { margin: 0 0 20px; font-size: 1.15rem; color: var(--muted); }
+  .b .me span { display: block; margin-top: 4px; font-family: var(--serif); font-size: clamp(1.7rem, 1.2rem + 1.2vw, 2.3rem); font-weight: 600; color: var(--text); }
+
+  /* C — signature script with a swash */
+  .c .hello { position: relative; display: inline-block; margin: 0; font-family: 'Great Vibes', cursive; font-weight: 400; font-size: clamp(4.2rem, 2rem + 5.5vw, 7.2rem); line-height: 1; color: var(--text); }
+  .c .hello svg { position: absolute; left: 4%; bottom: -14px; width: 92%; height: 24px; color: var(--sun); }
+  .c .hi { margin: 30px 0 6px; font-family: var(--serif); font-weight: 400; font-size: clamp(1.8rem, 1.3rem + 1.2vw, 2.4rem); }
+  .c .me { margin: 0 0 18px; font-family: var(--serif); font-size: clamp(1.4rem, 1.1rem + .8vw, 1.8rem); font-weight: 300; line-height: 1.3; }
+  .c .me strong { font-weight: 600; color: var(--sun-soft); }
+
+  /* D — modern, quiet */
+  .d .hello { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(3.6rem, 2rem + 4.4vw, 6.2rem); line-height: 1; letter-spacing: -.02em; background: linear-gradient(100deg, var(--sun-soft), var(--sun) 60%, #f39a2b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .d .hi { display: flex; align-items: center; gap: 12px; margin: 22px 0 10px; font-size: clamp(1.6rem, 1.2rem + 1vw, 2.1rem); font-weight: 500; }
+  .d .me { margin: 0 0 18px; }
+  .d .me .pill { display: inline-block; margin-bottom: 8px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: .9rem; font-weight: 500; }
+  .d .me b { display: block; font-family: var(--serif); font-size: clamp(1.8rem, 1.3rem + 1.2vw, 2.4rem); font-weight: 600; }
+  .d .tagline { font-style: normal; font-family: var(--sans); font-size: 1.25rem; font-weight: 500; }
+
+  /* E — handwriting, light (Kalam) */
+  .e .hello { margin: 0; font-family: 'Kalam', cursive; font-weight: 700; font-size: clamp(3.4rem, 2rem + 4vw, 5.8rem); line-height: 1.05; color: var(--sun-soft); transform: rotate(-2deg); transform-origin: left; }
+  .e .hi { margin: 18px 0 4px; font-family: var(--serif); font-size: clamp(1.9rem, 1.4rem + 1.2vw, 2.5rem); font-weight: 500; }
+  .e .me { margin: 0 0 18px; font-family: var(--serif); font-size: clamp(1.45rem, 1.1rem + .9vw, 1.9rem); font-weight: 400; line-height: 1.25; }
+
+  @media (max-width: 760px) {
+    .frame { grid-template-columns: 1fr; }
+    .photo { max-width: 15rem; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>"Hoş geldiniz" bölümü: 5 seçenek</h1>
+  <p>Sıralama hepsinde aynı: en büyük yazı "Hoş geldiniz", altında biraz daha küçük "Merhaba 👋", bir alt satırda "Ben Klinik Psikolog Osman Güneş Özkurt.", sonra slogan, kısa yazı ve butonlar. Beğendiğiniz harfi söylemeniz yeterli; iki seçeneği karıştırabiliriz de (ör. "A'nın yazı tipi, D'nin düzeni").</p>
+</header>
+
+<section class="opt a">
+  <p class="tag"><b>A</b> El yazısı, sıcak</p>
+  <div class="frame">
+    <div class="photo"></div>
+    <div>
+      <p class="hello">Hoş geldiniz</p>
+      <p class="hi">Merhaba <span class="wave">👋</span></p>
+      <p class="me">Ben Klinik Psikolog <strong>Osman Güneş Özkurt.</strong></p>
+      <p class="tagline">Daha iyi bir yaşam mümkün.</p>
+      <p class="lead">Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.</p>
+      <div class="btns"><a class="btn p">Randevu Al</a><a class="btn g">Ön Görüşme<i>Ücretsiz</i></a></div>
+    </div>
+  </div>
+  <p class="note">"Hoş geldiniz" güneş sarısı, akıcı bir el yazısıyla. Samimi ve sıcak; en "karşılayan" seçenek.</p>
+</section>
+
+<section class="opt b">
+  <p class="tag"><b>B</b> Yumuşak italik</p>
+  <div class="frame">
+    <div class="photo"></div>
+    <div>
+      <p class="hello">Hoş geldiniz</p>
+      <p class="hi">Merhaba <span class="wave">👋</span></p>
+      <p class="me">Ben Klinik Psikolog<span>Osman Güneş Özkurt.</span></p>
+      <p class="tagline">Daha iyi bir yaşam mümkün.</p>
+      <p class="lead">Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.</p>
+      <div class="btns"><a class="btn p">Randevu Al</a><a class="btn g">Ön Görüşme<i>Ücretsiz</i></a></div>
+    </div>
+  </div>
+  <p class="note">Sitenin kendi yazı tipinin (Fraunces) yumuşatılmış italiği; sonunda sarı bir nokta. Zarif ve sitenin geri kalanıyla en uyumlu seçenek.</p>
+</section>
+
+<section class="opt c">
+  <p class="tag"><b>C</b> İmza gibi</p>
+  <div class="frame">
+    <div class="photo"></div>
+    <div>
+      <p class="hello">Hoş geldiniz<svg viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true"><path d="M4 16 C 70 4, 140 22, 210 10 S 290 8, 296 14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></p>
+      <p class="hi">Merhaba <span class="wave">👋</span></p>
+      <p class="me">Ben Klinik Psikolog <strong>Osman Güneş Özkurt.</strong></p>
+      <p class="tagline">Daha iyi bir yaşam mümkün.</p>
+      <p class="lead">Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.</p>
+      <div class="btns"><a class="btn p">Randevu Al</a><a class="btn g">Ön Görüşme<i>Ücretsiz</i></a></div>
+    </div>
+  </div>
+  <p class="note">İmzaya benzeyen, kıvrımlı bir el yazısı ve altında sarı bir fırça çizgisi. En "kişisel" ve gösterişli seçenek.</p>
+</section>
+
+<section class="opt d">
+  <p class="tag"><b>D</b> Sade ve modern</p>
+  <div class="frame">
+    <div class="photo"></div>
+    <div>
+      <p class="hello">Hoş geldiniz</p>
+      <p class="hi">Merhaba <span class="wave">👋</span></p>
+      <p class="me"><span class="pill">Klinik Psikolog</span><b>Ben Osman Güneş Özkurt.</b></p>
+      <p class="tagline">Daha iyi bir yaşam mümkün.</p>
+      <p class="lead">Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.</p>
+      <div class="btns"><a class="btn p">Randevu Al</a><a class="btn g">Ön Görüşme<i>Ücretsiz</i></a></div>
+    </div>
+  </div>
+  <p class="note">İnce, büyük harfler ve gün doğumu renklerinde bir geçiş. "Klinik Psikolog" küçük bir etiket olarak. El yazısı yok; en sakin ve modern seçenek.</p>
+</section>
+
+<section class="opt e">
+  <p class="tag"><b>E</b> Defter el yazısı</p>
+  <div class="frame">
+    <div class="photo"></div>
+    <div>
+      <p class="hello">Hoş geldiniz</p>
+      <p class="hi">Merhaba <span class="wave">👋</span></p>
+      <p class="me">Ben Klinik Psikolog Osman Güneş Özkurt.</p>
+      <p class="tagline">Daha iyi bir yaşam mümkün.</p>
+      <p class="lead">Kendini anlamak, değişimin ilk adımıdır. Bu yolculukta yanınızdayım.</p>
+      <div class="btns"><a class="btn p">Randevu Al</a><a class="btn g">Ön Görüşme<i>Ücretsiz</i></a></div>
+    </div>
+  </div>
+  <p class="note">Elle not alınmış gibi, hafif eğik ve rahat bir yazı. A'dan daha gündelik ve oyunbaz.</p>
+</section>
+
+<script>
+  // The owner's portrait from the site (relative to this file inside the repo).
+  document.querySelectorAll('.photo').forEach((p) => (p.style.backgroundImage = "url('../../../../../public/images/profil-451757c8.webp')"));
+</script>
+</body>
+</html>

@@ -68,8 +68,6 @@ if (hasPopular) tiles.push({ icon: 'flame', title: t(lang, 'popularPosts'), subt
 const tilePair: [Tile] | [Tile, Tile] | null = tiles.length === 2 ? [tiles[0], tiles[1]] : tiles.length === 1 ? [tiles[0]] : null;
 
 const faq = getFaq(lang);
-const hasFirstSession = faq.some((f) => f.id === 'ilk-gorusme');
-const hasFreeIntro = faq.some((f) => f.id === 'on-gorusme');
 const firstName = profile.name.split(/\s+/)[0];
 const helloText = profile.shortIntro?.[lang].trim() || intro;
 const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
@@ -95,18 +93,14 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       </div>
       {intro && <p class="intro">{intro}</p>}
       <a id="top-cta" class="top-cta" href={pathFor('appointment', lang)}>
-        <Icon name="calendar" size={18} />
+        <Icon name="booking" size={20} />
         {t(lang, 'bookSession')}
       </a>
-      {
-        hasFreeIntro && (
-          <a class="free-intro" href={`${pathFor('faq', lang)}#on-gorusme`}>
-            <span class="free-dot" aria-hidden="true" />
-            <b>{t(lang, 'freeIntroBadge')}</b>
-            <span class="free-hint">· {t(lang, 'freeIntroBadgeHint')}</span>
-          </a>
-        )
-      }
+      <a class="pre-cta" href={pathFor('preConsult', lang)}>
+        <Icon name="talk" size={20} />
+        {t(lang, 'preConsult')}
+        <span class="free-tag">{t(lang, 'freeTag')}</span>
+      </a>
 
       <div class="stack">
         <SocialAccordion lang={lang} />
@@ -155,8 +149,6 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       intro={intro}
       title={profile.title[lang].trim()}
       name={profile.name}
-      showFirstSession={hasFirstSession}
-      showFreeIntro={hasFreeIntro}
     />
 
     <section class="latest container" aria-label={t(lang, 'recentPosts')}>
@@ -293,32 +285,41 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     color: var(--btn-text);
   }
 
-  /* "Ücretsiz ön görüşme · 25 dakika · online" under the button. */
-  .free-intro {
+  /* "Ön Görüşme" under "Randevu Al": outlined, with a small "Ücretsiz" tag on its corner. */
+  .pre-cta {
+    position: relative;
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    margin-top: 10px;
-    padding: 8px 12px;
-    border: 1px solid color-mix(in srgb, var(--sun-disc) 55%, transparent);
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--sun-halo) 18%, transparent);
+    gap: 8px;
+    min-height: 52px;
+    margin-top: 12px;
+    padding: 14px 16px;
+    border: 1.5px solid color-mix(in srgb, var(--sun-disc) 65%, transparent);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--sun-halo) 12%, transparent);
     color: var(--text);
-    font-size: var(--text-xs);
+    font-size: 1.03125rem;
+    font-weight: 600;
     text-decoration: none;
   }
 
-  .free-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--sun-disc);
+  .pre-cta:hover {
+    background: color-mix(in srgb, var(--sun-halo) 24%, transparent);
+    color: var(--text);
   }
 
-  .free-hint {
-    color: var(--muted);
+  .free-tag {
+    position: absolute;
+    top: -0.65rem;
+    right: 0.9rem;
+    padding: 2px 9px;
+    border-radius: var(--radius-pill);
+    background: var(--sun-disc);
+    color: #1F2E4A;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
   }
 
   .stack,

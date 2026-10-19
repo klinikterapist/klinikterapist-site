@@ -7,7 +7,7 @@
  *
  * Icon files: public/favicon.svg (face colour follows the OS) and public/favicon.ico (32×32),
  * both with a thicker face stroke so the face survives at tab size;
- * public/apple-touch-icon.png (180, cream), public/icons/icon-192.png, icon-512.png,
+ * public/apple-touch-icon.png (180, navy), public/icons/icon-192.png, icon-512.png,
  * icon-maskable-512.png. When the owner's Logo folder exists, it also writes the two 1080×1080
  * Instagram profile pictures there, but never replaces a file that is already there.
  *
@@ -91,11 +91,11 @@ async function writeIcons() {
   mkdirSync('public/icons', { recursive: true });
   writeFileSync('public/favicon.svg', faviconSvg());
   writeFileSync('public/favicon.ico', ico(await icon(32), 32));
-  writeFileSync('public/apple-touch-icon.png', await icon(180, { scale: 0.8, background: CREAM }));
+  writeFileSync('public/apple-touch-icon.png', await icon(180, { scale: 0.8, background: NAVY, face: FACE_NIGHT }));
   writeFileSync('public/icons/icon-192.png', await icon(192));
   writeFileSync('public/icons/icon-512.png', await icon(512));
-  // Maskable: full-bleed cream, the halo stays inside the central 80% safe circle.
-  writeFileSync('public/icons/icon-maskable-512.png', await icon(512, { scale: 0.8, background: CREAM }));
+  // Maskable: full-bleed navy (the night background, owner's review 2026-10-19), the halo stays inside the central 80% safe circle.
+  writeFileSync('public/icons/icon-maskable-512.png', await icon(512, { scale: 0.8, background: NAVY, face: FACE_NIGHT }));
   console.log('public/: favicon.svg, favicon.ico, apple-touch-icon.png, icons/icon-{192,512,maskable-512}.png');
 
   if (!existsSync(LOGO_DIR)) return;

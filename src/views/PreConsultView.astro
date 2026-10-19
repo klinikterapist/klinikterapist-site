@@ -1,0 +1,337 @@
+---
+/**
+ * Free intro call page (owner's review 2026-10-19, item 3). On the dev server (or a build with
+ * `BOOKING_DESIGN=1`) the step-by-step request form design comes first; on the live site, until the
+ * form works, e-mail and the contact page stand in its place. Below, on both: why the call is free,
+ * what happens in it, and the common questions (who therapy is for, whether there is an age limit,
+ * psychologist or psychiatrist), plus the emergency note.
+ */
+import PageShell from '../layouts/PageShell.astro';
+import PageHead from '../components/ui/PageHead.astro';
+import Accordion from '../components/ui/Accordion.astro';
+import ListItem from '../components/ui/ListItem.astro';
+import Icon from '../components/Icon.astro';
+import PreConsultDesign from '../components/appointment/PreConsultDesign.astro';
+import type { Lang } from '../lib/settings';
+import { getContact } from '../lib/settings';
+import { pageMeta } from '../lib/seo';
+import { pathFor } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+
+const T = {
+  tr: {
+    title: 'Ücretsiz Ön Görüşme',
+    lead: 'Terapiye başlamadan önce 25–30 dakikalık, ücretsiz bir online görüşmeyle tanışalım. Ön görüşmeler cumartesi ve pazar günleri yapılır.',
+    facts: [
+      ['clock', '25–30 dakika'],
+      ['calendar', 'Cumartesi ve pazar'],
+      ['laptop', 'Online'],
+      ['heart', 'Ücretsiz, bağlayıcı değil'],
+    ],
+    liveLead: 'Talep formu çok yakında burada. Şimdilik ön görüşme talebinizi e-postayla iletebilirsiniz.',
+    whyTitle: 'Ön görüşme neden ücretsiz?',
+    why: [
+      'Terapide en belirleyici şeylerden biri, danışan ile terapist arasında kurulan güvene dayalı ilişkidir. Bu ilişkinin size iyi gelip gelmeyeceğini anlamanın en iyi yolu, birbirimizi tanımaktır.',
+      'Ön görüşme, herhangi bir ücret ödemeden önce benimle tanışmanız, çalışma biçimimi görmeniz ve aklınızdaki soruları sormanız için var. Bir terapi seansı değildir; tanı konmaz, tedavi başlamaz.',
+      'Görüşmenin sonunda bu çalışmanın ihtiyacınıza uygun olup olmadığına birlikte karar veririz. Gerekirse sizi daha uygun bir uzmana ya da kuruma yönlendiririm. Devam etme zorunluluğunuz yoktur.',
+    ],
+    whatTitle: 'Ön görüşmede neler konuşuruz?',
+    what: [
+      'Sizi başvurmaya yönelten konuyu ve beklentilerinizi kısaca dinlerim.',
+      'Nasıl çalıştığımı, görüşmelerin sıklığını, süresini ve gizlilik ilkelerini anlatırım.',
+      'Sorularınızı yanıtlarım; ücretler ve ayrıntılar daha sonra e-postayla iletilir.',
+      'Birlikte bir sonraki adıma karar veririz.',
+    ],
+    faqTitle: 'Sık sorulan sorular',
+    faq: [
+      {
+        q: 'İnsanlar neden terapiye başvurur?',
+        a: [
+          'Terapiye başvurmak için sorunun "yeterince büyük" olması gerekmez. Kimi insanlar kaygı, mutsuzluk, ilişki sorunları ya da bir kayıp gibi zorlayıcı bir dönemden geçerken gelir; kimileri de kendini daha iyi tanımak, tekrar eden döngüleri anlamak ya da hayatında bir şeyleri değiştirmek için.',
+          'Gündelik hayatı, ilişkileri, işi ya da uykuyu etkileyen; uzun süredir geçmeyen ya da tek başına taşımakta zorlandığınız her konu, destek almak için geçerli bir nedendir.',
+        ],
+      },
+      {
+        q: 'Kimler terapi alabilir?',
+        a: [
+          'Terapi, zor bir dönemden geçen ya da kendisiyle ilgili bir şeyi anlamak isteyen herkes içindir. "Hasta" olmanız ya da bir tanı almış olmanız gerekmez.',
+          'Bazı durumlarda terapiyle birlikte bir psikiyatristin değerlendirmesi de gerekebilir; böyle bir ihtiyaç görürsem bunu sizinle açıkça konuşurum.',
+        ],
+      },
+      {
+        q: 'Terapinin bir yaş sınırı var mı?',
+        a: [
+          'Terapinin bir üst yaş sınırı yoktur; her yaşta destek almak mümkündür. Çocuklar ve ergenler için de yaşlarına uygun yöntemler vardır.',
+          '18 yaşından küçükler için ebeveyn ya da yasal vasinin onayı gerekir. Formda yaş aralığınızı sormamın nedeni budur.',
+        ],
+      },
+      {
+        q: 'Psikolog ile psikiyatrist arasındaki fark nedir?',
+        a: [
+          'Psikiyatrist, tıp fakültesini bitirip psikiyatri uzmanlığı almış bir hekimdir; tanı koyar ve gerektiğinde ilaç tedavisi düzenler.',
+          'Psikolog ise psikoloji eğitimi almıştır; klinik psikologlar bu eğitimin üzerine klinik psikoloji yüksek lisansı yapar. Psikologlar ilaç yazmaz; psikoterapi ve psikolojik değerlendirme ile çalışır.',
+          'İkisi çoğu zaman birbirini tamamlar: bazı durumlarda en iyi sonuç, terapi ile ilaç tedavisinin birlikte yürütülmesiyle alınır.',
+        ],
+      },
+      {
+        q: 'Online terapi nasıl yapılır?',
+        a: [
+          'Görüşmeler görüntülü olarak yapılır; bağlantıyı e-postayla gönderirim. Sessiz, rahat konuşabileceğiniz bir ortam ve iyi bir internet bağlantısı yeterlidir.',
+        ],
+      },
+    ],
+    urgentTitle: 'Acil bir durumdaysanız',
+    urgent: 'Kendinize ya da bir başkasına zarar verme düşünceniz varsa ön görüşmeyi beklemeyin; 112 Acil Çağrı Merkezi’ni arayın ya da en yakın acil servise başvurun.',
+  },
+  en: {
+    title: 'Free Intro Call',
+    lead: 'Before starting therapy, let’s get to know each other in a free 25–30 minute online call. Intro calls are held on Saturdays and Sundays.',
+    facts: [
+      ['clock', '25–30 minutes'],
+      ['calendar', 'Saturday and Sunday'],
+      ['laptop', 'Online'],
+      ['heart', 'Free, no obligation'],
+    ],
+    liveLead: 'The request form is coming here soon. For now, you can ask for an intro call by e-mail.',
+    whyTitle: 'Why is the intro call free?',
+    why: [
+      'One of the things that matters most in therapy is a relationship of trust between client and therapist. The best way to find out whether it suits you is to meet.',
+      'The intro call is there so you can meet me, see how I work and ask your questions before paying anything. It is not a therapy session: no diagnosis is made and no treatment starts.',
+      'At the end we decide together whether this work suits your needs. If needed, I refer you to a better-suited specialist or service. You are under no obligation to continue.',
+    ],
+    whatTitle: 'What do we talk about?',
+    what: [
+      'I briefly listen to what brings you here and what you hope for.',
+      'I explain how I work, how often and how long sessions are, and the principles of confidentiality.',
+      'I answer your questions; fees and details follow by e-mail.',
+      'We decide on the next step together.',
+    ],
+    faqTitle: 'Common questions',
+    faq: [
+      {
+        q: 'Why do people start therapy?',
+        a: [
+          'A problem does not have to be "big enough" for therapy. Some people come during a hard time such as anxiety, low mood, relationship problems or a loss; others to know themselves better, understand recurring patterns or change something in their lives.',
+          'Anything that affects your daily life, relationships, work or sleep, that has lasted a long time or that is hard to carry alone is a valid reason to seek support.',
+        ],
+      },
+      {
+        q: 'Who can have therapy?',
+        a: [
+          'Therapy is for anyone going through a hard time or wanting to understand something about themselves. You do not need to be "ill" or to have a diagnosis.',
+          'Sometimes a psychiatrist’s assessment is needed alongside therapy; if I see such a need, I will talk about it with you openly.',
+        ],
+      },
+      {
+        q: 'Is there an age limit?',
+        a: [
+          'There is no upper age limit; support is possible at any age. There are age-appropriate approaches for children and adolescents too.',
+          'Under-18s need the consent of a parent or legal guardian. That is why the form asks for your age range.',
+        ],
+      },
+      {
+        q: 'What is the difference between a psychologist and a psychiatrist?',
+        a: [
+          'A psychiatrist is a medical doctor who has specialised in psychiatry; they diagnose and, when needed, prescribe medication.',
+          'A psychologist has studied psychology; clinical psychologists add a master’s degree in clinical psychology. Psychologists do not prescribe; they work with psychotherapy and psychological assessment.',
+          'The two often complement each other: in some cases the best results come from therapy and medication together.',
+        ],
+      },
+      {
+        q: 'How does online therapy work?',
+        a: ['Sessions are held by video; I send the link by e-mail. A quiet place where you can talk freely and a good internet connection are enough.'],
+      },
+    ],
+    urgentTitle: 'If you are in crisis',
+    urgent: 'If you are thinking of harming yourself or someone else, do not wait for the intro call: call 112 (emergency services in Turkey) or go to the nearest emergency department.',
+  },
+}[lang];
+
+const { meta, alternatePaths } = pageMeta('preConsult', lang, T.title, T.lead);
+const { email } = getContact();
+const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
+---
+
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design}>
+  <div class:list={['inner-page preconsult-page', design ? 'container' : 'container-text']}>
+    <PageHead title={T.title}>
+      <p class="lead">{T.lead}</p>
+    </PageHead>
+
+    <ul class="facts">
+      {
+        T.facts.map(([icon, text]) => (
+          <li>
+            <Icon name={icon} size={18} />
+            {text}
+          </li>
+        ))
+      }
+    </ul>
+
+    {
+      design ? (
+        <PreConsultDesign lang={lang} email={email} />
+      ) : (
+        <div class="page-stack">
+          <p class="live-lead">{T.liveLead}</p>
+          <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
+          <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+        </div>
+      )
+    }
+
+    <div class="info">
+      <section class="why">
+        <h2>{T.whyTitle}</h2>
+        {T.why.map((p) => <p>{p}</p>)}
+      </section>
+
+      <section class="what">
+        <h2>{T.whatTitle}</h2>
+        <ol>
+          {T.what.map((p) => <li>{p}</li>)}
+        </ol>
+      </section>
+
+      <section class="pc-faq">
+        <h2>{T.faqTitle}</h2>
+        <div class="page-stack">
+          {
+            T.faq.map((f) => (
+              <Accordion title={f.q} name="pc-faq">
+                {f.a.map((p) => <p class="answer">{p}</p>)}
+              </Accordion>
+            ))
+          }
+        </div>
+      </section>
+
+      <aside class="urgent" role="note">
+        <Icon name="alert" size={20} />
+        <p><b>{T.urgentTitle}.</b> {T.urgent}</p>
+      </aside>
+    </div>
+  </div>
+</PageShell>
+
+<style>
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+
+  .facts li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .facts :global(svg) {
+    color: var(--link);
+  }
+
+  .live-lead {
+    margin: 0;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .info {
+    display: grid;
+    gap: var(--space-7);
+    max-width: 44rem;
+    margin: var(--space-8) auto 0;
+  }
+
+  .info h2 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xl);
+  }
+
+  .why p {
+    margin: 0 0 var(--space-3);
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .what ol {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: what;
+  }
+
+  .what li {
+    position: relative;
+    padding-left: 2.5rem;
+    color: var(--muted);
+    line-height: 1.55;
+    counter-increment: what;
+  }
+
+  .what li::before {
+    content: counter(what);
+    position: absolute;
+    top: -2px;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--sun-disc);
+    color: #1f2e4a;
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .answer {
+    margin: 0 0 var(--space-3);
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .answer:last-child {
+    margin-bottom: 0;
+  }
+
+  .urgent {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-left: 4px solid #d9534f;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .urgent :global(svg) {
+    flex: none;
+    color: #d9534f;
+  }
+
+  .urgent p {
+    margin: 0;
+  }
+</style>

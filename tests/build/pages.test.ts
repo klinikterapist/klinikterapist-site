@@ -47,9 +47,11 @@ describe('static pages', () => {
     expect(enLd.find((d) => d['@type'] === 'FAQPage').mainEntity).toHaveLength(2);
   });
 
-  it('home and header links to the first-session answer resolve', () => {
-    expect(loadPage('/').querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')).not.toBeNull();
-    expect(loadPage('/en/').querySelector('a[href="/en/faq/#ilk-gorusme"]')).not.toBeNull();
+  it('home links to the free intro call page, which exists in both languages', () => {
+    expect(loadPage('/').querySelector('a[href="/on-gorusme/"]')).not.toBeNull();
+    expect(loadPage('/en/').querySelector('a[href="/en/intro-call/"]')).not.toBeNull();
+    expect(loadPage('/on-gorusme/').querySelector('h1')?.text).toBe('Ücretsiz Ön Görüşme');
+    expect(loadPage('/en/intro-call/').querySelector('h1')?.text).toBe('Free Intro Call');
   });
 
   it('sets the document language', () => {

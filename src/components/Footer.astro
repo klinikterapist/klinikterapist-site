@@ -5,7 +5,7 @@
  * "Sosyal medyada takip et" box.
  */
 import type { Lang } from '../lib/settings';
-import { getLinks } from '../lib/settings';
+import { getLinks, getSeo } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
 import { t } from '../i18n/ui';
 import Icon from './Icon.astro';
@@ -17,6 +17,8 @@ interface Props {
 const { lang } = Astro.props;
 const links = getLinks().filter((l) => l.inFooter);
 const external = (url: string) => /^https?:\/\//.test(url);
+// With Google Analytics on, the cookie choice can be changed from every page (Analytics.astro).
+const hasAnalytics = Boolean(getSeo().gaId);
 ---
 
 <footer class="site-footer">
@@ -47,6 +49,7 @@ const external = (url: string) => /^https?:\/\//.test(url);
   </div>
   <div class="container">
     <PageEnd lang={lang} />
+    {hasAnalytics && <button type="button" class="cookie-prefs" data-cookie-prefs>{t(lang, 'cookiePrefs')}</button>}
   </div>
 </footer>
 
@@ -72,6 +75,19 @@ const external = (url: string) => /^https?:\/\//.test(url);
   }
 
   .social,
+  .cookie-prefs {
+    display: block;
+    margin: 0 auto var(--space-4);
+    padding: 8px;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: var(--text-xs);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   .legal {
     display: flex;
     flex-wrap: wrap;

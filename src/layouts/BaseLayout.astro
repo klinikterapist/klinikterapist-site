@@ -9,6 +9,7 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Counter from '../components/Counter.astro';
 import { COUNTER_ENABLED } from '../lib/site';
+import Analytics from '../components/Analytics.astro';
 
 interface Props {
   lang: Lang;
@@ -34,6 +35,7 @@ const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content="Klinik Terapist" />
     <meta name="generator" content={Astro.generator} />
     {noindex && <meta name="robots" content="noindex" />}
     <Seo meta={meta} jsonLd={jsonLd} />
@@ -48,5 +50,6 @@ const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
     </main>
     <Footer lang={lang} />
     {COUNTER_ENABLED && !noindex && <Counter />}
+    <Analytics lang={lang} />
   </body>
 </html>

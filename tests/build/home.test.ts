@@ -136,7 +136,7 @@ describe('home (phone)', () => {
 });
 
 describe('home (desktop)', () => {
-  it('hero: the greeting as the one h1, the tagline, intro, booking and first-session buttons', () => {
+  it('hero: the greeting as the one h1, the tagline, intro, booking and free intro call buttons', () => {
     const hero = tr().querySelector('.home-desk .desktop-hero')!;
     expect(tr().querySelectorAll('h1')).toHaveLength(1);
     // Owner's review 2026-10-19: a personal welcome is the headline; the tagline follows it.
@@ -146,8 +146,11 @@ describe('home (desktop)', () => {
     expect(hero.querySelector('p.tagline')?.text).toBe('Daha iyi bir yaşam mümkün.');
     expect(hero.text).toContain('Kendini anlamak');
     expect(hero.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();
-    expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')?.text).toContain('İlk görüşme nasıl geçer?');
-    expect(en().querySelector('.home-desk .desktop-hero a[href="/en/faq/#ilk-gorusme"]')).toBeTruthy();
+    // Owner's review 2026-10-19: "Ön Görüşme" with a "Ücretsiz" tag replaces "İlk görüşme nasıl geçer?".
+    expect(hero.querySelector('a[href="/on-gorusme/"]')?.text).toContain('Ön Görüşme');
+    expect(hero.querySelector('a[href="/on-gorusme/"] .free-tag')?.text).toBe('Ücretsiz');
+    expect(en().querySelector('.home-desk .desktop-hero a[href="/en/intro-call/"]')).toBeTruthy();
+    expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')).toBeNull();
     // No membership / response-time line on the desktop hero (owner's review 2026-10-18).
     expect(hero.querySelector('.trust')).toBeNull();
     // The text stays first in the markup (reading order); CSS puts the photo on the left.

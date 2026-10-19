@@ -21,10 +21,17 @@ function load(): Record<string, number> {
 
 let cache: Record<string, number> | null = null;
 
+/**
+ * On the dev server every count starts at 100 (owner's review 2026-10-19, item 4), so the owner can
+ * see how the counters look before there are real reads. Never in a build or in tests.
+ */
+const DEMO_START = import.meta.env?.DEV && !process.env.VITEST ? 100 : 0;
+
 /** Reads of a post (both languages together), or null when unknown. */
 export function readCount(postKey: string): number | null {
   cache ??= load();
   const n = cache[postKey];
+  if (DEMO_START) return DEMO_START + (typeof n === 'number' && Number.isFinite(n) ? n : 0);
   return typeof n === 'number' && Number.isFinite(n) ? n : null;
 }
 

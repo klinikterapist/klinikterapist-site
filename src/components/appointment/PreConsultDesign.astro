@@ -1,0 +1,403 @@
+---
+/**
+ * The free intro call request design (owner's review 2026-10-19, item 3): the same step-by-step form
+ * as the booking design (wizard.ts), for the intro call only. Steps: what brings you (who it is for,
+ * the topics, earlier support, a short note), a weekend day and time (intro calls are on Saturdays
+ * and Sundays only, 25–30 minutes), your details (name, e-mail, phone and age range are required),
+ * confirm. Only the look: the times are made up in the browser and the last button sends nothing.
+ * Shown on the dev server (or with `BOOKING_DESIGN=1`) only (PreConsultView).
+ */
+import type { Lang } from '../../lib/settings';
+import { getProfile } from '../../lib/settings';
+import { pathFor } from '../../i18n/routes';
+import Icon from '../Icon.astro';
+import RoundPortrait from '../ui/RoundPortrait.astro';
+import './wizard.css';
+
+interface Props {
+  lang: Lang;
+  email: string;
+}
+const { lang, email } = Astro.props;
+const profile = getProfile();
+const role = profile.title[lang].trim();
+
+const T = {
+  tr: {
+    preview: 'Tasarım önizlemesi: talep formu henüz çalışmıyor, gösterilen gün ve saatler örnektir.',
+    steps: ['Sizi tanıyalım', 'Gün ve saat', 'Bilgileriniz', 'Onay'],
+    s1: 'Sizi tanıyalım',
+    s1Hint: 'Birkaç kısa soru. Ayrıntıları görüşmede konuşacağız; burada yalnızca genel bir fikir edinmek istiyorum.',
+    forWhom: 'Görüşme kimin için?',
+    me: 'Kendim için',
+    meText: 'Bireysel terapiyi düşünüyorum.',
+    couple: 'Partnerimle birlikte',
+    coupleText: 'Çift terapisini düşünüyoruz.',
+    reasons: 'Sizi en çok ne getiriyor?',
+    reasonsHint: 'Birden fazla seçebilirsiniz.',
+    topics: [
+      'Kaygı ve stres',
+      'Mutsuzluk, isteksizlik',
+      'İlişki sorunları',
+      'Aile ilişkileri',
+      'Özgüven',
+      'Yas ve kayıp',
+      'Zorlayıcı bir yaşam olayı',
+      'İş ya da okul',
+      'Uyku',
+      'Kendimi daha iyi tanımak',
+      'Başka bir konu',
+      'Görüşmede anlatmak istiyorum',
+    ],
+    before: 'Daha önce psikolojik destek aldınız mı?',
+    yes: 'Evet',
+    no: 'Hayır',
+    note: 'Kısaca eklemek istediğiniz bir şey var mı? (isteğe bağlı)',
+    noteHint: 'Bir iki cümle yeterli; sağlığınızla ilgili ayrıntıları görüşmede konuşuruz.',
+    s2: 'Gün ve saat seçin',
+    s2Hint: 'Ön görüşmeler yalnızca cumartesi ve pazar günleri yapılır ve 25–30 dakika sürer.',
+    tz: 'Saatler Türkiye saatiyle (GMT+3) gösterilir.',
+    prev: 'Önceki ay',
+    next: 'Sonraki ay',
+    week: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+    pickDay: 'Takvimden bir gün seçin.',
+    s3: 'Bilgileriniz',
+    s3Hint: 'Yıldızlı alanlar zorunludur. Görüşme bağlantısını e-postayla gönderirim.',
+    name: 'Ad soyad',
+    mail: 'E-posta',
+    phone: 'Telefon',
+    age: 'Yaş aralığınız',
+    agePick: 'Seçin',
+    ages: ['18 yaşından küçük (veli ya da vasi onayıyla)', '18–24', '25–34', '35–44', '45–54', '55 ve üzeri'],
+    consentA: 'Aydınlatma metnini',
+    consentB: ' okudum.',
+    s4: 'Özet ve onay',
+    s4Hint: 'Bilgilerinizi kontrol edin; talebiniz bana e-postayla ulaşır, size dönüş yaparım.',
+    summary: 'Ön görüşme özeti',
+    type: 'Görüşme',
+    intro: 'Ücretsiz ön görüşme',
+    introMeta: '25–30 dakika · Online',
+    forLabel: 'Kimin için',
+    topicLabel: 'Konu',
+    when: 'Tarih',
+    time: 'Saat',
+    you: 'İletişim',
+    place: 'Yer',
+    placeValue: 'Online (bağlantı e-postayla gönderilir)',
+    price: 'Ücret',
+    free: 'Ücretsiz',
+    back: 'Geri',
+    cont: 'Devam',
+    edit: 'Bilgileri düzenle',
+    submit: 'Ön görüşme talebini gönder',
+    soonMail: 'Talep formu çok yakında açılıyor. Şimdilik e-posta ile yazabilirsiniz:',
+    noObligation: 'Ön görüşmeden sonra devam etme zorunluluğunuz yoktur.',
+    secure: 'Bilgileriniz yalnızca bu görüşme için kullanılır.',
+  },
+  en: {
+    preview: 'Design preview: the request form is not live yet; the days and times shown are examples.',
+    steps: ['About you', 'Day and time', 'Your details', 'Confirm'],
+    s1: 'About you',
+    s1Hint: 'A few short questions. We will talk about the details in the call; here I only want a general picture.',
+    forWhom: 'Who is the call for?',
+    me: 'For myself',
+    meText: 'I am thinking of individual therapy.',
+    couple: 'With my partner',
+    coupleText: 'We are thinking of couple therapy.',
+    reasons: 'What brings you here most?',
+    reasonsHint: 'You can choose more than one.',
+    topics: [
+      'Anxiety and stress',
+      'Low mood, lack of drive',
+      'Relationship problems',
+      'Family relationships',
+      'Self-esteem',
+      'Grief and loss',
+      'A difficult life event',
+      'Work or school',
+      'Sleep',
+      'Knowing myself better',
+      'Something else',
+      'I would rather tell in the call',
+    ],
+    before: 'Have you had psychological support before?',
+    yes: 'Yes',
+    no: 'No',
+    note: 'Anything short you would like to add? (optional)',
+    noteHint: 'A sentence or two is enough; we will talk about health details in the call.',
+    s2: 'Choose a day and time',
+    s2Hint: 'Intro calls are held on Saturdays and Sundays only and last 25–30 minutes.',
+    tz: 'Times are shown in Turkey time (GMT+3).',
+    prev: 'Previous month',
+    next: 'Next month',
+    week: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    pickDay: 'Pick a day in the calendar.',
+    s3: 'Your details',
+    s3Hint: 'Fields with a star are required. I send the call link by e-mail.',
+    name: 'Full name',
+    mail: 'E-mail',
+    phone: 'Phone',
+    age: 'Your age range',
+    agePick: 'Choose',
+    ages: ['Under 18 (with a parent’s or guardian’s consent)', '18–24', '25–34', '35–44', '45–54', '55 and over'],
+    consentA: 'I have read the ',
+    consentB: 'privacy notice.',
+    s4: 'Summary and confirm',
+    s4Hint: 'Check your details; your request reaches me by e-mail and I get back to you.',
+    summary: 'Intro call summary',
+    type: 'Session',
+    intro: 'Free intro call',
+    introMeta: '25–30 minutes · Online',
+    forLabel: 'For',
+    topicLabel: 'Topic',
+    when: 'Date',
+    time: 'Time',
+    you: 'Contact',
+    place: 'Where',
+    placeValue: 'Online (link sent by e-mail)',
+    price: 'Fee',
+    free: 'Free',
+    back: 'Back',
+    cont: 'Continue',
+    edit: 'Edit details',
+    submit: 'Send intro call request',
+    soonMail: 'The request form opens very soon. For now, you can write by e-mail:',
+    noObligation: 'You are under no obligation to continue after the intro call.',
+    secure: 'Your details are used only for this call.',
+  },
+}[lang];
+const notice = pathFor('privacyNotice', lang);
+---
+
+<div class="wz preconsult" data-preconsult data-lang={lang}>
+  <p class="preview-note" role="note">
+    <Icon name="alert" size={16} />
+    {T.preview}
+  </p>
+
+  <ol class="stepper">
+    {
+      T.steps.map((s, i) => (
+        <li data-step-dot={i + 1} class:list={[{ 'is-current': i === 0 }]}>
+          <button type="button" tabindex="-1">
+            <span class="dot">{i + 1}</span>
+            <span class="step-label">{s}</span>
+          </button>
+        </li>
+      ))
+    }
+  </ol>
+
+  <div class="wz-grid">
+    <div class="wz-main">
+      <section class="card" data-step="1" data-need="group:pc-topic" aria-labelledby="pc-s1">
+        <h2 id="pc-s1">{T.s1}</h2>
+        <p class="card-hint">{T.s1Hint}</p>
+
+        <p class="q" id="pc-for">{T.forWhom} <span class="req" aria-hidden="true">*</span></p>
+        <div class="types" role="radiogroup" aria-labelledby="pc-for">
+          <label class="type">
+            <input type="radio" name="pc-for" value="me" data-sum-src="for" data-label={T.me} checked />
+            <span class="type-body">
+              <b>{T.me}</b>
+              <span class="type-text">{T.meText}</span>
+            </span>
+          </label>
+          <label class="type">
+            <input type="radio" name="pc-for" value="couple" data-sum-src="for" data-label={T.couple} />
+            <span class="type-body">
+              <b>{T.couple}</b>
+              <span class="type-text">{T.coupleText}</span>
+            </span>
+          </label>
+        </div>
+
+        <p class="q" id="pc-topics">{T.reasons} <span class="req" aria-hidden="true">*</span></p>
+        <p class="card-hint">{T.reasonsHint}</p>
+        <div class="chips" role="group" aria-labelledby="pc-topics">
+          {
+            T.topics.map((topic) => (
+              <label class="chip">
+                <input type="checkbox" name="pc-topic" value={topic} data-sum-src="topic" data-label={topic} />
+                <span>{topic}</span>
+              </label>
+            ))
+          }
+        </div>
+
+        <p class="q" id="pc-before">{T.before}</p>
+        <div class="chips" role="radiogroup" aria-labelledby="pc-before">
+          <label class="chip"><input type="radio" name="pc-before" value="yes" /><span>{T.yes}</span></label>
+          <label class="chip"><input type="radio" name="pc-before" value="no" /><span>{T.no}</span></label>
+        </div>
+
+        <label class="field note">
+          <span>{T.note}</span>
+          <textarea rows="3" maxlength="500"></textarea>
+          <small>{T.noteHint}</small>
+        </label>
+        <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
+      </section>
+
+      <section class="card" data-step="2" data-need="slot" aria-labelledby="pc-s2" hidden>
+        <h2 id="pc-s2">{T.s2}</h2>
+        <p class="card-hint weekend"><Icon name="calendar" size={16} />{T.s2Hint}</p>
+        <div class="when">
+          <div class="calendar">
+            <div class="cal-head">
+              <button type="button" class="cal-nav" data-cal-prev aria-label={T.prev}>
+                <Icon name="chevron" size={18} class="flip" />
+              </button>
+              <b data-cal-title aria-live="polite"></b>
+              <button type="button" class="cal-nav" data-cal-next aria-label={T.next}>
+                <Icon name="chevron" size={18} />
+              </button>
+            </div>
+            <div class="cal-week" aria-hidden="true">{T.week.map((d) => <span>{d}</span>)}</div>
+            <div class="cal-days" data-cal-days></div>
+          </div>
+          <div class="slots">
+            <p class="slots-title" data-slots-title>{T.pickDay}</p>
+            <div class="slot-list" data-slots role="radiogroup" aria-labelledby="pc-s2"></div>
+            <p class="tz"><Icon name="globe" size={14} />{T.tz}</p>
+          </div>
+        </div>
+        <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
+      </section>
+
+      <section class="card" data-step="3" aria-labelledby="pc-s3" hidden>
+        <h2 id="pc-s3">{T.s3}</h2>
+        <p class="card-hint">{T.s3Hint}</p>
+        <div class="fields">
+          <label class="field">
+            <span>{T.name} <span class="req" aria-hidden="true">*</span></span>
+            <input type="text" autocomplete="name" required data-sum-src="name" />
+          </label>
+          <label class="field">
+            <span>{T.age} <span class="req" aria-hidden="true">*</span></span>
+            <select required>
+              <option value="">{T.agePick}</option>
+              {T.ages.map((a) => <option>{a}</option>)}
+            </select>
+          </label>
+          <label class="field">
+            <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
+            <input type="email" autocomplete="email" inputmode="email" required data-sum-src="contact" />
+          </label>
+          <label class="field">
+            <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
+            <input type="tel" autocomplete="tel" inputmode="tel" required minlength="10" data-sum-src="contact" />
+          </label>
+          <label class="consent field-wide">
+            <input type="checkbox" required />
+            <span>
+              {lang === 'tr' ? <><a href={notice}>{T.consentA}</a>{T.consentB}</> : <>{T.consentA}<a href={notice}>{T.consentB}</a></>}
+              <span class="req" aria-hidden="true"> *</span>
+            </span>
+          </label>
+        </div>
+        <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
+      </section>
+
+      <section class="card" data-step="4" aria-labelledby="pc-s4" hidden>
+        <h2 id="pc-s4">{T.s4}</h2>
+        <p class="card-hint">{T.s4Hint}</p>
+        <div class="summary-card">
+          <div class="who">
+            <RoundPortrait photo={profile.photo} alt="" size={52} />
+            <span>
+              <b>{profile.name}</b>
+              {role && <small>{role}</small>}
+            </span>
+          </div>
+          <dl>
+            <div><dt><Icon name="talk" size={16} />{T.type}</dt><dd>{T.intro}<small>{T.introMeta}</small></dd></div>
+            <div><dt><Icon name="users" size={16} />{T.forLabel}</dt><dd data-sum="for"></dd></div>
+            <div><dt><Icon name="tag" size={16} />{T.topicLabel}</dt><dd data-sum="topic"></dd></div>
+            <div><dt><Icon name="calendar" size={16} />{T.when}</dt><dd data-sum="day"></dd></div>
+            <div><dt><Icon name="clock" size={16} />{T.time}</dt><dd data-sum="time"></dd></div>
+            <div><dt><Icon name="user" size={16} />{T.name}</dt><dd data-sum="name"></dd></div>
+            <div><dt><Icon name="mail" size={16} />{T.you}</dt><dd data-sum="contact"></dd></div>
+            <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
+            <div class="total"><dt>{T.price}</dt><dd>{T.free}</dd></div>
+          </dl>
+          <button type="button" class="submit" disabled aria-describedby="pc-soon">
+            <Icon name="send" size={18} />
+            {T.submit}
+          </button>
+          <p class="soon" id="pc-soon">{T.soonMail} <a href={`mailto:${email}`}>{email}</a></p>
+          <button type="button" class="edit-link" data-goto="1">{T.edit}</button>
+          <ul class="assure">
+            <li><Icon name="heart" size={15} />{T.noObligation}</li>
+            <li><Icon name="shield" size={15} />{T.secure}</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="wz-nav" data-nav>
+        <button type="button" class="wz-back" data-back hidden><Icon name="arrow" size={18} />{T.back}</button>
+        <button type="button" class="wz-next" data-next><span data-next-label>{T.cont}</span><Icon name="arrow" size={18} /></button>
+      </div>
+    </div>
+
+    <aside class="summary" aria-labelledby="pc-sum">
+      <div class="summary-card">
+        <div class="who">
+          <RoundPortrait photo={profile.photo} alt="" size={52} />
+          <span>
+            <b>{profile.name}</b>
+            {role && <small>{role}</small>}
+          </span>
+        </div>
+        <h2 id="pc-sum">{T.summary}</h2>
+        <dl>
+          <div><dt><Icon name="talk" size={16} />{T.type}</dt><dd>{T.intro}<small>{T.introMeta}</small></dd></div>
+          <div><dt><Icon name="calendar" size={16} />{T.when}</dt><dd data-sum="day"></dd></div>
+          <div><dt><Icon name="clock" size={16} />{T.time}</dt><dd data-sum="time"></dd></div>
+          <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
+          <div class="total"><dt>{T.price}</dt><dd>{T.free}</dd></div>
+        </dl>
+        <ul class="assure">
+          <li><Icon name="heart" size={15} />{T.noObligation}</li>
+          <li><Icon name="shield" size={15} />{T.secure}</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  import { mountWizard } from './wizard';
+
+  // Example availability: Saturdays and Sundays only, 30-minute rows; a few taken per day.
+  const ALL = ['10:00', '10:30', '11:00', '11:30', '12:00', '13:30', '14:00', '14:30', '15:00', '15:30'];
+  for (const root of document.querySelectorAll<HTMLElement>('[data-preconsult]')) {
+    mountWizard(root, {
+      timesFor: (d, today) => {
+        const wd = d.getDay();
+        if ((wd !== 0 && wd !== 6) || d <= today) return [];
+        return ALL.filter((_, i) => (d.getDate() * 5 + i * 3) % 4 !== 0);
+      },
+    });
+  }
+</script>
+
+<style>
+  .note {
+    margin-top: var(--space-5);
+  }
+
+  .weekend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--sun-halo) 16%, transparent);
+    color: var(--text);
+  }
+
+  .weekend :global(svg) {
+    flex: none;
+  }
+</style>

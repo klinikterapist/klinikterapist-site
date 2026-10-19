@@ -1,16 +1,20 @@
 ---
 /**
- * The booking page design (owner's review 2026-10-19, item 12): how "Randevu Al" will look once the
- * booking system exists. Four steps (session type, date and time, your details, confirm) beside a
- * summary card. Only the look: the available days and times are made up in the browser, and the
- * last button sends nothing. Shown on the dev server (or with `BOOKING_DESIGN=1`) only
- * (AppointmentView); the live site keeps the e-mail page until the booking backend is built.
+ * The booking page design (owner's reviews 2026-10-19, items 12 and 3): how "Randevu Al" will look
+ * once the booking system exists. A note first sends first-time visitors to the free intro call.
+ * Then four steps, one on screen at a time (session type, date and time, your details, confirm),
+ * with a summary card beside them on desktop. Session types: individual (50 min) and couple (60 min)
+ * therapy, both online; group therapy ("soon") and face to face ("not available") are faded and
+ * cannot be chosen. Fees are sent by e-mail. Only the look: the days and times are made up in the
+ * browser and the last button sends nothing. Shown on the dev server (or with `BOOKING_DESIGN=1`)
+ * only (AppointmentView); the live site keeps the e-mail page until the booking backend is built.
  */
 import type { Lang } from '../../lib/settings';
 import { getProfile } from '../../lib/settings';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
+import './wizard.css';
 
 interface Props {
   lang: Lang;
@@ -22,90 +26,114 @@ const role = profile.title[lang].trim();
 
 const T = {
   tr: {
-    lead: 'Önce 25 dakikalık ücretsiz bir ön görüşmeyle tanışalım. Size uygun günü ve saati seçin; onay e-postası gelsin.',
     preview: 'Tasarım önizlemesi: randevu sistemi henüz çalışmıyor, gösterilen gün ve saatler örnektir.',
+    firstTitle: 'İlk kez mi randevu alıyorsunuz?',
+    firstText: 'Terapiye başlamadan önce ücretsiz ön görüşme talep etmenizi öneririm. 25–30 dakikalık bu görüşmede tanışır, sizin için doğru adımın ne olduğuna birlikte karar veririz.',
+    firstCta: 'Ücretsiz ön görüşme talep et',
     steps: ['Görüşme', 'Tarih ve saat', 'Bilgileriniz', 'Onay'],
     s1: 'Görüşme türünü seçin',
-    intro: 'Ücretsiz ön görüşme',
-    introMeta: '25 dakika · Online',
-    introText: 'Tanışma ve ön değerlendirme: sizi neyin getirdiğini dinlerim, çalışma biçimimi anlatırım, birlikte karar veririz.',
-    introBadge: 'İlk adım',
-    free: 'Ücretsiz',
-    therapy: 'Bireysel terapi seansı',
-    therapyMeta: '50 dakika · Online',
-    therapyText: 'Ön görüşmeden sonra devam eden danışanlar için düzenli seans.',
-    therapyPrice: 'Ücret ön görüşmede',
+    s1Hint: 'Seanslar online yapılır. Ücretler ve ayrıntılı bilgiler e-postayla iletilir.',
+    online: 'Online',
+    soon: 'Yakında',
+    off: 'Şu an uygun değil',
+    individual: 'Bireysel terapi seansı',
+    individualMeta: '50 dakika',
+    individualText: 'Kendi gündeminizle, birebir ve düzenli görüşmeler.',
+    couple: 'Çift terapisi seansı',
+    coupleMeta: '60 dakika',
+    coupleText: 'Partnerinizle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
+    group: 'Grup terapisi seansı',
+    groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışma.',
+    face: 'Yüz yüze terapi',
+    faceText: 'Şu an yalnızca online görüşme yapıyorum.',
     s2: 'Gün ve saat seçin',
+    s2Hint: 'Boş saati olan günler renkli görünür.',
     tz: 'Saatler Türkiye saatiyle (GMT+3) gösterilir.',
     prev: 'Önceki ay',
     next: 'Sonraki ay',
     week: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
     pickDay: 'Takvimden bir gün seçin.',
-    noSlots: 'Bu gün için boş saat yok.',
-    slotsFor: 'için boş saatler',
     s3: 'Bilgileriniz',
+    s3Hint: 'Yıldızlı alanlar zorunludur.',
     name: 'Ad soyad',
     mail: 'E-posta',
-    phone: 'Telefon (isteğe bağlı)',
-    note: 'Sizi neyin getirdiğini kısaca yazabilirsiniz (isteğe bağlı)',
+    phone: 'Telefon',
+    note: 'Eklemek istediğiniz bir not (isteğe bağlı)',
     noteHint: 'Sağlık durumunuza ilişkin ayrıntıları burada paylaşmayın; bunları görüşmede konuşuruz.',
     consentA: 'Aydınlatma metnini',
     consentB: ' okudum.',
     s4: 'Özet ve onay',
+    s4Hint: 'Bilgilerinizi kontrol edin; talebiniz bana e-postayla ulaşır, size dönüş yaparım.',
     summary: 'Randevu özeti',
     type: 'Görüşme',
     when: 'Tarih',
     time: 'Saat',
-    notChosen: 'Seçilmedi',
+    you: 'İletişim',
     place: 'Yer',
-    online: 'Online (bağlantı e-postayla gönderilir)',
+    placeValue: 'Online (bağlantı e-postayla gönderilir)',
     price: 'Ücret',
+    priceValue: 'E-postayla iletilir',
+    back: 'Geri',
+    cont: 'Devam',
+    edit: 'Bilgileri düzenle',
     submit: 'Randevu talebini gönder',
-    soon: 'Online randevu sistemi çok yakında açılıyor. Şimdilik e-posta ile yazabilirsiniz:',
+    soonMail: 'Online randevu sistemi çok yakında açılıyor. Şimdilik e-posta ile yazabilirsiniz:',
     reminders: 'Randevudan bir gün önce hatırlatma e-postası gelir. Değişiklik ve iptal için en az 24 saat önce haber vermeniz yeterli.',
     secure: 'Bilgileriniz yalnızca randevunuz için kullanılır.',
   },
   en: {
-    lead: "Let's start with a free 25-minute intro call. Pick a day and time that suit you; a confirmation e-mail follows.",
     preview: 'Design preview: the booking system is not live yet; the days and times shown are examples.',
+    firstTitle: 'Booking for the first time?',
+    firstText: 'Before starting therapy, I recommend asking for a free intro call. In these 25–30 minutes we get to know each other and decide together on the right next step for you.',
+    firstCta: 'Ask for a free intro call',
     steps: ['Session', 'Date and time', 'Your details', 'Confirm'],
     s1: 'Choose a session type',
-    intro: 'Free intro call',
-    introMeta: '25 minutes · Online',
-    introText: 'Getting to know each other: I listen to what brings you here, explain how I work, and we decide together.',
-    introBadge: 'First step',
-    free: 'Free',
-    therapy: 'Individual therapy session',
-    therapyMeta: '50 minutes · Online',
-    therapyText: 'Regular sessions for clients who continue after the intro call.',
-    therapyPrice: 'Fee discussed in the intro call',
+    s1Hint: 'Sessions are held online. Fees and full details are sent by e-mail.',
+    online: 'Online',
+    soon: 'Coming soon',
+    off: 'Not available now',
+    individual: 'Individual therapy session',
+    individualMeta: '50 minutes',
+    individualText: 'One-to-one, regular sessions around what you bring.',
+    couple: 'Couple therapy session',
+    coupleMeta: '60 minutes',
+    coupleText: 'Together with your partner: communication, conflict and the relationship itself.',
+    group: 'Group therapy session',
+    groupText: 'Working together with a small group around similar themes.',
+    face: 'Face-to-face therapy',
+    faceText: 'For now I only work online.',
     s2: 'Choose a day and time',
+    s2Hint: 'Days with free times are coloured.',
     tz: 'Times are shown in Turkey time (GMT+3).',
     prev: 'Previous month',
     next: 'Next month',
     week: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     pickDay: 'Pick a day in the calendar.',
-    noSlots: 'No free times on this day.',
-    slotsFor: '– free times',
     s3: 'Your details',
+    s3Hint: 'Fields with a star are required.',
     name: 'Full name',
     mail: 'E-mail',
-    phone: 'Phone (optional)',
-    note: 'You may briefly say what brings you here (optional)',
+    phone: 'Phone',
+    note: 'Anything you would like to add (optional)',
     noteHint: 'Please do not share health details here; we will talk about them in the session.',
     consentA: 'I have read the ',
     consentB: 'privacy notice.',
     s4: 'Summary and confirm',
+    s4Hint: 'Check your details; your request reaches me by e-mail and I get back to you.',
     summary: 'Booking summary',
     type: 'Session',
     when: 'Date',
     time: 'Time',
-    notChosen: 'Not chosen',
+    you: 'Contact',
     place: 'Where',
-    online: 'Online (link sent by e-mail)',
+    placeValue: 'Online (link sent by e-mail)',
     price: 'Fee',
+    priceValue: 'Sent by e-mail',
+    back: 'Back',
+    cont: 'Continue',
+    edit: 'Edit details',
     submit: 'Send booking request',
-    soon: 'The online booking system opens very soon. For now, you can write by e-mail:',
+    soonMail: 'The online booking system opens very soon. For now, you can write by e-mail:',
     reminders: 'A reminder e-mail arrives a day before. To change or cancel, letting me know 24 hours ahead is enough.',
     secure: 'Your details are used only for your appointment.',
   },
@@ -113,61 +141,88 @@ const T = {
 const notice = pathFor('privacyNotice', lang);
 ---
 
-<div class="booking" data-booking data-lang={lang}>
+<div class="wz booking" data-booking data-lang={lang}>
   <p class="preview-note" role="note">
     <Icon name="alert" size={16} />
     {T.preview}
   </p>
-  <p class="booking-lead">{T.lead}</p>
 
-  <ol class="stepper" aria-label={T.steps.join(', ')}>
+  <a class="first-time" href={pathFor('preConsult', lang)}>
+    <span class="ft-icon"><Icon name="talk" size={26} /></span>
+    <span class="ft-body">
+      <b>{T.firstTitle}</b>
+      <span>{T.firstText}</span>
+      <span class="ft-cta">{T.firstCta} <Icon name="arrow" size={16} /></span>
+    </span>
+  </a>
+
+  <ol class="stepper">
     {
       T.steps.map((s, i) => (
         <li data-step-dot={i + 1} class:list={[{ 'is-current': i === 0 }]}>
-          <span class="dot">{i + 1}</span>
-          <span class="step-label">{s}</span>
+          <button type="button" tabindex="-1">
+            <span class="dot">{i + 1}</span>
+            <span class="step-label">{s}</span>
+          </button>
         </li>
       ))
     }
   </ol>
 
-  <div class="booking-grid">
-    <div class="booking-main">
-      <section class="card" aria-labelledby="bk-s1">
-        <h2 id="bk-s1"><span class="num">1</span>{T.s1}</h2>
+  <div class="wz-grid">
+    <div class="wz-main">
+      <section class="card" data-step="1" aria-labelledby="bk-s1">
+        <h2 id="bk-s1">{T.s1}</h2>
+        <p class="card-hint">{T.s1Hint}</p>
         <div class="types" role="radiogroup" aria-labelledby="bk-s1">
           <label class="type">
-            <input type="radio" name="bk-type" value="intro" data-label={T.intro} data-meta={T.introMeta} data-price={T.free} checked />
+            <input type="radio" name="bk-type" value="individual" data-sum-src="type" data-label={T.individual} data-meta={T.individualMeta} checked />
             <span class="type-body">
               <span class="type-top">
-                <b>{T.intro}</b>
-                <span class="badge badge-sun">{T.introBadge}</span>
+                <b>{T.individual}</b>
+                <span class="badge badge-online">{T.online}</span>
               </span>
-              <span class="type-meta">
-                <Icon name="clock" size={15} />
-                {T.introMeta}
-              </span>
-              <span class="type-text">{T.introText}</span>
+              <span class="type-meta"><Icon name="clock" size={15} />{T.individualMeta}</span>
+              <span class="type-text">{T.individualText}</span>
             </span>
-            <span class="type-price free">{T.free}</span>
           </label>
           <label class="type">
-            <input type="radio" name="bk-type" value="therapy" data-label={T.therapy} data-meta={T.therapyMeta} data-price={T.therapyPrice} />
+            <input type="radio" name="bk-type" value="couple" data-sum-src="type" data-label={T.couple} data-meta={T.coupleMeta} />
             <span class="type-body">
-              <span class="type-top"><b>{T.therapy}</b></span>
-              <span class="type-meta">
-                <Icon name="clock" size={15} />
-                {T.therapyMeta}
+              <span class="type-top">
+                <b>{T.couple}</b>
+                <span class="badge badge-online">{T.online}</span>
               </span>
-              <span class="type-text">{T.therapyText}</span>
+              <span class="type-meta"><Icon name="clock" size={15} />{T.coupleMeta}</span>
+              <span class="type-text">{T.coupleText}</span>
             </span>
-            <span class="type-price">{T.therapyPrice}</span>
+          </label>
+          <label class="type is-off">
+            <input type="radio" name="bk-type" value="group" disabled />
+            <span class="type-body">
+              <span class="type-top">
+                <b>{T.group}</b>
+                <span class="badge badge-soon">{T.soon}</span>
+              </span>
+              <span class="type-text">{T.groupText}</span>
+            </span>
+          </label>
+          <label class="type is-off">
+            <input type="radio" name="bk-type" value="face" disabled />
+            <span class="type-body">
+              <span class="type-top">
+                <b>{T.face}</b>
+                <span class="badge badge-soon">{T.off}</span>
+              </span>
+              <span class="type-text">{T.faceText}</span>
+            </span>
           </label>
         </div>
       </section>
 
-      <section class="card" aria-labelledby="bk-s2">
-        <h2 id="bk-s2"><span class="num">2</span>{T.s2}</h2>
+      <section class="card" data-step="2" data-need="slot" aria-labelledby="bk-s2" hidden>
+        <h2 id="bk-s2">{T.s2}</h2>
+        <p class="card-hint">{T.s2Hint}</p>
         <div class="when">
           <div class="calendar">
             <div class="cal-head">
@@ -180,33 +235,32 @@ const notice = pathFor('privacyNotice', lang);
               </button>
             </div>
             <div class="cal-week" aria-hidden="true">{T.week.map((d) => <span>{d}</span>)}</div>
-            <div class="cal-days" data-cal-days role="grid"></div>
+            <div class="cal-days" data-cal-days></div>
           </div>
           <div class="slots">
             <p class="slots-title" data-slots-title>{T.pickDay}</p>
             <div class="slot-list" data-slots role="radiogroup" aria-labelledby="bk-s2"></div>
-            <p class="tz">
-              <Icon name="globe" size={14} />
-              {T.tz}
-            </p>
+            <p class="tz"><Icon name="globe" size={14} />{T.tz}</p>
           </div>
         </div>
+        <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
       </section>
 
-      <section class="card" aria-labelledby="bk-s3">
-        <h2 id="bk-s3"><span class="num">3</span>{T.s3}</h2>
+      <section class="card" data-step="3" aria-labelledby="bk-s3" hidden>
+        <h2 id="bk-s3">{T.s3}</h2>
+        <p class="card-hint">{T.s3Hint}</p>
         <div class="fields">
           <label class="field">
-            <span>{T.name}</span>
-            <input type="text" autocomplete="name" data-field-name />
+            <span>{T.name} <span class="req" aria-hidden="true">*</span></span>
+            <input type="text" autocomplete="name" required data-sum-src="name" />
           </label>
           <label class="field">
-            <span>{T.mail}</span>
-            <input type="email" autocomplete="email" />
+            <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
+            <input type="email" autocomplete="email" inputmode="email" required data-sum-src="contact" />
           </label>
           <label class="field">
-            <span>{T.phone}</span>
-            <input type="tel" autocomplete="tel" />
+            <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
+            <input type="tel" autocomplete="tel" inputmode="tel" required minlength="10" data-sum-src="contact" />
           </label>
           <label class="field field-wide">
             <span>{T.note}</span>
@@ -214,13 +268,53 @@ const notice = pathFor('privacyNotice', lang);
             <small>{T.noteHint}</small>
           </label>
           <label class="consent field-wide">
-            <input type="checkbox" />
+            <input type="checkbox" required />
             <span>
               {lang === 'tr' ? <><a href={notice}>{T.consentA}</a>{T.consentB}</> : <>{T.consentA}<a href={notice}>{T.consentB}</a></>}
+              <span class="req" aria-hidden="true"> *</span>
             </span>
           </label>
         </div>
+        <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
       </section>
+
+      <section class="card" data-step="4" aria-labelledby="bk-s4" hidden>
+        <h2 id="bk-s4">{T.s4}</h2>
+        <p class="card-hint">{T.s4Hint}</p>
+        <div class="summary-card">
+          <div class="who">
+            <RoundPortrait photo={profile.photo} alt="" size={52} />
+            <span>
+              <b>{profile.name}</b>
+              {role && <small>{role}</small>}
+            </span>
+          </div>
+          <dl>
+            <div><dt><Icon name="chat" size={16} />{T.type}</dt><dd data-sum="type"></dd></div>
+            <div><dt><Icon name="calendar" size={16} />{T.when}</dt><dd data-sum="day"></dd></div>
+            <div><dt><Icon name="clock" size={16} />{T.time}</dt><dd data-sum="time"></dd></div>
+            <div><dt><Icon name="user" size={16} />{T.name}</dt><dd data-sum="name"></dd></div>
+            <div><dt><Icon name="mail" size={16} />{T.you}</dt><dd data-sum="contact"></dd></div>
+            <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
+            <div class="total"><dt>{T.price}</dt><dd>{T.priceValue}</dd></div>
+          </dl>
+          <button type="button" class="submit" disabled aria-describedby="bk-soon">
+            <Icon name="send" size={18} />
+            {T.submit}
+          </button>
+          <p class="soon" id="bk-soon">{T.soonMail} <a href={`mailto:${email}`}>{email}</a></p>
+          <button type="button" class="edit-link" data-goto="3">{T.edit}</button>
+          <ul class="assure">
+            <li><Icon name="clock" size={15} />{T.reminders}</li>
+            <li><Icon name="shield" size={15} />{T.secure}</li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="wz-nav" data-nav>
+        <button type="button" class="wz-back" data-back hidden><Icon name="arrow" size={18} />{T.back}</button>
+        <button type="button" class="wz-next" data-next><span data-next-label>{T.cont}</span><Icon name="arrow" size={18} /></button>
+      </div>
     </div>
 
     <aside class="summary" aria-labelledby="bk-sum">
@@ -234,34 +328,12 @@ const notice = pathFor('privacyNotice', lang);
         </div>
         <h2 id="bk-sum">{T.summary}</h2>
         <dl>
-          <div>
-            <dt><Icon name="chat" size={16} />{T.type}</dt>
-            <dd data-sum-type>{T.intro}<small>{T.introMeta}</small></dd>
-          </div>
-          <div>
-            <dt><Icon name="calendar" size={16} />{T.when}</dt>
-            <dd data-sum-day class="muted">{T.notChosen}</dd>
-          </div>
-          <div>
-            <dt><Icon name="clock" size={16} />{T.time}</dt>
-            <dd data-sum-time class="muted">{T.notChosen}</dd>
-          </div>
-          <div>
-            <dt><Icon name="laptop" size={16} />{T.place}</dt>
-            <dd>{T.online}</dd>
-          </div>
-          <div class="total">
-            <dt>{T.price}</dt>
-            <dd data-sum-price>{T.free}</dd>
-          </div>
+          <div><dt><Icon name="chat" size={16} />{T.type}</dt><dd data-sum="type"></dd></div>
+          <div><dt><Icon name="calendar" size={16} />{T.when}</dt><dd data-sum="day"></dd></div>
+          <div><dt><Icon name="clock" size={16} />{T.time}</dt><dd data-sum="time"></dd></div>
+          <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
+          <div class="total"><dt>{T.price}</dt><dd>{T.priceValue}</dd></div>
         </dl>
-        <button type="button" class="submit" disabled aria-describedby="bk-soon">
-          <Icon name="send" size={18} />
-          {T.submit}
-        </button>
-        <p class="soon" id="bk-soon">
-          {T.soon} <a href={`mailto:${email}`}>{email}</a>
-        </p>
         <ul class="assure">
           <li><Icon name="clock" size={15} />{T.reminders}</li>
           <li><Icon name="shield" size={15} />{T.secure}</li>
@@ -272,697 +344,79 @@ const notice = pathFor('privacyNotice', lang);
 </div>
 
 <script>
-  // Design preview only: made-up availability, drawn in the browser. Nothing is sent anywhere.
+  import { mountWizard } from './wizard';
+
+  // Example availability: weekdays, not today; a varying set of times per day.
+  const ALL = ['10:00', '11:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
   for (const root of document.querySelectorAll<HTMLElement>('[data-booking]')) {
-    const lang = root.dataset.lang === 'en' ? 'en' : 'tr';
-    const locale = lang === 'en' ? 'en-GB' : 'tr-TR';
-    const t = {
-      pick: lang === 'en' ? 'Pick a day in the calendar.' : 'Takvimden bir gün seçin.',
-      none: lang === 'en' ? 'No free times on this day.' : 'Bu gün için boş saat yok.',
-      notChosen: lang === 'en' ? 'Not chosen' : 'Seçilmedi',
-    };
-    const q = <T extends Element>(s: string) => root.querySelector<T>(s)!;
-    const days = q<HTMLElement>('[data-cal-days]');
-    const title = q<HTMLElement>('[data-cal-title]');
-    const slots = q<HTMLElement>('[data-slots]');
-    const slotsTitle = q<HTMLElement>('[data-slots-title]');
-    const sumDay = q<HTMLElement>('[data-sum-day]');
-    const sumTime = q<HTMLElement>('[data-sum-time]');
-    const sumType = q<HTMLElement>('[data-sum-type]');
-    const sumPrice = q<HTMLElement>('[data-sum-price]');
-    const cap = (s: string) => s.charAt(0).toLocaleUpperCase(locale) + s.slice(1);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let month = new Date(today.getFullYear(), today.getMonth(), 1);
-    let chosen: Date | null = null;
-
-    const dots = root.querySelectorAll<HTMLElement>('[data-step-dot]');
-    const setStep = (n: number) => dots.forEach((d) => {
-      const i = Number(d.dataset.stepDot);
-      d.classList.toggle('is-done', i < n);
-      d.classList.toggle('is-current', i === n);
+    mountWizard(root, {
+      timesFor: (d, today) => {
+        const wd = (d.getDay() + 6) % 7;
+        if (wd > 4 || d <= today) return [];
+        return ALL.filter((_, i) => (d.getDate() * 7 + i * 3) % 5 !== 0);
+      },
     });
-
-    // Example availability: weekdays, not today; a varying set of times per day.
-    const ALL = ['10:00', '11:00', '13:30', '15:00', '16:30', '18:00', '19:30'];
-    const timesFor = (d: Date) => {
-      const wd = (d.getDay() + 6) % 7;
-      if (wd > 4 || d <= today) return [];
-      return ALL.filter((_, i) => (d.getDate() * 7 + i * 3) % 5 !== 0);
-    };
-
-    const drawSlots = () => {
-      slots.replaceChildren();
-      if (!chosen) {
-        slotsTitle.textContent = t.pick;
-        return;
-      }
-      const list = timesFor(chosen);
-      slotsTitle.textContent = list.length
-        ? cap(chosen.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }))
-        : t.none;
-      for (const time of list) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'slot';
-        b.textContent = time;
-        b.setAttribute('role', 'radio');
-        b.setAttribute('aria-checked', 'false');
-        b.addEventListener('click', () => {
-          slots.querySelectorAll('.slot').forEach((s) => s.setAttribute('aria-checked', 'false'));
-          b.setAttribute('aria-checked', 'true');
-          sumTime.textContent = time;
-          sumTime.classList.remove('muted');
-          setStep(3);
-        });
-        slots.append(b);
-      }
-    };
-
-    const drawMonth = () => {
-      title.textContent = cap(month.toLocaleDateString(locale, { month: 'long', year: 'numeric' }));
-      days.replaceChildren();
-      const lead = (month.getDay() + 6) % 7;
-      for (let i = 0; i < lead; i++) days.append(document.createElement('span'));
-      const last = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-      for (let n = 1; n <= last; n++) {
-        const d = new Date(month.getFullYear(), month.getMonth(), n);
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'day';
-        b.textContent = String(n);
-        const free = timesFor(d).length > 0;
-        b.disabled = !free;
-        if (free) b.classList.add('has-slots');
-        if (d.getTime() === today.getTime()) b.classList.add('is-today');
-        if (chosen && d.getTime() === chosen.getTime()) b.setAttribute('aria-pressed', 'true');
-        b.setAttribute('aria-label', d.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' }));
-        b.addEventListener('click', () => {
-          chosen = d;
-          days.querySelectorAll('.day').forEach((x) => x.removeAttribute('aria-pressed'));
-          b.setAttribute('aria-pressed', 'true');
-          sumDay.textContent = d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long' });
-          sumDay.classList.remove('muted');
-          sumTime.textContent = t.notChosen;
-          sumTime.classList.add('muted');
-          setStep(2);
-          drawSlots();
-        });
-        days.append(b);
-      }
-      const prev = q<HTMLButtonElement>('[data-cal-prev]');
-      prev.disabled = month <= new Date(today.getFullYear(), today.getMonth(), 1);
-    };
-
-    q('[data-cal-prev]').addEventListener('click', () => {
-      month = new Date(month.getFullYear(), month.getMonth() - 1, 1);
-      drawMonth();
-    });
-    q('[data-cal-next]').addEventListener('click', () => {
-      month = new Date(month.getFullYear(), month.getMonth() + 1, 1);
-      drawMonth();
-    });
-    root.querySelectorAll<HTMLInputElement>('input[name="bk-type"]').forEach((r) =>
-      r.addEventListener('change', () => {
-        sumType.replaceChildren(r.dataset.label ?? '', Object.assign(document.createElement('small'), { textContent: r.dataset.meta ?? '' }));
-        sumPrice.textContent = r.dataset.price ?? '';
-        setStep(Math.max(1, root.querySelector('.slot[aria-checked="true"]') ? 3 : chosen ? 2 : 1));
-      }),
-    );
-    root.querySelector('[data-field-name]')?.addEventListener('input', () => setStep(4));
-    drawMonth();
-    drawSlots();
   }
 </script>
 
 <style>
-  .booking {
-    display: grid;
-    gap: var(--space-5);
-  }
-
-  .preview-note {
+  /* "İlk kez mi randevu alıyorsunuz?": the way to the free intro call, before the steps. */
+  .first-time {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    margin: 0;
-    padding: 10px 14px;
-    border: 1px dashed color-mix(in srgb, var(--sun-disc) 70%, transparent);
-    border-radius: var(--radius-md);
-    background: color-mix(in srgb, var(--sun-halo) 14%, transparent);
-    color: var(--text);
-    font-size: var(--text-xs);
-    text-align: center;
-  }
-
-  .booking-lead {
-    max-width: 38rem;
-    margin: 0 auto;
-    color: var(--muted);
-    text-align: center;
-  }
-
-  /* 1 — 2 — 3 — 4 */
-  .stepper {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    counter-reset: step;
-  }
-
-  .stepper li {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-    font-size: var(--text-xs);
-    text-align: center;
-  }
-
-  .stepper li + li::before {
-    content: '';
-    position: absolute;
-    top: 15px;
-    right: 50%;
-    width: 100%;
-    height: 2px;
-    background: var(--line);
-    z-index: 0;
-  }
-
-  .stepper li.is-done + li::before,
-  .stepper li.is-done + li.is-current::before {
-    background: var(--sun-disc);
-  }
-
-  .stepper .dot {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    place-items: center;
-    width: 32px;
-    height: 32px;
-    border: 2px solid var(--line);
-    border-radius: 50%;
-    background: var(--bg);
-    font-weight: 700;
-  }
-
-  .stepper li.is-current {
-    color: var(--text);
-    font-weight: 600;
-  }
-
-  .stepper li.is-current .dot {
-    border-color: var(--btn-bg);
-    background: var(--btn-bg);
-    color: var(--btn-text);
-  }
-
-  .stepper li.is-done .dot {
-    border-color: var(--sun-disc);
-    background: var(--sun-disc);
-    color: #1F2E4A;
-  }
-
-  .booking-grid {
-    display: grid;
-    gap: var(--space-5);
-  }
-
-  .booking-main {
-    display: grid;
+    align-items: flex-start;
     gap: var(--space-4);
-  }
-
-  .card {
-    padding: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    border: 1.5px solid color-mix(in srgb, var(--sun-disc) 60%, transparent);
     border-radius: var(--radius-lg);
-    background: var(--surface);
+    background: color-mix(in srgb, var(--sun-halo) 16%, transparent);
+    color: var(--text);
+    text-decoration: none;
   }
 
-  .card h2 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-lg);
+  .first-time:hover {
+    background: color-mix(in srgb, var(--sun-halo) 26%, transparent);
+    color: var(--text);
   }
 
-  .num {
+  .ft-icon {
     display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: var(--btn-bg);
-    color: var(--btn-text);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    font-weight: 700;
-  }
-
-  /* Session types: big tappable cards, the radio hidden behind the selected outline. */
-  .types {
-    display: grid;
-    gap: var(--space-3);
-  }
-
-  .type {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
-    padding: var(--space-4);
-    border: 2px solid transparent;
-    border-radius: var(--radius-md);
-    background: var(--bg);
-    cursor: pointer;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  }
-
-  .type:hover {
-    border-color: var(--line);
-  }
-
-  .type input {
     flex: none;
-    width: 20px;
-    height: 20px;
-    margin: 2px 0 0;
-    accent-color: var(--btn-bg);
-  }
-
-  .type:has(input:checked) {
-    border-color: var(--btn-bg);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .type:has(input:focus-visible) {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .type-body {
-    display: grid;
-    flex: 1;
-    gap: 4px;
-  }
-
-  .type-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .type-meta {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--muted);
-    font-size: var(--text-xs);
-  }
-
-  .type-text {
-    color: var(--muted);
-    font-size: var(--text-sm);
-    line-height: 1.45;
-  }
-
-  .type-price {
-    flex: none;
-    max-width: 8rem;
-    color: var(--muted);
-    font-size: var(--text-xs);
-    font-weight: 600;
-    text-align: right;
-  }
-
-  .type-price.free {
-    color: var(--text);
-    font-size: var(--text-sm);
-  }
-
-  .badge {
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  .badge-sun {
-    background: var(--sun-disc);
-    color: #1F2E4A;
-  }
-
-  /* Calendar and the day's times. */
-  .when {
-    display: grid;
-    gap: var(--space-5);
-  }
-
-  .cal-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-3);
-  }
-
-  .cal-nav {
-    display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
-    border: 0;
-    border-radius: 50%;
-    background: var(--bg);
-    color: var(--text);
-    cursor: pointer;
-  }
-
-  .cal-nav:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-
-  .cal-nav :global(.flip) {
-    transform: rotate(180deg);
-  }
-
-  .cal-week,
-  .cal-days {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
-    text-align: center;
-  }
-
-  .cal-week {
-    margin-bottom: 4px;
-    color: var(--muted);
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .cal-days :global(.day) {
-    position: relative;
-    aspect-ratio: 1;
-    min-height: 40px;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    font-size: var(--text-sm);
-    opacity: 0.5;
-  }
-
-  .cal-days :global(.day.has-slots) {
-    background: color-mix(in srgb, var(--btn-bg) 9%, transparent);
-    color: var(--text);
-    font-weight: 600;
-    opacity: 1;
-    cursor: pointer;
-  }
-
-  .cal-days :global(.day.has-slots:hover) {
-    background: color-mix(in srgb, var(--btn-bg) 18%, transparent);
-  }
-
-  .cal-days :global(.day.is-today)::after {
-    content: '';
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    width: 4px;
-    height: 4px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: var(--sun-disc);
-    transform: translateX(-50%);
+    color: #1f2e4a;
   }
 
-  .cal-days :global(.day[aria-pressed='true']) {
-    background: var(--btn-bg);
-    color: var(--btn-text);
-  }
-
-  .slots-title {
-    margin: 0 0 var(--space-3);
-    font-weight: 600;
-  }
-
-  .slot-list {
+  .ft-body {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
-    gap: 8px;
-  }
-
-  .slot-list :global(.slot) {
-    min-height: 44px;
-    border: 1.5px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--bg);
-    color: var(--text);
-    font: inherit;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-  }
-
-  .slot-list :global(.slot:hover) {
-    border-color: var(--btn-bg);
-  }
-
-  .slot-list :global(.slot[aria-checked='true']) {
-    border-color: var(--btn-bg);
-    background: var(--btn-bg);
-    color: var(--btn-text);
-  }
-
-  .tz {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: var(--space-3) 0 0;
-    color: var(--muted);
-    font-size: var(--text-xs);
-  }
-
-  /* Details form. */
-  .fields {
-    display: grid;
-    gap: var(--space-3);
-  }
-
-  .field {
-    display: grid;
-    gap: 6px;
+    gap: 4px;
     font-size: var(--text-sm);
-    font-weight: 600;
-  }
-
-  .field input,
-  .field textarea {
-    min-height: 46px;
-    padding: 10px 12px;
-    border: 1px solid color-mix(in srgb, var(--text) 30%, transparent);
-    border-radius: var(--radius-sm);
-    background: var(--bg);
-    color: var(--text);
-    font: inherit;
-    font-weight: 400;
-  }
-
-  .field small {
-    color: var(--muted);
-    font-size: var(--text-xs);
-    font-weight: 400;
-  }
-
-  .consent {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    font-size: var(--text-sm);
-  }
-
-  .consent input {
-    width: 20px;
-    height: 20px;
-    margin: 1px 0 0;
-    accent-color: var(--btn-bg);
-  }
-
-  /* Summary card. */
-  .summary-card {
-    padding: var(--space-5);
-    border-radius: var(--radius-lg);
-    background: var(--surface);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .who {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--line);
-  }
-
-  .who span {
-    display: grid;
-  }
-
-  .who small {
-    color: var(--muted);
-    font-size: var(--text-xs);
-  }
-
-  .summary-card h2 {
-    margin: var(--space-4) 0 var(--space-3);
-    font-size: var(--text-base);
-  }
-
-  dl {
-    display: grid;
-    gap: 10px;
-    margin: 0 0 var(--space-4);
-  }
-
-  dl > div {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-3);
-    font-size: var(--text-sm);
-  }
-
-  dt {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--muted);
-  }
-
-  dd {
-    display: grid;
-    margin: 0;
-    font-weight: 600;
-    text-align: right;
-  }
-
-  dd small {
-    color: var(--muted);
-    font-size: var(--text-xs);
-    font-weight: 400;
-  }
-
-  dd.muted {
-    color: var(--muted);
-    font-weight: 400;
-  }
-
-  .total {
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
-  }
-
-  .total dd {
-    font-size: var(--text-base);
-  }
-
-  .submit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    min-height: 52px;
-    border: 0;
-    border-radius: 16px;
-    background: var(--btn-bg);
-    color: var(--btn-text);
-    font: inherit;
-    font-weight: 700;
-  }
-
-  .submit:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  .soon {
-    margin: var(--space-3) 0 0;
-    color: var(--muted);
-    font-size: var(--text-xs);
     line-height: 1.5;
-    text-align: center;
   }
 
-  .assure {
-    display: grid;
-    gap: 8px;
-    margin: var(--space-4) 0 0;
-    padding: var(--space-4) 0 0;
-    border-top: 1px solid var(--line);
-    list-style: none;
-    color: var(--muted);
-    font-size: var(--text-xs);
-    line-height: 1.45;
+  .ft-body b {
+    font-size: var(--text-base);
   }
 
-  .assure li {
-    display: flex;
-    gap: 8px;
-  }
-
-  .assure :global(svg) {
-    flex: none;
-    margin-top: 1px;
+  .ft-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    color: var(--link);
+    font-weight: 700;
   }
 
   @media (max-width: 479px) {
-    .step-label {
-      font-size: 0.6875rem;
-    }
-
-    .card,
-    .summary-card {
+    .first-time {
       padding: var(--space-4);
     }
-  }
 
-  @media (min-width: 640px) {
-    .fields {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .field-wide {
-      grid-column: 1 / -1;
-    }
-
-    .when {
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-      align-items: start;
-    }
-  }
-
-  @media (min-width: 960px) {
-    .booking-grid {
-      grid-template-columns: minmax(0, 1fr) 21rem;
-      align-items: start;
-    }
-
-    .summary {
-      position: sticky;
-      top: var(--space-5);
+    .ft-icon {
+      width: 40px;
+      height: 40px;
     }
   }
 </style>

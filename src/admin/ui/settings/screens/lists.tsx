@@ -18,6 +18,7 @@ const PAGE_LABEL: Record<(typeof PAGE_KEYS)[number], string> = {
   resources: 'Kaynaklar',
   contact: 'İletişim',
   appointment: 'Randevu',
+  preConsult: 'Ön görüşme',
   privacyNotice: 'Aydınlatma metni',
   privacyPolicy: 'Gizlilik politikası',
   faq: 'Sık sorulan sorular',

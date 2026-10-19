@@ -12,6 +12,7 @@ const PAGES: Record<PageKey, Record<Lang, string>> = {
   resources: { tr: '/kaynaklar/', en: '/en/resources/' },
   contact: { tr: '/iletisim/', en: '/en/contact/' },
   appointment: { tr: '/randevu/', en: '/en/appointment/' },
+  preConsult: { tr: '/on-gorusme/', en: '/en/intro-call/' },
   privacyNotice: { tr: '/aydinlatma-metni/', en: '/en/privacy-notice/' },
   privacyPolicy: { tr: '/gizlilik/', en: '/en/privacy-policy/' },
   faq: { tr: '/sik-sorulan-sorular/', en: '/en/faq/' },
