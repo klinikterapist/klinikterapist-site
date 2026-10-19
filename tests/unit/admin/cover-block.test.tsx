@@ -8,9 +8,9 @@ vi.mock('react-easy-crop', () => ({
     return <div data-testid="cropper" data-initial={JSON.stringify(props.initialCroppedAreaPercentages)} />;
   },
 }));
-const renderCrop = vi.hoisted(() => vi.fn(async () => ({ base64: 'Q1JPUA==', ext: 'webp' })));
+const renderCrop = vi.hoisted(() => vi.fn(async (..._args: unknown[]) => ({ base64: 'Q1JPUA==', ext: 'webp' })));
 vi.mock('../../../src/admin/lib/crop', async (orig) => ({ ...(await orig<object>()), renderCrop }));
-const resizeImage = vi.hoisted(() => vi.fn(async () => ({ base64: 'T1JJRw==', ext: 'webp', type: 'image/webp', width: 2000, height: 1500 })));
+const resizeImage = vi.hoisted(() => vi.fn(async (..._args: unknown[]) => ({ base64: 'T1JJRw==', ext: 'webp', type: 'image/webp', width: 2000, height: 1500 })));
 vi.mock('../../../src/admin/lib/image', async (orig) => ({ ...(await orig<object>()), resizeImage }));
 
 import { CoverBlock } from '../../../src/admin/ui/editor/CoverBlock';
@@ -36,7 +36,7 @@ afterEach(() => {
 });
 
 function setup(draft: { cover: string | null; coverOriginal: string | null; coverCrop: CropArea | null }) {
-  const images = { url: vi.fn(async (n: string) => `data:image/webp;base64,${n === 'cover.webp' ? 'Q09WRVI=' : 'T1JJRw=='}`), add: vi.fn(async () => {}) };
+  const images = { url: vi.fn(async (n: string) => `data:image/webp;base64,${n === 'cover.webp' ? 'Q09WRVI=' : 'T1JJRw=='}`), add: vi.fn(async (_name: string, _base64: string) => {}) };
   const onShared = vi.fn();
   const onCoverUploaded = vi.fn();
   render(<CoverBlock draft={draft} images={images} coverVersion={0} onShared={onShared} onCoverUploaded={onCoverUploaded} onError={() => {}} lang="tr" alt="Kapak" />);
