@@ -54,10 +54,12 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
   const mails: MailMessage[] = [];
   const calls: { url: string; opts: FetchOpts }[] = [];
   const logs: string[] = [];
+  const triggers: string[] = [];
   const routes = [...(init.routes ?? [])];
   const root = new MemFolder('root', 'Klinikterapist Panel');
-  const gas: Gas & { calls: typeof calls; logs: string[]; mails: MailMessage[]; routes: Route[]; clock: { now: number }; root: MemFolder } = {
+  const gas: Gas & { triggerList: string[]; calls: typeof calls; logs: string[]; mails: MailMessage[]; routes: Route[]; clock: { now: number }; root: MemFolder } = {
     mails,
+    triggerList: triggers,
     calls,
     logs,
     routes,
@@ -93,6 +95,7 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
     },
     log: (msg) => void logs.push(msg),
     mail: { send: (m) => void mails.push(m) },
+    triggers: { ensureHourly: (h) => void (triggers.includes(h) || triggers.push(h)) },
   };
   return gas;
 }

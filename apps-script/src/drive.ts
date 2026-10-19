@@ -150,7 +150,12 @@ const summary = (d: Draft): DraftSummary => ({
   published: d.published,
   category: d.category,
   title: { tr: d.tr.title, en: d.en.title },
+  scheduledAt: typeof d.scheduledAt === 'string' ? d.scheduledAt : null,
 });
+
+/** The last planned-publish error of a draft (kept outside the cached list: the trigger sets it). */
+export const SCHEDULE_ERROR = (k: string) => `sched:err:${k}`;
+const withScheduleError = (gas: Gas, d: DraftSummary): DraftSummary => ({ ...d, scheduleError: d.scheduledAt ? gas.props.get(SCHEDULE_ERROR(d.key)) : null });
 
 /**
  * The drafts list is kept in the script cache, so opening the panel does not read every draft file
@@ -178,13 +183,13 @@ const sorted = (list: DraftSummary[]) => [...list].sort((a, b) => b.updatedAt.lo
 
 export function listDrafts(gas: Gas): { drafts: DraftSummary[] } {
   const cached = cachedList(gas);
-  if (cached) return { drafts: sorted(cached) };
+  if (cached) return { drafts: sorted(cached).map((d) => withScheduleError(gas, d)) };
   const folder = sub(gas, 'taslaklar', false);
   const drafts = sorted(
     (folder?.listFiles() ?? []).filter((f) => f.getName().endsWith('.json')).map((f) => summary(JSON.parse(f.read()) as Draft)),
   );
   gas.cache.put(LIST_CACHE, JSON.stringify(drafts), LIST_TTL);
-  return { drafts };
+  return { drafts: drafts.map((d) => withScheduleError(gas, d)) };
 }
 
 /** Deleted drafts wait here for 30 days (owner's request 2026-10-19), then go for good. */

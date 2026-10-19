@@ -54,7 +54,7 @@ const normalizeLang = (v: unknown): LangFields => {
 export function normalizeDraft(d: unknown): Draft {
   const x = d as Draft;
   const crop = x.coverCrop && typeof x.coverCrop === 'object' ? parseCrop(formatCrop(x.coverCrop)) : null;
-  return { ...x, coverOriginal: typeof x.coverOriginal === 'string' ? x.coverOriginal : null, coverCrop: crop, tr: normalizeLang(x.tr), en: normalizeLang(x.en) };
+  return { ...x, coverOriginal: typeof x.coverOriginal === 'string' ? x.coverOriginal : null, coverCrop: crop, scheduledAt: typeof x.scheduledAt === 'string' ? x.scheduledAt : null, tr: normalizeLang(x.tr), en: normalizeLang(x.en) };
 }
 
 /** Local calendar day, `YYYY-MM-DD`. */

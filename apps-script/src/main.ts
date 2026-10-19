@@ -13,6 +13,7 @@ import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
 import { recordHit, statsReads, statsSummary } from './stats';
+import { runScheduled } from './schedule';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
@@ -47,6 +48,10 @@ export const ACTIONS: Record<string, Handler> = {
   'images.put': (gas, p) => putImage(gas, p),
   'images.get': (gas, p) => getImage(gas, p),
   'stats.summary': (gas, p) => statsSummary(gas, p),
+  'admin.triggers': (gas) => {
+    gas.triggers.ensureHourly('hourly');
+    return {};
+  },
 };
 
 export function handle(gas: Gas, body: string): ApiResponse {
@@ -80,6 +85,22 @@ export function handle(gas: Gas, body: string): ApiResponse {
 export function doPost(e: { postData?: { contents?: string } }) {
   const out = handle(realGas(), e?.postData?.contents ?? '');
   return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * The hourly time-driven trigger: publishes the planned drafts that are due. Errors are logged
+ * without any draft text; the draft keeps its plan and the next hour tries again.
+ */
+export async function runHourly(gas: Gas): Promise<void> {
+  try {
+    await runScheduled(gas, new Date(gas.now()));
+  } catch (e) {
+    gas.log(`hourly/schedule: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+export function hourly() {
+  return runHourly(realGas());
 }
 
 export function doGet(e?: { parameter?: Record<string, string> }) {

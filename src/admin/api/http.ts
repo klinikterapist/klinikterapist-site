@@ -71,5 +71,6 @@ export function createHttpApi(
     },
     getImage: (key, name) => call(ACTIONS.getImage, { key, name }),
     statsSummary: (range) => call(ACTIONS.statsSummary, range),
+    ensureTriggers: () => call(ACTIONS.ensureTriggers, {}).then(() => undefined),
   };
 }

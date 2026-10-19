@@ -55,6 +55,8 @@ export interface Gas {
   log(message: string): void;
   /** One plain-text e-mail from the deploying account (MailApp; needs the script.send_mail scope). */
   mail: { send(m: MailMessage): void };
+  /** Time-driven triggers (ScriptApp; needs the script.scriptapp scope). */
+  triggers: { ensureHourly(handler: 'hourly'): void };
 }
 
 export type MailMessage = { to: string; replyTo: string; subject: string; body: string; name?: string };
@@ -191,6 +193,13 @@ export function realGas(): Gas {
     log: (message) => console.error(message),
     mail: {
       send: (m) => MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name }),
+    },
+    triggers: {
+      // Created once; a second one would publish the same post twice.
+      ensureHourly: (handler) => {
+        if (ScriptApp.getProjectTriggers().some((t) => t.getHandlerFunction() === handler)) return;
+        ScriptApp.newTrigger(handler).timeBased().everyHours(1).create();
+      },
     },
   };
 }

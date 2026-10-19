@@ -64,7 +64,7 @@ describe('drafts', () => {
     gas.clock.now += 60_000;
     saveDraft(gas, { draft: draft({ key: 'yeni', published: true, en: lang('New') }) });
     expect(listDrafts(gas).drafts).toEqual([
-      { key: 'yeni', rev: 1, updatedAt: new Date(gas.now()).toISOString(), published: true, category: 'terapi', title: { tr: 'Başlık', en: 'New' } },
+      { key: 'yeni', rev: 1, updatedAt: new Date(gas.now()).toISOString(), published: true, category: 'terapi', title: { tr: 'Başlık', en: 'New' }, scheduledAt: null, scheduleError: null },
       expect.objectContaining({ key: 'eski' }),
     ]);
     putImage(gas, { key: 'eski', name: 'a.webp', base64: 'AAAA' });

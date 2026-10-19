@@ -96,6 +96,18 @@ Panel süre dolmadan 30 gün önce sarı bir uyarı gösterir. Süre dolarsa kay
 2. Apps Script › **Proje ayarları › Komut dosyası özellikleri**'nde `GITHUB_TOKEN` değerini yeni anahtarla değiştirip kaydedin.
 3. GitHub'da eski anahtarı silebilirsiniz (**Fine-grained tokens** listesinde **Delete**).
 
+## 7. Planlı yayın için tek seferlik izin
+
+Yazıyı ileri bir tarihe planlayabilmek için panelin arka tarafı saatte bir kendi kendine çalışır. Bunun için Google bir kez ek izin ister.
+
+1. Bu özellik ilk kez yüklendiğinde (Claude `npm run gas:push`, sonra `npm run gas:deploy` çalıştırdıktan sonra) Apps Script düzenleyicisini açın: **script.google.com** › "Klinikterapist Panel" projesi.
+2. Üstteki işlev listesinden **hourly** seçip **Çalıştır**'a basın.
+3. "Yetkilendirme gerekli" penceresi çıkar. **İzinleri gözden geçir**'e basın, merhaba@klinikterapist.com hesabını seçin. "Google bu uygulamayı doğrulamadı" uyarısında **Gelişmiş** › **Klinikterapist Panel'e git (güvenli değil)** deyin. Bu uygulamayı siz yazdırdınız, uyarı bu yüzden çıkar. Sonra **İzin ver**'e basın. Yeni izin, "komut dosyası tetikleyicilerini yönetme" iznidir.
+4. Panele dönün, bir yazıyı ileri bir saate planlayın. Panel saatlik çalışmayı kendisi kurar.
+5. Kontrol: Apps Script › sol menüde **Tetikleyiciler** (saat simgesi) ekranında `hourly`, "Saat başı zamanlayıcı" olarak tek satır görünmelidir.
+
+Planlanan yazı, seçilen saatten sonraki bir saat içinde yayına girer. O ana kadar metni yalnızca Drive'daki taslaktadır; GitHub'a ve siteye gitmez. Yayın bir sebeple yapılamazsa (örneğin GitHub anahtarının süresi dolmuşsa) yazı planlı kalır, panelde sarı bir uyarı görünür ve bir saat sonra yeniden denenir.
+
 ## Sorun giderme
 
 | Ne görüyorsunuz | Ne yapmalı |

@@ -72,6 +72,8 @@ export type Draft = {
   coverOriginal: string | null;
   /** The 16:9 frame chosen in "Kapağı ayarla", in percent of the original; null = centred. */
   coverCrop: CropArea | null;
+  /** Planned publish time, an instant with offset (`2026-10-24T09:00:00+03:00`); null or missing = not planned. */
+  scheduledAt?: string | null;
   /** `YYYY-MM-DD`, shared by both languages. */
   publishedAt: string;
   /** Shown as a featured post on the site; omitted (not false) when off. */
@@ -89,6 +91,9 @@ export type DraftSummary = {
   published: boolean;
   category: string;
   title: { tr: string; en: string };
+  scheduledAt?: string | null;
+  /** Why the last planned publish failed (it is retried every hour); null when it did not fail. */
+  scheduleError?: string | null;
 };
 
 /** A deleted draft in the panel's trash: removed for good at `purgeAt` (30 days after `deletedAt`). */
@@ -125,6 +130,8 @@ export interface Api {
   getImage(key: string, name: string): Promise<{ base64: string }>;
   /** The page counter's day counts for [from, to] (Istanbul days, `YYYY-MM-DD`). */
   statsSummary(range: { from: string; to: string }): Promise<StatsSummary>;
+  /** Makes sure the backend's hourly trigger (planned publishing) exists. */
+  ensureTriggers(): Promise<void>;
 }
 
 export class ApiFailure extends Error {
@@ -160,4 +167,5 @@ export const ACTIONS = {
   putImage: 'images.put',
   getImage: 'images.get',
   statsSummary: 'stats.summary',
+  ensureTriggers: 'admin.triggers',
 } as const satisfies Record<keyof Api, string>;

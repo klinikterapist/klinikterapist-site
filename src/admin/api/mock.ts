@@ -28,6 +28,10 @@ export type MockState = {
   commits: { message: string; writes: CommitWrite[]; deletes: CommitDelete[] }[];
   /** The panel's trash: deleted drafts by key, `deletedAt` in epoch ms. */
   trash: Map<string, { deletedAt: number; draft: Draft }>;
+  /** Planned-publish errors by draft key, as the backend's trigger records them. */
+  scheduleErrors: Map<string, string>;
+  /** How many times the panel asked for the hourly trigger. */
+  triggerCalls: number;
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
@@ -42,7 +46,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map() };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0 };
   let head = 1;
   let status: SiteStatus = { state: 'success', commitSha: 'c1', url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' };
   let pollsSinceCommit = 0;
@@ -105,7 +109,16 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     listDrafts: () =>
       wait(() => ({
         drafts: [...state.drafts.values()]
-          .map((d) => ({ key: d.key, rev: d.rev, updatedAt: d.updatedAt, published: d.published, category: d.category, title: { tr: d.tr.title, en: d.en.title } }))
+          .map((d) => ({
+            key: d.key,
+            rev: d.rev,
+            updatedAt: d.updatedAt,
+            published: d.published,
+            category: d.category,
+            title: { tr: d.tr.title, en: d.en.title },
+            scheduledAt: d.scheduledAt ?? null,
+            scheduleError: d.scheduledAt ? (state.scheduleErrors.get(d.key) ?? null) : null,
+          }))
           .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
       })),
     getDraft: (key) =>
@@ -204,6 +217,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         for (const [d, c] of Object.entries(all.days)) if (d >= from && d <= to) days[d] = { ...c };
         return { days, since: all.since };
       }),
+    ensureTriggers: () => wait(() => void state.triggerCalls++),
   };
 }
 

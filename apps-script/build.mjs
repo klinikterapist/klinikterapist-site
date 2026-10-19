@@ -19,11 +19,14 @@ const result = await build({
   write: false,
   charset: 'utf8',
   legalComments: 'none',
+  // The publish flow brings zod and yaml along (shared with the panel); minified it stays small.
+  minify: true,
 });
 
 const shims = `
 function doPost(e) { return App.doPost(e); }
 function doGet(e) { return App.doGet(e); }
+function hourly(e) { return App.hourly(e); }
 `;
 writeFileSync(join(out, 'Code.js'), result.outputFiles[0].text + shims);
 copyFileSync(join(here, 'appsscript.json'), join(out, 'appsscript.json'));
