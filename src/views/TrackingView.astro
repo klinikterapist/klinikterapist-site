@@ -156,7 +156,7 @@ const messages: TrackMessages =
 const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_PATH[lang], alternates: TRACK_PATH });
 ---
 
-<PageShell lang={lang} meta={meta} alternatePaths={TRACK_PATH} noindex personal cta={false}>
+<PageShell lang={lang} meta={meta} alternatePaths={TRACK_PATH} noindex noAnalytics cta={false}>
   <div class="container-text inner-page tracking">
     <PageHead title={T.title}>
       <p class="lead">{T.lead}</p>

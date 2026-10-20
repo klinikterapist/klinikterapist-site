@@ -29,7 +29,7 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 const info = bookingInfo(lang);
 ---
 
-<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design}>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design} noAnalytics>
   {
     design ? (
       <div class="container inner-page appointment-design">

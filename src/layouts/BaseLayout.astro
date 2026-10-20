@@ -19,12 +19,14 @@ interface Props {
   /** Keep the page out of search results (404). */
   noindex?: boolean;
   /**
-   * A page for one person (the client's own page): no page counter and no Google Analytics, so
-   * nobody but the owner learns that someone opened it.
+   * A page whose visit says something about someone's health (the client's own page, the booking
+   * and intro-call pages; owner's decision 2026-10-20): no Google Analytics, so Google never learns
+   * that this browser looked for or is in therapy. The site's own cookieless counter stays where the
+   * page is indexed.
    */
-  personal?: boolean;
+  noAnalytics?: boolean;
 }
-const { lang, meta, jsonLd, alternatePaths, noindex = false, personal = false } = Astro.props;
+const { lang, meta, jsonLd, alternatePaths, noindex = false, noAnalytics = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -55,6 +57,6 @@ const { lang, meta, jsonLd, alternatePaths, noindex = false, personal = false } 
     </main>
     <Footer lang={lang} />
     {COUNTER_ENABLED && !noindex && <Counter />}
-    {!personal && <Analytics lang={lang} />}
+    {!noAnalytics && <Analytics lang={lang} />}
   </body>
 </html>

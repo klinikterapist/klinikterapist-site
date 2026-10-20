@@ -181,7 +181,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
     button.textContent = messages.sending;
-    let result: 'sent' | 'taken' | 'failed' = 'failed';
+    let result: 'sent' | 'taken' | 'closed' | 'failed' = 'failed';
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 20000);
@@ -197,6 +197,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
         if (res.ok && out?.ok === true) result = 'sent';
         // The message check is for a backend from before `reason` was sent.
         else if (out?.data?.reason === 'taken' || out?.error?.message?.includes('artık uygun değil')) result = 'taken';
+        else if (out?.data?.reason === 'closed') result = 'closed';
       } finally {
         clearTimeout(timer);
       }
@@ -217,6 +218,11 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
       // Someone was quicker: show the calendar again with the fresh taken times.
       await loadBusy();
       say(messages.taken);
+    } else if (result === 'closed') {
+      // Booking closed while the page was open: the "Haber et" form takes over (owner's decision 2026-10-20).
+      close();
+      root.querySelector<HTMLElement>('[data-closed] h2')?.setAttribute('tabindex', '-1');
+      root.querySelector<HTMLElement>('[data-closed] h2')?.focus();
     } else {
       say(messages.failed);
     }

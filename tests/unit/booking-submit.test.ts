@@ -147,6 +147,20 @@ describe('mountBookingForm', () => {
     expect($('[data-done]').hidden).toBe(true);
     expect($<HTMLButtonElement>('[data-submit]').disabled).toBe(false);
   });
+
+  it('booking closed while the page was open: the form gives way to "Haber et"', async () => {
+    const fetch = vi.fn(async (url: RequestInfo | URL) => {
+      if (String(url).includes('booking.busy')) return new Response(JSON.stringify({ ok: true, data: { busy: [] } }));
+      return new Response(JSON.stringify({ ok: false, error: { code: 'bad_request', message: 'Şu an tüm seanslar dolu.' }, data: { reason: 'closed' } }));
+    });
+    const root = markup('https://api.example/exec');
+    mountBookingForm(root, { fetch, now: () => NOW });
+    fill();
+    $('[data-submit]').click();
+    await vi.waitFor(() => expect(root.classList.contains('is-closed')).toBe(true));
+    expect($('[data-closed]').hidden).toBe(false);
+    expect($('[data-done]').hidden).toBe(true);
+  });
 });
 
 describe('e-mail check and closed booking on the site', () => {

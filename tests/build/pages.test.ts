@@ -487,15 +487,16 @@ describe('inner pages redesign (spec §5.9)', () => {
     }
   });
 
-  it("the client's own page loads no Google Analytics, even where the site has it (real data build)", () => {
-    expect(loadPage('/', DIST_SAMPLES).toString()).toContain('googletagmanager');
-    for (const path of ['/randevum/', '/en/my-appointment/']) {
+  it('the client’s own page and the booking pages load no Google Analytics, even where the site has it (real data build)', () => {
+    const home = loadPage('/', DIST_SAMPLES).toString();
+    expect(home).toContain('googletagmanager');
+    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
       const d = loadPage(path, DIST_SAMPLES);
-      expect(d.toString()).not.toContain('googletagmanager');
-      expect(d.querySelector('[data-consent-bar]')).toBeNull();
+      expect(d.toString(), path).not.toContain('googletagmanager');
+      expect(d.querySelector('[data-consent-bar]'), path).toBeNull();
     }
-    // Elsewhere the e-mail check code of an acknowledgement link stays out of the address Google gets.
-    expect(loadPage('/randevu/', DIST_SAMPLES).toString()).toContain("page.searchParams.delete('dogrula')");
+    // The site's own cookieless counter stays on the booking pages, as on the home page.
+    expect(loadPage('/randevu/', DIST_SAMPLES).toString().includes('stats.hit')).toBe(home.includes('stats.hit'));
   });
 });
 

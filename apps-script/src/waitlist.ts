@@ -56,8 +56,13 @@ export function markWaitlistVerified(gas: Gas, id: string): void {
 
 const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 
+const OPEN = 'Randevu alımı şu an açık. Sayfayı yenileyip takvimden size uygun bir saat seçebilirsiniz.';
+
 export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true } {
   if (str(p[HONEYPOT]).trim()) return { sent: true };
+  // The list is for when booking is closed (owner's decision 2026-10-20): while it is open, the
+  // calendar is the way in.
+  if (!isClosed(gas)) throw new ApiError('bad_request', OPEN, { reason: 'open' });
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw new ApiError('internal', 'Form henüz kurulmadı. Lütfen doğrudan e-posta gönderin.');
   const input: WaitlistInput = {

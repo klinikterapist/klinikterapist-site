@@ -530,3 +530,35 @@ describe('E3: the owner hears of a hold running out', () => {
     expect(s.gas.mails).toHaveLength(1);
   });
 });
+
+describe('closing booking: the codes the pages read (owner’s decisions 2026-10-20)', () => {
+  it('a request while closed says "closed"; "Haber et" while open says "open" and keeps nothing', () => {
+    const s = setup();
+    const join = { action: 'booking.waitlist', name: 'Elif Bekler', email: 'elif@example.com', phone: '0534 000 00 00', kinds: ['individual'], times: [], reason: '', consent: true, lang: 'tr' };
+    s.gas.mails.length = 0;
+    expect(handle(s.gas, JSON.stringify(join))).toMatchObject({ ok: false, data: { reason: 'open' } });
+    expect(s.gas.mails).toEqual([]);
+    expect(s.call<{ waiting: number }>('booking.state').data.waiting).toBe(0);
+    s.call('booking.setOpen', { open: false });
+    expect(s.send(session)).toMatchObject({ ok: false, data: { reason: 'closed' } });
+    expect(handle(s.gas, JSON.stringify(join)).ok).toBe(true);
+  });
+});
+
+describe('a decision: the e-mail first, then the calendar and the file', () => {
+  it('when the e-mail cannot go, nothing changes and Onayla works on a second try', () => {
+    const s = setup();
+    s.send(session);
+    const id = s.requests()[0].id;
+    const send = s.gas.mail.send;
+    s.gas.mail.send = () => {
+      throw new Error('Service invoked too many times for one day: email.');
+    };
+    expect(s.call('requests.decide', { id, decision: 'approve', ...mail }).ok).toBe(false);
+    expect(s.requests()[0].status).toBe('pending');
+    expect(s.call<{ entries: { status: string }[] }>('calendar.list').data.entries.map((e) => e.status)).toEqual(['hold']);
+    s.gas.mail.send = send;
+    expect(s.call('requests.decide', { id, decision: 'approve', ...mail }).ok).toBe(true);
+    expect(s.requests()[0].status).toBe('approved');
+  });
+});

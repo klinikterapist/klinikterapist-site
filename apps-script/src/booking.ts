@@ -177,7 +177,8 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
 
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw new ApiError('internal', NOT_READY);
-  if (isClosed(gas)) throw badRequest(CLOSED);
+  // `reason: 'closed'`: the page open since before booking closed shows "Haber et" instead.
+  if (isClosed(gas)) throw new ApiError('bad_request', CLOSED, { reason: 'closed' });
 
   const input = inputOf(p);
   const now = gas.now();

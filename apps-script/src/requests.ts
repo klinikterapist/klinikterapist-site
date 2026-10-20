@@ -232,15 +232,19 @@ export function decideRequest(gas: Gas, cfg: BookingConfig, p: Record<string, un
     if (!r) throw new ApiError('not_found', NOT_FOUND);
     if (decision === 'approve' && r.status === 'approved') throw badRequest('Bu talep zaten onaylanmış.');
 
+    // Order (owner's decision 2026-10-20, "whichever is better"): check, then the e-mail, then the
+    // calendar and the file. The e-mail is the step that can fail (the daily limit); if it does,
+    // nothing has changed and the owner can try again. Before, the calendar changed first: a failed
+    // e-mail left the time confirmed and the request waiting, and a second Onayla clashed with it.
+    if (decision === 'approve') assertFree(gas, cfg, holdFor(cfg, r.day, r.time, r.kind, r.type));
+    gas.mail.send({ to: r.email, replyTo: owner, subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
     let calendarId: string | undefined;
     if (decision === 'approve') {
-      assertFree(gas, cfg, holdFor(cfg, r.day, r.time, r.kind, r.type));
       calendarId = addConfirmed(gas, cfg, { day: r.day, time: r.time, kind: r.kind, type: r.type }).entry.id;
     } else {
       removeEntry(gas, { id: r.calendarId ?? r.holdId });
       if (r.calendarId) removeEntry(gas, { id: r.holdId });
     }
-    gas.mail.send({ to: r.email, replyTo: owner, subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
     write(
       gas,
       REQUESTS,

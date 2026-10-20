@@ -181,7 +181,7 @@ const { email } = getContact();
 const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 ---
 
-<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design}>
+<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design} noAnalytics>
   <div class:list={['inner-page preconsult-page', design ? 'container' : 'container-text']}>
     <PageHead title={T.title}>
       <p class="lead">{T.lead}</p>
