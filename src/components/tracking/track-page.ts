@@ -287,12 +287,16 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     const state = el('p', 'tp-state');
     if (s.status === 'cancelled' || s.status === 'postponed') {
       state.textContent = `${m.status[s.status]}${s.movedTo ? ` → ${when(s.movedTo)}` : ''}${s.by === 'client' ? ` · ${m.byClient}` : ''}`;
-    } else if (s.late) state.textContent = m.late;
+    } else if (s.late) {
+      state.textContent = m.late;
+      state.classList.add('is-late');
+    }
     if (state.textContent) li.append(state);
     if (s.status !== 'planned' || s.kind === 'intro' || slotInstant(s.day, s.time) <= deps.now()) return li;
 
     const row = el('div', 'tp-row');
-    const cancel = button('tp-btn', m.cancel);
+    // Postponing keeps the therapy going: it comes first; cancelling is the quieter button.
+    const cancel = button('tp-btn tp-btn-quiet', m.cancel);
     const move = button('tp-btn', m.postpone);
     const open = (which: 'cancel' | 'postpone') => {
       row.hidden = true;
@@ -334,7 +338,7 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     };
     cancel.addEventListener('click', () => open('cancel'));
     move.addEventListener('click', () => open('postpone'));
-    row.append(cancel, move);
+    row.append(move, cancel);
     li.append(row);
     return li;
   }

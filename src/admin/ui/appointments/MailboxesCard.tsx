@@ -57,7 +57,7 @@ export function MailboxesCard() {
       {!data ? (
         !error && <Spinner label="Yükleniyor…" />
       ) : (
-        <>
+        <div className="cl-card">
           <dl className="mb-list">
             {BOXES.map((b) => (
               <div key={b.key}>
@@ -78,7 +78,7 @@ export function MailboxesCard() {
               Deneme gönder
             </Button>
           </div>
-        </>
+        </div>
       )}
       {editing && data && (
         <MailboxesDialog

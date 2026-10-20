@@ -87,7 +87,7 @@ const notice = pathFor('privacyNotice', lang);
         <span class="way-icon" aria-hidden="true"><Icon name="talk" size={24} /></span>
         <h2>{T.meet}</h2>
         <p>{T.meetText}</p>
-        <a class="btn" href={pathFor('preConsult', lang)}>{T.meetGo}</a>
+        <a class="btn" href={`${pathFor('preConsult', lang)}#pc-form`}>{T.meetGo}</a>
       </li>
       <li class="way">
         <span class="way-icon" aria-hidden="true"><Icon name="calendar" size={24} /></span>
@@ -158,9 +158,10 @@ const notice = pathFor('privacyNotice', lang);
 
   .way {
     position: relative;
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-3);
-    justify-items: start;
+    align-items: flex-start;
     padding: var(--space-5);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
@@ -197,6 +198,12 @@ const notice = pathFor('privacyNotice', lang);
   .way h2 {
     margin: 0;
     font-size: var(--text-lg);
+  }
+
+  /* The buttons line up at the bottom of the cards. */
+  .way > .btn,
+  .way > .info-box {
+    margin-top: auto;
   }
 
   .way p {
@@ -257,7 +264,8 @@ const notice = pathFor('privacyNotice', lang);
     display: flex;
     gap: var(--space-2);
     align-items: flex-start;
-    min-height: 44px;
+    /* Even rows whether the text wraps or not; still a 44 px tap target. */
+    padding-block: 10px;
     line-height: 1.5;
   }
 
@@ -325,9 +333,27 @@ const notice = pathFor('privacyNotice', lang);
   }
 
   @media (min-width: 900px) {
+    /* Three cards side by side need more room than a column of text. */
+    .book-start {
+      max-width: 68rem;
+    }
+
+    .book-start :global(.lead) {
+      max-width: 40rem;
+      margin-inline: auto;
+    }
+
     .ways {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      align-items: start;
+    }
+
+    .info-form {
+      max-width: 40rem;
+    }
+
+    /* With the form open, the other two cards share the first row. */
+    .ways:has(details[open]) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     /* The open information form takes the whole row. */

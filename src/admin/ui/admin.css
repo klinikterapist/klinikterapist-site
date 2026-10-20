@@ -3653,6 +3653,18 @@ html[data-theme='dark'] {
   }
 }
 
+.appt-side {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Terapist profili's side column is taller than the screen: it scrolls with the page. */
+.profile-page .appt-side {
+  position: static;
+}
+
 .appt-main {
   display: grid;
   align-content: start;
@@ -4221,6 +4233,20 @@ html[data-theme='dark'] {
   min-height: 34px;
 }
 
+/* The status keeps to one line; on a narrow screen the button goes under it. */
+@media (max-width: 520px) {
+  .intake {
+    flex-wrap: wrap;
+    padding: 8px 12px 4px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+
+  .intake .k-btn {
+    padding-inline: 0;
+  }
+}
+
 .intake-dot {
   width: 9px;
   height: 9px;
@@ -4493,6 +4519,14 @@ html[data-theme='dark'] {
 .ss-actions .k-btn {
   min-height: 34px;
   padding: 0 0.8rem;
+}
+
+/* On a phone the buttons wrap: they start on the left in every row. */
+@media (max-width: 640px) {
+  .ss-actions {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
 }
 
 
@@ -4846,6 +4880,13 @@ html[data-theme='dark'] {
   font-weight: 700;
 }
 
+/* "Bugün seans yok." lines up with the titles above it. */
+.tk-active > .k-hint,
+.profile-page .k-group > .k-hint {
+  padding: 0 var(--k-space-4);
+}
+
+
 .tk-active {
   display: grid;
   gap: var(--k-space-2);
@@ -4898,6 +4939,21 @@ html[data-theme='dark'] {
   max-width: 52rem;
 }
 
+.nt-layout > * {
+  min-width: 0;
+}
+
+/* The six filters scroll sideways on a phone instead of widening the page. */
+.nt-layout .segmented {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nt-layout .segmented button {
+  flex: none;
+}
+
 .nt-list {
   display: grid;
   gap: 2px;
@@ -4919,7 +4975,19 @@ html[data-theme='dark'] {
 }
 
 .nt-item a {
+  flex: 1;
+  min-width: 0;
   color: inherit;
+  text-decoration: none;
+}
+
+/* The whole row reads as one link; the underline comes on hover. */
+.nt-item a:hover {
+  text-decoration: underline;
+}
+
+.nt-item:has(> a:hover) {
+  background: color-mix(in srgb, var(--p-accent) 8%, var(--p-surface));
 }
 
 .nt-item.nt-err {
@@ -4961,6 +5029,10 @@ html[data-theme='dark'] {
 }
 
 /* Terapist profili: E-posta adresleri (Faz 4). */
+.mail-boxes .cl-card {
+  padding-block: var(--k-space-4);
+}
+
 .mb-list {
   display: grid;
   gap: 10px;

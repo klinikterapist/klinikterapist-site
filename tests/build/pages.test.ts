@@ -489,7 +489,7 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it('the booking start page: three ways (intro call recommended), the info form, out of search until booking is live', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, intro, appt] of [['/randevu-al/', '/on-gorusme/', '/randevu/'], ['/en/book/', '/en/intro-call/', '/en/appointment/']] as const) {
+    for (const [path, intro, appt] of [['/randevu-al/', '/on-gorusme/#pc-form', '/randevu/'], ['/en/book/', '/en/intro-call/#pc-form', '/en/appointment/']] as const) {
       const d = loadPage(path);
       expect(d.querySelectorAll('main .way').length, path).toBe(3);
       expect(d.querySelector('main .way.is-recommended a')?.getAttribute('href'), path).toBe(intro);

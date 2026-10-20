@@ -43,7 +43,7 @@ export function SessionChart({ stats }: { stats: SessionStats }) {
               </li>
             ))}
           </ul>
-          <p className="chart-note">{`Geçmiş ${stats.total} seans üzerinden (iptal ve ertelenenler dahil).`}</p>
+          <p className="chart-note">{`Yüzdeler, iptal ve ertelenenler dahil geçmiş ${stats.total} randevu üzerinden.`}</p>
         </>
       )}
     </div>

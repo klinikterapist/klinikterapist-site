@@ -413,11 +413,22 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
 
 <script>
   import { mountBookingForm } from './booking-submit';
+  import { ENTRY_PATH } from '../../lib/booking-entry';
 
-  // The way to the intro call can be closed; it comes back when the page is opened again.
-  document.querySelectorAll<HTMLElement>('[data-first-time]').forEach((box) =>
-    box.querySelector('[data-first-time-close]')?.addEventListener('click', () => box.remove()),
-  );
+  // The way to the intro call can be closed; it comes back when the page is opened again. Coming
+  // from the start page ("Başlamaya hazırım"), the person has already passed the intro call by.
+  const fromStart = (() => {
+    try {
+      const r = new URL(document.referrer);
+      return r.origin === location.origin && Object.values(ENTRY_PATH).includes(r.pathname as never);
+    } catch {
+      return false;
+    }
+  })();
+  document.querySelectorAll<HTMLElement>('[data-first-time]').forEach((box) => {
+    if (fromStart) return box.remove();
+    box.querySelector('[data-first-time-close]')?.addEventListener('click', () => box.remove());
+  });
 
   for (const root of document.querySelectorAll<HTMLElement>('[data-booking]')) mountBookingForm(root);
 </script>

@@ -330,11 +330,10 @@ export function ClientPage({ id }: { id: string }) {
         </div>
       </header>
       <div className="row cl-end-actions">
-        <Button variant="primary" onClick={() => setEnding({ mode: 'complete', mail: endMail(client.contact, 'complete') })}>
-          Terapiyi sonlandır
-        </Button>
+        {/* Rare and weighty: quiet buttons, Sil in red (they all ask before acting). */}
+        <Button onClick={() => setEnding({ mode: 'complete', mail: endMail(client.contact, 'complete') })}>Terapiyi sonlandır</Button>
         <Button onClick={() => setReverting(revertMail(client.contact))}>Geri al</Button>
-        <Button variant="ghost" onClick={() => setDeleting(true)}>
+        <Button variant="danger" onClick={() => setDeleting(true)}>
           Sil
         </Button>
       </div>

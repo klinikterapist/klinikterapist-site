@@ -84,7 +84,7 @@ const messages: TrackMessages =
           since: 'Since therapy began',
           free: '{n} free',
           empty: 'No past sessions yet; the chart fills after the first one.',
-          note: 'Out of the past {n} sessions (cancelled and moved ones included).',
+          note: 'Percentages are of the past {n} appointments, cancelled and moved ones included.',
           parts: { attended: 'Attended', noshow: 'Missed', cancelled: 'Cancelled', postponed: 'Moved', unmarked: 'Not marked yet' },
         },
         endTitle: 'Ending therapy',
@@ -140,7 +140,7 @@ const messages: TrackMessages =
           since: 'Terapiye başlangıçtan bu yana',
           free: '{n} ücretsiz görüşme',
           empty: 'Henüz geçmiş seans yok; grafik ilk seanstan sonra dolar.',
-          note: 'Geçmiş {n} seans üzerinden (iptal ve ertelenenler dahil).',
+          note: 'Yüzdeler, iptal ve ertelenenler dahil geçmiş {n} randevu üzerinden.',
           parts: { attended: 'Katıldı', noshow: 'Gelmedi', cancelled: 'İptal edildi', postponed: 'Ertelendi', unmarked: 'İşaretlenmedi' },
         },
         endTitle: 'Terapiyi sonlandırmak',
@@ -271,6 +271,20 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
 
   .tp :global(.tp-btn:hover) {
     border-color: var(--text);
+  }
+
+  .tp :global(.tp-btn-quiet) {
+    border-color: transparent;
+    background: none;
+    color: var(--muted);
+  }
+
+  /* Under 24 hours: the full-fee rule applies, so the line stands out. */
+  .tp :global(.tp-state.is-late) {
+    padding-left: var(--space-2);
+    border-left: 3px solid var(--sun-disc);
+    color: var(--text);
+    font-weight: 600;
   }
 
   .tp :global(.tp-link) {

@@ -264,13 +264,18 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
     const form = document.querySelector<HTMLElement>('[data-pc-form]');
     const intro = document.querySelector<HTMLElement>('[data-pc-intro]');
     if (!form?.hidden) continue;
-    start.addEventListener('click', (e) => {
-      e.preventDefault();
+    const open = (smooth: boolean) => {
       form.hidden = false;
       if (intro) intro.hidden = true;
-      form.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+      form.scrollIntoView({ behavior: smooth && !matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto', block: 'start' });
       form.querySelector<HTMLElement>('[data-step="1"] h2')?.focus({ preventScroll: true });
+    };
+    start.addEventListener('click', (e) => {
+      e.preventDefault();
+      open(true);
     });
+    // From the booking start page ("Önce tanışalım"): the person has read about it there already.
+    if (location.hash === '#pc-form') open(false);
   }
 </script>
 
@@ -321,6 +326,7 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 
   .what li {
     display: flex;
+    align-items: flex-start;
     gap: 10px;
     color: var(--muted);
     line-height: 1.55;
