@@ -15,6 +15,7 @@ import { HONEYPOT, allowSend } from './contact';
 import { readItems, writeItems } from './store';
 import { verifyLines, verifyLink } from './verify';
 import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS, validateWaitlist, type WaitlistInput } from '../../src/lib/waitlist-form';
+import { PANEL_URL, oneLine, str } from './text';
 
 const FILE = 'bekleme.json';
 const CLOSED = 'booking.closed';
@@ -22,7 +23,6 @@ const KEEP_MS = WAITLIST_KEEP_DAYS * 24 * 3600 * 1000;
 const NOT_FOUND = 'Bu kişi listede bulunamadı. Başka bir yerde listeden çıkarılmış olabilir.';
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TOO_MANY = 'Şu anda çok fazla talep gönderildi. Lütfen daha sonra tekrar deneyin ya da doğrudan e-posta gönderin.';
-const PANEL_URL = 'https://klinikterapist.com/admin/';
 
 export const isClosed = (gas: Gas) => gas.props.get(CLOSED) === '1';
 
@@ -54,9 +54,7 @@ export function markWaitlistVerified(gas: Gas, id: string): void {
   });
 }
 
-const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
-const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
 export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true } {
   if (str(p[HONEYPOT]).trim()) return { sent: true };

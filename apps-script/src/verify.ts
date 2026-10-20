@@ -8,8 +8,8 @@
 import type { Gas } from './gas';
 import { derive } from './seal';
 import { pathFor } from '../../src/i18n/routes';
+import { SITE, sameString } from './text';
 
-const SITE = 'https://klinikterapist.com';
 export const VERIFY_PARAM = 'dogrula';
 
 const tokenOf = (gas: Gas, ref: string) => gas.hmac(derive(gas, 'verify'), ref).slice(0, 22);
@@ -25,10 +25,7 @@ export function refOf(gas: Gas, code: unknown): string | null {
   if (i < 3) return null;
   const ref = code.slice(0, i);
   const want = tokenOf(gas, ref);
-  const got = code.slice(i + 1);
-  let d = want.length ^ got.length;
-  for (let k = 0; k < Math.min(want.length, got.length); k++) d |= want.charCodeAt(k) ^ got.charCodeAt(k);
-  return d === 0 && /^[rw]:[\w-]{4,40}$/.test(ref) ? ref : null;
+  return sameString(want, code.slice(i + 1)) && /^[rw]:[\w-]{4,40}$/.test(ref) ? ref : null;
 }
 
 /** The lines for an acknowledgement e-mail. */

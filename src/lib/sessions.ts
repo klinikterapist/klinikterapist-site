@@ -6,6 +6,7 @@
  * Shared by the panel and the backend.
  */
 import { holdOf, slotInstant, type BusyInterval } from './booking-form';
+import { DAY_RE, TIME_RE } from './field-rules';
 
 export type SessionKind = 'weekly' | 'intro' | 'closing' | 'extra';
 export type SessionStatus = 'planned' | 'attended' | 'noshow' | 'cancelled' | 'postponed';
@@ -101,8 +102,6 @@ export type SessionChangeInput = {
 export class SessionError extends Error {}
 
 const STATUSES: SessionStatus[] = ['planned', 'attended', 'noshow', 'cancelled', 'postponed'];
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
  * The client's records after a change. `added`: a new session that takes a time (an added one, or

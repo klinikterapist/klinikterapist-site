@@ -4,6 +4,7 @@
  * details and what they are looking for; when a time frees up the owner writes to them. Shared by
  * the site form and the backend, which checks it again.
  */
+import { EMAIL_RE } from './field-rules';
 
 export const WAITLIST_KINDS = ['individual', 'couple', 'accessible', 'intro'] as const;
 export const WAITLIST_TIMES = ['weekday-day', 'weekday-evening', 'weekend'] as const;
@@ -46,8 +47,6 @@ export type WaitlistInput = {
   /** Explicit consent, needed only when a reason is written (it may be about health). */
   healthConsent: boolean;
 };
-
-const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
 
 export function validateWaitlist(i: WaitlistInput): Partial<Record<keyof WaitlistInput, 'required' | 'invalid'>> {
   const e: Partial<Record<keyof WaitlistInput, 'required' | 'invalid'>> = {};

@@ -1,10 +1,12 @@
 /**
  * Booking and intro-call requests: the fixed choices, the field rules and the free times, shared by
  * the site (the step-by-step forms) and the Apps Script backend (`booking.request`, which checks
- * everything again). No imports: Apps Script bundles this file too.
+ * everything again). Apps Script bundles this file too, so it imports only dependency-free files.
  *
  * Times are Istanbul wall times (Turkey has kept +03:00 all year since 2016).
  */
+import { DAY_RE, EMAIL_RE, TIME_RE } from './field-rules';
+
 export type BookingLang = 'tr' | 'en';
 export type BookingKind = 'session' | 'intro';
 
@@ -119,9 +121,6 @@ export type BookingInput = {
 export type BookingField = 'type' | 'slot' | 'name' | 'email' | 'phone' | 'note' | 'consent' | 'forWhom' | 'topics' | 'age' | 'healthConsent';
 export type BookingErrors = Partial<Record<BookingField, 'required' | 'invalid' | 'tooLong' | 'taken'>>;
 
-const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const HOUR = 3600 * 1000;
 
 /** The instant of an Istanbul wall time. */

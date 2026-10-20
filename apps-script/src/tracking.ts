@@ -24,13 +24,11 @@ import { CLIENTS, allBusy, sendMail, type StoredClient } from './requests';
 import { INTRO_MINUTES, formatDay, holdOf, overlaps, timesFor } from '../../src/lib/booking-form';
 import { SessionError, applyChange, sessionKey } from '../../src/lib/sessions';
 import { TRACK_CODE_RE, TRACK_NOTE_MAX, TRACK_PARAM, TRACK_PATH, trackView, type TrackAsk, type TrackFailure, type TrackView } from '../../src/lib/tracking';
+import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
+import { PANEL_URL, SITE, sameString } from './text';
 
-const SITE = 'https://klinikterapist.com';
-const PANEL_URL = 'https://klinikterapist.com/admin/';
 export const TRACK_BAD_MAX = 30;
 const HOUR_MS = 3600 * 1000;
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const MESSAGES: Record<TrackFailure, string> = {
   link: 'Bu bağlantı geçersiz ya da artık kullanılmıyor.',
@@ -47,12 +45,6 @@ const codeOf = (gas: Gas, c: StoredClient) => `${c.id}.${signature(gas, c)}`;
 
 export const trackLink = (gas: Gas, c: StoredClient) => `${SITE}${TRACK_PATH[c.contact.lang]}#${TRACK_PARAM}=${codeOf(gas, c)}`;
 
-const equal = (a: string, b: string) => {
-  let d = a.length ^ b.length;
-  for (let i = 0; i < Math.min(a.length, b.length); i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return d === 0;
-};
-
 /** The client a code names. A wrong code counts against the site-wide hourly limit. */
 function clientOf(gas: Gas, code: unknown): { clients: StoredClient[]; c: StoredClient } {
   const key = `track:bad:${Math.floor(gas.now() / HOUR_MS)}`;
@@ -60,7 +52,7 @@ function clientOf(gas: Gas, code: unknown): { clients: StoredClient[]; c: Stored
   if (bad >= TRACK_BAD_MAX) throw failure('busy');
   const clients = readItems<StoredClient>(gas, CLIENTS);
   const c = typeof code === 'string' && TRACK_CODE_RE.test(code) ? clients.find((x) => x.id === code.slice(0, code.lastIndexOf('.'))) : undefined;
-  if (!c || !equal(codeOf(gas, c), code as string)) {
+  if (!c || !sameString(codeOf(gas, c), code as string)) {
     gas.cache.put(key, String(bad + 1), 2 * 3600);
     throw failure('link');
   }

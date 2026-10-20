@@ -11,6 +11,7 @@
 import { hitKeys, hourDay, istanbulDay, istanbulHour, parseHit, readsByPost, type DayCounts, type StatsSummary } from '../../src/lib/stats-wire';
 import type { FolderLike, Gas } from './gas';
 import { badRequest } from './respond';
+import { DAY_RE } from '../../src/lib/field-rules';
 
 const IDX = 'st:idx';
 const SINCE = 'st:since';
@@ -22,7 +23,6 @@ const MAX_BUCKET_BYTES = 8000;
 const READS_CACHE = 'st:reads';
 /** Flood guard: hits past this many in one hour are dropped before the lock (cache counter, approximate). */
 export const MAX_HITS_PER_HOUR = 3000;
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 type MonthFile = { days: Record<string, DayCounts> };
 

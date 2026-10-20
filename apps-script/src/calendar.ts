@@ -11,14 +11,13 @@ import type { CalendarEntry } from '../../src/admin/api/types';
 import type { Gas, FolderLike } from './gas';
 import { ApiError, badRequest } from './respond';
 import { holdOf, minutesOf, overlaps, slotInstant, type BookingConfig, type BookingKind, type BusyInterval } from '../../src/lib/booking-form';
+import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 
 export type { CalendarEntry };
 
 export const HOLD_MS = 24 * 3600 * 1000;
 const FOLDER = 'randevular';
 const FILE = 'takvim.json';
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const OVERLAP = 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.';
 
 function folder(gas: Gas, create: boolean): FolderLike | null {

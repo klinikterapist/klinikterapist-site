@@ -4,6 +4,7 @@
  */
 import type { Gas } from './gas';
 import { ApiError } from './respond';
+import { sameString } from './text';
 
 export const SESSION_TTL_MS = 12 * 3600 * 1000;
 const ISSUERS = new Set(['accounts.google.com', 'https://accounts.google.com']);
@@ -52,13 +53,6 @@ function secret(gas: Gas): string {
 }
 
 const version = (gas: Gas) => Number(gas.props.get('SESSION_VERSION') ?? '0');
-
-/** Length-independent comparison, so a forged signature cannot be found byte by byte. */
-function sameString(a: string, b: string): boolean {
-  let diff = a.length ^ b.length;
-  for (let i = 0; i < Math.max(a.length, b.length); i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
-  return diff === 0;
-}
 
 export function issueSession(gas: Gas, email: string): { session: string; email: string; expiresAt: number } {
   const expiresAt = gas.now() + SESSION_TTL_MS;

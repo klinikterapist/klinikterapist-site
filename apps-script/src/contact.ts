@@ -7,6 +7,7 @@
 import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 import { isContactTopic, topicLabel, validateContact, type ContactInput } from '../../src/lib/contact-form';
+import { oneLine, str } from './text';
 
 /**
  * Fixed windows: per visitor address and for the whole site per clock hour, and for the whole site per
@@ -25,10 +26,6 @@ const NOT_READY = 'İletişim formu henüz kurulmadı. Lütfen doğrudan e-posta
 
 /** Honeypot field name: non-semantic, so browsers do not autofill it. */
 export const HONEYPOT = 'hp_field';
-
-const str = (v: unknown) => (typeof v === 'string' ? v : '');
-/** One line for the subject and the header-like lines of the body. */
-const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
 /**
  * One mailbox, however it is written: lowercase, without a "+tag", and for Gmail without dots

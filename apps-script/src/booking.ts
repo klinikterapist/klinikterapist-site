@@ -22,6 +22,7 @@ import { parseBooking } from '../../src/lib/schemas';
 import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
 } from '../../src/lib/booking-form';
+import { PANEL_URL, oneLine, str } from './text';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TAKEN = 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.';
@@ -31,9 +32,6 @@ const CLOSED = 'Şu an tüm seanslar dolu. Sayfayı yenileyip "Haber et" formunu
 
 const CONFIG_CACHE = 'booking.config';
 const CONFIG_TTL = 10 * 60;
-
-const str = (v: unknown) => (typeof v === 'string' ? v : '');
-const oneLine = (s: string) => s.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
 
 export function config(gas: Gas): BookingConfig {
   const cached = gas.cache.get(CONFIG_CACHE);
@@ -75,8 +73,6 @@ function inputOf(p: Record<string, unknown>): BookingInput {
       : {}),
   };
 }
-
-const PANEL_URL = 'https://klinikterapist.com/admin/';
 
 function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: string; body: string } {
   const name = oneLine(i.name);

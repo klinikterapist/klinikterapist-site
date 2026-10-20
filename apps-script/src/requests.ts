@@ -17,6 +17,7 @@ import { readItems, writeItems } from './store';
 import { verifyLines, verifyLink } from './verify';
 import { BOOKING_LIMITS, INTRO_MINUTES, SESSION_TYPES, clientNumber, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
+import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 
 export const REQUEST_KEEP_MS = 30 * 24 * 3600 * 1000;
 const REQUESTS = 'talepler.json';
@@ -25,8 +26,6 @@ const SEQ = 'clients.seq';
 const NOT_FOUND = 'Bu talep bulunamadı. Başka bir yerde karara bağlanmış ya da silinmiş olabilir.';
 const NO_CLIENT = 'Bu danışan bulunamadı. Başka bir yerde takipten çıkarılmış olabilir.';
 const EMPTY_MAIL = 'E-postanın konusu ve metni boş olamaz.';
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The request as it came, kept with a client so Geri al can put it back. */
 type Origin = Omit<BookingRequest, 'id' | 'createdAt' | 'status' | 'holdId' | 'calendarId'>;
@@ -79,8 +78,6 @@ export function markVerified(gas: Gas, id: string): void {
     }
   });
 }
-
-const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
 
 /**
  * Randevu ekle: an appointment the owner gives by phone or e-mail, with the person's name and

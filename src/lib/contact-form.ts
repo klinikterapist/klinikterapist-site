@@ -1,8 +1,10 @@
 /**
  * The contact form's fixed topics and field rules, shared by the site (inline errors in the browser)
- * and the Apps Script backend (`contact.send`, which checks everything again). No imports: Apps Script
- * bundles this file too.
+ * and the Apps Script backend (`contact.send`, which checks everything again). Apps Script
+ * bundles this file too, so it imports only dependency-free files.
  */
+import { EMAIL_RE } from './field-rules';
+
 export type ContactLang = 'tr' | 'en';
 
 export const CONTACT_TOPICS = [
@@ -23,8 +25,6 @@ export type ContactInput = { name: string; email: string; topic: string; message
 export type ContactField = keyof ContactInput;
 export type ContactErrorKind = 'required' | 'tooLong' | 'tooShort' | 'invalid';
 export type ContactErrors = Partial<Record<ContactField, ContactErrorKind>>;
-
-const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
 
 export const isContactTopic = (id: string): id is ContactTopic => CONTACT_TOPICS.some((t) => t.id === id);
 
