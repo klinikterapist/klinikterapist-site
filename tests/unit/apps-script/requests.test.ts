@@ -562,3 +562,85 @@ describe('a decision: the e-mail first, then the calendar and the file', () => {
     expect(s.requests()[0].status).toBe('approved');
   });
 });
+
+describe('Faz 1: fees, payments and reminders', () => {
+  const settings = { year: 2026, fees: { individual: 1500, couple: 2000, accessible: 1200 }, bank: 'Ad Soyad · Örnek Bank · TR00 0000 0000 0000 0000 0000 00', link: '', dueHours: 24 };
+  /** KT001AY: couples therapy every Thursday 19:20 from 22 October (NOW: Tuesday 20 October, 10:00). */
+  function withClient() {
+    const s = setup();
+    s.send(session);
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    const cid = s.call<{ client: { id: string } }>('requests.toClient', { id }).data.client.id;
+    s.call('payment.set', { payment: settings });
+    s.gas.mails.length = 0;
+    const client = () => s.call<{ clients: { sessions: { day: string; paid?: number; sent?: string[] }[] }[] }>('clients.list').data.clients[0];
+    return { ...s, cid, client };
+  }
+
+  it('the fees are kept in the backend only, as the panel set them; a year is required', () => {
+    const s = setup();
+    expect(s.call('payment.set', { payment: { ...settings, year: 0 } }).ok).toBe(false);
+    expect(s.call('payment.set', { payment: { ...settings, fees: { individual: '1500', bogus: 9 }, link: 'javascript:alert(1)' } }).ok).toBe(true);
+    expect(s.call<{ payment: unknown }>('payment.get').data.payment).toEqual({ ...settings, fees: { individual: 1500, couple: 0, accessible: 0 }, link: '' });
+    // Not for the public.
+    expect(handle(s.gas, JSON.stringify({ action: 'payment.get' }))).toMatchObject({ ok: false });
+  });
+
+  it('72 hours before: the session, the fee, the bank details, the rule and the page; 48 hours: the payment again; at the due time the owner is told; each once', async () => {
+    const t = withClient();
+    t.gas.clock.now = at('2026-10-26T19:30:00'); // 71 h 50 min before Thursday 29 October 19:20
+    await runHourly(t.gas);
+    expect(t.gas.mails).toHaveLength(1);
+    const r72 = t.gas.mails[0];
+    expect(r72).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Seans hatırlatması: 29 Ekim 2026, Perşembe – klinikterapist.com' });
+    for (const part of ['29 Ekim 2026, Perşembe, saat 19.20 çift terapisi seansınızı', 'Seans ücreti: 2.000 TL.', 'en geç 24 saat önce', 'TR00 0000', 'tamamı ödenir', 'https://klinikterapist.com/randevum/#k=']) expect(r72.body).toContain(part);
+    await runHourly(t.gas);
+    expect(t.gas.mails).toHaveLength(1);
+    t.gas.clock.now = at('2026-10-27T19:30:00'); // 47 h 50 min
+    await runHourly(t.gas);
+    expect(t.gas.mails.at(-1)).toMatchObject({ to: 'ayse@example.com', subject: 'Seans ödemesi hatırlatması – klinikterapist.com' });
+    t.gas.clock.now = at('2026-10-28T19:30:00'); // 23 h 50 min: due
+    await runHourly(t.gas);
+    expect(t.gas.mails.at(-1)).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com', subject: '[klinikterapist] KT001AY: ödeme alınmadı — 29 Ekim 2026, Perşembe, 19.20' });
+    expect(t.gas.mails.at(-1)!.body).toContain('sistem kendiliğinden bir şey yapmaz');
+    await runHourly(t.gas);
+    expect(t.gas.mails).toHaveLength(3);
+    expect(t.client().sessions.find((x) => x.day === '2026-10-29')!.sent).toEqual(['r72', 'r48', 'due']);
+  });
+
+  it('a paid session gets the reminder without the payment part, and nothing more', async () => {
+    const t = withClient();
+    expect(t.call('clients.pay', { id: t.cid, day: '2026-10-29', time: '19:20', paid: true, mail: { subject: 'Ödemeniz alındı', body: 'Teşekkürler' } }).ok).toBe(true);
+    expect(t.gas.mails).toEqual([expect.objectContaining({ to: 'ayse@example.com', subject: 'Ödemeniz alındı' })]);
+    expect(t.client().sessions.find((x) => x.day === '2026-10-29')!.paid).toBe(NOW);
+    t.gas.mails.length = 0;
+    for (const h of ['2026-10-26T19:30:00', '2026-10-27T19:30:00', '2026-10-28T19:30:00']) {
+      t.gas.clock.now = at(h);
+      await runHourly(t.gas);
+    }
+    expect(t.gas.mails).toHaveLength(1);
+    expect(t.gas.mails[0].body).not.toContain('Seans ücreti');
+    // A postponement takes the payment to the new date.
+    t.gas.clock.now = NOW;
+    t.call('clients.session', { id: t.cid, op: 'mark', day: '2026-10-29', time: '19:20', status: 'postponed', by: 'owner', newDay: '2026-10-30', newTime: '10:00' });
+    const sessions = t.client().sessions;
+    expect(sessions.find((x) => x.day === '2026-10-29')).not.toHaveProperty('paid');
+    expect(sessions.find((x) => x.day === '2026-10-30')!.paid).toBe(NOW);
+  });
+
+  it('an approved appointment not yet in Seans takip gets the 72-hour reminder once; a free intro call has no payment part', async () => {
+    const s = setup();
+    s.call('payment.set', { payment: settings });
+    s.send(intro); // Saturday 24 October 11:00
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    s.gas.mails.length = 0;
+    s.gas.clock.now = at('2026-10-22T12:00:00'); // 47 h before
+    await runHourly(s.gas);
+    await runHourly(s.gas);
+    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'ayse@example.com' })]);
+    expect(s.gas.mails[0].body).toContain('ücretsiz görüşmenizi');
+    expect(s.gas.mails[0].body).not.toContain('Seans ücreti');
+  });
+});

@@ -7,6 +7,7 @@
 import type { BookingRequest, RequestDecision } from '../api/types';
 import { INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
+import { paymentLines, ruleLine, type PaymentSettings } from '../../lib/payment';
 
 const SITE = 'https://klinikterapist.com';
 const SIGN_TR = ['Saygılarımla,', 'Osman Güneş Özkurt', 'Klinik Psikolog', 'klinikterapist.com'];
@@ -21,7 +22,8 @@ function what(r: BookingRequest, lang: 'tr' | 'en'): string {
   return lang === 'en' ? t.en.toLowerCase() : t.tr.toLocaleLowerCase('tr-TR');
 }
 
-export function decisionMail(r: BookingRequest, decision: RequestDecision): Mail {
+/** `pay`: the owner's fee and payment settings; a session's approval tells the fee, how to pay and the rules (Faz 1). */
+export function decisionMail(r: BookingRequest, decision: RequestDecision, pay?: PaymentSettings): Mail {
   const lang = r.lang;
   const when = `${formatDay(r.day, lang)}, ${lang === 'en' ? 'at ' : 'saat '}${r.time.replace(':', '.')}`;
   const again = `${SITE}${pathFor(r.kind === 'intro' ? 'preConsult' : 'appointment', lang)}`;
@@ -44,7 +46,10 @@ export function decisionMail(r: BookingRequest, decision: RequestDecision): Mail
           : [
               `Your ${what(r, 'en')} appointment on ${when} (Turkey time) is confirmed.`,
               'The session is held online. I will send you the link by e-mail before the session.',
-              'If you need to change or cancel it, please let me know at least 24 hours before by replying to this e-mail.',
+              ...(pay ? ['', ...paymentLines(pay, r.type ?? 'individual', 'en')] : []),
+              '',
+              ruleLine('en'),
+              'Three days before the session I will send you a reminder.',
             ];
       return { subject: r.kind === 'intro' ? 'Your intro call is confirmed – klinikterapist.com' : 'Your appointment is confirmed – klinikterapist.com', body: [hello, '', ...lines, '', ...SIGN_EN].join('\n') };
     }
@@ -74,7 +79,10 @@ export function decisionMail(r: BookingRequest, decision: RequestDecision): Mail
         : [
             `${when} için ${what(r, 'tr')} randevu talebiniz onaylanmıştır.`,
             'Seans online yapılacak. Görüşme bağlantısını seanstan önce e-postayla göndereceğim.',
-            'Randevunuzu değiştirmeniz ya da iptal etmeniz gerekirse lütfen en az 24 saat önce bu e-postayı yanıtlayarak haber verin.',
+            ...(pay ? ['', ...paymentLines(pay, r.type ?? 'individual', 'tr')] : []),
+            '',
+            ruleLine('tr'),
+            'Seansınızdan 3 gün önce size bir hatırlatma e-postası göndereceğim.',
           ];
     return { subject: r.kind === 'intro' ? 'Ön görüşmeniz onaylandı – klinikterapist.com' : 'Randevunuz onaylandı – klinikterapist.com', body: [hello, '', ...lines, '', 'Görüşmek üzere,', ...SIGN_TR.slice(1)].join('\n') };
   }

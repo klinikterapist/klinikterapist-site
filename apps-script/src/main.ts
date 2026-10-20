@@ -16,6 +16,7 @@ import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from '
 import { addConfirmed, listEntries, removeEntry } from './calendar';
 import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor, listClients, listRequests, requestToClient, revertClient, revertRequest, warnExpiringHolds } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
+import { payClient, readPayment, runReminders, savePayment } from './payment';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
@@ -112,6 +113,10 @@ export const ACTIONS: Record<string, Handler> = {
   },
   'clients.link': (gas, p) => clientLink(gas, p),
   'clients.linkMail': (gas, p) => mailClientLink(gas, p),
+  'clients.mail': (gas, p) => mailClientLink(gas, p),
+  'clients.pay': (gas, p) => payClient(gas, p),
+  'payment.get': (gas) => readPayment(gas),
+  'payment.set': (gas, p) => savePayment(gas, p),
   'requests.add': (gas, p) => {
     const out = addManual(gas, bookingConfig(gas), p);
     gas.cache.put('booking.busy', '', 1);
@@ -175,6 +180,11 @@ export async function runHourly(gas: Gas): Promise<void> {
     warnExpiringHolds(gas);
   } catch (e) {
     gas.log(`hourly/holds: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  try {
+    runReminders(gas);
+  } catch (e) {
+    gas.log(`hourly/reminders: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 

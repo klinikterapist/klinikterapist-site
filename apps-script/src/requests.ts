@@ -21,7 +21,7 @@ import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, oneLine } from './text';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
-const REQUESTS = 'talepler.json';
+export const REQUESTS = 'talepler.json';
 export const CLIENTS = 'danisanlar.json';
 const SEQ = 'clients.seq';
 const NOT_FOUND = 'Bu talep bulunamadı. Başka bir yerde karara bağlanmış ya da silinmiş olabilir.';

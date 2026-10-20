@@ -28,7 +28,13 @@ export type SessionRecord = {
    * told them the full fee is due (owner's review a5). It goes when the owner marks the session again.
    */
   late?: true;
+  /** The owner marked it paid (epoch ms); a postponement takes the payment to the new date. */
+  paid?: number;
+  /** Reminders already sent for it (Faz 1): `r72`, `r48` to the client, `due` to the owner. */
+  sent?: ReminderKind[];
 };
+
+export type ReminderKind = 'r72' | 'r48' | 'due';
 export type TrackedClient = { weekday: number; time: string; minutes: number; since: string; sessions?: SessionRecord[] };
 
 /** The free ones: the intro call before therapy and the closing session at its end. */
@@ -87,7 +93,10 @@ export function tally(c: TrackedClient): Record<Exclude<SessionStatus, 'planned'
 
 /** A change the owner makes on the client's page (the wire shape of `clients.session`). */
 export type SessionChangeInput = {
-  op: 'mark' | 'add' | 'remove';
+  op: 'mark' | 'add' | 'remove' | 'pay';
+  /** `pay`: paid or not, and when (the backend's clock; defaults to now). */
+  paid?: boolean;
+  paidAt?: number;
   day: string;
   time: string;
   status?: SessionStatus;
@@ -129,6 +138,16 @@ export function applyChange(c: TrackedClient, ch: SessionChangeInput, closingMin
     if (s.from) sessions = sessions.map((x) => (sessionKey(x) === s.from && x.status === 'postponed' ? { ...x, movedTo: undefined } : x));
     return { sessions };
   }
+  if (ch.op === 'pay') {
+    const old = sessions.find((x) => sessionKey(x) === key);
+    if (!old && !isWeekly(c, ch.day, ch.time)) throw new SessionError('Bu tarihte bir seans yok.');
+    const base: SessionRecord = old ?? { day: ch.day, time: ch.time, kind: 'weekly', minutes: c.minutes, status: 'planned' };
+    if (FREE_KINDS.includes(base.kind)) throw new SessionError('Ücretsiz görüşmenin ödemesi olmaz.');
+    const next: SessionRecord = { ...base };
+    if (ch.paid) next.paid = ch.paidAt ?? Date.now();
+    else delete next.paid;
+    return { sessions: [...sessions.filter((x) => x !== old), next] };
+  }
   if (ch.op !== 'mark') throw new SessionError('İşlem anlaşılamadı.');
   const status = STATUSES.find((st) => st === ch.status);
   if (!status) throw new SessionError('Durum eksik.');
@@ -151,11 +170,26 @@ export function applyChange(c: TrackedClient, ch: SessionChangeInput, closingMin
     if (taken(ch.newDay, ch.newTime)) throw new SessionError('Yeni tarihte zaten bir seans var.');
     next.movedTo = { day: ch.newDay, time: ch.newTime };
     const added: SessionRecord = { day: ch.newDay, time: ch.newTime, kind: base.kind === 'weekly' ? 'extra' : base.kind, minutes: base.minutes, status: 'planned', from: key };
+    // A payment made for the session goes with it to the new date (and is not counted twice).
+    if (next.paid) {
+      added.paid = next.paid;
+      delete next.paid;
+    }
     return { sessions: [...sessions, next, added], added };
   }
-  // An unmarked weekly session needs no record.
-  if (base.kind === 'weekly' && status === 'planned' && !note) return { sessions };
+  // An unmarked weekly session needs no record, unless it holds a payment or sent reminders.
+  if (base.kind === 'weekly' && status === 'planned' && !note && !next.paid && !next.sent?.length) return { sessions };
   return { sessions: [...sessions, next] };
+}
+
+/** The client's sessions with `kind` noted as sent for the session at `day`/`time` (a weekly one gets a record). */
+export function markSent(c: TrackedClient, day: string, time: string, kind: ReminderKind): SessionRecord[] {
+  const key = sessionKey({ day, time });
+  const sessions = c.sessions ?? [];
+  const old = sessions.find((x) => sessionKey(x) === key);
+  const base: SessionRecord = old ?? { day, time, kind: 'weekly', minutes: c.minutes, status: 'planned' };
+  const next: SessionRecord = { ...base, sent: [...new Set([...(base.sent ?? []), kind])] };
+  return [...sessions.filter((x) => x !== old), next];
 }
 
 export type SessionStats = {

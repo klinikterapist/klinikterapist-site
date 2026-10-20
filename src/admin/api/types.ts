@@ -8,6 +8,7 @@ import type { JSONContent } from '@tiptap/core';
 import type { Reference } from '../../lib/apa/types';
 import type { CropArea } from '../../lib/crop-area';
 import type { SessionRecord, SessionStatus } from '../../lib/sessions';
+import type { PaymentSettings } from '../../lib/payment';
 
 export type ErrorCode =
   | 'unauthorized'
@@ -143,6 +144,8 @@ export type BookingRequest = {
   calendarId?: string;
   /** The person opened the link in the acknowledgement e-mail: the address is right. */
   verified?: boolean;
+  /** An approved one-off appointment got its 72-hour reminder (Faz 1). */
+  reminded?: boolean;
   /** The owner was told its 24-hour hold is running out (review E3); told once. */
   holdWarned?: boolean;
   /** `manual`: the owner put it in with "Randevu ekle". */
@@ -273,6 +276,13 @@ export interface Api {
   clientRevert(input: { id: string; subject: string; body: string }): Promise<void>;
   /** Marks a session (attended, cancelled …), adds a closing or extra session, or removes one. */
   clientSession(input: SessionChange): Promise<{ client: Client }>;
+  /** The owner's fees, bank details and payment link (script properties, never in the repository). */
+  paymentGet(): Promise<{ payment: PaymentSettings }>;
+  paymentSet(payment: PaymentSettings): Promise<{ payment: PaymentSettings }>;
+  /** A session paid or not; when paid with `mail`, the owner's thank-you goes to the client. */
+  clientPay(input: { id: string; day: string; time: string; paid: boolean; mail?: { subject: string; body: string } }): Promise<{ client: Client }>;
+  /** The owner's (edited) e-mail to the client, e.g. a payment reminder. */
+  clientMail(input: { id: string; subject: string; body: string }): Promise<void>;
   /** The client's secret page link; `renew` makes a new one (the old one stops working). */
   clientLink(input: { id: string; renew?: boolean }): Promise<{ link: string }>;
   /** Sends the owner's (edited) e-mail with the link to the client's address. */
@@ -337,6 +347,10 @@ export const ACTIONS = {
   clientSession: 'clients.session',
   clientLink: 'clients.link',
   clientLinkMail: 'clients.linkMail',
+  paymentGet: 'payment.get',
+  paymentSet: 'payment.set',
+  clientPay: 'clients.pay',
+  clientMail: 'clients.mail',
   bookingState: 'booking.state',
   bookingSetOpen: 'booking.setOpen',
   requestAdd: 'requests.add',
