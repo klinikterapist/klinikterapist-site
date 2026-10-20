@@ -493,3 +493,19 @@ describe('H1: the panel’s own bookings respect the clients’ sessions', () =>
     expect(s.call('requests.toClient', { id, weekday: 4, time: '10:00', since: '2026-11-05' }).ok).toBe(true);
   });
 });
+
+describe('E4: an approved request keeps its person until its appointment has passed', () => {
+  it('a booking six weeks ahead is not deleted at 30 days; after the appointment it goes with its calendar entry', () => {
+    const s = setup();
+    s.send({ ...session, day: '2026-11-26' }); // Thursday 26 November 19:20, 37 days ahead
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    s.gas.clock.now = NOW + REQUEST_KEEP_MS + 1;
+    expect(s.requests()).toEqual([expect.objectContaining({ id, status: 'approved' })]);
+    const entries = () => s.call<{ entries: { status: string }[] }>('calendar.list').data.entries;
+    expect(entries()).toHaveLength(1);
+    s.gas.clock.now = at('2026-11-27T20:30:00');
+    expect(s.requests()).toEqual([]);
+    expect(s.gas.root.findFolder('randevular')!.findFile('takvim.json')!.read()).not.toContain('"confirmed"');
+  });
+});

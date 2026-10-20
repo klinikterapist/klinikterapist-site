@@ -126,6 +126,19 @@ const HOUR = 3600 * 1000;
 /** The instant of an Istanbul wall time. */
 export const slotInstant = (day: string, time: string) => Date.parse(`${day}T${time}:00+03:00`);
 
+/** Requests are kept at most this many days (an approved one at least until its appointment has passed). */
+export const REQUEST_KEEP_DAYS = 30;
+
+/**
+ * When a request and its details are deleted (review E4): 30 days after it came. An approved one
+ * waits at least until a day after its appointment, so an appointment booked further ahead keeps
+ * its person; its calendar entry, by then in the past, goes with it.
+ */
+export function requestKeepUntil(r: { createdAt: number; status: string; day: string; time: string }): number {
+  const base = r.createdAt + REQUEST_KEEP_DAYS * 24 * HOUR;
+  return r.status === 'approved' ? Math.max(base, slotInstant(r.day, r.time) + 24 * HOUR) : base;
+}
+
 /** The holiday on `day`, if any. */
 export const closedOn = (cfg: Pick<BookingConfig, 'closed'>, day: string): ClosedDay | null => cfg.closed.find((c) => c.date === day) ?? null;
 

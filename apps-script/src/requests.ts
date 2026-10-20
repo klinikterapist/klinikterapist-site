@@ -15,11 +15,11 @@ import { ApiError, badRequest } from './respond';
 import { activeEntries, addConfirmed, addHold, busyOf, removeEntry } from './calendar';
 import { readItems, writeItems } from './store';
 import { verifyLines, verifyLink } from './verify';
-import { BOOKING_LIMITS, INTRO_MINUTES, SESSION_TYPES, clientNumber, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
+import { BOOKING_LIMITS, INTRO_MINUTES, REQUEST_KEEP_DAYS, requestKeepUntil, SESSION_TYPES, clientNumber, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
 import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 
-export const REQUEST_KEEP_MS = 30 * 24 * 3600 * 1000;
+export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
 const REQUESTS = 'talepler.json';
 export const CLIENTS = 'danisanlar.json';
 const SEQ = 'clients.seq';
@@ -39,8 +39,12 @@ const write = writeItems;
 function liveRequests(gas: Gas): BookingRequest[] {
   const now = gas.now();
   const all = read<BookingRequest>(gas, REQUESTS);
-  const kept = all.filter((r) => now - r.createdAt < REQUEST_KEEP_MS);
-  if (kept.length !== all.length) write(gas, REQUESTS, kept);
+  const kept = all.filter((r) => now < requestKeepUntil(r));
+  if (kept.length !== all.length) {
+    // An approved request leaves only after its appointment: its (past) calendar entry goes too.
+    for (const r of all) if (!kept.includes(r) && r.calendarId) removeEntry(gas, { id: r.calendarId });
+    write(gas, REQUESTS, kept);
+  }
   return kept;
 }
 

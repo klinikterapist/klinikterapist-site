@@ -15,7 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type RequestDecision, type WaitlistEntry } from '../../api/types';
-import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, clientNumber, formatDay } from '../../../lib/booking-form';
+import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, REQUEST_KEEP_DAYS, SESSION_TYPES, clientNumber, formatDay, requestKeepUntil } from '../../../lib/booking-form';
 import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
 import { go, usePanel } from '../context';
 import { BellRing, CircleCheck, Icon, Inbox, Plus } from '../icons';
@@ -26,12 +26,13 @@ import { MailDialog } from './MailDialog';
 import { initialsOf } from './shared';
 import { VerifiedMark, WaitlistTab } from './WaitlistTab';
 
-const KEEP_DAYS = 30;
+const KEEP_DAYS = REQUEST_KEEP_DAYS;
 const DECISION_SEND: Record<RequestDecision, string> = { approve: 'Onayla ve gönder', unavailable: 'Uygun değilim ve gönder', cancel: 'İptal et ve gönder' };
 const DECISION_TITLE: Record<RequestDecision, string> = { approve: 'Onay e-postası', unavailable: '"Uygun değilim" e-postası', cancel: 'İptal e-postası' };
 
 const whenOf = (r: BookingRequest) => `${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')}`;
-const daysLeft = (r: BookingRequest) => Math.max(0, KEEP_DAYS - Math.floor((Date.now() - r.createdAt) / (24 * 3600e3)));
+/** Whole days until the request is deleted (review E4: an approved one not before its appointment has passed). */
+const daysLeft = (r: BookingRequest) => Math.max(0, Math.ceil((requestKeepUntil(r) - Date.now()) / (24 * 3600e3)));
 const DAY_MS = 24 * 3600e3;
 /** When the request came: "20 Ekim 2026, Salı, 09.12". */
 const sentAt = (ms: number) => {
@@ -369,7 +370,11 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
                         </footer>
                       ) : (
                         <footer className="rq-foot">
-                          <span className="rq-status rq-ok">{`Onaylandı · ${daysLeft(r)} gün içinde takibe geçirilmezse bilgiler silinir`}</span>
+                          {daysLeft(r) <= 5 ? (
+                            <span className="rq-status rq-late">{`Onaylandı · Seans takibe geçirilmezse ${daysLeft(r)} gün sonra bilgiler silinecek`}</span>
+                          ) : (
+                            <span className="rq-status rq-ok">{`Onaylandı · ${daysLeft(r)} gün içinde takibe geçirilmezse bilgiler silinir`}</span>
+                          )}
                           <span className="row">
                             <Button
                               variant="primary"
