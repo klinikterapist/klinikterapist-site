@@ -97,6 +97,61 @@ function ownerMail(c: StoredClient, ask: TrackAsk, ch: Change | null, note: stri
   };
 }
 
+/**
+ * Review E1: the client's own copy of what they did on their page. Fixed text: the client's note
+ * does not go into it (the link is made here); a late change says the full fee is due, as the page
+ * did. "If it was not you" covers a link that reached someone else.
+ */
+function clientMail(gas: Gas, c: StoredClient, ask: TrackAsk, ch: Change | null): { subject: string; body: string } {
+  const lang = c.contact.lang;
+  const at = (s: { day: string; time: string }) => `${formatDay(s.day, lang)}, ${s.time.replace(':', '.')}`;
+  const link = trackLink(gas, c);
+  if (lang === 'en') {
+    const lines =
+      ask === 'cancel'
+        ? [`Your session on ${at(ch!.s)} (Turkey time) has been cancelled from your appointment page.`]
+        : ask === 'postpone'
+          ? [`Your session on ${at(ch!.s)} has been moved to ${at(ch!.to!)} (Turkey time).`]
+          : ['Your wish to end therapy has reached me. I will write to you soon.'];
+    return {
+      subject: { cancel: 'Your session has been cancelled', postpone: 'Your session has been moved', end: 'Your message has reached me' }[ask] + ' – klinikterapist.com',
+      body: [
+        'Hello,',
+        '',
+        ...lines,
+        ...(ch?.late ? ['As you accepted on the page, the full session fee is due because this was done less than 24 hours before the session.'] : []),
+        '',
+        `Your appointment page: ${link}`,
+        'If you did not do this, please reply to this e-mail straight away.',
+        '',
+        'Osman Güneş Özkurt',
+        'klinikterapist.com',
+      ].join('\n'),
+    };
+  }
+  const lines =
+    ask === 'cancel'
+      ? [`${at(ch!.s)} seansınız, randevu sayfanızdan yaptığınız işlemle iptal edildi.`]
+      : ask === 'postpone'
+        ? [`${at(ch!.s)} seansınız ${at(ch!.to!)} tarihine ertelendi.`]
+        : ['Terapiyi sonlandırma isteğiniz bana ulaştı. En kısa sürede size yazacağım.'];
+  return {
+    subject: { cancel: 'Seansınız iptal edildi', postpone: 'Seansınız ertelendi', end: 'İsteğiniz bana ulaştı' }[ask] + ' – klinikterapist.com',
+    body: [
+      'Merhaba,',
+      '',
+      ...lines,
+      ...(ch?.late ? ['Seansa 24 saatten az kala yapıldığı için, sayfada onayladığınız gibi seans ücretinin tamamı ödenir.'] : []),
+      '',
+      `Randevu sayfanız: ${link}`,
+      'Bu işlemi siz yapmadıysanız lütfen bu e-postayı yanıtlayarak hemen bana yazın.',
+      '',
+      'Osman Güneş Özkurt',
+      'klinikterapist.com',
+    ].join('\n'),
+  };
+}
+
 /** `track.ask` (public): what the client did on their page. */
 export function askTracking(gas: Gas, p: Record<string, unknown>): { view: TrackView } {
   const ask = (['cancel', 'postpone', 'end'] as const).find((a) => a === p.ask);
@@ -140,13 +195,16 @@ export function askTracking(gas: Gas, p: Record<string, unknown>): { view: Track
         if (allBusy(gas, cfg!, now, others).some((b) => overlaps(mine, b))) throw failure('taken');
       }
     }
-    if (!allowSend(gas, c.contact.email)) throw failure('busy');
+    // Two e-mails: the owner's and the client's own copy (E1).
+    if (!allowSend(gas, c.contact.email, 2)) throw failure('busy');
     const all = clients.map((x) => (x.id === c.id ? updated : x));
     writeItems(gas, CLIENTS, all);
     return { c: updated, clients: all, change };
   });
   const m = ownerMail(c, ask, change, note);
   gas.mail.send({ to: owner, replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'klinikterapist.com randevu sayfası' });
+  const mine = clientMail(gas, c, ask, change);
+  gas.mail.send({ to: c.contact.email, replyTo: owner, subject: mine.subject, body: mine.body, name: 'Osman Güneş Özkurt' });
   return { view: viewOf(gas, clients, c, gas.now()) };
 }
 

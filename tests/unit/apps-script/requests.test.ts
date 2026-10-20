@@ -372,9 +372,17 @@ describe("The client's own page (tracking.ts)", () => {
     t.gas.mails.length = 0;
     expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-29', time: '19:20', note: 'Hastayım' }).ok).toBe(true);
     expect(t.client().sessions).toContainEqual(expect.objectContaining({ day: '2026-10-29', status: 'cancelled', by: 'client', note: 'Hastayım' }));
-    expect(t.gas.mails).toEqual([expect.objectContaining({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' })]);
+    expect(t.gas.mails).toEqual([
+      expect.objectContaining({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' }),
+      expect.objectContaining({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Seansınız iptal edildi – klinikterapist.com' }),
+    ]);
     expect(t.gas.mails[0].subject).toContain('KT001AY seansını iptal etti');
     expect(t.gas.mails[0].body).toContain('Hastayım');
+    // E1: the client's own copy is fixed text: the date, the page link; not their note, no fee line.
+    expect(t.gas.mails[1].body).toContain('29 Ekim 2026, Perşembe, 19.20 seansınız');
+    expect(t.gas.mails[1].body).toContain('https://klinikterapist.com/randevum/#k=');
+    expect(t.gas.mails[1].body).not.toContain('Hastayım');
+    expect(t.gas.mails[1].body).not.toContain('ücretinin tamamı');
     t.gas.cache.put('booking.busy', '', 1);
     expect(bookingBusy(t.gas).busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(false);
   });
@@ -390,6 +398,8 @@ describe("The client's own page (tracking.ts)", () => {
     expect(t.client().sessions).toContainEqual(expect.objectContaining({ day: '2026-10-22', status: 'cancelled', by: 'client', late: true }));
     expect(t.gas.mails[0].subject).toContain('iptal etti (24 saatten az kala)');
     expect(t.gas.mails[0].body).toContain('seans ücretinin tamamının ödeneceğini');
+    expect(t.gas.mails[1]).toMatchObject({ to: 'ayse@example.com' });
+    expect(t.gas.mails[1].body).toContain('seans ücretinin tamamı ödenir');
     // Not one of their sessions.
     expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-30', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'gone' } });
   });
@@ -418,13 +428,17 @@ describe("The client's own page (tracking.ts)", () => {
     );
     expect(t.client().sessions.find((x) => x.day === '2026-10-29')).not.toHaveProperty('late');
     expect(t.gas.mails[0].subject).toContain('KT001AY seansını erteledi');
+    expect(t.gas.mails[1]).toMatchObject({ to: 'ayse@example.com', subject: 'Seansınız ertelendi – klinikterapist.com' });
     t.gas.cache.put('booking.busy', '', 1);
     const busy = bookingBusy(t.gas).busy;
     expect(busy.some((b) => b.start === at(`${day}T${free}:00`))).toBe(true);
     expect(busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(false);
+    // Each change sends two e-mails (the owner's and the client's copy): at most five an hour per address.
+    t.gas.clock.now += 3600 * 1000;
     expect(t.pub('track.ask', { code: t.code, ask: 'end', note: 'Kendimi iyi hissediyorum' }).ok).toBe(true);
     expect(t.client().endAsked).toMatchObject({ note: 'Kendimi iyi hissediyorum' });
-    expect(t.gas.mails.at(-1)!.subject).toContain('terapiyi sonlandırmak istiyor');
+    expect(t.gas.mails.at(-2)!.subject).toContain('terapiyi sonlandırmak istiyor');
+    expect(t.gas.mails.at(-1)!).toMatchObject({ to: 'ayse@example.com', subject: 'İsteğiniz bana ulaştı – klinikterapist.com' });
   });
 
   it('the owner sends the link from the panel; ending therapy kills it', () => {
