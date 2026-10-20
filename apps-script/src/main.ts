@@ -17,6 +17,7 @@ import { addClosed, addConfirmed, listEntries, removeEntry } from './calendar';
 import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor, listClients, listRequests, requestToClient, revertClient, revertRequest, warnExpiringHolds } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
 import { listEvents } from './events';
+import { sendInfo } from './info';
 import { payClient, readPayment, runReminders, savePayment } from './payment';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
@@ -31,6 +32,7 @@ export const PUBLIC_ACTIONS: Record<string, Handler> = {
   'booking.request': (gas, p) => sendBooking(gas, p),
   'booking.waitlist': (gas, p) => joinWaitlist(gas, p),
   'booking.verify': (gas, p) => verifyEmail(gas, p),
+  'info.request': (gas, p) => sendInfo(gas, p),
   'track.view': (gas, p) => viewTracking(gas, p),
   'track.ask': (gas, p) => {
     const out = askTracking(gas, p);

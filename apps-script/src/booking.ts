@@ -19,6 +19,7 @@ import { allBusy, markVerified, saveRequest } from './requests';
 import { isClosed, markWaitlistVerified } from './waitlist';
 import { refOf, verifyLines, verifyLink } from './verify';
 import { initials, logEvent, shortWhen } from './events';
+import { assertMailDomain } from './mx';
 import { parseBooking } from '../../src/lib/schemas';
 import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
@@ -189,6 +190,7 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   if (plain.slot) throw taken();
 
   const email = input.email.trim().toLowerCase();
+  assertMailDomain(gas, email);
   const lang: BookingLang = p.lang === 'en' ? 'en' : 'tr';
   // Two e-mails per request: count both against the shared limits.
   if (!allowSend(gas, email, 2)) throw badRequest(TOO_MANY);

@@ -5,7 +5,7 @@ import { bookingBusy } from '../../../apps-script/src/booking';
 import { issueSession } from '../../../apps-script/src/auth';
 import { REQUEST_KEEP_MS } from '../../../apps-script/src/requests';
 import { seal, unseal } from '../../../apps-script/src/seal';
-import { fakeGas, type MemFile } from './fake-gas';
+import { fakeGas, json, type MemFile } from './fake-gas';
 import { FakeGitHub } from './fake-github';
 import { ghProps } from './publish-fixtures';
 import { parseBooking } from '../../../src/lib/schemas';
@@ -696,5 +696,47 @@ describe('Faz 2: Bildirimler', () => {
     expect(JSON.stringify(events)).not.toMatch(/ayse@|Ayşe/);
     expect(s.gas.root.findFolder('randevular')!.findFile('olaylar.json')!.read()).not.toContain('KT001AY');
     expect(handle(s.gas, JSON.stringify({ action: 'events.list' }))).toMatchObject({ ok: false });
+  });
+});
+
+describe('Faz 3: mistyped addresses and Süreç bilgisi', () => {
+  /** A DNS where example.com takes e-mail and gmial.con does not exist. */
+  function withDns() {
+    const s = setup();
+    s.gas.routes.push((url) => {
+      if (!url.startsWith('https://dns.google/resolve')) return undefined;
+      const name = new URL(url).searchParams.get('name');
+      return name === 'example.com' ? json(200, { Status: 0, Answer: [{ data: '10 mx.example.com.' }] }) : json(200, { Status: 3 });
+    });
+    return s;
+  }
+
+  it('a domain that takes no e-mail stops the booking, the list and the information form before any e-mail', () => {
+    const s = withDns();
+    s.gas.mails.length = 0;
+    expect(s.send({ ...session, email: 'ayse@gmial.con' })).toMatchObject({ ok: false, data: { reason: 'email' } });
+    expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'ayse@gmial.con', topics: ['sure'], consent: true }))).toMatchObject({ ok: false, data: { reason: 'email' } });
+    expect(s.gas.mails).toEqual([]);
+    expect(s.send(session).ok).toBe(true);
+  });
+
+  it('Süreç bilgisi sends only the chosen answers, never the fee; the address is not kept', () => {
+    const s = withDns();
+    s.gas.mails.length = 0;
+    expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'Merak@Example.com', topics: ['sure', 'ucret'], consent: true, lang: 'tr' })).ok).toBe(true);
+    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merak@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'İstediğiniz bilgiler – klinikterapist.com' })]);
+    const body = s.gas.mails[0].body;
+    expect(body).toContain('Seanslar ne kadar sürer, ne sıklıkla olur?');
+    expect(body).toContain('randevunuz oluştuğunda size e-postayla iletilir');
+    expect(body).not.toContain('Gizlilik nasıl korunur?');
+    expect(body).toContain('https://klinikterapist.com/on-gorusme/');
+    expect(body).not.toMatch(/\d+\s?TL/);
+    const events = s.call<{ events: { kind: string; text: string }[] }>('events.list').data.events;
+    expect(events[0]).toMatchObject({ kind: 'info', text: 'Bilgi talebi: Seanslar ne kadar sürer, ne sıklıkla olur; Seans ücreti ne kadar' });
+    expect(JSON.stringify(events)).not.toContain('merak@');
+    // No topic, an unknown topic or no consent: refused.
+    for (const bad of [{ topics: [] }, { topics: ['bogus'] }, { topics: ['sure'], consent: false }]) {
+      expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'merak@example.com', consent: true, ...bad })).ok).toBe(false);
+    }
   });
 });
