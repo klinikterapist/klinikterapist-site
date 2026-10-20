@@ -42,9 +42,10 @@ function live(gas: Gas): WaitlistEntry[] {
   return kept;
 }
 
-export const bookingState = (gas: Gas) => ({ open: !isClosed(gas), waiting: live(gas).length });
+// Under the lock: dropping the old entries writes the file, and someone may be joining the list.
+export const bookingState = (gas: Gas) => gas.withLock(() => ({ open: !isClosed(gas), waiting: live(gas).length }));
 
-export const listWaitlist = (gas: Gas) => ({ entries: live(gas).sort((a, b) => a.createdAt - b.createdAt) });
+export const listWaitlist = (gas: Gas) => gas.withLock(() => ({ entries: live(gas).sort((a, b) => a.createdAt - b.createdAt) }));
 
 export function markWaitlistVerified(gas: Gas, id: string): void {
   gas.withLock(() => {

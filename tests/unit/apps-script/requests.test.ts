@@ -5,7 +5,7 @@ import { bookingBusy } from '../../../apps-script/src/booking';
 import { issueSession } from '../../../apps-script/src/auth';
 import { REQUEST_KEEP_MS } from '../../../apps-script/src/requests';
 import { seal, unseal } from '../../../apps-script/src/seal';
-import { fakeGas } from './fake-gas';
+import { fakeGas, type MemFile } from './fake-gas';
 import { FakeGitHub } from './fake-github';
 import { ghProps } from './publish-fixtures';
 import { parseBooking } from '../../../src/lib/schemas';
@@ -179,6 +179,46 @@ describe('Talepler (backend)', () => {
     send(session);
     gas.clock.now = NOW + REQUEST_KEEP_MS + 1;
     expect(requests()).toEqual([]);
+  });
+
+  it('every write of the appointment files happens under the script lock (a request coming in at the same moment is not lost)', () => {
+    const s = setup();
+    let depth = 0;
+    const unlocked: string[] = [];
+    s.gas.withLock = (fn) => {
+      depth++;
+      try {
+        return fn();
+      } finally {
+        depth--;
+      }
+    };
+    const folder = s.gas.root.findFolder('randevular') ?? s.gas.root.createFolder('randevular');
+    const create = folder.createFile.bind(folder);
+    const watch = (f: MemFile) => {
+      const write = f.write.bind(f);
+      f.write = (text: string) => {
+        if (!depth) unlocked.push(f.name);
+        write(text);
+      };
+      return f;
+    };
+    folder.createFile = (name, content, kind) => {
+      if (!depth) unlocked.push(name);
+      return watch(create(name, content, kind));
+    };
+    expect(s.send(session).ok).toBe(true);
+    expect(s.send(intro).ok).toBe(true);
+    const [a] = s.requests();
+    expect(s.call('requests.decide', { id: a.id, decision: 'cancel', ...mail }).ok).toBe(true);
+    s.gas.clock.now = NOW + REQUEST_KEEP_MS + 1;
+    expect(s.requests()).toEqual([]);
+    s.call('booking.setOpen', { open: false });
+    handle(s.gas, JSON.stringify({ action: 'booking.waitlist', name: 'Elif Bekler', email: 'elif@example.com', phone: '0534 000 00 00', kinds: ['individual'], times: [], reason: '', consent: true, healthConsent: false, lang: 'tr' }));
+    s.gas.clock.now += 91 * 24 * 3600 * 1000;
+    expect(s.call<{ waiting: number }>('booking.state').data.waiting).toBe(0);
+    s.call('waitlist.list');
+    expect(unlocked).toEqual([]);
   });
 });
 

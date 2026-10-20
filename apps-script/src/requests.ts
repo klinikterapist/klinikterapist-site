@@ -127,8 +127,9 @@ export function addManual(gas: Gas, cfg: BookingConfig, p: Record<string, unknow
   });
 }
 
+/** Under the lock: dropping the old requests writes the file, and a request may be coming in. */
 export function listRequests(gas: Gas): { requests: BookingRequest[] } {
-  return { requests: liveRequests(gas).sort((a, b) => a.createdAt - b.createdAt) };
+  return gas.withLock(() => ({ requests: liveRequests(gas).sort((a, b) => a.createdAt - b.createdAt) }));
 }
 
 const str = (v: unknown, max: number) => (typeof v === 'string' && v.trim() && v.length <= max ? v : null);
@@ -161,25 +162,29 @@ export function decideRequest(gas: Gas, cfg: BookingConfig, p: Record<string, un
   const body = str(p.body, 5000);
   if (!decision || !subject || !body) throw badRequest(EMPTY_MAIL);
   const owner = gas.props.get('OWNER_EMAIL')?.trim() ?? '';
-  const requests = liveRequests(gas);
-  const r = requests.find((x) => x.id === p.id);
-  if (!r) throw new ApiError('not_found', NOT_FOUND);
-  if (decision === 'approve' && r.status === 'approved') throw badRequest('Bu talep zaten onaylanmış.');
+  // Under the lock, like every other write of the file: a request coming in from the site at the
+  // same moment would otherwise be lost when this one writes the list back.
+  return gas.withLock(() => {
+    const requests = liveRequests(gas);
+    const r = requests.find((x) => x.id === p.id);
+    if (!r) throw new ApiError('not_found', NOT_FOUND);
+    if (decision === 'approve' && r.status === 'approved') throw badRequest('Bu talep zaten onaylanmış.');
 
-  let calendarId: string | undefined;
-  if (decision === 'approve') {
-    calendarId = addConfirmed(gas, cfg, { day: r.day, time: r.time, kind: r.kind, type: r.type }).entry.id;
-  } else {
-    removeEntry(gas, { id: r.calendarId ?? r.holdId });
-    if (r.calendarId) removeEntry(gas, { id: r.holdId });
-  }
-  gas.mail.send({ to: r.email, replyTo: owner, subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
-  write(
-    gas,
-    REQUESTS,
-    decision === 'approve' ? requests.map((x) => (x.id === r.id ? { ...x, status: 'approved' as const, calendarId } : x)) : requests.filter((x) => x.id !== r.id),
-  );
-  return {};
+    let calendarId: string | undefined;
+    if (decision === 'approve') {
+      calendarId = addConfirmed(gas, cfg, { day: r.day, time: r.time, kind: r.kind, type: r.type }).entry.id;
+    } else {
+      removeEntry(gas, { id: r.calendarId ?? r.holdId });
+      if (r.calendarId) removeEntry(gas, { id: r.holdId });
+    }
+    gas.mail.send({ to: r.email, replyTo: owner, subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
+    write(
+      gas,
+      REQUESTS,
+      decision === 'approve' ? requests.map((x) => (x.id === r.id ? { ...x, status: 'approved' as const, calendarId } : x)) : requests.filter((x) => x.id !== r.id),
+    );
+    return {};
+  });
 }
 
 /**
