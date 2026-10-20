@@ -24,6 +24,7 @@ import type { Lang } from '../lib/settings';
 import { getAbout, getProfile } from '../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
+import { profilePageLd } from '../lib/jsonld';
 import { renderMarkdown } from '../lib/markdown';
 import { pathFor } from '../i18n/routes';
 import { bookPath } from '../lib/booking-entry';
@@ -59,9 +60,10 @@ const certificates = about.certificates
   .map((c) => ({ title: c.title[lang].trim(), issuer: c.issuer.trim(), year: c.year.trim(), url: c.url?.trim() ?? '' }))
   .filter((c) => c.title);
 const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter(Boolean).join(' · ');
+const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
 ---
 
-<PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
+<PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths}>
   <div class="container-text inner-page about">
     <header class="about-top">
       <h1>{about.heading[lang]}</h1>

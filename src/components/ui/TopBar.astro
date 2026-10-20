@@ -6,7 +6,6 @@
  */
 import type { Lang } from '../../lib/settings';
 import { pathFor } from '../../i18n/routes';
-import { t } from '../../i18n/ui';
 import SunMark from '../brand/SunMark.astro';
 import { getProfile } from '../../lib/settings';
 import ThemeToggle from '../ThemeToggle.astro';
@@ -29,7 +28,7 @@ const title = profile.title[lang].trim();
 <div class="top-bar">
   {
     left === 'logo' ? (
-      <a class="left logo" href={pathFor('home', lang)} aria-label={t(lang, 'homeLink')}>
+      <a class="left logo" href={pathFor('home', lang)}>
         <SunMark size={30} />
         <span class="brand-text">
           <span class="brand-name">{profile.name}</span>
@@ -96,7 +95,7 @@ const title = profile.title[lang].trim();
     margin-top: 2px;
     overflow: hidden;
     color: var(--muted);
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     letter-spacing: 0.08em;
     text-overflow: ellipsis;
     /* Small capitals, as in the desktop header (owner's review 2026-10-19). */

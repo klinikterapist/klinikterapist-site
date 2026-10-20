@@ -27,9 +27,10 @@ const withPhoto = style !== 'none' && !!photo;
 const kind: PortraitStyle = withPhoto ? style : 'none';
 // The phone column is at most 440 px wide. Desktops never show this block: the <source> only matches
 // below 768 px and the <img> itself is an empty inline GIF, so a desktop fetches no photo here.
+// 860 w: a common Android phone (412 px at 1.75x) needs 721 px and would otherwise fetch the 1080 w file.
 const img = withPhoto
   ? kind === 'background'
-    ? await portraitImage(photo!, [480, 720, 1080])
+    ? await portraitImage(photo!, [480, 720, 860, 1080])
     : await portraitImage(photo!, [112, 224, 336])
   : null;
 const sizes = kind === 'background' ? 'min(100vw, 440px)' : '112px';

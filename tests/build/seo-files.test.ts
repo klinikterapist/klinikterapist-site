@@ -41,6 +41,21 @@ describe('author metadata and web app manifest', () => {
     expect(post.author.url).toMatch(/\/hakkimda\/$/);
   });
 
+  it('the About pages are ProfilePages of the home person, with the work areas', () => {
+    const ldOf = (path: string) => loadPage(path).querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text));
+    const home = ldOf('/').find((x) => x['@type'] === 'Person');
+    for (const [path, lang] of [['/hakkimda/', 'tr'], ['/en/about/', 'en']] as const) {
+      const page = ldOf(path).find((x) => x['@type'] === 'ProfilePage');
+      expect(page, path).toBeTruthy();
+      expect(page.url, path).toMatch(new RegExp(`${path.replace(/\//g, '\\/')}$`));
+      expect(page.inLanguage).toBe(lang);
+      expect(page.mainEntity['@type']).toBe('Person');
+      expect(page.mainEntity['@id']).toBe(home['@id']);
+      expect(page.mainEntity['@context']).toBeUndefined();
+      expect(page.mainEntity.knowsAbout.length, path).toBeGreaterThan(0);
+    }
+  });
+
   it('the home person is a member of the association', () => {
     const ld = loadPage('/').querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text));
     expect(ld.find((x) => x['@type'] === 'Person').memberOf[0].name).toBe('Türk Psikologlar Derneği');

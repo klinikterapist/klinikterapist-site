@@ -95,7 +95,6 @@ describe('contact.send', () => {
     expect(gas.mails[0].subject).not.toMatch(/[\r\n]/);
   });
 
-  const HOUR = 3600 * 1000;
   /** 10:15 UTC: a quarter past a clock hour, so the window boundary is 45 minutes ahead. */
   const quarterPast = Date.UTC(2026, 9, 17, 10, 15);
 

@@ -36,7 +36,7 @@ export const STRINGS = {
   preConsult: { tr: 'Ön Görüşme', en: 'Intro Call' },
   preConsultSub: { tr: 'Ücretsiz · Online', en: 'Free · Online' },
   freeIntroBadge: { tr: 'Ücretsiz ön görüşme', en: 'Free intro call' },
-  freeIntroBadgeHint: { tr: '25 dakika · online', en: '25 minutes · online' },
+  freeIntroBadgeHint: { tr: '25–30 dakika · online', en: '25–30 minutes · online' },
   followSocial: { tr: 'Sosyal medyada takip et', en: 'Follow on social media' },
   andMore: { tr: '{list} ve diğerleri', en: '{list} and more' },
   newPost: { tr: 'YENİ YAZI', en: 'NEW POST' },
@@ -246,7 +246,6 @@ export const STRINGS = {
 
   // Mobile app blocks
   switchLangShort: { tr: 'ENG', en: 'TR' },
-  homeLink: { tr: 'klinikterapist, ana sayfa', en: 'klinikterapist, home page' },
   emergencyNote: {
     tr: "Acil bir durumdaysanız lütfen {number}'yi arayın.",
     en: 'If you are in an emergency, please call {number}.',

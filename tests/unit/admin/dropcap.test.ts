@@ -18,7 +18,7 @@ function setup() {
 /** Document position `offset` characters into paragraph `n` (0-based). */
 function at(e: Editor, n: number, offset: number) {
   let pos = 0;
-  e.state.doc.forEach((node, p, i) => {
+  e.state.doc.forEach((_node, p, i) => {
     if (i === n) pos = p + 1 + offset;
   });
   return pos;

@@ -184,7 +184,10 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     let result: 'sent' | 'taken' | 'closed' | 'email' | 'failed' = 'failed';
     try {
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 20000);
+      // A request does a lot on the backend (domain check, the lock, Drive files, two e-mails) and
+      // Apps Script may start cold: giving up too early shows "failed" for a request that was saved,
+      // and trying again then finds the person's own time "taken".
+      const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 45000);
       try {
         const res = await deps.fetch(endpoint, {
           method: 'POST',

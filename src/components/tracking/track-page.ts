@@ -132,7 +132,8 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     if (demoState) return demoCall(action, p) as T;
     if (!endpoint) throw new Failure('network');
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 20000);
+    // A change takes the lock, writes the file and sends two e-mails; Apps Script may start cold.
+    const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 45000);
     let out: { ok?: boolean; data?: unknown };
     try {
       const res = await deps.fetch(endpoint, {

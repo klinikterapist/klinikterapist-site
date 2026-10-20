@@ -58,7 +58,8 @@ export function mountWaitlist(section: HTMLElement, endpoint: string, lang: 'tr'
     let badDomain = false;
     try {
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 20000);
+      // Same as the booking form: the backend saves and sends two e-mails, and may start cold.
+      const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 45000);
       try {
         const res = await deps.fetch(endpoint, {
           method: 'POST',

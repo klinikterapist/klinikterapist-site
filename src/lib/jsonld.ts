@@ -28,6 +28,22 @@ export function personLd(lang: Lang) {
   };
 }
 
+/**
+ * The About page as the person's profile page: the same person as the home page (same `@id`), with
+ * the work areas listed on the page as `knowsAbout`.
+ */
+export function profilePageLd(lang: Lang, areas: string[]) {
+  const { '@context': _context, ...person } = personLd(lang);
+  const knowsAbout = areas.map((a) => a.trim()).filter(Boolean);
+  return {
+    '@context': CONTEXT,
+    '@type': 'ProfilePage',
+    url: absoluteUrl(pathFor('about', lang)),
+    inLanguage: lang,
+    mainEntity: { ...person, ...(knowsAbout.length > 0 ? { knowsAbout } : {}) },
+  };
+}
+
 /** Online-only service: deliberately no `address` (no office, no city). */
 export function professionalServiceLd(lang: Lang) {
   const profile = getProfile();
