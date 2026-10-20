@@ -6,30 +6,37 @@
  * the Drive files cannot make one. "Bağlantıyı yenile" counts the version up (the old link stops
  * working); ending therapy deletes the client, and with it every link.
  *
- * Public: `track.view` (the next sessions, no name, no e-mail, no notes) and `track.ask` (cancel a
- * session at once, ask for another time, or say they want to end therapy). Every ask e-mails the
- * owner, with Reply-To the client so the owner can answer from Gmail. Wrong codes are counted for
- * the whole site (Apps Script sees no IP): after 30 in a clock hour the page waits for the next hour.
+ * Public: `track.view` (the therapy as the owner sees it, the next sessions and the times others
+ * take; no name, no e-mail, no notes) and `track.ask`: cancel a session, move it to a free time of
+ * the booking calendar (checked again here), or say they want to end therapy. Less than 24 hours
+ * before a session the page warns that the full fee is due; the change is taken only with that
+ * warning accepted (`lateOk`), and the session is marked `late`. Every ask e-mails the owner, with
+ * Reply-To the client so the owner can answer from Gmail. Wrong codes are counted for the whole site
+ * (Apps Script sees no IP): after 30 in a clock hour the page waits for the next hour.
  */
 import type { Gas } from './gas';
-import { ApiError, badRequest } from './respond';
+import { ApiError } from './respond';
 import { derive } from './seal';
 import { allowSend } from './contact';
 import { readItems, writeItems } from './store';
-import { CLIENTS, sendMail, type StoredClient } from './requests';
-import { INTRO_MINUTES, formatDay } from '../../src/lib/booking-form';
-import { SessionError, applyChange, askReschedule } from '../../src/lib/sessions';
+import { config } from './booking';
+import { CLIENTS, allBusy, sendMail, type StoredClient } from './requests';
+import { INTRO_MINUTES, formatDay, holdOf, overlaps, timesFor } from '../../src/lib/booking-form';
+import { SessionError, applyChange, sessionKey } from '../../src/lib/sessions';
 import { TRACK_CODE_RE, TRACK_NOTE_MAX, TRACK_PARAM, TRACK_PATH, trackView, type TrackAsk, type TrackFailure, type TrackView } from '../../src/lib/tracking';
 
 const SITE = 'https://klinikterapist.com';
 const PANEL_URL = 'https://klinikterapist.com/admin/';
 export const TRACK_BAD_MAX = 30;
 const HOUR_MS = 3600 * 1000;
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const MESSAGES: Record<TrackFailure, string> = {
   link: 'Bu bağlantı geçersiz ya da artık kullanılmıyor.',
-  late: 'Seansa 24 saatten az kaldı; bu sayfadan değiştirilemez. Lütfen doğrudan e-posta gönderin.',
+  late: 'Seansa 24 saatten az kaldı; önce uyarının onaylanması gerekir.',
   gone: 'Bu seans artık değiştirilemez. Sayfayı yenileyin.',
+  taken: 'Seçilen saat artık uygun değil. Başka bir saat seçin.',
   busy: 'Şu anda çok fazla istek var. Lütfen biraz sonra tekrar deneyin.',
   invalid: 'İstek anlaşılamadı. Sayfayı yenileyip tekrar deneyin.',
 };
@@ -60,22 +67,30 @@ function clientOf(gas: Gas, code: unknown): { clients: StoredClient[]; c: Stored
   return { clients, c };
 }
 
+/** The page's view: the times the others take, this client's own left out (the page adds them). */
+const viewOf = (gas: Gas, clients: StoredClient[], c: StoredClient, now: number) => trackView(c, now, allBusy(gas, config(gas), now, clients.filter((x) => x.id !== c.id)));
+
 /** `track.view` (public). */
 export function viewTracking(gas: Gas, p: Record<string, unknown>): TrackView {
-  return trackView(clientOf(gas, p.code).c, gas.now());
+  const { clients, c } = clientOf(gas, p.code);
+  return viewOf(gas, clients, c, gas.now());
 }
 
 const when = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s.time.replace(':', '.')}`;
 
-function ownerMail(c: StoredClient, ask: TrackAsk, s: { day: string; time: string } | null, note: string): { subject: string; body: string } {
+type Change = { s: { day: string; time: string }; to?: { day: string; time: string }; late: boolean };
+
+function ownerMail(c: StoredClient, ask: TrackAsk, ch: Change | null, note: string): { subject: string; body: string } {
   const page = `${PANEL_URL}#/seans-takip/${c.id}`;
+  const fee = ch?.late ? ['', 'Seansa 24 saatten az kala yapıldı. Danışan, seans ücretinin tamamının ödeneceğini ve bunun kendi sorumluluğunda olduğunu belirten uyarıyı onayladı.'] : [];
   const lines =
     ask === 'cancel'
-      ? [`${c.number}, kendi randevu sayfasından ${when(s!)} seansını iptal etti.`, 'Seans Seans takip\'te "İptal edildi · danışan istedi" olarak işaretlendi; saat takvimde ve sitede açıldı.']
-      : ask === 'reschedule'
-        ? [`${c.number}, ${when(s!)} seansı için başka bir saat istiyor.`, 'Seans şimdilik planlı duruyor. Yeni saati danışanla konuşup Seans takip\'te "Ertele" ile işleyin.']
-        : [`${c.number}, kendi randevu sayfasından terapiyi sonlandırmak istediğini bildirdi.`, 'Danışanla konuştuktan sonra Seans takip\'te "Terapiyi sonlandır"ı kullanabilirsiniz.'];
-  const subject = { cancel: `seansını iptal etti — ${s ? when(s) : ''}`, reschedule: `başka bir saat istiyor — ${s ? when(s) : ''}`, end: 'terapiyi sonlandırmak istiyor' }[ask];
+      ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını iptal etti.`, 'Seans Seans takip\'te "İptal edildi · danışan istedi" olarak işaretlendi; saat takvimde ve sitede açıldı.', ...fee]
+      : ask === 'postpone'
+        ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını ${when(ch!.to!)} tarihine erteledi.`, 'Seans takip\'te "Ertelendi · danışan istedi" olarak işaretlendi; yeni saat takvime işlendi, eski saat açıldı.', ...fee]
+        : [`${c.number}, kendi randevu sayfasından terapiyi sonlandırmak istediğini bildirdi.`, 'Danışanla konuştuktan sonra danışanın sayfasında "Terapiyi sonlandır"ı kullanabilirsiniz.'];
+  const late = ch?.late ? ' (24 saatten az kala)' : '';
+  const subject = { cancel: `seansını iptal etti${late} — ${ch ? when(ch.s) : ''}`, postpone: `seansını erteledi${late} — ${ch ? `${when(ch.s)} → ${ch.to ? when(ch.to) : ''}` : ''}`, end: 'terapiyi sonlandırmak istiyor' }[ask];
   return {
     subject: `[klinikterapist] ${c.number} ${subject}`,
     body: [
@@ -90,43 +105,57 @@ function ownerMail(c: StoredClient, ask: TrackAsk, s: { day: string; time: strin
   };
 }
 
-/** `track.ask` (public): what the client asked for on their page. */
+/** `track.ask` (public): what the client did on their page. */
 export function askTracking(gas: Gas, p: Record<string, unknown>): { view: TrackView } {
-  const ask = (['cancel', 'reschedule', 'end'] as const).find((a) => a === p.ask);
+  const ask = (['cancel', 'postpone', 'end'] as const).find((a) => a === p.ask);
   if (!ask) throw failure('invalid');
   const note = typeof p.note === 'string' ? p.note.trim().slice(0, TRACK_NOTE_MAX) : '';
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw failure('busy');
-  const { c, s } = gas.withLock(() => {
+  const cfg = ask === 'postpone' ? config(gas) : null;
+  const { c, clients, change } = gas.withLock(() => {
     const { clients, c } = clientOf(gas, p.code);
     const now = gas.now();
     let updated: StoredClient;
-    let s: { day: string; time: string } | null = null;
+    let change: Change | null = null;
     if (ask === 'end') {
       updated = { ...c, endAsked: { at: now, ...(note ? { note } : {}) } };
     } else {
       const shown = trackView(c, now).next.find((x) => x.day === p.day && x.time === p.time);
-      if (!shown || shown.status !== 'planned') throw failure('gone');
-      if (shown.late) throw failure('late');
-      s = { day: shown.day, time: shown.time };
+      if (!shown || shown.status !== 'planned' || shown.kind === 'intro') throw failure('gone');
+      if (shown.late && p.lateOk !== true) throw failure('late');
+      change = { s: { day: shown.day, time: shown.time }, late: shown.late };
+      let to: { day: string; time: string } | undefined;
+      if (ask === 'postpone') {
+        if (typeof p.newDay !== 'string' || !DAY_RE.test(p.newDay) || typeof p.newTime !== 'string' || !TIME_RE.test(p.newTime)) throw failure('invalid');
+        if (!timesFor(cfg!, 'session', p.newDay, now).includes(p.newTime)) throw failure('taken');
+        to = { day: p.newDay, time: p.newTime };
+        change.to = to;
+      }
+      let result: ReturnType<typeof applyChange>;
       try {
-        const sessions =
-          ask === 'cancel'
-            ? applyChange(c, { op: 'mark', day: shown.day, time: shown.time, status: 'cancelled', by: 'client', note }, INTRO_MINUTES).sessions
-            : askReschedule(c, shown.day, shown.time, note);
-        updated = { ...c, sessions };
+        result = applyChange(c, { op: 'mark', day: shown.day, time: shown.time, status: ask === 'cancel' ? 'cancelled' : 'postponed', by: 'client', note, ...(to ? { newDay: to.day, newTime: to.time } : {}) }, INTRO_MINUTES);
       } catch (e) {
-        if (e instanceof SessionError) throw failure('gone');
+        if (e instanceof SessionError) throw failure(ask === 'postpone' ? 'taken' : 'gone');
         throw e;
+      }
+      const key = sessionKey(shown);
+      const sessions = shown.late ? result.sessions.map((x) => (sessionKey(x) === key ? { ...x, late: true as const } : x)) : result.sessions;
+      updated = { ...c, sessions };
+      if (result.added) {
+        const mine = holdOf(result.added.day, result.added.time, result.added.minutes, cfg!.restMinutes);
+        const others = clients.map((x) => (x.id === c.id ? { ...updated, sessions: sessions.filter((s) => sessionKey(s) !== sessionKey(result.added!)) } : x));
+        if (allBusy(gas, cfg!, now, others).some((b) => overlaps(mine, b))) throw failure('taken');
       }
     }
     if (!allowSend(gas, c.contact.email)) throw failure('busy');
-    writeItems(gas, CLIENTS, clients.map((x) => (x.id === c.id ? updated : x)));
-    return { c: updated, s };
+    const all = clients.map((x) => (x.id === c.id ? updated : x));
+    writeItems(gas, CLIENTS, all);
+    return { c: updated, clients: all, change };
   });
-  const m = ownerMail(c, ask, s, note);
+  const m = ownerMail(c, ask, change, note);
   gas.mail.send({ to: owner, replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'klinikterapist.com randevu sayfası' });
-  return { view: trackView(c, gas.now()) };
+  return { view: viewOf(gas, clients, c, gas.now()) };
 }
 
 const NO_CLIENT = 'Bu danışan bulunamadı. Başka bir yerde takipten çıkarılmış olabilir.';
