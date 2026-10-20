@@ -19,6 +19,7 @@ import { BOOKING_LIMITS, INTRO_MINUTES, REQUEST_KEEP_DAYS, requestKeepUntil, SES
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
 import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, oneLine } from './text';
+import { initials, logEvent, shortWhen } from './events';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
 export const REQUESTS = 'talepler.json';
@@ -172,6 +173,7 @@ export function warnExpiringHolds(gas: Gas): number {
     return list;
   });
   if (!due.length) return 0;
+  for (const r of due) logEvent(gas, 'reminder', `Tutma süresi doluyor: ${initials(r.name)} · ${shortWhen(r)}`, '#/randevular');
   const now = gas.now();
   const left = (r: BookingRequest) => {
     const m = Math.round((r.createdAt + HOLD_MS - now) / 60000);
@@ -251,6 +253,8 @@ export function decideRequest(gas: Gas, cfg: BookingConfig, p: Record<string, un
       REQUESTS,
       decision === 'approve' ? requests.map((x) => (x.id === r.id ? { ...x, status: 'approved' as const, calendarId } : x)) : requests.filter((x) => x.id !== r.id),
     );
+    const said = { approve: 'onaylandı', unavailable: '"uygun değilim" yanıtı gitti', cancel: 'iptal edildi' }[decision];
+    logEvent(gas, 'decision', `Talep ${said}: ${initials(r.name)} · ${shortWhen(r)}`, '#/randevular');
     return {};
   });
 }
@@ -334,6 +338,7 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
     if (r.kind === 'session' && r.calendarId) removeEntry(gas, { id: r.calendarId });
     write(gas, CLIENTS, [...read<StoredClient>(gas, CLIENTS), client]);
     write(gas, REQUESTS, requests.filter((x) => x.id !== r.id));
+    logEvent(gas, 'client', `${client.number} Seans takibe alındı`, `#/seans-takip/${client.id}`);
     return { client: publicClient(client) };
   });
 }
@@ -359,6 +364,7 @@ export function endClient(gas: Gas, p: Record<string, unknown>): Record<string, 
     if (!c) throw new ApiError('not_found', NO_CLIENT);
     if (mode !== 'delete') sendMail(gas, c.contact.email, p);
     write(gas, CLIENTS, mode === 'closing' ? clients.map((x) => (x.id === c.id ? { ...x, status: 'closing' as const } : x)) : clients.filter((x) => x.id !== c.id));
+    logEvent(gas, 'client', `${c.number}: ${{ complete: 'terapi tamamlandı', closing: 'sonlandırma görüşmesi daveti gitti', delete: 'Seans takipten silindi' }[mode]}`, mode === 'closing' ? `#/seans-takip/${c.id}` : '#/seans-takip');
     return {};
   });
 }

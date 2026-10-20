@@ -3,7 +3,7 @@
  * Seeded with the real settings files and the fixture posts. Never shipped: the panel only
  * imports it behind `import.meta.env.DEV`.
  */
-import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
+import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type PanelEvent, type PanelEventKind, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
 import { INTRO_MINUTES, PREVIEW_CLOSED_KEY, clientNumber, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
@@ -50,6 +50,8 @@ export type MockState = {
   linkGen: Map<string, number>;
   /** The owner's fees and payment details (Faz 1). */
   payment: PaymentSettings;
+  /** Bildirimler (Faz 2), oldest first. */
+  events: PanelEvent[];
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
@@ -64,7 +66,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [] };
   let clientSeq = 0;
   if (opts.demoRequests) {
     try {
@@ -97,6 +99,13 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', note: 'Hastalık', late: true },
       ],
     });
+    // A few things that happened, for Bildirimler.
+    const ev = (ago: number, kind: PanelEventKind, text: string, link?: string) => state.events.push({ id: `demo-ev-${state.events.length}`, at: now - ago, kind, text, ...(link ? { link } : {}) });
+    ev(5 * 864e5, 'client', 'KT001ZO seansını iptal etti · 24 saatten az kala (tam ücret)', '#/seans-takip/demo-client');
+    ev(2 * 864e5, 'waitlist', 'Bekleme listesine yeni kayıt: E. B.', '#/randevular?liste');
+    ev(26 * 3600e3, 'request', 'Yeni ön görüşme talebi: M. D.', '#/randevular');
+    ev(3 * 3600e3, 'request', 'Yeni seans talebi: A. Ö.', '#/randevular');
+    ev(2 * 3600e3, 'reminder', 'Tutma süresi doluyor: M. D.', '#/randevular');
     state.waitlist.push({
       id: 'demo-wait', createdAt: now - 2 * 864e5, name: 'Elif Bekler', email: 'elif@example.com', phone: '0534 000 00 00', kinds: ['individual'], times: ['weekday-evening'],
       reason: 'Son aylarda iş stresiyle baş etmekte zorlanıyorum.', lang: 'tr', verified: true,
@@ -398,6 +407,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         const sig = `${id}${state.linkGen.get(id) ?? 0}`.padEnd(32, 'x').slice(0, 32).replace(/[^\w-]/g, 'x');
         return { link: `https://klinikterapist.com${TRACK_PATH[c.contact.lang]}#k=${id}.${sig}` };
       }),
+    eventsList: () => wait(() => ({ events: [...state.events].reverse().sort((a, b) => b.at - a.at) })),
     paymentGet: () => wait(() => ({ payment: structuredClone(state.payment) })),
     paymentSet: (payment) =>
       wait(() => {
@@ -414,6 +424,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
           const sessions = applyChange(c, { op: 'pay', day, time, paid, paidAt: clock() }, INTRO_MINUTES).sessions;
           if (paid && m) mail(c.contact.email, m.subject, m.body);
           c.sessions = sessions;
+          state.events.push({ id: Math.random().toString(36).slice(2, 10), at: clock(), kind: 'payment', text: `${c.number}: ${day} seansı ${paid ? 'ödendi' : 'için ödeme işareti kaldırıldı'}`, link: `#/seans-takip/${c.id}` });
         } catch (e) {
           if (e instanceof SessionError) throw new ApiFailure('bad_request', e.message);
           throw e;

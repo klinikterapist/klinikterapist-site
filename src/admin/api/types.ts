@@ -155,6 +155,10 @@ export type BookingRequest = {
   source?: 'site' | 'manual';
 };
 
+/** Bildirimler (Faz 2): what happened. `link`: a panel route (`#/…`) to the place it concerns. */
+export type PanelEventKind = 'request' | 'decision' | 'client' | 'payment' | 'reminder' | 'waitlist' | 'info';
+export type PanelEvent = { id: string; at: number; kind: PanelEventKind; text: string; link?: string };
+
 /** "Haber et": someone who wants a time when one frees up (booking closed). Kept at most 90 days. */
 export type WaitlistEntry = {
   id: string;
@@ -281,6 +285,8 @@ export interface Api {
   clientRevert(input: { id: string; subject: string; body: string }): Promise<void>;
   /** Marks a session (attended, cancelled …), adds a closing or extra session, or removes one. */
   clientSession(input: SessionChange): Promise<{ client: Client }>;
+  /** Bildirimler: the last 90 days, newest first. */
+  eventsList(): Promise<{ events: PanelEvent[] }>;
   /** The owner's fees, bank details and payment link (script properties, never in the repository). */
   paymentGet(): Promise<{ payment: PaymentSettings }>;
   paymentSet(payment: PaymentSettings): Promise<{ payment: PaymentSettings }>;
@@ -353,6 +359,7 @@ export const ACTIONS = {
   clientSession: 'clients.session',
   clientLink: 'clients.link',
   clientLinkMail: 'clients.linkMail',
+  eventsList: 'events.list',
   paymentGet: 'payment.get',
   paymentSet: 'payment.set',
   clientPay: 'clients.pay',

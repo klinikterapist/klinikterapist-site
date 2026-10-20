@@ -16,6 +16,7 @@ import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from '
 import { addClosed, addConfirmed, listEntries, removeEntry } from './calendar';
 import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor, listClients, listRequests, requestToClient, revertClient, revertRequest, warnExpiringHolds } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
+import { listEvents } from './events';
 import { payClient, readPayment, runReminders, savePayment } from './payment';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
@@ -120,6 +121,7 @@ export const ACTIONS: Record<string, Handler> = {
   'clients.linkMail': (gas, p) => mailClientLink(gas, p),
   'clients.mail': (gas, p) => mailClientLink(gas, p),
   'clients.pay': (gas, p) => payClient(gas, p),
+  'events.list': (gas) => listEvents(gas),
   'payment.get': (gas) => readPayment(gas),
   'payment.set': (gas, p) => savePayment(gas, p),
   'requests.add': (gas, p) => {

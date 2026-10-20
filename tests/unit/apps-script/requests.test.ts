@@ -673,3 +673,28 @@ describe('Faz 2: Saat kapat', () => {
     expect(s.send({ ...session, day: '2026-10-30', time: '10:00' }).ok).toBe(true);
   });
 });
+
+describe('Faz 2: Bildirimler', () => {
+  it('records what happened with initials or the client number, never an address, newest first; sealed in Drive', () => {
+    const s = setup();
+    s.send(session);
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    const cid = s.call<{ client: { id: string } }>('requests.toClient', { id }).data.client.id;
+    s.call('clients.pay', { id: cid, day: '2026-10-29', time: '19:20', paid: true });
+    const code = s.call<{ link: string }>('clients.link', { id: cid }).data.link.split('#k=')[1];
+    handle(s.gas, JSON.stringify({ action: 'track.ask', code, ask: 'cancel', day: '2026-11-05', time: '19:20' }));
+    const events = s.call<{ events: { kind: string; text: string; link?: string }[] }>('events.list').data.events;
+    expect(events.map((e) => e.text)).toEqual([
+      'KT001AY seansını iptal etti · 5 Kasım, 19.20',
+      'KT001AY: 29 Ekim, 19.20 seansı ödendi',
+      'KT001AY Seans takibe alındı',
+      'Talep onaylandı: A. Y. · 22 Ekim, 19.20',
+      'Yeni seans talebi: A. Y. · 22 Ekim, 19.20',
+    ]);
+    expect(events[0].link).toBe(`#/seans-takip/${cid}`);
+    expect(JSON.stringify(events)).not.toMatch(/ayse@|Ayşe/);
+    expect(s.gas.root.findFolder('randevular')!.findFile('olaylar.json')!.read()).not.toContain('KT001AY');
+    expect(handle(s.gas, JSON.stringify({ action: 'events.list' }))).toMatchObject({ ok: false });
+  });
+});

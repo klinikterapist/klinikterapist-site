@@ -86,6 +86,7 @@ export function createHttpApi(
     clientLink: (input) => call(ACTIONS.clientLink, input),
     calendarClose: (input) => call(ACTIONS.calendarClose, input),
     clientLinkMail: (input) => call(ACTIONS.clientLinkMail, input).then(() => undefined),
+    eventsList: () => call(ACTIONS.eventsList, {}),
     paymentGet: () => call(ACTIONS.paymentGet, {}),
     paymentSet: (payment) => call(ACTIONS.paymentSet, { payment }),
     clientPay: (input) => call(ACTIONS.clientPay, input),

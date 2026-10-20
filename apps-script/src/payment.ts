@@ -19,6 +19,7 @@ import { readItems, writeItems } from './store';
 import { CLIENTS, REQUESTS, publicClient, sendMail, type StoredClient } from './requests';
 import { trackLink } from './tracking';
 import { PANEL_URL } from './text';
+import { logEvent, shortWhen } from './events';
 import { INTRO_MINUTES, formatDay, slotInstant } from '../../src/lib/booking-form';
 import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type SessionRecord } from '../../src/lib/sessions';
 import { EMPTY_PAYMENT, parsePayment, paymentReminderMail, sessionReminderMail, type PaymentSettings } from '../../src/lib/payment';
@@ -68,6 +69,7 @@ export function payClient(gas: Gas, p: Record<string, unknown>): { client: Clien
     if (p.paid === true && mail) sendMail(gas, c.contact.email, mail);
     const updated: StoredClient = { ...c, sessions };
     writeItems(gas, CLIENTS, clients.map((x) => (x.id === c.id ? updated : x)));
+    logEvent(gas, 'payment', `${c.number}: ${shortWhen({ day, time })} seansı ${p.paid === true ? 'ödendi' : 'için ödeme işareti kaldırıldı'}`, `#/seans-takip/${c.id}`);
     return { client: publicClient(updated) };
   });
 }
@@ -127,6 +129,7 @@ export function runReminders(gas: Gas): number {
             name: 'klinikterapist.com randevu sistemi',
           });
           mark('due');
+          logEvent(gas, 'payment', `${c.number}: ödeme alınmadı · ${shortWhen(s)}`, `#/seans-takip/${c.id}`);
         }
       }
       return cur;

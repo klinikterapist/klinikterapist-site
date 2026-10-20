@@ -26,6 +26,7 @@ import { SessionError, applyChange, sessionKey } from '../../src/lib/sessions';
 import { TRACK_CODE_RE, TRACK_NOTE_MAX, TRACK_PARAM, TRACK_PATH, trackView, type TrackAsk, type TrackFailure, type TrackView } from '../../src/lib/tracking';
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SITE, sameString } from './text';
+import { logEvent, shortWhen } from './events';
 
 export const TRACK_BAD_MAX = 30;
 const HOUR_MS = 3600 * 1000;
@@ -205,6 +206,8 @@ export function askTracking(gas: Gas, p: Record<string, unknown>): { view: Track
   gas.mail.send({ to: owner, replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'klinikterapist.com randevu sayfası' });
   const mine = clientMail(gas, c, ask, change);
   gas.mail.send({ to: c.contact.email, replyTo: owner, subject: mine.subject, body: mine.body, name: 'Osman Güneş Özkurt' });
+  const did = ask === 'cancel' ? 'seansını iptal etti' : ask === 'postpone' ? 'seansını erteledi' : 'terapiyi sonlandırmak istiyor';
+  logEvent(gas, 'client', `${c.number} ${did}${change ? ` · ${shortWhen(change.s)}${change.to ? ` → ${shortWhen(change.to)}` : ''}${change.late ? ' · 24 saatten az kala (tam ücret)' : ''}` : ''}`, `#/seans-takip/${c.id}`);
   return { view: viewOf(gas, clients, c, gas.now()) };
 }
 

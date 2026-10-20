@@ -18,6 +18,7 @@ import { addHold } from './calendar';
 import { allBusy, markVerified, saveRequest } from './requests';
 import { isClosed, markWaitlistVerified } from './waitlist';
 import { refOf, verifyLines, verifyLink } from './verify';
+import { initials, logEvent, shortWhen } from './events';
 import { parseBooking } from '../../src/lib/schemas';
 import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
@@ -203,6 +204,7 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   gas.mail.send({ to: owner, replyTo: email, subject: o.subject, body: o.body, name: 'klinikterapist.com randevu formu' });
   const v = visitorMail(input, lang, verifyLink(gas, `r:${saved.id}`, input.kind === 'intro' ? 'preConsult' : 'appointment', lang));
   gas.mail.send({ to: email, replyTo: owner, subject: v.subject, body: v.body, name: 'Osman Güneş Özkurt' });
+  logEvent(gas, 'request', `Yeni ${input.kind === 'intro' ? 'ön görüşme' : 'seans'} talebi: ${initials(input.name)} · ${shortWhen(input)}`, '#/randevular');
   return { sent: true };
 }
 

@@ -14,6 +14,7 @@ import { ApiError, badRequest } from './respond';
 import { HONEYPOT, allowSend } from './contact';
 import { readItems, writeItems } from './store';
 import { verifyLines, verifyLink } from './verify';
+import { initials, logEvent } from './events';
 import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS, validateWaitlist, type WaitlistInput } from '../../src/lib/waitlist-form';
 import { PANEL_URL, oneLine, str } from './text';
 
@@ -151,6 +152,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
     ).join('\n'),
     name: 'Osman Güneş Özkurt',
   });
+  logEvent(gas, 'waitlist', `Bekleme listesine yeni kayıt: ${initials(input.name)}`, '#/randevular?liste');
   return { sent: true };
 }
 
