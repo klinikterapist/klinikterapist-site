@@ -22,6 +22,8 @@ export type Route =
   /** Randevu talepleri. `add`: a time to put in the calendar (`?ekle=YYYY-MM-DDTHH:MM&tur=…`). */
   | { name: 'requests'; add: { day: string; time: string; type: string } | null; list?: boolean }
   | { name: 'tracking' }
+  | { name: 'profile' }
+  | { name: 'notifications' }
   /** Seans takip › one client's sessions. */
   | { name: 'client'; id: string }
   | { name: 'post'; key: string }
@@ -33,6 +35,8 @@ export function parseRoute(hash: string): Route {
   const path = rawPath.replace(/(.)\/+$/, '$1');
   // The older /randevular/takvim and /randevular/danisanlar links still land on the right page.
   if (path === '/seans-takip' || path === '/randevular/danisanlar') return { name: 'tracking' };
+  if (path === '/profil') return { name: 'profile' };
+  if (path === '/bildirimler') return { name: 'notifications' };
   const client = path.match(/^\/seans-takip\/([\w-]+)$/);
   if (client) return { name: 'client', id: client[1] };
   if (path === '/randevular' || path === '/randevular/takvim') {

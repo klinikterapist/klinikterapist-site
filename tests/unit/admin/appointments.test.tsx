@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { RequestsPage } from '../../../src/admin/ui/appointments/RequestsPage';
 import { TrackingPage } from '../../../src/admin/ui/appointments/TrackingPage';
 import { ClientPage } from '../../../src/admin/ui/appointments/ClientPage';
+import { ProfilePage } from '../../../src/admin/ui/appointments/ProfilePage';
+import { NotificationsPage } from '../../../src/admin/ui/appointments/NotificationsPage';
 import { templateTimes } from '../../../src/admin/ui/appointments/AppointmentCalendar';
 import { Panel, parseRoute } from '../../../src/admin/ui/context';
 import { createMockApi } from '../../../src/admin/api/mock';
@@ -30,7 +32,7 @@ const client = (c: Partial<Client> = {}): Client => ({
   contact: { name: 'Osman Güneş Özkurt', email: 'osman@example.com', lang: 'tr' }, ...c,
 });
 
-function setup(page: 'requests' | 'tracking' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
+function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
   const api = createMockApi({ seed: {} });
   api.state.requests.push(...requests.map((r) => ({ ...r })));
   api.state.calendar.push(
@@ -39,7 +41,7 @@ function setup(page: 'requests' | 'tracking' | `client:${string}`, requests: Boo
   api.state.clients.push(...clients);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
-      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : <ClientPage id={page.slice(7)} />}
+      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );
   return { api };
@@ -408,5 +410,45 @@ describe('Faz 1: payments on the client’s page', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'İşaretle' }));
     await waitFor(() => expect(api.state.clients[0].sessions?.filter((x) => x.paid)).toHaveLength(2));
     expect(api.state.sent).toHaveLength(sent);
+  });
+});
+
+describe('Faz 2: Terapist profili, Bildirimler, Saat kapat', () => {
+  const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const weekdayIn = (n: number) => new Date(`${day(n)}T12:00:00Z`).getUTCDay();
+
+  it('routes: #/profil and #/bildirimler', () => {
+    expect(parseRoute('#/profil')).toEqual({ name: 'profile' });
+    expect(parseRoute('#/bildirimler')).toEqual({ name: 'notifications' });
+  });
+
+  it('Terapist profili: the numbers, the next sessions and the waiting requests', async () => {
+    setup('profile', [session], [client({ weekday: weekdayIn(2), since: day(-20) })]);
+    expect(await screen.findByText('Aktif danışan')).toBeTruthy();
+    const next = screen.getByRole('heading', { name: /Yaklaşan seanslar/ }).parentElement!;
+    expect(within(next).getAllByText('KT007OGO').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Gelen talepler \(1\)/)).toBeTruthy();
+    expect(screen.getByLabelText('Şu an')).toBeTruthy();
+  });
+
+  it('Bildirimler: unpaid and unmarked sessions need attention; the events are listed by day', async () => {
+    const { api } = setup('notifications', [], [client({ weekday: weekdayIn(-6), since: day(-13), sessions: [{ day: day(-13), time: '10:00', kind: 'weekly', minutes: 50, status: 'attended' }] })]);
+    api.state.events.push({ id: 'e1', at: Date.now() - 3600e3, kind: 'client', text: 'KT007OGO seansını iptal etti', link: '#/seans-takip/c1' });
+    expect(await screen.findByText('KT007OGO: 1 seansın ödemesi işaretlenmedi')).toBeTruthy();
+    expect(screen.getByText('KT007OGO: 1 geçmiş seans işaretlenmeyi bekliyor')).toBeTruthy();
+    expect(screen.getByText('KT007OGO seansını iptal etti')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ödemeler' }));
+    expect(screen.queryByText('KT007OGO seansını iptal etti')).toBeNull();
+  });
+
+  it('Saat kapat closes a whole day in the calendar', async () => {
+    const { api } = setup('tracking', [], []);
+    fireEvent.click(await screen.findByRole('button', { name: 'Saat kapat' }));
+    const dialog = screen.getByRole('dialog', { name: 'Saat kapat' });
+    fireEvent.change(within(dialog).getByLabelText('Gün'), { target: { value: day(3) } });
+    fireEvent.change(within(dialog).getByLabelText('Not (isteğe bağlı, yalnızca siz görürsünüz)'), { target: { value: 'İzin' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kapat' }));
+    await waitFor(() => expect(api.state.calendar).toEqual([expect.objectContaining({ status: 'closed', minutes: 1440, note: 'İzin' })]));
+    expect(await screen.findByText(/bütün gün kapatıldı/)).toBeTruthy();
   });
 });

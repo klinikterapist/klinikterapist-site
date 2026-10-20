@@ -28,6 +28,7 @@ import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../k
 import { endMail, linkMail, revertMail, type Mail } from '../../lib/booking-mail';
 import { EMPTY_PAYMENT, paymentReminderMail, thanksMail, type PaymentSettings } from '../../../lib/payment';
 import { MailDialog } from './MailDialog';
+import { hasFee } from '../../lib/attention';
 import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
 import { SessionChart } from './SessionChart';
 
@@ -232,9 +233,7 @@ export function ClientPage({ id }: { id: string }) {
     const { d, m, w } = short(s.day);
     const free = FREE_KINDS.includes(s.kind);
     const added = s.kind !== 'weekly';
-    // A session with a fee: not the free ones, not one postponed (its payment went with it); a late
-    // cancellation keeps its full fee.
-    const payable = !free && s.status !== 'postponed' && (s.status !== 'cancelled' || !!s.late);
+    const payable = hasFee(s);
     return (
       <li key={sessionKey(s)} className={`ss-row ss-${s.status}${free ? ' is-free' : ''}`}>
         <span className="ss-date" aria-hidden="true">

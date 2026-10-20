@@ -4,7 +4,7 @@ import { go, usePanel, type Route } from './context';
 import { startNewPost } from '../lib/new-post';
 import { useTheme } from './theme';
 import { Button, Toggle } from './kit';
-import { CalendarCheck, ExternalLink, FileText, House, Icon, Inbox, LogOut, Menu, Moon, Plus, Sun, Trash2, type LucideIcon } from './icons';
+import { BellRing, CalendarCheck, ExternalLink, FileText, House, Icon, Inbox, LogOut, Menu, Moon, Plus, Sun, Trash2, UserRound, type LucideIcon } from './icons';
 import { SETTINGS_SCREENS } from './settings/screens';
 
 export { SETTINGS_SCREENS };
@@ -38,7 +38,7 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
   const [noTrack, setNoTrack] = useNoTrack();
   useEffect(() => setOpen(false), [route]);
   const current =
-    route.name === 'settings' ? `#/ayarlar/${route.screen}` : route.name === 'home' ? '#/' : route.name === 'posts' ? '#/yazilar' : route.name === 'trash' ? '#/cop-kutusu' : route.name === 'requests' ? '#/randevular' : route.name === 'tracking' || route.name === 'client' ? '#/seans-takip' : '';
+    route.name === 'settings' ? `#/ayarlar/${route.screen}` : route.name === 'home' ? '#/' : route.name === 'posts' ? '#/yazilar' : route.name === 'trash' ? '#/cop-kutusu' : route.name === 'profile' ? '#/profil' : route.name === 'notifications' ? '#/bildirimler' : route.name === 'requests' ? '#/randevular' : route.name === 'tracking' || route.name === 'client' ? '#/seans-takip' : '';
   const link = (href: string, label: string, icon?: LucideIcon) => (
     <li key={href}>
       <a href={href} aria-current={current === href ? 'page' : undefined}>
@@ -73,6 +73,8 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
         </Button>
         <ul>
           {link('#/yazilar', 'Yazılar', FileText)}
+          {link('#/profil', 'Terapist profili', UserRound)}
+          {link('#/bildirimler', 'Bildirimler', BellRing)}
           {link('#/randevular', 'Randevu talepleri', Inbox)}
           {link('#/seans-takip', 'Seans takip', CalendarCheck)}
           {link('#/cop-kutusu', 'Çöp kutusu', Trash2)}

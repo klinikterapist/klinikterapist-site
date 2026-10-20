@@ -12,6 +12,8 @@ import { TrashPage } from './TrashPage';
 import { RequestsPage } from './appointments/RequestsPage';
 import { TrackingPage } from './appointments/TrackingPage';
 import { ClientPage } from './appointments/ClientPage';
+import { ProfilePage } from './appointments/ProfilePage';
+import { NotificationsPage } from './appointments/NotificationsPage';
 import { PostsList } from './PostsList';
 import { EditorPage } from './editor/EditorPage';
 import { SettingsPage } from './settings/SettingsPage';
@@ -58,6 +60,10 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <TrashPage />
             ) : route.name === 'requests' ? (
               <RequestsPage key={route.list ? 'list' : 'requests'} add={route.add} list={route.list} />
+            ) : route.name === 'profile' ? (
+              <ProfilePage />
+            ) : route.name === 'notifications' ? (
+              <NotificationsPage />
             ) : route.name === 'tracking' ? (
               <TrackingPage />
             ) : route.name === 'client' ? (
