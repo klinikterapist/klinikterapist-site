@@ -14,9 +14,9 @@ import { freeTimes, type TrackView } from '../../../src/lib/tracking';
 const NOW = Date.parse('2026-10-20T10:00:00+03:00');
 const at = (s: string) => Date.parse(`${s}+03:00`);
 
-function setup() {
+function setup(aliases: string[] = []) {
   const gh = new FakeGitHub({ 'src/data/booking.json': readFileSync('src/data/booking.json', 'utf8') });
-  const gas = fakeGas({ props: { ...ghProps, OWNER_EMAIL: 'merhaba@klinikterapist.com' }, routes: [gh.route], now: NOW });
+  const gas = fakeGas({ props: { ...ghProps, OWNER_EMAIL: 'merhaba@klinikterapist.com' }, routes: [gh.route], now: NOW, aliases });
   const call = <T = unknown>(action: string, p: Record<string, unknown> = {}) =>
     handle(gas, JSON.stringify({ action, session: issueSession(gas, 'merhaba@klinikterapist.com').session, ...p })) as { ok: boolean; data: T; error?: { code: string; message: string } };
   const send = (p: Record<string, unknown>) =>
@@ -738,5 +738,73 @@ describe('Faz 3: mistyped addresses and Süreç bilgisi', () => {
     for (const bad of [{ topics: [] }, { topics: ['bogus'] }, { topics: ['sure'], consent: false }]) {
       expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'merak@example.com', consent: true, ...bad })).ok).toBe(false);
     }
+  });
+});
+
+describe('Faz 4: the system’s e-mail addresses (bildirim@, randevu@, bilgi@)', () => {
+  const ALIASES = ['randevu@klinikterapist.com', 'bilgi@klinikterapist.com', 'bildirim@klinikterapist.com'];
+  const boxes = { notify: 'bildirim@klinikterapist.com', booking: 'randevu@klinikterapist.com', info: 'bilgi@klinikterapist.com' };
+
+  it('unset, everything goes from and to the owner’s address as before', () => {
+    const s = setup();
+    expect(s.call('mail.settings').data).toMatchObject({ mailboxes: { notify: '', booking: '', info: '' }, owner: 'merhaba@klinikterapist.com', aliases: [] });
+    s.gas.mails.length = 0;
+    expect(s.send(session).ok).toBe(true);
+    expect(s.gas.mails.map((m) => [m.to, m.from])).toEqual([
+      ['merhaba@klinikterapist.com', undefined],
+      ['ayse@example.com', undefined],
+    ]);
+  });
+
+  it('only addresses added in Gmail as "Send mail as" can be senders; the notice address can be any address', () => {
+    const s = setup(['randevu@klinikterapist.com']);
+    const bad = s.call('mail.settings.set', { mailboxes: { ...boxes } });
+    expect(bad).toMatchObject({ ok: false, data: { reason: 'alias', box: 'info' } });
+    expect(s.call('mail.settings').data).toMatchObject({ mailboxes: { notify: '', booking: '', info: '' } });
+    expect(s.call('mail.settings.set', { mailboxes: { notify: 'not-an-address' } })).toMatchObject({ ok: false, data: { reason: 'invalid', box: 'notify' } });
+    const ok = s.call<{ mailboxes: Record<string, string> }>('mail.settings.set', { mailboxes: { notify: ' Bildirim@Klinikterapist.com ', booking: 'randevu@klinikterapist.com', info: '' } });
+    expect(ok.data.mailboxes).toEqual({ notify: 'bildirim@klinikterapist.com', booking: 'randevu@klinikterapist.com', info: '' });
+    // An empty field goes back to the owner's address.
+    expect(s.call<{ mailboxes: Record<string, string> }>('mail.settings.set', { mailboxes: { notify: '', booking: '', info: '' } }).data.mailboxes).toEqual({ notify: '', booking: '', info: '' });
+  });
+
+  it('notices go to bildirim@; e-mails to people come from randevu@ (and reply there); information from bilgi@; the contact form stays at the owner’s address', () => {
+    const s = setup(ALIASES);
+    expect(s.call('mail.settings.set', { mailboxes: boxes }).ok).toBe(true);
+    s.gas.mails.length = 0;
+    expect(s.send(session).ok).toBe(true);
+    expect(s.gas.mails.map((m) => [m.to, m.from ?? null, m.replyTo])).toEqual([
+      ['bildirim@klinikterapist.com', null, 'ayse@example.com'],
+      ['ayse@example.com', 'randevu@klinikterapist.com', 'randevu@klinikterapist.com'],
+    ]);
+    const id = s.requests()[0].id;
+    s.gas.mails.length = 0;
+    expect(s.call('requests.decide', { id, decision: 'approve', ...mail }).ok).toBe(true);
+    expect(s.gas.mails[0]).toMatchObject({ to: 'ayse@example.com', from: 'randevu@klinikterapist.com' });
+
+    s.gas.mails.length = 0;
+    s.gas.cache.put('mx:example.com', '1', 3600);
+    expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'merak@example.com', topics: ['sure'], consent: true })).ok).toBe(true);
+    expect(s.gas.mails[0]).toMatchObject({ to: 'merak@example.com', from: 'bilgi@klinikterapist.com', replyTo: 'bilgi@klinikterapist.com' });
+
+    s.gas.mails.length = 0;
+    s.gas.clock.now += 3600e3;
+    expect(handle(s.gas, JSON.stringify({ action: 'contact.send', name: 'Ali Veli', email: 'ali@example.com', topic: 'collaboration', message: 'Merhaba, bir sorum var.', consent: true })).ok).toBe(true);
+    expect(s.gas.mails[0]).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ali@example.com' });
+    expect(s.gas.mails[0].from).toBeUndefined();
+  });
+
+  it('the test sends one e-mail per address in use and the panel sees the e-mails left today', () => {
+    const s = setup(ALIASES);
+    s.call('mail.settings.set', { mailboxes: { notify: boxes.notify, booking: boxes.booking } });
+    s.gas.mails.length = 0;
+    expect(s.call('mail.test').data).toEqual({ sent: 2 });
+    expect(s.gas.mails.map((m) => [m.to, m.from ?? null])).toEqual([
+      ['bildirim@klinikterapist.com', null],
+      ['merhaba@klinikterapist.com', 'randevu@klinikterapist.com'],
+    ]);
+    expect(s.call<{ quota: number }>('mail.settings').data.quota).toBe(98);
+    // Owner only.
+    expect(handle(s.gas, JSON.stringify({ action: 'mail.test' }))).toMatchObject({ ok: false, error: { code: 'unauthorized' } });
   });
 });

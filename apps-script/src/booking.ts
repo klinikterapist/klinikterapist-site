@@ -25,6 +25,7 @@ import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
 } from '../../src/lib/booking-form';
 import { PANEL_URL, oneLine, str } from './text';
+import { asSender, notifyTo } from './mailboxes';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TAKEN = 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.';
@@ -203,9 +204,9 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   gas.cache.put(BUSY_CACHE, '', 1);
 
   const o = ownerMail(input, lang, now);
-  gas.mail.send({ to: owner, replyTo: email, subject: o.subject, body: o.body, name: 'klinikterapist.com randevu formu' });
+  gas.mail.send({ to: notifyTo(gas, owner), replyTo: email, subject: o.subject, body: o.body, name: 'klinikterapist.com randevu formu' });
   const v = visitorMail(input, lang, verifyLink(gas, `r:${saved.id}`, input.kind === 'intro' ? 'preConsult' : 'appointment', lang));
-  gas.mail.send({ to: email, replyTo: owner, subject: v.subject, body: v.body, name: 'Osman Güneş Özkurt' });
+  gas.mail.send({ to: email, ...asSender(gas, 'booking', owner), subject: v.subject, body: v.body, name: 'Osman Güneş Özkurt' });
   logEvent(gas, 'request', `Yeni ${input.kind === 'intro' ? 'ön görüşme' : 'seans'} talebi: ${initials(input.name)} · ${shortWhen(input)}`, '#/randevular');
   return { sent: true };
 }

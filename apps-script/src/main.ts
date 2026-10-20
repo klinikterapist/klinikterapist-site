@@ -22,6 +22,7 @@ import { payClient, readPayment, runReminders, savePayment } from './payment';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
+import { readMailboxes, saveMailboxes, testMailboxes } from './mailboxes';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
@@ -126,6 +127,9 @@ export const ACTIONS: Record<string, Handler> = {
   'events.list': (gas) => listEvents(gas),
   'payment.get': (gas) => readPayment(gas),
   'payment.set': (gas, p) => savePayment(gas, p),
+  'mail.settings': (gas) => readMailboxes(gas),
+  'mail.settings.set': (gas, p) => saveMailboxes(gas, p),
+  'mail.test': (gas) => testMailboxes(gas),
   'requests.add': (gas, p) => {
     const out = addManual(gas, bookingConfig(gas), p);
     gas.cache.put('booking.busy', '', 1);

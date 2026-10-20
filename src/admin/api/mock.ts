@@ -3,12 +3,24 @@
  * Seeded with the real settings files and the fixture posts. Never shipped: the panel only
  * imports it behind `import.meta.env.DEV`.
  */
-import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type PanelEvent, type PanelEventKind, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
+import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type PanelEvent, type PanelEventKind, type MailSettings, type MailboxKey, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
 import { INTRO_MINUTES, PREVIEW_CLOSED_KEY, clientNumber, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
 import { EMPTY_PAYMENT, parsePayment, type PaymentSettings } from '../../lib/payment';
+import { EMAIL_RE } from '../../lib/field-rules';
+
+/** Faz 4 demo: the owner's address and the aliases added in Gmail ("Send mail as"). */
+const OWNER = 'merhaba@klinikterapist.com';
+const MOCK_ALIASES = ['randevu@klinikterapist.com', 'bilgi@klinikterapist.com'];
+/** A Workspace account sends 1500 a day; each demo e-mail uses one. */
+const mailSettingsOf = (state: { mailboxes: Record<MailboxKey, string>; sent: unknown[] }): MailSettings => ({
+  mailboxes: { ...state.mailboxes },
+  owner: OWNER,
+  aliases: [...MOCK_ALIASES],
+  quota: Math.max(0, 1500 - state.sent.length),
+});
 
 const data = import.meta.glob('/src/data/**/*.{json,md}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const posts = import.meta.glob('/tests/fixtures/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -52,6 +64,8 @@ export type MockState = {
   payment: PaymentSettings;
   /** Bildirimler (Faz 2), oldest first. */
   events: PanelEvent[];
+  /** Faz 4: the addresses, and the aliases the demo account has in Gmail. */
+  mailboxes: Record<MailboxKey, string>;
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
@@ -66,7 +80,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [] };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [], mailboxes: { notify: '', booking: '', info: '' } };
   let clientSeq = 0;
   if (opts.demoRequests) {
     try {
@@ -415,6 +429,23 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         if (!p.year) throw new ApiFailure('bad_request', 'Ücretlerin geçerli olduğu yılı girin.');
         state.payment = p;
         return { payment: structuredClone(p) };
+      }),
+    mailSettings: () => wait(() => mailSettingsOf(state)),
+    mailSettingsSet: (boxes) =>
+      wait(() => {
+        const next = { notify: boxes.notify.trim().toLowerCase(), booking: boxes.booking.trim().toLowerCase(), info: boxes.info.trim().toLowerCase() };
+        for (const v of Object.values(next)) if (v && !EMAIL_RE.test(v)) throw new ApiFailure('bad_request', `Bu adres geçerli görünmüyor: ${v}`);
+        for (const v of [next.booking, next.info]) {
+          if (v && !MOCK_ALIASES.includes(v)) throw new ApiFailure('bad_request', `${v} Gmail'de "Farklı adresten gönder" olarak eklenmemiş. Önce rehberdeki adımları yapın, sonra tekrar kaydedin.`);
+        }
+        state.mailboxes = next;
+        return mailSettingsOf(state);
+      }),
+    mailTest: () =>
+      wait(() => {
+        const sent = 1 + [state.mailboxes.booking, state.mailboxes.info].filter(Boolean).length;
+        for (let i = 0; i < sent; i++) state.sent.push({ to: OWNER, subject: '[klinikterapist] Deneme', body: '' });
+        return { sent };
       }),
     clientPay: ({ id, day, time, paid, mail: m }) =>
       wait(() => {

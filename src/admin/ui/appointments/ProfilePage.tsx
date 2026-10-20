@@ -3,7 +3,7 @@
  * and Seans takip. At a glance: the time now, a few numbers (active clients, sessions this week,
  * waiting requests, unpaid sessions), the next seven days' sessions, the waiting requests, what
  * needs attention and the latest events (Bildirimler, in short), the appointment calendar with
- * "Saat kapat", and the chart of all clients' sessions so far.
+ * "Saat kapat", the chart of all clients' sessions so far, and the system's e-mail addresses (Faz 4).
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type PanelEvent } from '../../api/types';
@@ -14,6 +14,7 @@ import { usePanel } from '../context';
 import { Icon, UserRound } from '../icons';
 import { Banner, Button, Spinner } from '../kit';
 import { AppointmentCalendar, SESSION_KIND_LABEL, labelOf } from './AppointmentCalendar';
+import { MailboxesCard } from './MailboxesCard';
 import { SessionChart } from './SessionChart';
 import { NowClock, whenText } from './TrackingPage';
 
@@ -174,6 +175,7 @@ export function ProfilePage() {
                 <h3 className="tk-group-title">Toplam seans grafiği</h3>
                 <SessionChart stats={total(data.clients, now)} />
               </div>
+              <MailboxesCard />
             </aside>
           </div>
         </>

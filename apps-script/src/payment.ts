@@ -24,6 +24,7 @@ import { INTRO_MINUTES, formatDay, slotInstant } from '../../src/lib/booking-for
 import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type SessionRecord } from '../../src/lib/sessions';
 import { EMPTY_PAYMENT, parsePayment, paymentReminderMail, sessionReminderMail, type PaymentSettings } from '../../src/lib/payment';
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
+import { asSender, notifyTo } from './mailboxes';
 
 const PROP = 'PAYMENT_SETTINGS';
 const HOUR = 3600 * 1000;
@@ -82,7 +83,7 @@ export function runReminders(gas: Gas): number {
   if (!owner) return 0;
   const pay = getPayment(gas);
   const out: MailMessage[] = [];
-  const toClient = (c: { email: string }, m: { subject: string; body: string }) => out.push({ to: c.email, replyTo: owner, subject: m.subject, body: m.body, name: 'Osman Güneş Özkurt' });
+  const toClient = (c: { email: string }, m: { subject: string; body: string }) => out.push({ to: c.email, ...asSender(gas, 'booking', owner), subject: m.subject, body: m.body, name: 'Osman Güneş Özkurt' });
   gas.withLock(() => {
     const now = gas.now();
     const day = (ms: number) => new Date(ms + 3 * HOUR).toISOString().slice(0, 10);
@@ -114,7 +115,7 @@ export function runReminders(gas: Gas): number {
         }
         if (!free && !paid && !sent.includes('due') && left <= pay.dueHours * HOUR) {
           out.push({
-            to: owner,
+            to: notifyTo(gas, owner),
             replyTo: c.contact.email,
             subject: `[klinikterapist] ${c.number}: ödeme alınmadı — ${at(s)}`,
             body: [

@@ -4959,3 +4959,38 @@ html[data-theme='dark'] {
   color: var(--p-muted);
   font-size: var(--text-sm);
 }
+
+/* Terapist profili: E-posta adresleri (Faz 4). */
+.mb-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.mb-list dt {
+  color: var(--p-muted);
+  font-size: 0.85em;
+}
+
+.mb-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.mb-quota {
+  margin: 12px 0 0;
+  font-size: 0.9em;
+}
+
+.mb-quota.is-low {
+  color: var(--p-err-text);
+  font-weight: 600;
+}
+
+.mb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+

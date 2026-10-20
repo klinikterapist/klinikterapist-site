@@ -156,6 +156,10 @@ export type BookingRequest = {
 };
 
 /** Bildirimler (Faz 2): what happened. `link`: a panel route (`#/…`) to the place it concerns. */
+/** Faz 4: bildirim@ (the system's notices), randevu@ and bilgi@ (senders); '' is the owner's address. */
+export type MailboxKey = 'notify' | 'booking' | 'info';
+export type MailSettings = { mailboxes: Record<MailboxKey, string>; owner: string; aliases: string[]; quota: number | null };
+
 export type PanelEventKind = 'request' | 'decision' | 'client' | 'payment' | 'reminder' | 'waitlist' | 'info';
 export type PanelEvent = { id: string; at: number; kind: PanelEventKind; text: string; link?: string };
 
@@ -290,6 +294,12 @@ export interface Api {
   /** The owner's fees, bank details and payment link (script properties, never in the repository). */
   paymentGet(): Promise<{ payment: PaymentSettings }>;
   paymentSet(payment: PaymentSettings): Promise<{ payment: PaymentSettings }>;
+  /** The system's e-mail addresses, Gmail's sender addresses and the e-mails left today. */
+  mailSettings(): Promise<MailSettings>;
+  /** Senders must be Gmail "Send mail as" addresses; an empty field goes back to the owner's address. */
+  mailSettingsSet(mailboxes: Record<MailboxKey, string>): Promise<MailSettings>;
+  /** One test e-mail per address in use. */
+  mailTest(): Promise<{ sent: number }>;
   /** A session paid or not; when paid with `mail`, the owner's thank-you goes to the client. */
   clientPay(input: { id: string; day: string; time: string; paid: boolean; mail?: { subject: string; body: string } }): Promise<{ client: Client }>;
   /** The owner's (edited) e-mail to the client, e.g. a payment reminder. */
@@ -362,6 +372,9 @@ export const ACTIONS = {
   eventsList: 'events.list',
   paymentGet: 'payment.get',
   paymentSet: 'payment.set',
+  mailSettings: 'mail.settings',
+  mailSettingsSet: 'mail.settings.set',
+  mailTest: 'mail.test',
   clientPay: 'clients.pay',
   clientMail: 'clients.mail',
   bookingState: 'booking.state',

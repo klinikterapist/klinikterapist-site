@@ -53,13 +53,17 @@ export interface Gas {
   b64url: { encode(text: string): string; decode(text: string): string };
   /** Error log (Apps Script executions log). Never pass request bodies here. */
   log(message: string): void;
-  /** One plain-text e-mail from the deploying account (MailApp; needs the script.send_mail scope). */
-  mail: { send(m: MailMessage): void };
+  /**
+   * One plain-text e-mail from the deploying account (MailApp; script.send_mail scope). With `from`
+   * (an alias added in Gmail as "Send mail as", Faz 4) it goes through GmailApp (mail.google.com
+   * scope). `quota`: e-mails left today; `aliases`: Gmail's sender addresses.
+   */
+  mail: { send(m: MailMessage): void; quota(): number; aliases(): string[] };
   /** Time-driven triggers (ScriptApp; needs the script.scriptapp scope). */
   triggers: { ensureHourly(handler: 'hourly'): void };
 }
 
-export type MailMessage = { to: string; replyTo: string; subject: string; body: string; name?: string };
+export type MailMessage = { to: string; replyTo: string; subject: string; body: string; name?: string; from?: string };
 
 const ROOT_NAME = 'Klinikterapist Panel';
 const JSON_MIME = 'application/json';
@@ -199,7 +203,21 @@ export function realGas(): Gas {
     },
     log: (message) => console.error(message),
     mail: {
-      send: (m) => MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name }),
+      send: (m) => {
+        if (m.from) {
+          try {
+            GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name });
+            return;
+          } catch (e) {
+            // The alias was removed in Gmail, or the Gmail permission is missing: the e-mail still
+            // goes, from the account's own address.
+            console.error(`mail from ${m.from}: ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
+        MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name });
+      },
+      quota: () => MailApp.getRemainingDailyQuota(),
+      aliases: () => GmailApp.getAliases(),
     },
     triggers: {
       // Created once; a second one would publish the same post twice.

@@ -47,7 +47,7 @@ export class MemFile implements FileLike {
   trash() { this.trashed = true; }
 }
 
-export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]; now?: number } = {}) {
+export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]; now?: number; aliases?: string[] } = {}) {
   const props = new Map(Object.entries(init.props ?? {}));
   // Entries expire like CacheService: `ttlSec` after the fake clock time of the put.
   const cache = new Map<string, { value: string; until: number }>();
@@ -94,7 +94,7 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
       decode: (text) => Buffer.from(text, 'base64url').toString('utf8'),
     },
     log: (msg) => void logs.push(msg),
-    mail: { send: (m) => void mails.push(m) },
+    mail: { send: (m) => void mails.push(m), quota: () => 100 - mails.length, aliases: () => [...(init.aliases ?? [])] },
     triggers: { ensureHourly: (h) => void (triggers.includes(h) || triggers.push(h)) },
   };
   return gas;

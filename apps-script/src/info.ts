@@ -12,6 +12,7 @@ import { logEvent } from './events';
 import { SITE, str } from './text';
 import { pathFor } from '../../src/i18n/routes';
 import { INFO_TOPICS, infoMail, validateInfo } from '../../src/lib/info-answers';
+import { asSender } from './mailboxes';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TOO_MANY = 'Şu anda çok fazla istek var. Lütfen biraz sonra tekrar deneyin ya da doğrudan e-posta gönderin.';
@@ -28,7 +29,7 @@ export function sendInfo(gas: Gas, p: Record<string, unknown>): { sent: true } {
   assertMailDomain(gas, email);
   if (!allowSend(gas, email)) throw badRequest(TOO_MANY);
   const m = infoMail(topics, lang, { intro: `${SITE}${pathFor('preConsult', lang)}`, book: `${SITE}${pathFor('appointment', lang)}` });
-  gas.mail.send({ to: email, replyTo: owner, subject: m.subject, body: m.body, name: 'Osman Güneş Özkurt' });
+  gas.mail.send({ to: email, ...asSender(gas, 'info', owner), subject: m.subject, body: m.body, name: 'Osman Güneş Özkurt' });
   const names = INFO_TOPICS.filter((t) => topics.includes(t.id)).map((t) => t.q.tr.replace(/\?$/, ''));
   logEvent(gas, 'info', `Bilgi talebi${lang === 'en' ? ' (İngilizce)' : ''}: ${names.join('; ')}`);
   return { sent: true };
