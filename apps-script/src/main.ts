@@ -14,7 +14,7 @@ import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, lis
 import { sendContact } from './contact';
 import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from './booking';
 import { addConfirmed, listEntries, removeEntry } from './calendar';
-import { addManual, changeSession, decideRequest, endClient, listClients, listRequests, requestToClient, revertClient, revertRequest } from './requests';
+import { addManual, assertFree, changeSession, decideRequest, endClient, listClients, listRequests, holdFor, requestToClient, revertClient, revertRequest } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
@@ -64,7 +64,12 @@ export const ACTIONS: Record<string, Handler> = {
   'stats.summary': (gas, p) => statsSummary(gas, p),
   'calendar.list': (gas) => listEntries(gas),
   'calendar.add': (gas, p) => {
-    const out = addConfirmed(gas, bookingConfig(gas), p);
+    const cfg = bookingConfig(gas);
+    // One lock for the check and the write (the lock is re-entrant).
+    const out = gas.withLock(() => {
+      assertFree(gas, cfg, holdFor(cfg, p.day, p.time, p.kind === 'intro' ? 'intro' : 'session', typeof p.type === 'string' ? p.type : undefined));
+      return addConfirmed(gas, cfg, p);
+    });
     gas.cache.put('booking.busy', '', 1);
     return out;
   },

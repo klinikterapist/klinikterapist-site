@@ -436,3 +436,46 @@ describe("The client's own page (tracking.ts)", () => {
     expect(t.pub('track.view', { code: t.code })).toMatchObject({ ok: false, data: { reason: 'link' } });
   });
 });
+
+describe('H1: the panel’s own bookings respect the clients’ sessions', () => {
+  /** KT001AY: couples therapy every Thursday 19:20 from 22 October. */
+  function withWeekly() {
+    const s = setup();
+    s.send(session);
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    s.call('requests.toClient', { id });
+    return s;
+  }
+  const manual = { kind: 'session', type: 'individual', name: 'Elif Deneme', email: 'elif@example.com', phone: '', lang: 'tr', note: '' };
+
+  it('Randevu ekle and takvime ekle refuse a client’s weekly time and name the client', () => {
+    const s = withWeekly();
+    const added = s.call('requests.add', { ...manual, day: '2026-10-29', time: '19:20' });
+    expect(added).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    expect(added.error!.message).toContain('KT001AY');
+    expect(s.call('calendar.add', { day: '2026-10-29', time: '19:50', kind: 'session', type: 'individual' })).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    // A free time still works.
+    expect(s.call('requests.add', { ...manual, day: '2026-10-30', time: '10:00' }).ok).toBe(true);
+  });
+
+  it('approving a waiting request refuses a time a client took after it came', () => {
+    const s = setup();
+    s.send({ ...session, day: '2026-11-05' }); // waiting: Thursday 5 November 19:20
+    const late = s.requests()[0].id;
+    s.call('requests.add', { ...manual, kind: 'session', type: 'couple', day: '2026-10-22', time: '19:20' });
+    const first = s.requests().find((r) => r.id !== late)!.id;
+    expect(s.call('requests.toClient', { id: first }).ok).toBe(true); // weekly Thursdays 19:20 from 22 October
+    expect(s.call('requests.decide', { id: late, decision: 'approve', ...mail })).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    expect(s.requests().find((r) => r.id === late)!.status).toBe('pending');
+  });
+
+  it('Seans takibe geçir refuses a weekly time that falls on another client’s session', () => {
+    const s = withWeekly();
+    s.send(intro);
+    const id = s.requests().find((r) => r.status === 'pending')!.id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    expect(s.call('requests.toClient', { id, weekday: 4, time: '19:20', since: '2026-11-05' })).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    expect(s.call('requests.toClient', { id, weekday: 4, time: '10:00', since: '2026-11-05' }).ok).toBe(true);
+  });
+});

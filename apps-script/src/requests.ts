@@ -44,6 +44,28 @@ function liveRequests(gas: Gas): BookingRequest[] {
   return kept;
 }
 
+const WEEKS8 = 8 * 7 * 24 * 3600 * 1000;
+
+/**
+ * Review H1 (2026-10-20): the panel's own bookings (Onayla, Randevu ekle, takvime ekle, Seans takibe
+ * geçir) must not land on a client's session or on a confirmed appointment. `holds`: the stretches
+ * the new booking takes; `skipEntry`: a calendar entry being replaced (it does not count). Holds of
+ * waiting requests do not count either: the panel's decision wins over a 24-hour hold.
+ */
+export function assertFree(gas: Gas, cfg: BookingConfig, holds: BusyInterval[], skipEntry?: string): void {
+  const now = gas.now();
+  const hits = (busy: BusyInterval[]) => busy.some((b) => holds.some((h) => overlaps(h, b)));
+  for (const c of read<StoredClient>(gas, CLIENTS)) {
+    if (hits(clientsBusy([c], cfg.restMinutes, now, now + WEEKS8))) throw new ApiError('conflict', `Bu saat ${c.number} numaralı danışanın seansıyla çakışıyor. Başka bir saat seçin.`);
+  }
+  const confirmed = activeEntries(gas, now).filter((e) => e.status === 'confirmed' && e.id !== skipEntry);
+  if (hits(busyOf(confirmed, cfg.restMinutes))) throw new ApiError('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
+}
+
+/** The stretch a one-off booking takes, when its day and time are well formed. */
+export const holdFor = (cfg: BookingConfig, day: unknown, time: unknown, kind: 'session' | 'intro', type?: string): BusyInterval[] =>
+  typeof day === 'string' && DAY_RE.test(day) && typeof time === 'string' && TIME_RE.test(time) ? [holdOf(day, time, minutesOf(kind, type), cfg.restMinutes)] : [];
+
 /** Called by `booking.request` (inside its lock) after the hold is in place. */
 export function saveRequest(gas: Gas, input: BookingInput, lang: 'tr' | 'en', holdId: string): BookingRequest {
   const r: BookingRequest = {
@@ -96,6 +118,7 @@ export function addManual(gas: Gas, cfg: BookingConfig, p: Record<string, unknow
   if (!EMAIL_RE.test(email) || email.length > BOOKING_LIMITS.emailMax) throw badRequest('E-posta adresi hatalı görünüyor.');
   const lang = i.lang === 'en' ? 'en' : 'tr';
   return gas.withLock(() => {
+    assertFree(gas, cfg, holdFor(cfg, i.day, i.time, kind, type));
     const { entry } = addConfirmed(gas, cfg, { day: i.day, time: i.time, kind, type });
     const r: BookingRequest = {
       id: gas.uuid().slice(0, 12),
@@ -169,6 +192,7 @@ export function decideRequest(gas: Gas, cfg: BookingConfig, p: Record<string, un
 
     let calendarId: string | undefined;
     if (decision === 'approve') {
+      assertFree(gas, cfg, holdFor(cfg, r.day, r.time, r.kind, r.type));
       calendarId = addConfirmed(gas, cfg, { day: r.day, time: r.time, kind: r.kind, type: r.type }).entry.id;
     } else {
       removeEntry(gas, { id: r.calendarId ?? r.holdId });
@@ -237,6 +261,11 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
       since = p.since;
       type = r.forWhom ?? 'individual';
     }
+    // The weekly time must be free of the other clients' sessions and of confirmed appointments
+    // (this request's own one-off entry aside: the weekly slot takes its place).
+    const now = gas.now();
+    const minutes = minutesOf('session', type);
+    assertFree(gas, cfg, clientsBusy([{ weekday, time, minutes, since, sessions: [] }], cfg.restMinutes, now, now + WEEKS8), r.calendarId);
     const { id: _id, createdAt: _c, status: _s, holdId: _h, calendarId: _cal, ...origin } = r;
     // An intro call is where it began: it shows in the client's sessions, free and attended.
     const sessions: SessionRecord[] = r.kind === 'intro' ? [{ day: r.day, time: r.time, kind: 'intro', minutes: INTRO_MINUTES, status: 'attended' }] : [];
@@ -246,7 +275,7 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
       type,
       weekday,
       time,
-      minutes: minutesOf('session', type),
+      minutes,
       since,
       status: 'active',
       contact: { name: r.name, email: r.email, lang: r.lang, ...(r.verified ? { verified: true } : {}) },

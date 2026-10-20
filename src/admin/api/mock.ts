@@ -5,8 +5,8 @@
  */
 import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
-import { INTRO_MINUTES, PREVIEW_CLOSED_KEY, clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
-import { SessionError, applyChange, type SessionChangeInput } from '../../lib/sessions';
+import { INTRO_MINUTES, PREVIEW_CLOSED_KEY, clientNumber, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
+import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
 
 const data = import.meta.glob('/src/data/**/*.{json,md}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -99,6 +99,15 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       reason: 'Son aylarda iş stresiyle baş etmekte zorlanıyorum.', lang: 'tr', verified: true,
     });
   }
+  /** As the backend's `assertFree` (review H1): a booking made in the panel must not land on a client's session. */
+  const clientClash = (holds: BusyInterval[]) => {
+    const now = clock();
+    for (const c of state.clients) {
+      if (clientsBusy([c], 30, now, now + 56 * 864e5).some((b) => holds.some((h) => overlaps(h, b)))) {
+        throw new ApiFailure('conflict', `Bu saat ${c.number} numaralı danışanın seansıyla çakışıyor. Başka bir saat seçin.`);
+      }
+    }
+  };
   const mail = (to: string, subject: string, body: string) => {
     if (!subject.trim() || !body.trim()) throw new ApiFailure('bad_request', 'E-postanın konusu ve metni boş olamaz.');
     state.sent.push({ to, subject, body });
@@ -287,6 +296,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       wait(() => {
         const start = slotInstant(day, time);
         const minutes = minutesOf(kind, type);
+        clientClash([holdOf(day, time, minutes, 30)]);
         const end = (e: CalendarEntry) => e.start + (e.minutes + 30) * 60e3;
         if (state.calendar.some((e) => e.status === 'confirmed' && e.start < start + (minutes + 30) * 60e3 && start < end(e))) {
           throw new ApiFailure('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
@@ -302,6 +312,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       wait(() => {
         const r = state.requests.find((x) => x.id === id);
         if (!r) throw new ApiFailure('not_found', 'Bu talep bulunamadı.');
+        if (decision === 'approve') clientClash([holdOf(r.day, r.time, minutesOf(r.kind, r.type), 30)]);
         mail(r.email, subject, body);
         if (decision === 'approve') {
           const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'confirmed' };
@@ -320,6 +331,15 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         const session = r.kind === 'session';
         if (!session && (weekday === undefined || !time || !since)) throw new ApiFailure('bad_request', 'Haftalık seans günü, saati ve başlangıç tarihi gerekli.');
         const type = session ? (r.type ?? 'individual') : (r.forWhom ?? 'individual');
+        const now = clock();
+        clientClash(
+          clientsBusy(
+            [{ weekday: session ? new Date(`${r.day}T12:00:00Z`).getUTCDay() : weekday!, time: session ? r.time : time!, minutes: minutesOf('session', type), since: session ? r.day : since!, sessions: [] }],
+            30,
+            now,
+            now + 56 * 864e5,
+          ),
+        );
         const client: Client = {
           id: Math.random().toString(36).slice(2, 10),
           number: clientNumber(++clientSeq, r.name),
@@ -392,6 +412,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(input.email.trim())) throw new ApiFailure('bad_request', 'E-posta adresi hatalı görünüyor.');
         const start = slotInstant(input.day, input.time);
         const minutes = minutesOf(input.kind, input.type);
+        clientClash([holdOf(input.day, input.time, minutes, 30)]);
         if (state.calendar.some((e) => e.status === 'confirmed' && e.start < start + (minutes + 30) * 60e3 && start < e.start + (e.minutes + 30) * 60e3)) {
           throw new ApiFailure('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
         }
