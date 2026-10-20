@@ -18,8 +18,13 @@ interface Props {
   alternatePaths: { tr: string; en: string };
   /** Keep the page out of search results (404). */
   noindex?: boolean;
+  /**
+   * A page for one person (the client's own page): no page counter and no Google Analytics, so
+   * nobody but the owner learns that someone opened it.
+   */
+  personal?: boolean;
 }
-const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
+const { lang, meta, jsonLd, alternatePaths, noindex = false, personal = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -50,6 +55,6 @@ const { lang, meta, jsonLd, alternatePaths, noindex = false } = Astro.props;
     </main>
     <Footer lang={lang} />
     {COUNTER_ENABLED && !noindex && <Counter />}
-    <Analytics lang={lang} />
+    {!personal && <Analytics lang={lang} />}
   </body>
 </html>

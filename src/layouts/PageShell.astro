@@ -24,11 +24,13 @@ interface Props {
   back?: { href: string; label: string };
   /** The phone's fixed "Randevu Al" bar; off where the page is the booking itself. */
   cta?: boolean;
+  /** A page for one person: no page counter, no Google Analytics (BaseLayout). */
+  personal?: boolean;
 }
-const { lang, meta, jsonLd, alternatePaths, noindex, back, cta = true } = Astro.props;
+const { lang, meta, jsonLd, alternatePaths, noindex, back, cta = true, personal } = Astro.props;
 ---
 
-<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={noindex}>
+<BaseLayout lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths} noindex={noindex} personal={personal}>
   <slot name="head" slot="head" />
   <div class="page-top" slot="top">
     {

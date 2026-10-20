@@ -2,8 +2,8 @@
 /**
  * The client's own page, `/randevum/` and `/en/my-appointment/` (src/lib/tracking.ts): opened with
  * the secret link the owner sends from the panel. Kept out of search and the sitemap (noindex), no
- * page counter, no "Randevu Al" bar. Everything is drawn by track-page.ts; the booking calendar's
- * rules (`booking.json`) go with the page for the free times of a postponement.
+ * page counter, no Google Analytics, no "Randevu Al" bar. Everything is drawn by track-page.ts; the
+ * booking calendar's rules (`booking.json`) go with the page for the free times of a postponement.
  */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
@@ -156,7 +156,7 @@ const messages: TrackMessages =
 const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_PATH[lang], alternates: TRACK_PATH });
 ---
 
-<PageShell lang={lang} meta={meta} alternatePaths={TRACK_PATH} noindex cta={false}>
+<PageShell lang={lang} meta={meta} alternatePaths={TRACK_PATH} noindex personal cta={false}>
   <div class="container-text inner-page tracking">
     <PageHead title={T.title}>
       <p class="lead">{T.lead}</p>

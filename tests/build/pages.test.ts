@@ -486,6 +486,15 @@ describe('inner pages redesign (spec §5.9)', () => {
       expect(JSON.parse(root.getAttribute('data-messages')!).failures.link).toBeTruthy();
     }
   });
+
+  it("the client's own page loads no Google Analytics, even where the site has it (real data build)", () => {
+    expect(loadPage('/', DIST_SAMPLES).toString()).toContain('googletagmanager');
+    for (const path of ['/randevum/', '/en/my-appointment/']) {
+      const d = loadPage(path, DIST_SAMPLES);
+      expect(d.toString()).not.toContain('googletagmanager');
+      expect(d.querySelector('[data-consent-bar]')).toBeNull();
+    }
+  });
 });
 
 /**
