@@ -73,6 +73,8 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     const code = new URLSearchParams(location.search).get('dogrula');
     const note = root.querySelector<HTMLElement>('[data-verify-note]');
     if (!code || !endpoint || !note) return;
+    // Off the address bar at once: not kept in the history, not in a shared or bookmarked address.
+    history.replaceState(null, '', location.pathname);
     let ok = false;
     try {
       const res = await deps.fetch(endpoint, {
@@ -88,7 +90,6 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     note.textContent = ok ? messages.verified : messages.verifyFailed;
     note.classList.toggle('is-error', !ok);
     note.hidden = false;
-    history.replaceState(null, '', location.pathname);
   };
   void verify();
 

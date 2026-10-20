@@ -60,7 +60,12 @@ const T = {
             window.dataLayer = window.dataLayer || [];
             window.gtag = function () { window.dataLayer.push(arguments); };
             window.gtag('js', new Date());
-            window.gtag('config', id);
+            // The e-mail check code of an acknowledgement link (?dogrula=…, booking-submit.ts) is not
+            // part of the address Google gets.
+            var page = new URL(location.href);
+            page.searchParams.delete('dogrula');
+            page.hash = '';
+            window.gtag('config', id, { page_location: page.href });
             var s = document.createElement('script');
             s.async = true;
             s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);

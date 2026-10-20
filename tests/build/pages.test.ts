@@ -494,6 +494,8 @@ describe('inner pages redesign (spec §5.9)', () => {
       expect(d.toString()).not.toContain('googletagmanager');
       expect(d.querySelector('[data-consent-bar]')).toBeNull();
     }
+    // Elsewhere the e-mail check code of an acknowledgement link stays out of the address Google gets.
+    expect(loadPage('/randevu/', DIST_SAMPLES).toString()).toContain("page.searchParams.delete('dogrula')");
   });
 });
 

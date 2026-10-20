@@ -199,6 +199,8 @@ describe('e-mail check and closed booking on the site', () => {
       return new Response(JSON.stringify({ ok: true, data: { verified: true } }));
     });
     mountBookingForm(markup('https://api.example/exec'), { fetch, now: () => NOW });
+    // Off the address bar before the answer comes.
+    expect(location.search).toBe('');
     await vi.waitFor(() => expect($('[data-verify-note]').hidden).toBe(false));
     expect($('[data-verify-note]').textContent).toBe('Doğrulandı');
     expect(posts).toEqual([{ action: 'booking.verify', code: 'r:abc.def' }]);
