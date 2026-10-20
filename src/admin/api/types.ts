@@ -112,8 +112,11 @@ export type CalendarEntry = {
   minutes: number;
   kind: 'session' | 'intro';
   type?: string;
-  status: 'hold' | 'confirmed';
+  /** `closed`: a stretch the owner closed with "Saat kapat" (Faz 2): taken on the site, no rest added. */
+  status: 'hold' | 'confirmed' | 'closed';
   holdUntil?: number;
+  /** For a closed stretch: the owner's own note ("izin", "kongre"). */
+  note?: string;
 };
 
 /**
@@ -254,6 +257,8 @@ export interface Api {
   /** Puts an appointment in the calendar (`day` YYYY-MM-DD, `time` HH:MM, Istanbul). */
   calendarAdd(input: { day: string; time: string; kind: 'session' | 'intro'; type?: string }): Promise<{ entry: CalendarEntry }>;
   calendarRemove(id: string): Promise<void>;
+  /** Saat kapat: a day (whole, or `from`–`to`, Istanbul) taken on the site; the appointments in it stay. */
+  calendarClose(input: { day: string; from: string; to: string; note?: string }): Promise<{ entry: CalendarEntry }>;
   /** Requests from the site, oldest first. */
   requestsList(): Promise<{ requests: BookingRequest[] }>;
   /** Sends the owner's (edited) e-mail to the person and applies the decision. */
@@ -337,6 +342,7 @@ export const ACTIONS = {
   calendarList: 'calendar.list',
   calendarAdd: 'calendar.add',
   calendarRemove: 'calendar.remove',
+  calendarClose: 'calendar.close',
   requestsList: 'requests.list',
   requestDecide: 'requests.decide',
   requestToClient: 'requests.toClient',

@@ -6,6 +6,8 @@
  * small type and the picked day's appointments (the free intro and closing sessions marked as such).
  * The bar under a day is its occupancy; full, it turns red. Adding one is "Randevu ekle" at the top
  * of the page (AddAppointmentDialog).
+ * Faz 2 (owner's decision 2026-10-20): "Saat kapat" closes a whole day or a stretch of it (leave,
+ * a conference): taken on the site, grey here, "Aç" opens it again. Appointments in it stay.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type CalendarEntry, type Client } from '../../api/types';
@@ -14,7 +16,7 @@ import { SESSION_TYPES, closedOn, formatDay, holdOf, minutesOf, overlaps, timesF
 import { FREE_KINDS, clientsBusy, sessionsOf, type SessionKind } from '../../../lib/sessions';
 import { istanbulParts } from '../../lib/draft';
 import { usePanel } from '../context';
-import { Banner, Button, Dialog, Spinner } from '../kit';
+import { Banner, Button, Dialog, Field, Spinner } from '../kit';
 
 export const cfg = booking as BookingConfig;
 
@@ -46,7 +48,7 @@ function occupancy(day: string, busy: BusyInterval[]): number | null {
   return taken / times.length;
 }
 
-type DayItem = { start: number; minutes: number; label: string; note: string; tone: 'ok' | 'wait'; free?: boolean; entry?: CalendarEntry };
+type DayItem = { start: number; minutes: number; label: string; note: string; tone: 'ok' | 'wait' | 'closed'; free?: boolean; entry?: CalendarEntry };
 
 /** How a client's session reads in the day list. */
 export const SESSION_KIND_LABEL: Record<SessionKind, string> = {
@@ -82,6 +84,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
   const today = partsOf(Date.now()).day;
   const [month, setMonth] = useState(today.slice(0, 7));
   const [picked, setPicked] = useState<string | null>(null);
+  const [closing, setClosing] = useState<{ day: string; whole: boolean; from: string; to: string; note: string } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -105,7 +108,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
 
   const busyMonth = useMemo(
     () => [
-      ...(entries ?? []).map((e) => ({ start: e.start, end: e.start + (e.minutes + cfg.restMinutes) * 60e3 })),
+      ...(entries ?? []).map((e) => ({ start: e.start, end: e.start + (e.minutes + (e.status === 'closed' ? 0 : cfg.restMinutes)) * 60e3 })),
       ...clientsBusy(clients, cfg.restMinutes, first, last),
     ],
     [entries, clients, first, last],
@@ -117,9 +120,11 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
     const one: DayItem[] = (entries ?? [])
       .filter((e) => e.start >= from && e.start < to)
       .map((e) =>
-        e.status === 'confirmed'
-          ? { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onaylı randevu', tone: 'ok', entry: e }
-          : { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onay bekleyen talep', tone: 'wait', entry: e },
+        e.status === 'closed'
+          ? { start: e.start, minutes: e.minutes, label: 'Kapalı', note: e.note ?? 'Saat kapat', tone: 'closed', entry: e }
+          : e.status === 'confirmed'
+            ? { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onaylı randevu', tone: 'ok', entry: e }
+            : { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onay bekleyen talep', tone: 'wait', entry: e },
       );
     const tracked: DayItem[] = clients.flatMap((c) =>
       sessionsOf(c, day, day)
@@ -148,6 +153,23 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
     } finally {
       setBusy(false);
       setRemoving(null);
+    }
+  };
+
+  const close = async () => {
+    if (!closing) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.calendarClose({ day: closing.day, from: closing.whole ? '00:00' : closing.from, to: closing.whole ? '24:00' : closing.to, note: closing.note });
+      setNotice(`${formatDay(closing.day, 'tr')}${closing.whole ? ' bütün gün' : `, ${closing.from.replace(':', '.')}–${closing.to.replace(':', '.')}`} kapatıldı. Bu aralık sitede dolu görünür.`);
+      setPicked(closing.day);
+      setClosing(null);
+      reload();
+    } catch (err) {
+      setError(err instanceof ApiFailure ? err.message : 'Kapatılamadı. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -188,6 +210,9 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
               </Button>
             </span>
           </div>
+          <Button className="occ-close" onClick={() => setClosing({ day: picked && picked >= today ? picked : today, whole: true, from: '09:00', to: '13:00', note: '' })}>
+            Saat kapat
+          </Button>
           <div className="occ-grid" role="grid">
             {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((d) => (
               <span key={d} className="occ-wd" aria-hidden="true">
@@ -204,13 +229,14 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
               const pct = occ === null ? null : Math.round(occ * 100);
               const items = itemsOf(day);
               const ok = items.filter((it) => it.tone === 'ok').length;
-              const wait = items.length - ok;
-              const counts = [ok ? `${ok} onaylı` : '', wait ? `${wait} bekleyen talep` : ''].filter(Boolean).join(', ');
+              const wait = items.filter((it) => it.tone === 'wait').length;
+              const shut = items.some((it) => it.tone === 'closed');
+              const counts = [ok ? `${ok} onaylı` : '', wait ? `${wait} bekleyen talep` : '', shut ? 'kapalı saat var' : ''].filter(Boolean).join(', ');
               return (
                 <button
                   key={day}
                   type="button"
-                  className={`occ-day${pct === 100 ? ' is-full' : ''}${day === today ? ' is-today' : ''}${picked === day ? ' is-picked' : ''}${holiday && !holiday.from ? ' is-holiday' : ''}${day < today ? ' is-past' : ''}`}
+                  className={`occ-day${shut ? ' has-closed' : ''}${pct === 100 ? ' is-full' : ''}${day === today ? ' is-today' : ''}${picked === day ? ' is-picked' : ''}${holiday && !holiday.from ? ' is-holiday' : ''}${day < today ? ' is-past' : ''}`}
                   style={pct ? ({ '--occ': `${pct}%` } as React.CSSProperties) : undefined}
                   aria-label={`${formatDay(day, 'tr')}${holiday ? `, ${holiday.name}` : ''}${pct === null ? '' : pct === 100 ? ', tamamen dolu' : `, %${pct} dolu`}${counts ? `, ${counts}` : ''}`}
                   aria-pressed={picked === day}
@@ -239,6 +265,12 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
                 <i className="mk" />
               </span>
               Onay bekleyen talep (talep geldikten sonra 24 saat boyunca sizin için ayrılır)
+            </li>
+            <li>
+              <span className="mk-row mk-closed" aria-hidden="true">
+                <i className="mk" />
+              </span>
+              Kapattığınız saat (Saat kapat); sitede dolu görünür
             </li>
             <li>
               <span className="occ-legend-bar" aria-hidden="true" />
@@ -282,7 +314,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
                       </span>
                       {it.entry && (
                         <Button variant="ghost" onClick={() => setRemoving(it.entry!)}>
-                          Sil
+                          {it.tone === 'closed' ? 'Aç' : 'Sil'}
                         </Button>
                       )}
                     </li>
@@ -295,9 +327,45 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
         </>
       )}
 
+      {closing && (
+        <Dialog
+          title="Saat kapat"
+          history
+          onClose={() => !busy && setClosing(null)}
+          actions={
+            <>
+              <Button onClick={() => setClosing(null)} disabled={busy}>
+                Vazgeç
+              </Button>
+              <Button variant="primary" busy={busy} disabled={!closing.day || (!closing.whole && closing.to <= closing.from)} onClick={close}>
+                Kapat
+              </Button>
+            </>
+          }
+        >
+          <Field label="Gün" type="date" value={closing.day} onChange={(day) => setClosing({ ...closing, day })} />
+          <div className="segmented end-choice" role="group" aria-label="Kapatılacak süre">
+            <button type="button" aria-pressed={closing.whole} onClick={() => setClosing({ ...closing, whole: true })}>
+              Bütün gün
+            </button>
+            <button type="button" aria-pressed={!closing.whole} onClick={() => setClosing({ ...closing, whole: false })}>
+              Saat aralığı
+            </button>
+          </div>
+          {!closing.whole && (
+            <div className="add-grid">
+              <Field label="Başlangıç" type="time" value={closing.from} onChange={(from) => setClosing({ ...closing, from })} />
+              <Field label="Bitiş" type="time" value={closing.to} onChange={(to) => setClosing({ ...closing, to })} />
+            </div>
+          )}
+          <Field label="Not (isteğe bağlı, yalnızca siz görürsünüz)" value={closing.note} maxLength={80} onChange={(note) => setClosing({ ...closing, note })} />
+          <p className="k-hint">Bu aralık sitede dolu görünür; danışanlar da kendi sayfalarından buraya erteleyemez. İçindeki mevcut randevular değişmez.</p>
+        </Dialog>
+      )}
+
       {removing && (
         <Dialog
-          title="Randevu silinsin mi?"
+          title={removing.status === 'closed' ? 'Kapalı saat açılsın mı?' : 'Randevu silinsin mi?'}
           history
           onClose={() => !busy && setRemoving(null)}
           actions={
@@ -306,13 +374,14 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
                 Vazgeç
               </Button>
               <Button variant="danger" busy={busy} onClick={() => remove(removing)}>
-                Sil
+                {removing.status === 'closed' ? 'Aç' : 'Sil'}
               </Button>
             </>
           }
         >
           <p>
-            {formatDay(partsOf(removing.start).day, 'tr')}, {clock(removing.start)} · {labelOf(removing)}. Silince bu saat sitede yeniden açık görünür.
+            {formatDay(partsOf(removing.start).day, 'tr')}, {clock(removing.start)}–{clock(removing.start + removing.minutes * 60e3)} · {removing.status === 'closed' ? 'Kapalı' : labelOf(removing)}.{' '}
+            {removing.status === 'closed' ? 'Açınca bu aralık sitede yeniden boş görünür.' : 'Silince bu saat sitede yeniden açık görünür.'}
           </p>
         </Dialog>
       )}

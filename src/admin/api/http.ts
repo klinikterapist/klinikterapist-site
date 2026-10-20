@@ -84,6 +84,7 @@ export function createHttpApi(
     clientRevert: (input) => call(ACTIONS.clientRevert, input).then(() => undefined),
     clientSession: (input) => call(ACTIONS.clientSession, input),
     clientLink: (input) => call(ACTIONS.clientLink, input),
+    calendarClose: (input) => call(ACTIONS.calendarClose, input),
     clientLinkMail: (input) => call(ACTIONS.clientLinkMail, input).then(() => undefined),
     paymentGet: () => call(ACTIONS.paymentGet, {}),
     paymentSet: (payment) => call(ACTIONS.paymentSet, { payment }),

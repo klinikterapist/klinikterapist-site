@@ -309,6 +309,15 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         state.calendar.push(entry);
         return { entry };
       }),
+    calendarClose: ({ day, from, to, note }) =>
+      wait(() => {
+        const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+        const minutes = mins(to) - mins(from);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !(minutes > 0)) throw new ApiFailure('bad_request', 'Bitiş saati başlangıçtan sonra olmalı.');
+        const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start: slotInstant(day, from), minutes, kind: 'session', status: 'closed', ...(note?.trim() ? { note: note.trim().slice(0, 80) } : {}) };
+        state.calendar.push(entry);
+        return { entry };
+      }),
     calendarRemove: (id) => wait(() => void (state.calendar = state.calendar.filter((e) => e.id !== id))),
     requestsList: () => wait(() => ({ requests: [...state.requests].sort((a, b) => a.createdAt - b.createdAt) })),
     requestDecide: ({ id, decision, subject, body }) =>

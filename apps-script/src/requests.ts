@@ -63,8 +63,9 @@ export function assertFree(gas: Gas, cfg: BookingConfig, holds: BusyInterval[], 
   for (const c of read<StoredClient>(gas, CLIENTS)) {
     if (hits(clientsBusy([c], cfg.restMinutes, now, now + WEEKS8))) throw new ApiError('conflict', `Bu saat ${c.number} numaralı danışanın seansıyla çakışıyor. Başka bir saat seçin.`);
   }
-  const confirmed = activeEntries(gas, now).filter((e) => e.status === 'confirmed' && e.id !== skipEntry);
-  if (hits(busyOf(confirmed, cfg.restMinutes))) throw new ApiError('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
+  const entries = activeEntries(gas, now).filter((e) => e.id !== skipEntry);
+  if (hits(busyOf(entries.filter((e) => e.status === 'closed'), cfg.restMinutes))) throw new ApiError('conflict', 'Bu saat, takvimde kapattığınız bir aralığa denk geliyor. Önce o aralığı açın ya da başka bir saat seçin.');
+  if (hits(busyOf(entries.filter((e) => e.status === 'confirmed'), cfg.restMinutes))) throw new ApiError('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
 }
 
 /** The stretch a one-off booking takes, when its day and time are well formed. */

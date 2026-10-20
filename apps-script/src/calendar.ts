@@ -46,13 +46,13 @@ function writeAll(gas: Gas, entries: CalendarEntry[]): void {
 
 /** Entries still in force: not over yet, and holds not expired. */
 export function activeEntries(gas: Gas, now: number): CalendarEntry[] {
-  return readAll(gas).filter((e) => e.start + e.minutes * 60 * 1000 > now && (e.status === 'confirmed' || (e.holdUntil ?? 0) > now));
+  return readAll(gas).filter((e) => e.start + e.minutes * 60 * 1000 > now && (e.status === 'confirmed' || e.status === 'closed' || (e.holdUntil ?? 0) > now));
 }
 
-export const busyOf = (entries: CalendarEntry[], restMinutes: number): BusyInterval[] =>
-  entries.map((e) => ({ start: e.start, end: e.start + (e.minutes + restMinutes) * 60 * 1000 }));
+/** A closed stretch takes only itself; an appointment takes its length and the rest after it. */
+const intervalOf = (e: CalendarEntry, rest: number): BusyInterval => ({ start: e.start, end: e.start + (e.minutes + (e.status === 'closed' ? 0 : rest)) * 60 * 1000 });
 
-const intervalOf = (e: CalendarEntry, rest: number): BusyInterval => ({ start: e.start, end: e.start + (e.minutes + rest) * 60 * 1000 });
+export const busyOf = (entries: CalendarEntry[], restMinutes: number): BusyInterval[] => entries.map((e) => intervalOf(e, restMinutes));
 
 /** Adds a 24-hour hold for a request. Call inside the lock, after checking the time is free. */
 export function addHold(gas: Gas, now: number, day: string, time: string, kind: BookingKind, type?: string): CalendarEntry {
@@ -90,4 +90,25 @@ export function removeEntry(gas: Gas, p: Record<string, unknown>): Record<string
 /** Owner: the calendar, soonest first. */
 export function listEntries(gas: Gas): { entries: CalendarEntry[] } {
   return { entries: activeEntries(gas, gas.now()).sort((a, b) => a.start - b.start) };
+}
+
+/**
+ * Saat kapat (owner's decision 2026-10-20, Faz 2): a whole day (`from` 00:00, `to` 24:00) or a
+ * stretch of it is taken on the site and in the panel's checks. The appointments already in it
+ * stay; the owner moves them if needed. "Aç" is calendar.remove.
+ */
+export function addClosed(gas: Gas, p: Record<string, unknown>): { entry: CalendarEntry } {
+  const day = typeof p.day === 'string' && DAY_RE.test(p.day) ? p.day : null;
+  const from = typeof p.from === 'string' && TIME_RE.test(p.from) ? p.from : null;
+  const to = p.to === '24:00' ? '24:00' : typeof p.to === 'string' && TIME_RE.test(p.to) ? p.to : null;
+  if (!day || !from || !to) throw badRequest('Gün ve saat aralığı eksik ya da hatalı.');
+  const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const minutes = mins(to) - mins(from);
+  if (minutes <= 0) throw badRequest('Bitiş saati başlangıçtan sonra olmalı.');
+  const note = typeof p.note === 'string' ? p.note.replace(/[\r\n\t]+/g, ' ').trim().slice(0, 80) : '';
+  return gas.withLock(() => {
+    const entry: CalendarEntry = { id: gas.uuid().slice(0, 8), start: slotInstant(day, from), minutes, kind: 'session', status: 'closed', ...(note ? { note } : {}) };
+    writeAll(gas, [...readAll(gas), entry]);
+    return { entry };
+  });
 }

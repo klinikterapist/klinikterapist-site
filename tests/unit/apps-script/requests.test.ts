@@ -644,3 +644,32 @@ describe('Faz 1: fees, payments and reminders', () => {
     expect(s.gas.mails[0].body).not.toContain('Seans ücreti');
   });
 });
+
+describe('Faz 2: Saat kapat', () => {
+  it('a closed day is taken on the site, for requests, Randevu ekle and the client’s page; Aç opens it again', () => {
+    const s = setup();
+    const out = s.call<{ entry: { id: string; status: string } }>('calendar.close', { day: '2026-10-30', from: '00:00', to: '24:00', note: 'İzin' });
+    expect(out.data.entry.status).toBe('closed');
+    expect(s.call('calendar.close', { day: '2026-10-30', from: '14:00', to: '13:00' }).ok).toBe(false);
+    s.gas.cache.put('booking.busy', '', 1);
+    expect(bookingBusy(s.gas).busy).toContainEqual({ start: at('2026-10-30T00:00:00'), end: at('2026-10-31T00:00:00') });
+    expect(s.send({ ...session, day: '2026-10-30', time: '10:00' })).toMatchObject({ ok: false, data: { reason: 'taken' } });
+    const added = s.call('requests.add', { kind: 'session', type: 'individual', name: 'Elif Deneme', email: 'elif@example.com', phone: '', lang: 'tr', note: '', day: '2026-10-30', time: '10:00' });
+    expect(added).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    expect(added.error!.message).toContain('kapattığınız');
+    // A client cannot move a session into it.
+    s.send(session);
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    const cid = s.call<{ client: { id: string } }>('requests.toClient', { id }).data.client.id;
+    const code = s.call<{ link: string }>('clients.link', { id: cid }).data.link.split('#k=')[1];
+    const move = handle(s.gas, JSON.stringify({ action: 'track.ask', code, ask: 'postpone', day: '2026-10-29', time: '19:20', newDay: '2026-10-30', newTime: '10:00' }));
+    expect(move).toMatchObject({ ok: false, data: { reason: 'taken' } });
+    // A stretch takes only itself: no rest after it.
+    s.call('calendar.remove', { id: out.data.entry.id });
+    s.gas.cache.put('booking.busy', '', 1);
+    expect(bookingBusy(s.gas).busy.some((b) => b.start === at('2026-10-30T00:00:00'))).toBe(false);
+    s.gas.clock.now += 3600 * 1000; // the same address: at most five e-mails an hour
+    expect(s.send({ ...session, day: '2026-10-30', time: '10:00' }).ok).toBe(true);
+  });
+});

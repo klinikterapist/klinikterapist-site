@@ -13,7 +13,7 @@ import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
 import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from './booking';
-import { addConfirmed, listEntries, removeEntry } from './calendar';
+import { addClosed, addConfirmed, listEntries, removeEntry } from './calendar';
 import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor, listClients, listRequests, requestToClient, revertClient, revertRequest, warnExpiringHolds } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
 import { payClient, readPayment, runReminders, savePayment } from './payment';
@@ -71,6 +71,11 @@ export const ACTIONS: Record<string, Handler> = {
       assertFree(gas, cfg, holdFor(cfg, p.day, p.time, p.kind === 'intro' ? 'intro' : 'session', typeof p.type === 'string' ? p.type : undefined));
       return addConfirmed(gas, cfg, p);
     });
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'calendar.close': (gas, p) => {
+    const out = addClosed(gas, p);
     gas.cache.put('booking.busy', '', 1);
     return out;
   },

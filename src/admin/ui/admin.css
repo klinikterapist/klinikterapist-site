@@ -4762,6 +4762,24 @@ html[data-theme='dark'] {
 }
 
 /* The client's own page: what they asked for there, and the link card */
+/* Saat kapat (Faz 2) */
+.occ-close {
+  justify-self: start;
+}
+
+.mk-closed .mk,
+.day-closed .mk {
+  background: color-mix(in srgb, var(--p-muted) 70%, transparent);
+}
+
+.day-closed {
+  color: var(--p-muted);
+}
+
+.occ-day.has-closed {
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--p-muted) 16%, transparent) 5px 7px);
+}
+
 .ss-status small.ss-paid {
   color: var(--p-ok);
   font-weight: 600;
