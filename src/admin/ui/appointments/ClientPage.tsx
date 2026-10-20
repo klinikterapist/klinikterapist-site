@@ -10,7 +10,8 @@
  * count ("7. seans") that goes on past the four shown.
  * The client's own page (owner's decisions 2026-10-20): the owner sends the secret link from here
  * (an e-mail to edit, or copy it), and can make a new one. What the client does there shows here:
- * a cancelled session "danışan istedi", a session they want moved, and a wish to end therapy.
+ * a cancelled or postponed session "danışan istedi" (with "tam ücret" when it was less than 24 hours
+ * before), and a wish to end therapy.
  * Owner's review a5: Terapiyi sonlandır, Geri al and Sil live here (not in the Seans takip list);
  * the side column is the chart, then the session details, then the client's page.
  */
@@ -199,7 +200,7 @@ export function ClientPage({ id }: { id: string }) {
         <span className={`ss-status st-${s.status}`}>
           {s.status === 'planned' ? (past ? 'İşaretlenmedi' : 'Planlandı') : STATUS_LABEL[s.status]}
           {s.by && <small>{s.by === 'client' ? 'danışan istedi' : 'siz'}</small>}
-          {s.asked && <small className="ss-asked">saat değişikliği istedi</small>}
+          {s.late && <small className="ss-late">24 saatten az kala · tam ücret</small>}
           {s.movedTo && <small>{`→ ${short(s.movedTo.day).d} ${short(s.movedTo.day).m} ${s.movedTo.time.replace(':', '.')}`}</small>}
         </span>
         <span className="ss-actions">
@@ -288,8 +289,8 @@ export function ClientPage({ id }: { id: string }) {
           </div>
           <p className="k-hint">
             Geçmiş seansları "Katıldı" ya da "Gelmedi" diye işaretleyin. İptal ya da ertelenen bir seansın saati takvimde ve sitede açılır; ertelenen seansın yeni tarihi takvime
-            işlenir. Danışan kendi sayfasından bir seansı iptal ederse burada "danışan istedi" diye görünür. Başka bir saat isterse seans "saat değişikliği istedi" diye işaretlenir;
-            danışanla konuşup "Ertele" ile yeni saati girin.
+            işlenir. Danışan kendi sayfasından bir seansı iptal eder ya da ertelerse burada "danışan istedi" diye görünür; 24 saatten az kala yaptıysa "tam ücret" notu
+            düşer (danışan bunu onaylamıştır).
           </p>
         </div>
         <aside className="appt-side cl-side">
@@ -318,8 +319,9 @@ export function ClientPage({ id }: { id: string }) {
             <h3 className="tk-group-title">Danışanın randevu sayfası</h3>
             <div className="cl-card cl-link">
               <p className="k-hint">
-                Danışan bu gizli bağlantıyla sıradaki seanslarını görür; 24 saatten fazla kala iptal edebilir ya da başka saat isteyebilir, terapiyi sonlandırmak istediğini
-                bildirebilir. Her istek size e-postayla gelir. Sayfada adı görünmez.
+                Danışan bu gizli bağlantıyla seans bilgisini, seans grafiğini ve sıradaki seanslarını görür; bir seansı iptal edebilir ya da takvimdeki boş bir saate
+                erteleyebilir, terapiyi sonlandırmak istediğini bildirebilir. 24 saatten az kalmışsa önce tam ücret uyarısını onaylar. Her işlem size e-postayla gelir. Sayfada
+                adı görünmez.
               </p>
               <div className="row">
                 <Button variant="primary" disabled={busy} onClick={() => link('mail')}>

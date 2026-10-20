@@ -2,12 +2,13 @@
 /**
  * The client's own page, `/randevum/` and `/en/my-appointment/` (src/lib/tracking.ts): opened with
  * the secret link the owner sends from the panel. Kept out of search and the sitemap (noindex), no
- * page counter, no "Randevu Al" bar. The sessions are drawn by track-page.ts.
+ * page counter, no "Randevu Al" bar. Everything is drawn by track-page.ts; the booking calendar's
+ * rules (`booking.json`) go with the page for the free times of a postponement.
  */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
 import type { Lang } from '../lib/settings';
-import { getContact } from '../lib/settings';
+import { getBooking, getContact } from '../lib/settings';
 import { buildMeta } from '../lib/seo';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../admin/config';
 import { SESSION_TYPES } from '../lib/booking-form';
@@ -25,13 +26,13 @@ const demo = import.meta.env.DEV ? '1' : undefined;
 const T = {
   tr: {
     title: 'Randevularım',
-    lead: 'Sıradaki seanslarınız burada. Bir seansı başlamasına 24 saatten fazla varken iptal edebilir ya da başka bir saat isteyebilirsiniz.',
+    lead: 'Sıradaki seanslarınız, seans bilginiz ve seans grafiğiniz burada. Bir seansı iptal edebilir ya da takvimdeki boş bir saate erteleyebilirsiniz.',
     privacy: 'Bu sayfa size gönderilen bağlantıyla açılır; adınız burada görünmez. Bağlantıyı kimseyle paylaşmayın.',
     mail: 'Sorunuz olursa e-posta gönderin:',
   },
   en: {
     title: 'My appointments',
-    lead: 'Your next sessions are here. You can cancel a session or ask for another time up to 24 hours before it starts.',
+    lead: 'Your next sessions, your session details and your sessions so far are here. You can cancel a session or move it to a free time in the calendar.',
     privacy: 'This page opens with the link sent to you; your name does not appear here. Please do not share the link.',
     mail: 'If you have a question, write to me:',
   },
@@ -44,30 +45,48 @@ const messages: TrackMessages =
         noLink: 'This page opens with the link in the e-mail I sent you. Please open that link again.',
         failures: {
           link: 'This link is not valid or is no longer in use. If you are still in therapy, write to me and I will send you a new one.',
-          late: 'Less than 24 hours to go: this session cannot be changed here. Please write to me by e-mail.',
+          late: 'Less than 24 hours to go: please read and accept the note on the fee first.',
           gone: 'This session can no longer be changed here. Please reload the page.',
+          taken: 'That time is no longer free. Please choose another one.',
           busy: 'There are too many requests at the moment. Please try again a little later.',
           invalid: 'The request could not be understood. Please reload the page and try again.',
           network: 'Something went wrong. Please check your connection and try again, or write to me by e-mail.',
         },
-        weekly: 'Every {day} at {time} · {type}',
-        types: Object.fromEntries(SESSION_TYPES.map((t) => [t.id, t.en])),
+        nextTitle: 'Next sessions',
+        infoTitle: 'Session details',
+        chartTitle: 'Your sessions so far',
+        info: { weekly: 'Weekly session', type: 'Session type', since: 'Therapy began', every: 'Every {day} at {time}' },
+        types: Object.fromEntries(SESSION_TYPES.map((t) => [t.id, `${t.en} (${t.minutes} min)`])),
         kinds: { weekly: 'Session', intro: 'Free intro call', closing: 'Closing session (free)', extra: 'Extra session' },
         status: { cancelled: 'Cancelled', postponed: 'Moved' },
-        byClient: 'at your request',
-        asked: 'Your request for another time has been sent. I will write to you.',
-        late: 'Less than 24 hours to go. To change it, please write to me by e-mail.',
+        byClient: 'by you',
+        late: 'Less than 24 hours to go.',
         none: 'There are no planned sessions at the moment.',
         cancel: 'Cancel',
-        reschedule: 'Ask for another time',
+        postpone: 'Move',
+        lateTitle: 'Less than 24 hours to your session',
+        lateText:
+          'For a session cancelled or moved less than 24 hours before it starts, the full session fee is due. Making this change, and what follows from it, is your responsibility. If you go on, I will be told that you accepted this.',
+        lateOk: 'I understand, go on',
         cancelNote: 'A note (optional)',
-        rescheduleNote: 'Days and times that suit you',
         confirmCancel: 'Cancel this session',
-        sendReschedule: 'Send',
+        pickDay: 'New day',
+        pickTime: 'Choose a free time',
+        noDays: 'There is no free time in the calendar at the moment. Please write to me by e-mail.',
+        postponeNote: 'A note (optional)',
+        confirmPostpone: 'Move the session',
         back: 'Back',
         sending: 'Sending…',
         cancelled: 'cancelled. I have been told.',
-        rescheduled: 'your request has been sent. I will write to you.',
+        postponed: 'moved to',
+        chart: {
+          count: 'sessions',
+          since: 'Since therapy began',
+          free: '{n} free',
+          empty: 'No past sessions yet; the chart fills after the first one.',
+          note: 'Out of the past {n} sessions (cancelled and moved ones included).',
+          parts: { attended: 'Attended', noshow: 'Missed', cancelled: 'Cancelled', postponed: 'Moved', unmarked: 'Not marked yet' },
+        },
         endTitle: 'Ending therapy',
         endText: 'If you would like to end our work together, you can let me know here. We will then talk about how to close it well.',
         endButton: 'I want to end therapy',
@@ -82,30 +101,48 @@ const messages: TrackMessages =
         noLink: 'Bu sayfa size gönderdiğim e-postadaki bağlantıyla açılır. Lütfen o bağlantıyı yeniden açın.',
         failures: {
           link: 'Bu bağlantı geçersiz ya da artık kullanılmıyor. Terapiniz sürüyorsa bana yazın, size yenisini göndereyim.',
-          late: 'Seansa 24 saatten az kaldı; bu sayfadan değiştirilemez. Lütfen bana e-postayla yazın.',
+          late: 'Seansa 24 saatten az kaldı; lütfen önce ücretle ilgili uyarıyı okuyup onaylayın.',
           gone: 'Bu seans artık bu sayfadan değiştirilemez. Lütfen sayfayı yenileyin.',
+          taken: 'Seçtiğiniz saat artık boş değil. Lütfen başka bir saat seçin.',
           busy: 'Şu anda çok fazla istek var. Lütfen biraz sonra tekrar deneyin.',
           invalid: 'İstek anlaşılamadı. Lütfen sayfayı yenileyip tekrar deneyin.',
           network: 'Bir sorun oldu. Bağlantınızı kontrol edip tekrar deneyin ya da bana e-postayla yazın.',
         },
-        weekly: 'Her {day} {time} · {type}',
-        types: Object.fromEntries(SESSION_TYPES.map((t) => [t.id, t.tr])),
+        nextTitle: 'Sıradaki seanslar',
+        infoTitle: 'Seans bilgisi',
+        chartTitle: 'Seans grafiği',
+        info: { weekly: 'Haftalık seans', type: 'Görüşme türü', since: 'Terapiye başlangıç', every: 'Her {day} {time}' },
+        types: Object.fromEntries(SESSION_TYPES.map((t) => [t.id, `${t.tr} (${t.minutes} dk)`])),
         kinds: { weekly: 'Seans', intro: 'Ücretsiz ön görüşme', closing: 'Sonlandırma görüşmesi (ücretsiz)', extra: 'Ek seans' },
         status: { cancelled: 'İptal edildi', postponed: 'Ertelendi' },
         byClient: 'sizin isteğinizle',
-        asked: 'Başka saat isteğiniz iletildi. Size yazacağım.',
-        late: '24 saatten az kaldı. Değişiklik için lütfen bana e-postayla yazın.',
+        late: 'Seansa 24 saatten az kaldı.',
         none: 'Şu an planlı seans yok.',
         cancel: 'İptal et',
-        reschedule: 'Başka saat iste',
+        postpone: 'Ertele',
+        lateTitle: 'Seansınıza 24 saatten az kaldı',
+        lateText:
+          '24 saatten az kala yapılan iptal ve ertelemelerde seans ücretinin tamamı ödenir. Bu bildirimi yapmak ve sonucunu üstlenmek sizin sorumluluğunuzdadır. Devam ederseniz bu uyarıyı onayladığınız bana iletilir.',
+        lateOk: 'Anladım, devam et',
         cancelNote: 'Not (isteğe bağlı)',
-        rescheduleNote: 'Size uygun gün ve saatler',
         confirmCancel: 'Seansı iptal et',
-        sendReschedule: 'Gönder',
+        pickDay: 'Yeni gün',
+        pickTime: 'Boş bir saat seçin',
+        noDays: 'Takvimde şu an boş saat yok. Lütfen bana e-postayla yazın.',
+        postponeNote: 'Not (isteğe bağlı)',
+        confirmPostpone: 'Seansı ertele',
         back: 'Vazgeç',
         sending: 'Gönderiliyor…',
         cancelled: 'iptal edildi. Bana bilgi gitti.',
-        rescheduled: 'isteğiniz iletildi. Size yazacağım.',
+        postponed: 'ertelendi:',
+        chart: {
+          count: 'seans',
+          since: 'Terapiye başlangıçtan bu yana',
+          free: '{n} ücretsiz görüşme',
+          empty: 'Henüz geçmiş seans yok; grafik ilk seanstan sonra dolar.',
+          note: 'Geçmiş {n} seans üzerinden (iptal ve ertelenenler dahil).',
+          parts: { attended: 'Katıldı', noshow: 'Gelmedi', cancelled: 'İptal edildi', postponed: 'Ertelendi', unmarked: 'İşaretlenmedi' },
+        },
         endTitle: 'Terapiyi sonlandırmak',
         endText: 'Birlikte çalışmamızı sonlandırmak isterseniz bunu buradan bana iletebilirsiniz. Ardından süreci iyi bir şekilde nasıl kapatacağımızı konuşuruz.',
         endButton: 'Terapiyi sonlandırmak istiyorum',
@@ -125,7 +162,7 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
       <p class="lead">{T.lead}</p>
     </PageHead>
 
-    <div class="tp" data-tracking data-lang={lang} data-endpoint={endpoint} data-demo={demo} data-messages={JSON.stringify(messages)}>
+    <div class="tp" data-tracking data-lang={lang} data-endpoint={endpoint} data-demo={demo} data-config={JSON.stringify(getBooking())} data-messages={JSON.stringify(messages)}>
       <p class="tp-status" data-status role="status">{messages.loading}</p>
       <noscript><p class="tp-status">{lang === 'en' ? 'This page needs JavaScript.' : 'Bu sayfa için JavaScript gerekir.'}</p></noscript>
       <div data-body hidden></div>
@@ -215,6 +252,10 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
     flex-wrap: wrap;
     gap: var(--space-2);
     align-items: center;
+  }
+
+  .tp :global(.tp-row[hidden]) {
+    display: none;
   }
 
   .tp :global(.tp-btn) {
@@ -309,5 +350,209 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
 
   .tp-foot + .tp-foot {
     margin-top: var(--space-2);
+  }
+
+  /* Owner's review a5: the session details, the chart, the full-fee warning and the move form */
+  .tp :global(.tp-next h2),
+  .tp :global(.tp-card h2) {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-lg);
+  }
+
+  .tp :global(.tp-card) {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+  }
+
+  .tp :global(.tp-card h2) {
+    margin: 0;
+  }
+
+  .tp :global(.tp-info) {
+    margin: 0;
+  }
+
+  .tp :global(.tp-info > div) {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 10px 0;
+    font-size: var(--text-sm);
+  }
+
+  .tp :global(.tp-info > div + div) {
+    border-top: 1px solid var(--line);
+  }
+
+  .tp :global(.tp-info dt) {
+    color: var(--muted);
+  }
+
+  .tp :global(.tp-info dd) {
+    margin: 0;
+    font-weight: 600;
+    text-align: right;
+  }
+
+  .tp :global(.tp-count) {
+    margin: 0;
+  }
+
+  .tp :global(.tp-count b) {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  .tp :global(.tp-bar) {
+    display: flex;
+    gap: 2px;
+    height: 14px;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+  }
+
+  .tp :global(.tp-seg) {
+    min-width: 4px;
+  }
+
+  .tp :global(.seg-attended) {
+    background: #3f7a4f;
+  }
+
+  .tp :global(.seg-noshow) {
+    background: #b0412e;
+  }
+
+  .tp :global(.seg-cancelled) {
+    background: color-mix(in srgb, var(--muted) 75%, transparent);
+  }
+
+  .tp :global(.seg-postponed) {
+    background: var(--sun-disc);
+  }
+
+  .tp :global(.seg-unmarked) {
+    background: color-mix(in srgb, var(--text) 18%, transparent);
+  }
+
+  .tp :global(.tp-key) {
+    display: grid;
+    gap: 6px;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .tp :global(.tp-key li) {
+    display: grid;
+    grid-template-columns: 12px 1fr auto 2.5rem;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .tp :global(.tp-key i) {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .tp :global(.tp-key small) {
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .tp :global(.tp-panel) {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .tp :global(.tp-warn) {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-left: 4px solid var(--sun-disc);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+  }
+
+  .tp :global(.tp-warn p) {
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  .tp :global(.tp-move) {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .tp :global(.tp-move > label) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .tp :global(.tp-move select) {
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+
+  .tp :global(.tp-times) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .tp :global(.tp-times legend) {
+    margin-bottom: var(--space-2);
+    padding: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .tp :global(.tp-time) {
+    position: relative;
+  }
+
+  .tp :global(.tp-time input) {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+  }
+
+  .tp :global(.tp-time span) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .tp :global(.tp-time input:checked + span) {
+    border-color: var(--btn-bg);
+    background: var(--btn-bg);
+    color: var(--btn-text);
+  }
+
+  .tp :global(.tp-time input:focus-visible + span) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
 </style>

@@ -89,10 +89,9 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       sessions: [
         { day: iso(since - 4 * 864e5), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' },
         { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
-        { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', note: 'Hastalık' },
         { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
-        // Asked on their own page for another time.
-        { day: tue(4), time: '18:00', kind: 'weekly', minutes: 50, status: 'planned', asked: 'reschedule', note: 'Perşembe akşamı olabilir mi?' },
+        // Cancelled on their own page less than 24 hours before (full fee).
+        { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', note: 'Hastalık', late: true },
       ],
     });
     state.waitlist.push({

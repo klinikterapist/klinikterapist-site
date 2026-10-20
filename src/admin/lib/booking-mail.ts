@@ -287,8 +287,8 @@ export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when
 }
 
 /**
- * The client's own page (owner's decisions 2026-10-20): the secret link, what the page does, the
- * 24-hour rule, and that the link is theirs alone.
+ * The client's own page (owner's decisions 2026-10-20, review a5): the secret link, what the page
+ * does, the full fee less than 24 hours before, and that the link is theirs alone.
  */
 export function linkMail(c: Contact, link: string): Mail {
   const name = c.name.trim();
@@ -298,10 +298,10 @@ export function linkMail(c: Contact, link: string): Mail {
       body: [
         `Dear ${name},`,
         '',
-        'On this page you can see your upcoming sessions:',
+        'On this page you can see your upcoming sessions, your session details and your sessions so far:',
         link,
         '',
-        'From there you can cancel a session or ask for another time, up to 24 hours before it. For anything closer than 24 hours, please write to me by replying to this e-mail.',
+        'From there you can cancel a session or move it to a free time in the calendar. For a session cancelled or moved less than 24 hours before it starts, the full session fee is due; the page reminds you of this before you go on.',
         'You can also let me know there if you would like to end our work together.',
         '',
         'The link is yours alone; please do not share it. Your name does not appear on the page. If you think someone else has it, tell me and I will send you a new one.',
@@ -315,10 +315,10 @@ export function linkMail(c: Contact, link: string): Mail {
     body: [
       `Sayın ${name},`,
       '',
-      'Sıradaki seanslarınızı bu sayfadan görebilirsiniz:',
+      'Sıradaki seanslarınızı, seans bilginizi ve seans grafiğinizi bu sayfadan görebilirsiniz:',
       link,
       '',
-      'Bir seansı, başlamasına 24 saatten fazla varken bu sayfadan iptal edebilir ya da başka bir saat isteyebilirsiniz. 24 saatten az kaldığında lütfen bu e-postayı yanıtlayarak bana yazın.',
+      'Buradan bir seansı iptal edebilir ya da takvimdeki boş bir saate erteleyebilirsiniz. Başlamasına 24 saatten az kala iptal edilen ya da ertelenen seanslarda seans ücretinin tamamı ödenir; sayfa devam etmeden önce bunu size hatırlatır.',
       'Terapiyi sonlandırmak isterseniz bunu da bu sayfadan bana iletebilirsiniz.',
       '',
       'Bağlantı yalnızca size özeldir; lütfen kimseyle paylaşmayın. Sayfada adınız görünmez. Bağlantının başkasının eline geçtiğini düşünürseniz bana yazın, size yenisini göndereyim.',

@@ -179,14 +179,14 @@ describe('Seans takip', () => {
     setup('tracking', [], [
       client({ id: 'c3', number: 'KT003CC', weekday: weekdayIn(5), time: '10:00', since: day(-30) }),
       client({ id: 'c2', number: 'KT002BB', weekday: weekdayIn(1), time: '10:00', since: day(-30) }),
-      client({ id: 'c1', number: 'KT001AA', weekday: weekdayIn(0), time: '23:59', since: day(-30), sessions: [{ day: day(1), time: '10:00', kind: 'weekly', minutes: 50, status: 'planned', asked: 'reschedule' }] }),
+      client({ id: 'c1', number: 'KT001AA', weekday: weekdayIn(0), time: '23:59', since: day(-30), sessions: [{ day: day(-6), time: '23:59', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', late: true }] }),
     ]);
     const r1 = await row('KT001AA');
     expect(screen.getByText('Aktif danışanlar (3)')).toBeTruthy();
     expect(screen.getByText('Bugün (1)')).toBeTruthy();
     expect(screen.getByText('Yaklaşan seanslar (2)')).toBeTruthy();
     expect(r1.textContent).toContain('Bugün, 23.59');
-    expect(r1.textContent).not.toMatch(/Saat değişikliği|Osman/);
+    expect(r1.textContent).not.toMatch(/tam ücret|Osman/);
     expect(within(r1).queryByRole('button')).toBeNull();
     expect(within(r1).getByRole('link', { name: 'KT001AA: danışanın sayfasına git' }).getAttribute('href')).toBe('#/seans-takip/c1');
     const coming = [...document.querySelectorAll('.tk-number')].map((e) => e.textContent);
@@ -358,10 +358,10 @@ describe("the client's own page, seen from the panel", () => {
   it('the link goes by e-mail as the owner edits it; what the client asked for shows on their page and in the list', async () => {
     const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
     const weekday = new Date(`${day(3)}T12:00:00Z`).getUTCDay();
-    const asked = client({ weekday, since: day(3), sessions: [{ day: day(3), time: '10:00', kind: 'weekly', minutes: 50, status: 'planned', asked: 'reschedule', note: 'Cuma olur' }], endAsked: { at: Date.now(), note: 'İyiyim' } });
+    const asked = client({ weekday, since: day(3), sessions: [{ day: day(3), time: '10:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', late: true, note: 'Hastayım' }], endAsked: { at: Date.now(), note: 'İyiyim' } });
     const { api } = setup('client:c1', [], [asked]);
-    expect(await screen.findByText('saat değişikliği istedi')).toBeTruthy();
-    expect(screen.getByText('Cuma olur')).toBeTruthy();
+    expect(await screen.findByText('24 saatten az kala · tam ücret')).toBeTruthy();
+    expect(screen.getByText('Hastayım')).toBeTruthy();
     expect(screen.getByText(/terapiyi sonlandırmak istediğini bildirdi/)).toBeTruthy();
     expect(screen.getByText('Notu: İyiyim')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Bağlantıyı gönder' }));
@@ -375,6 +375,5 @@ describe("the client's own page, seen from the panel", () => {
     setup('tracking', [], [asked]);
     await row('KT007OGO');
     expect(screen.queryByText('Sonlandırmak istiyor')).toBeNull();
-    expect(screen.queryByText('Saat değişikliği istedi')).toBeNull();
   });
 });

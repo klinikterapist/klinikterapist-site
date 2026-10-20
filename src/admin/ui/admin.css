@@ -4851,13 +4851,8 @@ html[data-theme='dark'] {
 }
 
 /* The client's own page: what they asked for there, and the link card */
-.tk-badge.is-asked {
-  background: color-mix(in srgb, var(--p-accent) 18%, transparent);
-  color: var(--p-text);
-}
-
-.ss-status small.ss-asked {
-  color: var(--p-warn-text);
+.ss-status small.ss-late {
+  color: var(--p-err-text);
   font-weight: 600;
 }
 

@@ -22,8 +22,11 @@ export type SessionRecord = {
   movedTo?: { day: string; time: string };
   /** An extra session made by a postponement: the session it replaces (`YYYY-MM-DDTHH:MM`). */
   from?: string;
-  /** The client asked for another time on their own page; it goes when the owner marks the session. */
-  asked?: 'reschedule';
+  /**
+   * Cancelled or postponed by the client on their own page less than 24 hours before, after the page
+   * told them the full fee is due (owner's review a5). It goes when the owner marks the session again.
+   */
+  late?: true;
 };
 export type TrackedClient = { weekday: number; time: string; minutes: number; since: string; sessions?: SessionRecord[] };
 
@@ -142,8 +145,8 @@ export function applyChange(c: TrackedClient, ch: SessionChangeInput, closingMin
   if (!next.by) delete next.by;
   if (!next.note) delete next.note;
   delete next.movedTo;
-  // The owner has answered the client's request for another time.
-  delete next.asked;
+  // A mark made again by the owner is not the client's late one any more.
+  delete next.late;
   if (status === 'postponed' && ch.newDay && ch.newTime) {
     if (!DAY_RE.test(ch.newDay) || !TIME_RE.test(ch.newTime)) throw new SessionError('Yeni tarih ya da saat hatalı.');
     if (taken(ch.newDay, ch.newTime)) throw new SessionError('Yeni tarihte zaten bir seans var.');
@@ -154,21 +157,6 @@ export function applyChange(c: TrackedClient, ch: SessionChangeInput, closingMin
   // An unmarked weekly session needs no record.
   if (base.kind === 'weekly' && status === 'planned' && !note) return { sessions };
   return { sessions: [...sessions, next] };
-}
-
-/**
- * The client asked for another time for one of their sessions (their own page): the session stays
- * as it is, marked `asked`, with the client's note (the times that suit them) until the owner marks it.
- */
-export function askReschedule(c: TrackedClient, day: string, time: string, note: string): SessionRecord[] {
-  const key = sessionKey({ day, time });
-  const old = (c.sessions ?? []).find((s) => sessionKey(s) === key);
-  if (!old && !isWeekly(c, day, time)) throw new SessionError('Bu tarihte bir seans yok.');
-  const base: SessionRecord = old ?? { day, time, kind: 'weekly', minutes: c.minutes, status: 'planned' };
-  if (base.status !== 'planned') throw new SessionError('Bu seans artık planlı değil.');
-  const text = note.trim().slice(0, 300);
-  const next: SessionRecord = { ...base, asked: 'reschedule', ...(text ? { note: text } : {}) };
-  return [...(c.sessions ?? []).filter((s) => s !== old), next];
 }
 
 export type SessionStats = {

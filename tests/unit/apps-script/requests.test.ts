@@ -8,6 +8,8 @@ import { seal, unseal } from '../../../apps-script/src/seal';
 import { fakeGas } from './fake-gas';
 import { FakeGitHub } from './fake-github';
 import { ghProps } from './publish-fixtures';
+import { parseBooking } from '../../../src/lib/schemas';
+import { freeTimes, type TrackView } from '../../../src/lib/tracking';
 
 const NOW = Date.parse('2026-10-20T10:00:00+03:00');
 const at = (s: string) => Date.parse(`${s}+03:00`);
@@ -292,7 +294,7 @@ describe("The client's own page (tracking.ts)", () => {
     const code = link.split('#k=')[1];
     const pub = (action: string, p: Record<string, unknown> = {}) => handle(s.gas, JSON.stringify({ action, ...p })) as Res;
     const client = () =>
-      s.call<{ clients: { sessions: { day: string; status: string; by?: string; note?: string; asked?: string }[]; endAsked?: { note?: string } }[] }>('clients.list').data.clients[0];
+      s.call<{ clients: { sessions: { day: string; status: string; by?: string; note?: string; late?: boolean; time?: string }[]; endAsked?: { note?: string } }[] }>('clients.list').data.clients[0];
     return { ...s, cid, link, code, pub, client };
   }
 
@@ -337,26 +339,49 @@ describe("The client's own page (tracking.ts)", () => {
     expect(bookingBusy(t.gas).busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(false);
   });
 
-  it('less than 24 hours before the session the page refuses to cancel or move it', () => {
+  it('less than 24 hours before: refused until the full-fee warning is accepted; then done, marked late, and the owner is told', () => {
     const t = withClient();
     t.gas.clock.now = at('2026-10-21T19:30:00'); // 23 h 50 min before 22 October 19:20
-    expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-22', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'late' } });
     expect((t.pub('track.view', { code: t.code }).data!.next as { late: boolean }[])[0].late).toBe(true);
-    expect(t.pub('track.ask', { code: t.code, ask: 'reschedule', day: '2026-10-22', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'late' } });
+    expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-22', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'late' } });
+    expect(t.client().sessions).toEqual([]);
+    t.gas.mails.length = 0;
+    expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-22', time: '19:20', lateOk: true }).ok).toBe(true);
+    expect(t.client().sessions).toContainEqual(expect.objectContaining({ day: '2026-10-22', status: 'cancelled', by: 'client', late: true }));
+    expect(t.gas.mails[0].subject).toContain('iptal etti (24 saatten az kala)');
+    expect(t.gas.mails[0].body).toContain('seans ücretinin tamamının ödeneceğini');
     // Not one of their sessions.
     expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-30', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'gone' } });
-    expect(t.client().sessions).toEqual([]);
   });
 
-  it('asking for another time marks the session until the owner answers; asking to end marks the client', () => {
+  it('postponing moves the session to a free time of the booking calendar; a taken or made-up time is refused; asking to end marks the client', () => {
     const t = withClient();
-    expect(t.pub('track.ask', { code: t.code, ask: 'reschedule', day: '2026-10-29', time: '19:20', note: 'Cuma 10.00 olur' }).ok).toBe(true);
-    expect(t.client().sessions).toContainEqual(expect.objectContaining({ day: '2026-10-29', status: 'planned', asked: 'reschedule', note: 'Cuma 10.00 olur' }));
-    // The time stays taken until the owner moves it.
+    const cfg = parseBooking(JSON.parse(readFileSync('src/data/booking.json', 'utf8')));
+    const view = t.pub('track.view', { code: t.code }).data as unknown as TrackView;
+    expect(view).toMatchObject({ since: '2026-10-22', minutes: 60, stats: expect.objectContaining({ held: 0 }) });
+    // A free time a week on, and one in the calendar on that day that someone else takes.
+    const day = '2026-11-03';
+    const times = freeTimes(cfg, view, { day: '2026-10-29', time: '19:20' }, day, NOW);
+    const [free, other] = [times[0], times.at(-1)!];
+    expect(free && other).toBeTruthy();
+    t.call('calendar.add', { day, time: other, kind: 'session', type: 'individual' });
+    expect(t.pub('track.ask', { code: t.code, ask: 'postpone', day: '2026-10-29', time: '19:20', newDay: day, newTime: other })).toMatchObject({ ok: false, data: { reason: 'taken' } });
+    expect(t.pub('track.ask', { code: t.code, ask: 'postpone', day: '2026-10-29', time: '19:20', newDay: day, newTime: '03:00' })).toMatchObject({ ok: false, data: { reason: 'taken' } });
+    t.gas.mails.length = 0;
+    const out = t.pub('track.ask', { code: t.code, ask: 'postpone', day: '2026-10-29', time: '19:20', newDay: day, newTime: free });
+    expect(out.ok).toBe(true);
+    expect(t.client().sessions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ day: '2026-10-29', status: 'postponed', by: 'client' }),
+        expect.objectContaining({ day, time: free, kind: 'extra', status: 'planned' }),
+      ]),
+    );
+    expect(t.client().sessions.find((x) => x.day === '2026-10-29')).not.toHaveProperty('late');
+    expect(t.gas.mails[0].subject).toContain('KT001AY seansını erteledi');
     t.gas.cache.put('booking.busy', '', 1);
-    expect(bookingBusy(t.gas).busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(true);
-    t.call('clients.session', { id: t.cid, op: 'mark', day: '2026-10-29', time: '19:20', status: 'postponed', by: 'client', newDay: '2026-10-30', newTime: '10:00' });
-    expect(t.client().sessions.find((x) => x.day === '2026-10-29')).not.toHaveProperty('asked');
+    const busy = bookingBusy(t.gas).busy;
+    expect(busy.some((b) => b.start === at(`${day}T${free}:00`))).toBe(true);
+    expect(busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(false);
     expect(t.pub('track.ask', { code: t.code, ask: 'end', note: 'Kendimi iyi hissediyorum' }).ok).toBe(true);
     expect(t.client().endAsked).toMatchObject({ note: 'Kendimi iyi hissediyorum' });
     expect(t.gas.mails.at(-1)!.subject).toContain('terapiyi sonlandırmak istiyor');

@@ -36,6 +36,12 @@ Yapılan:
 - Site: `TrackingView.astro` + `track-page.ts` (noindex, site haritası dışı, sayaç yok, "Randevu Al" çubuğu yok). Geliştirme sunucusunda `/randevum/#k=demo` örnek verilerle açılır.
 - Testler: `tests/unit/apps-script/requests.test.ts` (6), `tests/unit/tracking.test.ts` (6), `tests/unit/admin/appointments.test.tsx` (1), `tests/build/pages.test.ts` (1).
 
+**İnceleme a5 (20 Ekim 2026) ile değişenler** (sabahki kararların yerine geçer):
+- "Başka saat iste" yerine **Ertele**: danışan, randevu takviminin boş gün ve saatlerinden birini seçer (çalışma saatleri, tatiller, başkalarının ve kendi diğer seanslarının saatleri dışarıda); sunucu saati yeniden denetler. Seans "Ertelendi · danışan istedi" olur, yeni saat ek seans olarak takvime girer.
+- **24 saat kuralı artık engellemiyor:** 24 saatten az kalan seansta da İptal et ve Ertele var; önce "24 saatten az kala yapılan iptal ve ertelemelerde seans ücretinin tamamı ödenir; bu bildirim sizin sorumluluğunuzdadır" uyarısı çıkar, danışan "Anladım, devam et" demeden işlem yapılmaz (`lateOk`). Seans kaydına `late` düşer; panelde "24 saatten az kala · tam ücret" yazar, sahibe giden e-postada da belirtilir.
+- Danışan sayfasında sahibin gördüğü **Seans bilgisi** (haftalık seans, tür, başlangıç) ve **Seans grafiği** de var.
+- "saat değişikliği istedi" işareti (`asked`) kaldırıldı.
+
 Kalan: Aydınlatma ve Gizlilik metinlerine paragraf (avukata gidecek metinlerle birlikte); canlıya alma (`gas:push`, `gas:deploy`, sonra site push).
 
 ## Kararlar (ilk öneri; yukarıdaki kararlar geçerli)
