@@ -153,20 +153,22 @@ body.admin {
   align-items: center;
   justify-content: center;
   gap: var(--k-space-2);
-  min-height: 44px;
-  padding: 0 var(--k-space-4);
-  border: 1px solid var(--p-accent);
-  border-radius: var(--k-radius-sm);
-  background: transparent;
-  color: var(--p-heading);
   font: inherit;
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  min-height: 40px;
+  padding: 0 1.1rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--p-accent) 12%, transparent);
+  color: var(--p-heading);
+  letter-spacing: -0.005em;
+  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
-/* Three levels: primary (filled), secondary (outlined, the default), ghost (text only). */
+/* Three levels: primary (filled), secondary (tinted capsule, the default), ghost (text only). */
 .k-btn:hover:not(:disabled) {
   background: var(--p-selected);
 }
@@ -179,7 +181,7 @@ body.admin {
 .k-btn-primary {
   background: var(--p-accent);
   color: var(--p-accent-text);
-  box-shadow: var(--k-shadow-1);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 12px color-mix(in srgb, var(--p-accent) 28%, transparent);
 }
 
 .k-btn-primary:hover:not(:disabled) {
@@ -188,16 +190,18 @@ body.admin {
 
 .k-btn-ghost {
   border-color: transparent;
-  color: var(--p-heading);
+  background: transparent;
+  color: var(--p-accent);
 }
 
 .k-btn-danger {
   border-color: var(--p-err-line);
+  background: var(--p-err-bg);
   color: var(--p-err-label);
 }
 
 .k-btn-danger:hover:not(:disabled) {
-  background: var(--p-err-bg);
+  background: color-mix(in srgb, var(--p-err) 22%, var(--p-err-bg));
 }
 
 .k-spinner {
@@ -287,13 +291,14 @@ body.admin {
 
 .k-input {
   width: 100%;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--p-border);
-  border-radius: var(--k-radius-sm);
-  background: var(--p-field);
   color: var(--p-text);
   font: inherit;
+  min-height: 42px;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--p-text) 6%, var(--p-field));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 textarea.k-input {
@@ -319,17 +324,27 @@ textarea.k-input {
 }
 
 .k-toggle {
-  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
   min-height: 44px;
   font-size: var(--text-sm);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  cursor: pointer;
 }
 
 .k-toggle input {
-  width: 1.2rem;
-  height: 1.2rem;
   accent-color: var(--p-accent);
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  margin: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-text) 18%, transparent);
+  transition: background-color 0.2s ease;
+  appearance: none;
+  cursor: pointer;
 }
 
 .k-banner {
@@ -339,10 +354,10 @@ textarea.k-input {
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-sm);
   background: var(--p-selected);
   color: var(--p-heading);
   font-size: var(--text-sm);
+  border-radius: 12px;
 }
 
 .k-banner-success {
@@ -379,9 +394,9 @@ textarea.k-input {
   max-height: 90vh;
   overflow: auto;
   padding: var(--k-space-5);
-  border-radius: var(--k-radius);
   background: var(--p-surface);
   box-shadow: var(--k-shadow-2);
+  border-radius: 18px;
 }
 
 .k-dialog h2 {
@@ -504,6 +519,7 @@ textarea.k-input {
   border-radius: var(--k-radius-sm);
   color: var(--p-text);
   text-decoration: none;
+  gap: var(--space-2);
 }
 
 .panel-nav a:hover,
@@ -551,11 +567,6 @@ textarea.k-input {
   display: block;
 }
 
-.panel-nav a,
-.panel-nav .linklike {
-  gap: var(--space-2);
-}
-
 .nav-icon {
   flex: none;
 }
@@ -571,10 +582,11 @@ textarea.k-input {
   margin: var(--space-4) 0 var(--space-1);
   padding: 0 var(--space-3);
   color: var(--p-muted);
-  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  margin-top: var(--space-5);
+  font-size: 0.6875rem;
 }
 
 .nav-end {
@@ -1764,11 +1776,11 @@ textarea.k-input {
   min-height: 36px;
   padding: 0 var(--space-3);
   border: 1px solid var(--p-border);
-  border-radius: var(--radius-pill);
   background: var(--p-field);
   font: inherit;
   font-size: var(--text-xs);
   cursor: pointer;
+  border-radius: var(--radius-pill);
 }
 
 .chip.is-active {
@@ -1868,7 +1880,7 @@ textarea.k-input {
 /* ---------- settings ---------- */
 
 .settings {
-  max-width: 52rem;
+  max-width: 50rem;
 }
 
 .settings h3 {
@@ -1877,13 +1889,15 @@ textarea.k-input {
 }
 
 .settings-intro {
-  margin-top: 0;
   color: var(--p-muted);
+  max-width: 40rem;
+  margin: calc(-1 * var(--k-space-2)) 0 var(--space-5);
+  font-size: var(--text-sm);
 }
 
 .settings-form {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
 .loc-field {
@@ -1981,10 +1995,12 @@ textarea.k-input {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  margin: 0 calc(-1 * var(--gutter));
   padding: var(--space-3) var(--gutter);
-  border-top: 1px solid var(--p-border);
-  background: var(--p-bg);
+  margin: var(--space-2) calc(-1 * var(--gutter)) 0;
+  border-top: 1px solid color-mix(in srgb, var(--p-border) 60%, transparent);
+  background: color-mix(in srgb, var(--p-bg) 78%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  backdrop-filter: saturate(180%) blur(18px);
 }
 
 .save-bar .k-banner {
@@ -2825,18 +2841,10 @@ textarea.k-input {
 /* ---------- Apple-style look (owner's review 2026-10-19) ----------
  * Grouped inset cards, tinted fields, capsule buttons, a real switch, a frosted save bar and a
  * System Settings sidebar. Built on the --p-* tokens, so both themes follow the site's palette.
+ * The base rules above (.k-btn, .k-input, .k-toggle, .k-dialog, .settings, .save-bar …) carry this
+ * look; what follows are the states and parts on top of them. Kept here, not merged up: the
+ * sidebar rows and the button hover, which must still win over rules between the two places.
  */
-
-.k-btn {
-  min-height: 40px;
-  padding: 0 1.1rem;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--p-accent) 12%, transparent);
-  color: var(--p-heading);
-  letter-spacing: -0.005em;
-  transition: background-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-}
 
 .k-btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--p-accent) 20%, transparent);
@@ -2846,44 +2854,11 @@ textarea.k-input {
   transform: scale(0.97);
 }
 
-.k-btn-primary {
-  background: var(--p-accent);
-  color: var(--p-accent-text);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 12px color-mix(in srgb, var(--p-accent) 28%, transparent);
-}
-
-.k-btn-primary:hover:not(:disabled) {
-  background: var(--p-accent-deep);
-}
-
-.k-btn-ghost {
-  background: transparent;
-  color: var(--p-accent);
-}
-
 .k-btn-ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--p-accent) 10%, transparent);
 }
 
-.k-btn-danger {
-  background: var(--p-err-bg);
-  color: var(--p-err-label);
-}
-
-.k-btn-danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--p-err) 22%, var(--p-err-bg));
-}
-
-/* Tinted, borderless fields; the accent ring shows focus. */
-.k-input {
-  min-height: 42px;
-  padding: 0.55rem 0.8rem;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--p-text) 6%, var(--p-field));
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-
+/* Tinted, borderless fields (.k-input above); the accent ring shows focus. */
 .k-input:hover {
   background: color-mix(in srgb, var(--p-text) 8%, var(--p-field));
 }
@@ -2918,27 +2893,7 @@ select.k-input {
   letter-spacing: 0.01em;
 }
 
-/* The switch: label on the left, the capsule on the right, like a Settings row. */
-.k-toggle {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-4);
-  cursor: pointer;
-}
-
-.k-toggle input {
-  position: relative;
-  flex: none;
-  width: 51px;
-  height: 31px;
-  margin: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--p-text) 18%, transparent);
-  transition: background-color 0.2s ease;
-  appearance: none;
-  cursor: pointer;
-}
-
+/* The switch (.k-toggle above): label on the left, the capsule on the right, like a Settings row. */
 .k-toggle input::before {
   content: '';
   position: absolute;
@@ -2966,10 +2921,6 @@ select.k-input {
 }
 
 /* Settings screens: large title, grouped inset cards. */
-.settings {
-  max-width: 50rem;
-}
-
 .settings .screen-head h2 {
   font-size: clamp(1.75rem, 1.4rem + 1vw, 2.125rem);
   letter-spacing: -0.015em;
@@ -2981,16 +2932,6 @@ select.k-input {
   border-radius: 10px;
   background: var(--p-accent);
   color: var(--p-accent-text);
-}
-
-.settings-intro {
-  max-width: 40rem;
-  margin: calc(-1 * var(--k-space-2)) 0 var(--space-5);
-  font-size: var(--text-sm);
-}
-
-.settings-form {
-  gap: var(--space-6);
 }
 
 .k-group {
@@ -3061,21 +3002,9 @@ select.k-input {
   background: var(--p-field);
 }
 
-/* Frosted save bar floating over the form. */
-.save-bar {
-  margin: var(--space-2) calc(-1 * var(--gutter)) 0;
-  border-top: 1px solid color-mix(in srgb, var(--p-border) 60%, transparent);
-  background: color-mix(in srgb, var(--p-bg) 78%, transparent);
-  -webkit-backdrop-filter: saturate(180%) blur(18px);
-  backdrop-filter: saturate(180%) blur(18px);
-}
-
+/* The frosted save bar is .save-bar above. */
 .save-bar .k-btn-primary {
   min-width: 8rem;
-}
-
-.chip {
-  border-radius: var(--radius-pill);
 }
 
 /* System Settings sidebar: rounded rows, the current one filled with the accent. */
@@ -3116,19 +3045,6 @@ select.k-input {
 .panel-nav .nav-new {
   min-height: 40px;
   justify-content: center;
-}
-
-.nav-group {
-  margin-top: var(--space-5);
-  font-size: 0.6875rem;
-}
-
-.k-dialog {
-  border-radius: 18px;
-}
-
-.k-banner {
-  border-radius: 12px;
 }
 
 /* ---------- Ana sayfa statistics ---------- */
@@ -3198,6 +3114,10 @@ html[data-theme='dark'] {
   font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .segmented button[aria-pressed='true'] {
@@ -3759,6 +3679,7 @@ html[data-theme='dark'] {
   border-radius: 18px;
   background: var(--p-surface);
   box-shadow: var(--k-shadow-1), 0 6px 20px rgb(0 0 0 / 0.04);
+  border-left: 5px solid var(--p-session);
 }
 
 .rq-head {
@@ -3886,13 +3807,6 @@ html[data-theme='dark'] {
 
 .rq-late::before {
   background: var(--p-err);
-}
-
-.segmented button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
 }
 
 .rq-ok::before {
@@ -4321,9 +4235,6 @@ html[data-theme='dark'] {
 }
 
 /* What the request is: a band across the top of the card */
-.rq-card {
-  border-left: 5px solid var(--p-session);
-}
 
 .rq-card.rq-is-intro {
   border-left-color: var(--p-intro);
