@@ -20,7 +20,7 @@ import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type S
 
 export const REQUEST_KEEP_MS = 30 * 24 * 3600 * 1000;
 const REQUESTS = 'talepler.json';
-const CLIENTS = 'danisanlar.json';
+export const CLIENTS = 'danisanlar.json';
 const SEQ = 'clients.seq';
 const NOT_FOUND = 'Bu talep bulunamadı. Başka bir yerde karara bağlanmış ya da silinmiş olabilir.';
 const NO_CLIENT = 'Bu danışan bulunamadı. Başka bir yerde takipten çıkarılmış olabilir.';
@@ -30,7 +30,8 @@ const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** The request as it came, kept with a client so Geri al can put it back. */
 type Origin = Omit<BookingRequest, 'id' | 'createdAt' | 'status' | 'holdId' | 'calendarId'>;
-type StoredClient = Client & { origin: Origin; requestId?: string };
+/** `linkGen`: the client's page link version (tracking.ts); a new link counts it up. */
+export type StoredClient = Client & { origin: Origin; requestId?: string; linkGen?: number };
 
 const read = readItems;
 const write = writeItems;
@@ -133,7 +134,7 @@ export function listRequests(gas: Gas): { requests: BookingRequest[] } {
 const str = (v: unknown, max: number) => (typeof v === 'string' && v.trim() && v.length <= max ? v : null);
 
 /** The owner's (edited) e-mail, to the person's address only. */
-function sendMail(gas: Gas, to: string, p: Record<string, unknown>): void {
+export function sendMail(gas: Gas, to: string, p: Record<string, unknown>): void {
   const subject = str(p.subject, 200);
   const body = str(p.body, 5000);
   if (!subject || !body) throw badRequest(EMPTY_MAIL);
@@ -260,7 +261,7 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
 }
 
 /** What the panel sees: everything but the request as it came. */
-const publicClient = ({ origin: _o, requestId: _r, ...c }: StoredClient): Client => ({ ...c, status: c.status ?? 'active' });
+export const publicClient = ({ origin: _o, requestId: _r, linkGen: _l, ...c }: StoredClient): Client => ({ ...c, status: c.status ?? 'active' });
 
 export function listClients(gas: Gas): { clients: Client[] } {
   return { clients: read<StoredClient>(gas, CLIENTS).map(publicClient).sort((a, b) => a.number.localeCompare(b.number)) };

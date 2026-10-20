@@ -24,7 +24,21 @@
 
 Panel tarafı yapıldı: **Seans takip** sayfası (KT001OGO numarası ve haftalık seans), talepten "Seans takibe geçir", "Terapiyi sonlandır" (iki e-posta türü), "Geri al", "Sil"; ayrıntı `2026-10-20-randevu-formlari-design.md` içinde. Kalan iş, **danışana açılan gizli sayfa** (kodlu bağlantı, iptal ve saat değişikliği talebi, sonlandırma talebi). Bunun için aşağıdaki T2 ve T5 görevleri, yeni `Client` kaydına bir kod özeti eklenerek uygulanacak.
 
-## Kararlar (öneri)
+## Yapıldı (20 Ekim 2026, sahibin kararlarıyla)
+
+Sahibin kararları: **24 saat kuralı zorunlu** (seansa 24 saatten az kaldıysa sayfa iptal ve saat değişikliği isteğini kabul etmez); **danışan başına tek bağlantı** (panelde "Yenile" ile değişir); **iptal hemen olur** (seans "İptal edildi · danışan istedi" diye işaretlenir, saat açılır, sahibe bilgi e-postası gider); **bağlantı panelden e-postayla gider** (düzenlenebilir hazır metin, ayrıca "Kopyala"); sayfa metinleri taslak, sahip önizlemede bakacak.
+
+Yapılan:
+- `src/lib/tracking.ts`: bağlantı adresi (`/randevum/#k=…`, `/en/my-appointment/#k=…`), 24 saat kuralı, danışana gösterilen bilgi (sıradaki 4 seans; ad, e-posta ve sahibin notları yok).
+- `apps-script/src/tracking.ts`: kod = danışan kimliği + HMAC imzası (SEAL_KEY'den türetilen anahtarla; kod hiçbir yerde saklanmaz). `track.view`, `track.ask` (iptal / başka saat / sonlandırma isteği; her biri sahibe e-posta, Reply-To danışan), `clients.link` (bağlantı, `renew` ile yenisi), `clients.linkMail`. Yanlış kodlar site geneli sayılır: saatte 30'dan sonra sayfa bir saat bekler. Terapi sonlanınca kayıt silinir, bağlantı da ölür.
+- `sessions.ts`: `asked: 'reschedule'` işareti; sahip seansı işaretleyince kalkar. Danışan kaydında `endAsked` (tarih ve not).
+- Panel: danışan sayfasında "Danışanın randevu sayfası" kutusu (Bağlantıyı gönder / Kopyala / Yenile), "saat değişikliği istedi" işareti, sonlandırma isteği uyarısı; Seans takip listesinde rozetler.
+- Site: `TrackingView.astro` + `track-page.ts` (noindex, site haritası dışı, sayaç yok, "Randevu Al" çubuğu yok). Geliştirme sunucusunda `/randevum/#k=demo` örnek verilerle açılır.
+- Testler: `tests/unit/apps-script/requests.test.ts` (6), `tests/unit/tracking.test.ts` (6), `tests/unit/admin/appointments.test.tsx` (1), `tests/build/pages.test.ts` (1).
+
+Kalan: Aydınlatma ve Gizlilik metinlerine paragraf (avukata gidecek metinlerle birlikte); canlıya alma (`gas:push`, `gas:deploy`, sonra site push).
+
+## Kararlar (ilk öneri; yukarıdaki kararlar geçerli)
 
 1. **Kod:** 32 bayt rastgele değer (`Utilities.getUuid` iki kez + HMAC), base64url, yaklaşık 43 karakter. Drive'da kodun kendisi değil, **HMAC özeti** saklanır. Drive dosyası ele geçse bile bağlantılar üretilemez.
 2. **Bağlantı biçimi:** `klinikterapist.com/randevum/#k=<kod>`. Kod adresin `#` sonrasında durur, bu yüzden sunucu kayıtlarına ve yönlendiren site bilgisine düşmez. Sayfa `noindex` olur, site haritasına girmez ve çerez kullanmaz.

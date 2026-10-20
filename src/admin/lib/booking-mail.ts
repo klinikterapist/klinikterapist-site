@@ -285,3 +285,45 @@ export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when
     ].join('\n'),
   };
 }
+
+/**
+ * The client's own page (owner's decisions 2026-10-20): the secret link, what the page does, the
+ * 24-hour rule, and that the link is theirs alone.
+ */
+export function linkMail(c: Contact, link: string): Mail {
+  const name = c.name.trim();
+  if (c.lang === 'en') {
+    return {
+      subject: 'Your appointment page – klinikterapist.com',
+      body: [
+        `Dear ${name},`,
+        '',
+        'On this page you can see your upcoming sessions:',
+        link,
+        '',
+        'From there you can cancel a session or ask for another time, up to 24 hours before it. For anything closer than 24 hours, please write to me by replying to this e-mail.',
+        'You can also let me know there if you would like to end our work together.',
+        '',
+        'The link is yours alone; please do not share it. Your name does not appear on the page. If you think someone else has it, tell me and I will send you a new one.',
+        '',
+        ...SIGN_EN,
+      ].join('\n'),
+    };
+  }
+  return {
+    subject: 'Randevu sayfanız – klinikterapist.com',
+    body: [
+      `Sayın ${name},`,
+      '',
+      'Sıradaki seanslarınızı bu sayfadan görebilirsiniz:',
+      link,
+      '',
+      'Bir seansı, başlamasına 24 saatten fazla varken bu sayfadan iptal edebilir ya da başka bir saat isteyebilirsiniz. 24 saatten az kaldığında lütfen bu e-postayı yanıtlayarak bana yazın.',
+      'Terapiyi sonlandırmak isterseniz bunu da bu sayfadan bana iletebilirsiniz.',
+      '',
+      'Bağlantı yalnızca size özeldir; lütfen kimseyle paylaşmayın. Sayfada adınız görünmez. Bağlantının başkasının eline geçtiğini düşünürseniz bana yazın, size yenisini göndereyim.',
+      '',
+      ...SIGN_TR,
+    ].join('\n'),
+  };
+}

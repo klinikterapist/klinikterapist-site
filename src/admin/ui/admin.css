@@ -4837,3 +4837,28 @@ html[data-theme='dark'] {
     flex-basis: calc(100% - 60px);
   }
 }
+
+/* The client's own page: what they asked for there, and the link card */
+.tk-badge.is-asked {
+  background: color-mix(in srgb, var(--p-accent) 18%, transparent);
+  color: var(--p-text);
+}
+
+.ss-status small.ss-asked {
+  color: var(--p-warn-text);
+  font-weight: 600;
+}
+
+.cl-link {
+  display: grid;
+  gap: var(--k-space-3);
+  padding: var(--k-space-4);
+}
+
+.cl-link p {
+  margin: 0;
+}
+
+.cl-link .row {
+  flex-wrap: wrap;
+}

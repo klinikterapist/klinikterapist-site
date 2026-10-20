@@ -278,3 +278,96 @@ describe('Randevu ekle, e-mail check, sessions, closing booking and "Haber et" (
     expect(s.send(session).ok).toBe(true);
   });
 });
+
+describe("The client's own page (tracking.ts)", () => {
+  type Res = { ok: boolean; data?: Record<string, unknown> };
+  /** A couples client with weekly sessions on Thursdays 19:20 from 22 October (NOW is Tuesday 20 October, 10:00). */
+  function withClient() {
+    const s = setup();
+    s.send(session);
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    const cid = s.call<{ client: { id: string } }>('requests.toClient', { id }).data.client.id;
+    const link = s.call<{ link: string }>('clients.link', { id: cid }).data.link;
+    const code = link.split('#k=')[1];
+    const pub = (action: string, p: Record<string, unknown> = {}) => handle(s.gas, JSON.stringify({ action, ...p })) as Res;
+    const client = () =>
+      s.call<{ clients: { sessions: { day: string; status: string; by?: string; note?: string; asked?: string }[]; endAsked?: { note?: string } }[] }>('clients.list').data.clients[0];
+    return { ...s, cid, link, code, pub, client };
+  }
+
+  it('the link opens the next sessions without the name, the e-mail or the notes', () => {
+    const t = withClient();
+    expect(t.link).toMatch(/^https:\/\/klinikterapist\.com\/randevum\/#k=[\w-]+\.[\w-]{32}$/);
+    t.call('clients.session', { id: t.cid, op: 'mark', day: '2026-10-29', time: '19:20', status: 'cancelled', by: 'owner', note: 'Özel not' });
+    const out = t.pub('track.view', { code: t.code });
+    expect(out.ok).toBe(true);
+    const text = JSON.stringify(out);
+    for (const secret of ['Ayşe', 'ayse@example.com', 'Özel not', 'KT001']) expect(text).not.toContain(secret);
+    expect((out.data!.next as unknown[]).slice(0, 2)).toEqual([
+      expect.objectContaining({ day: '2026-10-22', status: 'planned', late: false }),
+      expect.objectContaining({ day: '2026-10-29', status: 'cancelled', by: 'owner' }),
+    ]);
+  });
+
+  it('a wrong or renewed code tells nothing; 30 wrong codes in an hour close the page for the hour', () => {
+    const t = withClient();
+    const view = (code: string) => t.pub('track.view', { code });
+    expect(view(`${t.cid}.${'A'.repeat(32)}`)).toMatchObject({ ok: false, data: { reason: 'link' } });
+    const renewed = t.call<{ link: string }>('clients.link', { id: t.cid, renew: true }).data.link;
+    expect(renewed).not.toBe(t.link);
+    expect(view(t.code)).toMatchObject({ ok: false, data: { reason: 'link' } });
+    const fresh = renewed.split('#k=')[1];
+    expect(view(fresh).ok).toBe(true);
+    for (let i = 0; i < 28; i++) view('nonsense');
+    expect(view(fresh)).toMatchObject({ ok: false, data: { reason: 'busy' } });
+    t.gas.clock.now += 3600 * 1000;
+    expect(view(fresh).ok).toBe(true);
+  });
+
+  it('cancelling a session 24 hours or more ahead marks it "danışan istedi", frees the time and tells the owner', () => {
+    const t = withClient();
+    t.gas.mails.length = 0;
+    expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-29', time: '19:20', note: 'Hastayım' }).ok).toBe(true);
+    expect(t.client().sessions).toContainEqual(expect.objectContaining({ day: '2026-10-29', status: 'cancelled', by: 'client', note: 'Hastayım' }));
+    expect(t.gas.mails).toEqual([expect.objectContaining({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' })]);
+    expect(t.gas.mails[0].subject).toContain('KT001AY seansını iptal etti');
+    expect(t.gas.mails[0].body).toContain('Hastayım');
+    t.gas.cache.put('booking.busy', '', 1);
+    expect(bookingBusy(t.gas).busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(false);
+  });
+
+  it('less than 24 hours before the session the page refuses to cancel or move it', () => {
+    const t = withClient();
+    t.gas.clock.now = at('2026-10-21T19:30:00'); // 23 h 50 min before 22 October 19:20
+    expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-22', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'late' } });
+    expect((t.pub('track.view', { code: t.code }).data!.next as { late: boolean }[])[0].late).toBe(true);
+    expect(t.pub('track.ask', { code: t.code, ask: 'reschedule', day: '2026-10-22', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'late' } });
+    // Not one of their sessions.
+    expect(t.pub('track.ask', { code: t.code, ask: 'cancel', day: '2026-10-30', time: '19:20' })).toMatchObject({ ok: false, data: { reason: 'gone' } });
+    expect(t.client().sessions).toEqual([]);
+  });
+
+  it('asking for another time marks the session until the owner answers; asking to end marks the client', () => {
+    const t = withClient();
+    expect(t.pub('track.ask', { code: t.code, ask: 'reschedule', day: '2026-10-29', time: '19:20', note: 'Cuma 10.00 olur' }).ok).toBe(true);
+    expect(t.client().sessions).toContainEqual(expect.objectContaining({ day: '2026-10-29', status: 'planned', asked: 'reschedule', note: 'Cuma 10.00 olur' }));
+    // The time stays taken until the owner moves it.
+    t.gas.cache.put('booking.busy', '', 1);
+    expect(bookingBusy(t.gas).busy.some((b) => b.start === at('2026-10-29T19:20:00'))).toBe(true);
+    t.call('clients.session', { id: t.cid, op: 'mark', day: '2026-10-29', time: '19:20', status: 'postponed', by: 'client', newDay: '2026-10-30', newTime: '10:00' });
+    expect(t.client().sessions.find((x) => x.day === '2026-10-29')).not.toHaveProperty('asked');
+    expect(t.pub('track.ask', { code: t.code, ask: 'end', note: 'Kendimi iyi hissediyorum' }).ok).toBe(true);
+    expect(t.client().endAsked).toMatchObject({ note: 'Kendimi iyi hissediyorum' });
+    expect(t.gas.mails.at(-1)!.subject).toContain('terapiyi sonlandırmak istiyor');
+  });
+
+  it('the owner sends the link from the panel; ending therapy kills it', () => {
+    const t = withClient();
+    t.gas.mails.length = 0;
+    expect(t.call('clients.linkMail', { id: t.cid, subject: 'Randevu sayfanız', body: `Bağlantı: ${t.link}` }).ok).toBe(true);
+    expect(t.gas.mails).toEqual([expect.objectContaining({ to: 'ayse@example.com', subject: 'Randevu sayfanız' })]);
+    t.call('clients.end', { id: t.cid, mode: 'delete' });
+    expect(t.pub('track.view', { code: t.code })).toMatchObject({ ok: false, data: { reason: 'link' } });
+  });
+});

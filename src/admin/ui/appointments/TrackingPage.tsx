@@ -83,6 +83,8 @@ export function TrackingPage() {
         </span>
       </a>
       {c.status === 'closing' && <span className="tk-badge">Sonlandırma görüşmesi bekleniyor</span>}
+      {c.endAsked && <span className="tk-badge is-asked">Sonlandırmak istiyor</span>}
+      {c.sessions?.some((x) => x.asked) && <span className="tk-badge is-asked">Saat değişikliği istedi</span>}
       <span className="row tk-actions">
         <Button variant="primary" onClick={() => startEnd(c)}>
           Terapiyi sonlandır

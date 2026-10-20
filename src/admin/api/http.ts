@@ -83,6 +83,8 @@ export function createHttpApi(
     clientEnd: (input) => call(ACTIONS.clientEnd, input).then(() => undefined),
     clientRevert: (input) => call(ACTIONS.clientRevert, input).then(() => undefined),
     clientSession: (input) => call(ACTIONS.clientSession, input),
+    clientLink: (input) => call(ACTIONS.clientLink, input),
+    clientLinkMail: (input) => call(ACTIONS.clientLinkMail, input).then(() => undefined),
     bookingState: () => call(ACTIONS.bookingState),
     bookingSetOpen: (open) => call(ACTIONS.bookingSetOpen, { open }).then(() => undefined),
     requestAdd: (input) => call(ACTIONS.requestAdd, input),

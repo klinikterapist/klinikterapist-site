@@ -239,6 +239,7 @@ describe('page shell (every page but home)', () => {
   const pages = allPages().filter((p) => p !== '/' && p !== '/en/');
   const isPost = (p: string) => /^\/(en\/)?blog\/[^/]+\/$/.test(p);
   const langOf = (p: string) => (p.startsWith('/en/') ? 'en' : 'tr');
+  const NO_CTA = ['/randevum/', '/en/my-appointment/'];
 
   /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
   const pageCss = (p: string) => {
@@ -254,7 +255,7 @@ describe('page shell (every page but home)', () => {
     expect(pages.filter(isPost).length).toBeGreaterThan(0);
   });
 
-  it.each(pages)('%s has one phone top bar, the desktop header, one page end and an always-on sticky CTA', (p) => {
+  it.each(pages)('%s has one phone top bar, the desktop header, one page end and an always-on sticky CTA (none on the client page)', (p) => {
     const d = loadPage(p);
     const lang = langOf(p);
     const bars = d.querySelectorAll('.page-top .top-bar');
@@ -277,6 +278,8 @@ describe('page shell (every page but home)', () => {
     expect(d.querySelectorAll('.page-end')).toHaveLength(1);
     expect(d.querySelector('.page-end b')?.text).toBe('112');
 
+    // The client's own page is for people already in therapy: no "Randevu Al" bar (checked below).
+    if (NO_CTA.includes(p)) return;
     const sticky = d.querySelectorAll('.sticky-cta');
     expect(sticky).toHaveLength(1);
     expect(sticky[0].getAttribute('data-mode')).toBe('always');
@@ -467,6 +470,21 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(nf.querySelector('main .not-found svg.sun-mark')).toBeTruthy();
     expect(nf.querySelector('main a.list-item[href="/"]')).toBeTruthy();
     expect(nf.querySelector('main a[href="/en/"]')).toBeTruthy();
+  });
+
+  it("the client's own page: both languages, noindex, out of the sitemap, no page counter, no booking bar, no personal data", () => {
+    const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
+    for (const [path, title] of [['/randevum/', 'Randevularım'], ['/en/my-appointment/', 'My appointments']] as const) {
+      const d = loadPage(path);
+      expect(d.querySelector('h1')?.text).toBe(title);
+      expect(d.querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
+      expect(sm).not.toContain(path);
+      expect(d.toString()).not.toContain('stats.hit');
+      expect(d.querySelector('.sticky-cta')).toBeNull();
+      const root = d.querySelector('[data-tracking]')!;
+      expect(root.hasAttribute('data-demo')).toBe(false);
+      expect(JSON.parse(root.getAttribute('data-messages')!).failures.link).toBeTruthy();
+    }
   });
 });
 

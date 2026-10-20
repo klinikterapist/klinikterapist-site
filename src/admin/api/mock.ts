@@ -7,6 +7,7 @@ import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Cli
 import type { StatsSummary } from '../../lib/stats-wire';
 import { INTRO_MINUTES, clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
 import { SessionError, applyChange, type SessionChangeInput } from '../../lib/sessions';
+import { TRACK_PATH } from '../../lib/tracking';
 
 const data = import.meta.glob('/src/data/**/*.{json,md}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const posts = import.meta.glob('/tests/fixtures/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -44,6 +45,8 @@ export type MockState = {
   open: boolean;
   /** "Haber et" list. */
   waitlist: WaitlistEntry[];
+  /** Each client's link version ("Bağlantıyı yenile"). */
+  linkGen: Map<string, number>;
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
@@ -58,7 +61,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [] };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map() };
   let clientSeq = 0;
   if (opts.demoRequests) {
     const now = (opts.now ?? Date.now)();
@@ -83,6 +86,8 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
         { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', note: 'Hastalık' },
         { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
+        // Asked on their own page for another time.
+        { day: tue(4), time: '18:00', kind: 'weekly', minutes: 50, status: 'planned', asked: 'reschedule', note: 'Perşembe akşamı olabilir mi?' },
       ],
     });
     state.waitlist.push({
@@ -348,6 +353,20 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         }
         const { origin: _o, ...pub } = c;
         return { client: structuredClone(pub) };
+      }),
+    clientLink: ({ id, renew }) =>
+      wait(() => {
+        const c = state.clients.find((x) => x.id === id);
+        if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
+        if (renew) state.linkGen.set(id, (state.linkGen.get(id) ?? 0) + 1);
+        const sig = `${id}${state.linkGen.get(id) ?? 0}`.padEnd(32, 'x').slice(0, 32).replace(/[^\w-]/g, 'x');
+        return { link: `https://klinikterapist.com${TRACK_PATH[c.contact.lang]}#k=${id}.${sig}` };
+      }),
+    clientLinkMail: ({ id, subject, body }) =>
+      wait(() => {
+        const c = state.clients.find((x) => x.id === id);
+        if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
+        mail(c.contact.email, subject, body);
       }),
     bookingState: () => wait(() => ({ open: state.open, waiting: state.waitlist.length })),
     bookingSetOpen: (open) => wait(() => void (state.open = open)),

@@ -16,18 +16,25 @@ import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from '
 import { addConfirmed, listEntries, removeEntry } from './calendar';
 import { addManual, changeSession, decideRequest, endClient, listClients, listRequests, requestToClient, revertClient, revertRequest } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
+import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
 
-/** Actions anyone may call without a session: the contact form, the page counter and read counts. */
+/** Actions anyone may call without a session: the forms, the client's page, the page counter and read counts. */
 export const PUBLIC_ACTIONS: Record<string, Handler> = {
   'contact.send': (gas, p) => sendContact(gas, p),
   'booking.request': (gas, p) => sendBooking(gas, p),
   'booking.waitlist': (gas, p) => joinWaitlist(gas, p),
   'booking.verify': (gas, p) => verifyEmail(gas, p),
+  'track.view': (gas, p) => viewTracking(gas, p),
+  'track.ask': (gas, p) => {
+    const out = askTracking(gas, p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
   'stats.hit': (gas, p) => recordHit(gas, p),
   'stats.reads': (gas) => statsReads(gas),
 };
@@ -98,6 +105,8 @@ export const ACTIONS: Record<string, Handler> = {
     gas.cache.put('booking.busy', '', 1);
     return out;
   },
+  'clients.link': (gas, p) => clientLink(gas, p),
+  'clients.linkMail': (gas, p) => mailClientLink(gas, p),
   'requests.add': (gas, p) => {
     const out = addManual(gas, bookingConfig(gas), p);
     gas.cache.put('booking.busy', '', 1);

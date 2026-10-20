@@ -300,8 +300,9 @@ describe('Randevu ekle, randevu alımı, bekleme listesi (owner’s review 2026-
 describe('a client’s page in Seans takip', () => {
   it('the last and next sessions; mark attended; cancel as asked by the client; the free intro call shows as free', async () => {
     const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
-    const weekday = new Date(`${day(-7)}T12:00:00Z`).getUTCDay();
-    const { api } = setup('client:c1', [], [client({ weekday, time: '10:00', since: day(-14), sessions: [{ day: day(-20), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' }] })]);
+    // Weekly on tomorrow's weekday: two past sessions and the next tomorrow, whatever the hour the test runs.
+    const weekday = new Date(`${day(1)}T12:00:00Z`).getUTCDay();
+    const { api } = setup('client:c1', [], [client({ weekday, time: '10:00', since: day(-13), sessions: [{ day: day(-20), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' }] })]);
     expect(await screen.findByText('KT007OGO')).toBeTruthy();
     expect(screen.getByText('Ücretsiz ön görüşme').className).toContain('is-free');
     // Only the weekly time, the type and when therapy began; no name, e-mail or language.
@@ -315,7 +316,7 @@ describe('a client’s page in Seans takip', () => {
     const rows = within(past).getAllByRole('listitem');
     expect(rows).toHaveLength(3);
     fireEvent.click(within(rows[1]).getByRole('button', { name: 'Katıldı' }));
-    await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(-14), status: 'attended' })));
+    await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(-13), status: 'attended' })));
     const next = screen.getByRole('heading', { name: /Sıradaki seanslar/ }).parentElement!;
     fireEvent.click(within(within(next).getAllByRole('listitem')[0]).getByRole('button', { name: 'İptal' }));
     const dialog = screen.getByRole('dialog');
@@ -323,5 +324,29 @@ describe('a client’s page in Seans takip', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
     await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ status: 'cancelled', by: 'client', note: 'Seyahat' })));
     expect(await screen.findByText('danışan istedi')).toBeTruthy();
+  });
+});
+
+describe("the client's own page, seen from the panel", () => {
+  it('the link goes by e-mail as the owner edits it; what the client asked for shows on their page and in the list', async () => {
+    const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+    const weekday = new Date(`${day(3)}T12:00:00Z`).getUTCDay();
+    const asked = client({ weekday, since: day(3), sessions: [{ day: day(3), time: '10:00', kind: 'weekly', minutes: 50, status: 'planned', asked: 'reschedule', note: 'Cuma olur' }], endAsked: { at: Date.now(), note: 'İyiyim' } });
+    const { api } = setup('client:c1', [], [asked]);
+    expect(await screen.findByText('saat değişikliği istedi')).toBeTruthy();
+    expect(screen.getByText('Cuma olur')).toBeTruthy();
+    expect(screen.getByText(/terapiyi sonlandırmak istediğini bildirdi/)).toBeTruthy();
+    expect(screen.getByText('Notu: İyiyim')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Bağlantıyı gönder' }));
+    const dialog = await screen.findByRole('dialog');
+    const body = within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement;
+    expect(body.value).toMatch(/https:\/\/klinikterapist\.com\/randevum\/#k=c1\./);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Randevu sayfanız – klinikterapist.com' })));
+    expect(await screen.findByText(/danışana e-postayla gönderildi/)).toBeTruthy();
+    cleanup();
+    setup('tracking', [], [asked]);
+    expect(await screen.findByText('Sonlandırmak istiyor')).toBeTruthy();
+    expect(screen.getByText('Saat değişikliği istedi')).toBeTruthy();
   });
 });

@@ -8,6 +8,9 @@
  * Owner's review 2026-10-20 (a4): no name, e-mail or language on this page — only the weekly time,
  * the session type and when therapy began; a chart of the sessions so far in percent, and a running
  * count ("7. seans") that goes on past the four shown.
+ * The client's own page (owner's decisions 2026-10-20): the owner sends the secret link from here
+ * (an e-mail to edit, or copy it), and can make a new one. What the client does there shows here:
+ * a cancelled session "danışan istedi", a session they want moved, and a wish to end therapy.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type Client } from '../../api/types';
@@ -16,6 +19,8 @@ import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type
 import { usePanel } from '../context';
 import { CalendarCheck, Icon } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
+import { linkMail, type Mail } from '../../lib/booking-mail';
+import { MailDialog } from './MailDialog';
 import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
 import { SessionChart } from './SessionChart';
 
@@ -28,6 +33,7 @@ const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s
 
 type Marking = { s: SessionRecord; status: 'cancelled' | 'postponed'; by: 'client' | 'owner'; note: string; day: string; time: string };
 type Adding = { kind: 'closing' | 'extra'; day: string; time: string };
+type Linking = { step: 'mail'; mail: Mail } | { step: 'renew' };
 
 export function ClientPage({ id }: { id: string }) {
   const { api } = usePanel();
@@ -37,6 +43,7 @@ export function ClientPage({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [marking, setMarking] = useState<Marking | null>(null);
   const [adding, setAdding] = useState<Adding | null>(null);
+  const [linking, setLinking] = useState<Linking | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -64,6 +71,41 @@ export function ClientPage({ id }: { id: string }) {
       setBusy(false);
     }
   };
+  /** The client's page: the e-mail with the link, copying it, or a new link. */
+  const link = async (what: 'mail' | 'copy' | 'renew') => {
+    setBusy(true);
+    setError(null);
+    try {
+      const { link } = await api.clientLink({ id, renew: what === 'renew' });
+      if (what === 'copy') {
+        await navigator.clipboard.writeText(link);
+        setNotice('Bağlantı kopyalandı. Yalnızca bu danışana gönderin.');
+      } else if (what === 'renew') {
+        setNotice('Yeni bağlantı hazır; eskisi artık açılmıyor. Yenisini danışana gönderin.');
+        setLinking(null);
+      } else if (client) {
+        setLinking({ step: 'mail', mail: linkMail(client.contact, link) });
+      }
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : what === 'copy' ? 'Bağlantı kopyalanamadı. Tekrar deneyin.' : 'Bağlantı alınamadı. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const sendLink = async (mail: Mail) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.clientLinkMail({ id, ...mail });
+      setNotice('Randevu sayfasının bağlantısı danışana e-postayla gönderildi.');
+      setLinking(null);
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : 'E-posta gönderilemedi. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const mark = (s: SessionRecord, status: SessionStatus) =>
     change({ op: 'mark', id, day: s.day, time: s.time, status }, status === 'planned' ? `${at(s)}: işaret kaldırıldı.` : `${at(s)}: ${STATUS_LABEL[status].toLocaleLowerCase('tr-TR')} olarak işaretlendi.`);
 
@@ -109,6 +151,7 @@ export function ClientPage({ id }: { id: string }) {
         <span className={`ss-status st-${s.status}`}>
           {s.status === 'planned' ? (past ? 'İşaretlenmedi' : 'Planlandı') : STATUS_LABEL[s.status]}
           {s.by && <small>{s.by === 'client' ? 'danışan istedi' : 'siz'}</small>}
+          {s.asked && <small className="ss-asked">saat değişikliği istedi</small>}
           {s.movedTo && <small>{`→ ${short(s.movedTo.day).d} ${short(s.movedTo.day).m} ${s.movedTo.time.replace(':', '.')}`}</small>}
         </span>
         <span className="ss-actions">
@@ -169,6 +212,12 @@ export function ClientPage({ id }: { id: string }) {
       </header>
       {notice && <Banner tone="success">{notice}</Banner>}
       {error && <Banner tone="error">{error}</Banner>}
+      {client.endAsked && (
+        <Banner tone="warning" action={<a href="#/seans-takip">Seans takip › Terapiyi sonlandır →</a>}>
+          {`${formatDay(new Date(client.endAsked.at + 3 * 3600e3).toISOString().slice(0, 10), 'tr')} tarihinde kendi sayfasından terapiyi sonlandırmak istediğini bildirdi.`}
+          {client.endAsked.note && <span className="ss-note">{`Notu: ${client.endAsked.note}`}</span>}
+        </Banner>
+      )}
 
       <div className="appt-layout">
         <div className="appt-main">
@@ -182,7 +231,8 @@ export function ClientPage({ id }: { id: string }) {
           </div>
           <p className="k-hint">
             Geçmiş seansları "Katıldı" ya da "Gelmedi" diye işaretleyin. İptal ya da ertelenen bir seansın saati takvimde ve sitede açılır; ertelenen seansın yeni tarihi takvime
-            işlenir. Danışanın kendi sayfasından yapacağı iptal ve erteleme talepleri (o sayfa açıldığında) buraya kendiliğinden "danışan istedi" diye yazılacak.
+            işlenir. Danışan kendi sayfasından bir seansı iptal ederse burada "danışan istedi" diye görünür. Başka bir saat isterse seans "saat değişikliği istedi" diye işaretlenir;
+            danışanla konuşup "Ertele" ile yeni saati girin.
           </p>
         </div>
         <aside className="appt-side cl-side">
@@ -202,6 +252,26 @@ export function ClientPage({ id }: { id: string }) {
                 <dd>{formatDay(client.since, 'tr')}</dd>
               </div>
             </dl>
+          </div>
+          <div className="k-group">
+            <h3 className="tk-group-title">Danışanın randevu sayfası</h3>
+            <div className="cl-card cl-link">
+              <p className="k-hint">
+                Danışan bu gizli bağlantıyla sıradaki seanslarını görür; 24 saatten fazla kala iptal edebilir ya da başka saat isteyebilir, terapiyi sonlandırmak istediğini
+                bildirebilir. Her istek size e-postayla gelir. Sayfada adı görünmez.
+              </p>
+              <div className="row">
+                <Button variant="primary" disabled={busy} onClick={() => link('mail')}>
+                  Bağlantıyı gönder
+                </Button>
+                <Button disabled={busy} onClick={() => link('copy')}>
+                  Kopyala
+                </Button>
+                <Button variant="ghost" disabled={busy} onClick={() => setLinking({ step: 'renew' })}>
+                  Yenile
+                </Button>
+              </div>
+            </div>
           </div>
           <div className="k-group">
             <h3 className="tk-group-title">Seans grafiği</h3>
@@ -257,6 +327,41 @@ export function ClientPage({ id }: { id: string }) {
           )}
           <Field label="Not (isteğe bağlı)" value={marking.note} onChange={(note) => setMarking({ ...marking, note })} maxLength={300} />
           <p className="k-hint">Bu seansın saati takvimde ve sitede açılır. Kişiye e-posta gitmez.</p>
+        </Dialog>
+      )}
+
+      {linking?.step === 'mail' && (
+        <MailDialog
+          title={`${client.number}: randevu sayfası bağlantısı`}
+          to={client.contact}
+          mail={linking.mail}
+          onMail={(mail) => setLinking({ step: 'mail', mail })}
+          send="Gönder"
+          busy={busy}
+          onClose={() => setLinking(null)}
+          onSend={() => sendLink(linking.mail)}
+        >
+          <p className="k-hint">Bağlantı metnin içinde; onu silmeyin.</p>
+        </MailDialog>
+      )}
+
+      {linking?.step === 'renew' && (
+        <Dialog
+          title={`${client.number}: bağlantıyı yenile`}
+          history
+          onClose={() => !busy && setLinking(null)}
+          actions={
+            <>
+              <Button onClick={() => setLinking(null)} disabled={busy}>
+                Vazgeç
+              </Button>
+              <Button variant="danger" busy={busy} onClick={() => link('renew')}>
+                Yenile
+              </Button>
+            </>
+          }
+        >
+          <p>Yeni bir bağlantı yapılır; danışanın elindeki eski bağlantı artık açılmaz. Bağlantının başkasının eline geçtiğini düşünüyorsanız kullanın. Sonra yenisini danışana gönderin.</p>
         </Dialog>
       )}
 

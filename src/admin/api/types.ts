@@ -204,6 +204,8 @@ export type Client = {
   contact: { name: string; email: string; lang: 'tr' | 'en'; verified?: boolean };
   /** Marks on the weekly sessions and the other sessions (intro, closing, extra). */
   sessions?: SessionRecord[];
+  /** The client said on their own page that they want to end therapy (with their note). */
+  endAsked?: { at: number; note?: string };
 };
 
 /** How therapy ends: `complete` (e-mail: therapy is over), `closing` (e-mail: a free closing session), `delete` (no e-mail). */
@@ -269,6 +271,10 @@ export interface Api {
   clientRevert(input: { id: string; subject: string; body: string }): Promise<void>;
   /** Marks a session (attended, cancelled …), adds a closing or extra session, or removes one. */
   clientSession(input: SessionChange): Promise<{ client: Client }>;
+  /** The client's secret page link; `renew` makes a new one (the old one stops working). */
+  clientLink(input: { id: string; renew?: boolean }): Promise<{ link: string }>;
+  /** Sends the owner's (edited) e-mail with the link to the client's address. */
+  clientLinkMail(input: { id: string; subject: string; body: string }): Promise<void>;
   /** Whether the site takes bookings, and how many people wait to hear of a free time. */
   bookingState(): Promise<{ open: boolean; waiting: number }>;
   /** Randevu alımını kapat / aç: closed, the site says every session is taken and offers "Haber et". */
@@ -327,6 +333,8 @@ export const ACTIONS = {
   clientEnd: 'clients.end',
   clientRevert: 'clients.revert',
   clientSession: 'clients.session',
+  clientLink: 'clients.link',
+  clientLinkMail: 'clients.linkMail',
   bookingState: 'booking.state',
   bookingSetOpen: 'booking.setOpen',
   requestAdd: 'requests.add',
