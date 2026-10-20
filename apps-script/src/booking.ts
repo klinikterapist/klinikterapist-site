@@ -26,6 +26,8 @@ import { PANEL_URL, oneLine, str } from './text';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TAKEN = 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.';
+/** `reason: 'taken'` lets the page show the calendar again without reading the message. */
+const taken = () => new ApiError('bad_request', TAKEN, { reason: 'taken' });
 const TOO_MANY = 'Şu anda çok fazla talep gönderildi. Lütfen daha sonra tekrar deneyin ya da doğrudan e-posta gönderin.';
 const NOT_READY = 'Randevu formu henüz kurulmadı. Lütfen doğrudan e-posta gönderin.';
 const CLOSED = 'Şu an tüm seanslar dolu. Sayfayı yenileyip "Haber et" formunu kullanabilirsiniz.';
@@ -182,7 +184,7 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   const cfg = config(gas);
   const plain = validateBooking(input, cfg, now);
   if (Object.keys(plain).length > (plain.slot ? 1 : 0)) throw badRequest(INVALID);
-  if (plain.slot) throw badRequest(TAKEN);
+  if (plain.slot) throw taken();
 
   const email = input.email.trim().toLowerCase();
   const lang: BookingLang = p.lang === 'en' ? 'en' : 'tr';
@@ -190,7 +192,7 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   if (!allowSend(gas, email, 2)) throw badRequest(TOO_MANY);
   // Checked again under the lock, so two visitors cannot take the same time at once.
   const saved = gas.withLock(() => {
-    if (validateBooking(input, cfg, now, allBusy(gas, cfg, now)).slot) throw badRequest(TAKEN);
+    if (validateBooking(input, cfg, now, allBusy(gas, cfg, now)).slot) throw taken();
     const hold = addHold(gas, now, input.day, input.time, input.kind, input.kind === 'session' ? input.type : undefined);
     return saveRequest(gas, input, lang, hold.id);
   });

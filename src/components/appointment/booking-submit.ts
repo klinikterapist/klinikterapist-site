@@ -192,9 +192,10 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
           credentials: 'omit',
           signal: ctrl.signal,
         });
-        const out = (await res.json()) as { ok?: boolean; error?: { message?: string } };
+        const out = (await res.json()) as { ok?: boolean; error?: { message?: string }; data?: { reason?: string } };
         if (res.ok && out?.ok === true) result = 'sent';
-        else if (out?.error?.message?.includes('artık uygun değil')) result = 'taken';
+        // The message check is for a backend from before `reason` was sent.
+        else if (out?.data?.reason === 'taken' || out?.error?.message?.includes('artık uygun değil')) result = 'taken';
       } finally {
         clearTimeout(timer);
       }

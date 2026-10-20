@@ -64,7 +64,7 @@ describe('booking.request', () => {
   it('a time that is not free says so; other bad input is refused as a whole', () => {
     const { gas, send } = setup();
     const taken = send({ ...session, time: '09:00' });
-    expect(taken).toMatchObject({ ok: false, error: { code: 'bad_request', message: 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.' } });
+    expect(taken).toMatchObject({ ok: false, error: { code: 'bad_request', message: 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.' }, data: { reason: 'taken' } });
     expect(send({ ...session, consent: false })).toMatchObject({ ok: false, error: { message: 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.' } });
     expect(send({ ...intro, healthConsent: false }).ok).toBe(false);
     expect(gas.mails).toHaveLength(0);

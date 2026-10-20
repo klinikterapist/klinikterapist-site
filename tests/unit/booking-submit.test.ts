@@ -135,7 +135,7 @@ describe('mountBookingForm', () => {
     let posts = 0;
     const fetch = vi.fn(async (url: RequestInfo | URL) => {
       if (String(url).includes('booking.busy')) return new Response(JSON.stringify({ ok: true, data: { busy: [] } }));
-      if (++posts === 1) return new Response(JSON.stringify({ ok: false, error: { code: 'bad_request', message: 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.' } }));
+      if (++posts === 1) return new Response(JSON.stringify({ ok: false, error: { code: 'bad_request', message: 'Bu saat alındı.' }, data: { reason: 'taken' } }));
       throw new Error('offline');
     });
     mountBookingForm(markup('https://api.example/exec'), { fetch, now: () => NOW });
