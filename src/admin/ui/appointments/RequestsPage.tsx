@@ -4,19 +4,21 @@
  *   - Top right: "Randevu ekle" (an appointment given by phone or e-mail, with the person's name and
  *     e-mail) and "Randevu alımını kapat / aç" (closed, the site says every session is taken and
  *     offers "Haber et").
- *   - Bekleyen: Onayla / Uygun değilim / İptal et open the ready, personal e-mail for editing.
+ *   - Aktif talepler (owner's review a5): Onayla / Uygun değilim / İptal et open the ready, personal e-mail for editing.
  *   - Onaylanan: "Seans takibe geçir" (a booking keeps its weekday and time, an intro call asks),
  *     or "Geri al" when the approval went by mistake.
  *   - Bekleme listesi: the "Haber et" people (WaitlistTab).
  * Each card says loudly what it is (a session booking or the free intro call) and whether the
- * person's e-mail address is checked.
+ * person's e-mail address is checked. Owner's review a5: the kind box has the date box's size and
+ * type, in its own colour (session: sage, intro call: terracotta, with the card's side line); the
+ * card says when the request came and how long ago, and warns once 24 hours have passed.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type RequestDecision, type WaitlistEntry } from '../../api/types';
 import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, clientNumber, formatDay } from '../../../lib/booking-form';
 import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
 import { go, usePanel } from '../context';
-import { Icon, Inbox, Plus } from '../icons';
+import { BellRing, CircleCheck, Icon, Inbox, Plus } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { AddAppointmentDialog, type AddInitial } from './AddAppointmentDialog';
 import { AppointmentCalendar, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
@@ -30,6 +32,18 @@ const DECISION_TITLE: Record<RequestDecision, string> = { approve: 'Onay e-posta
 
 const whenOf = (r: BookingRequest) => `${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')}`;
 const daysLeft = (r: BookingRequest) => Math.max(0, KEEP_DAYS - Math.floor((Date.now() - r.createdAt) / (24 * 3600e3)));
+const DAY_MS = 24 * 3600e3;
+/** When the request came: "20 Ekim 2026, Salı, 09.12". */
+const sentAt = (ms: number) => {
+  const d = new Date(ms + 3 * 3600e3).toISOString();
+  return `${formatDay(d.slice(0, 10), 'tr')}, ${d.slice(11, 16).replace(':', '.')}`;
+};
+/** How long ago: "2 sa 15 dk", "45 dk". */
+export const elapsed = (ms: number) => {
+  const m = Math.max(0, Math.floor(ms / 60e3));
+  const h = Math.floor(m / 60);
+  return h ? `${h} sa ${m % 60} dk` : `${m} dk`;
+};
 const weekly = (weekday: number, time: string) => `her ${WEEKDAYS[weekday].toLocaleLowerCase('tr-TR')} ${time.replace(':', '.')}`;
 
 /** The next date on or after today that falls on `weekday` (`YYYY-MM-DD`, Istanbul). */
@@ -48,17 +62,28 @@ function Row({ label, children, wide }: { label: string; children: React.ReactNo
   );
 }
 
-/** What the request is, in its own box beside the date (owner's review 2026-10-20, a4). */
+/** What the request is, in its own box beside the date, the same size and type (owner's reviews a4, a5). */
 function KindBox({ r }: { r: BookingRequest }) {
   return r.kind === 'intro' ? (
     <span className="rq-kindbox is-intro">
       <b>Ön görüşme</b>
-      <small>Ücretsiz</small>
+      <span>Ücretsiz</span>
     </span>
   ) : (
     <span className="rq-kindbox">
       <b>Seans</b>
-      <small>Randevusu</small>
+      <span>Randevusu</span>
+    </span>
+  );
+}
+
+/** When the request came and how long ago; past 24 hours, a warning (the hold has run out). */
+function SentLine({ r, now }: { r: BookingRequest; now: number }) {
+  const late = now - r.createdAt >= DAY_MS;
+  return (
+    <span className={`rq-status ${late ? 'rq-late' : 'rq-wait'}`}>
+      {`${r.source === 'manual' ? 'Eklendi' : 'Gönderildi'}: ${sentAt(r.createdAt)} · ${elapsed(now - r.createdAt)} önce`}
+      {late && <b>{r.holdId ? ' · 24 saat geçti, saat artık tutulmuyor' : ' · 24 saat geçti'}</b>}
     </span>
   );
 }
@@ -139,6 +164,12 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
   const [adding, setAdding] = useState<{ initial: AddInitial; from?: WaitlistEntry } | null>(add ? { initial: { day: add.day, time: add.time, kind: add.type } } : null);
   const [booking, setBooking] = useState<{ open: boolean; waiting: number } | null>(null);
   const [closing, setClosing] = useState(false);
+  // The "… önce" times move on every minute.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60e3);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -182,7 +213,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
       run: async (m) => {
         await api.requestRevert({ id: r.id, ...m });
         setView('pending');
-        return 'Özür e-postası gönderildi. Talep yeniden "Bekleyen" bölümünde; onaylı saat takvimden kaldırıldı.';
+        return 'Özür e-postası gönderildi. Talep yeniden "Aktif talepler" bölümünde; onaylı saat takvimden kaldırıldı.';
       },
     });
 
@@ -284,12 +315,15 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
         <div className="appt-main">
           <div className="segmented" role="group" aria-label="Talepler">
             <button type="button" aria-pressed={view === 'pending'} onClick={() => setView('pending')}>
-              {`Bekleyen (${pending.length})`}
+              <Icon as={Inbox} size={16} />
+              {`Aktif talepler (${pending.length})`}
             </button>
             <button type="button" aria-pressed={view === 'approved'} onClick={() => setView('approved')}>
+              <Icon as={CircleCheck} size={16} />
               {`Onaylanan (${approved.length})`}
             </button>
             <button type="button" aria-pressed={view === 'waitlist'} onClick={() => setView('waitlist')}>
+              <Icon as={BellRing} size={16} />
               {`Bekleme listesi (${booking?.waiting ?? 0})`}
             </button>
           </div>
@@ -314,7 +348,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
             <>
               {!requests && !error && <Spinner label="Talepler yükleniyor…" />}
               {requests && shown.length === 0 && (
-                <EmptyState icon={Inbox}>{view === 'pending' ? 'Bekleyen talep yok.' : 'Seans takibe geçirilmeyi bekleyen onaylı talep yok.'}</EmptyState>
+                <EmptyState icon={Inbox}>{view === 'pending' ? 'Aktif talep yok.' : 'Seans takibe geçirilmeyi bekleyen onaylı talep yok.'}</EmptyState>
               )}
               {requests && shown.length > 0 && (
                 <ul className="rq-list">
@@ -322,7 +356,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
                     <RequestCard key={r.id} r={r}>
                       {r.status === 'pending' ? (
                         <footer className="rq-foot">
-                          <span className="rq-status rq-wait">{r.holdId ? 'Saat 24 saat sizin için tutuluyor' : 'Saat tutulmuyor; onaylarken çakışma denetlenir'}</span>
+                          <SentLine r={r} now={now} />
                           <span className="row">
                             <Button variant="primary" onClick={() => decide(r, 'approve')}>
                               Onayla
@@ -377,7 +411,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
           onSend={send}
           onClose={() => setSending(null)}
         >
-          {sending.revert && <p>Yanlışlıkla onayladığınız talep "Bekleyen" bölümüne döner ve onaylı saat takvimden kalkar. Kişiye teknik bir sorundan özür dileyen bu e-posta gider.</p>}
+          {sending.revert && <p>Yanlışlıkla onayladığınız talep "Aktif talepler" bölümüne döner ve onaylı saat takvimden kalkar. Kişiye teknik bir sorundan özür dileyen bu e-posta gider.</p>}
         </MailDialog>
       )}
 

@@ -11,6 +11,8 @@
  * The client's own page (owner's decisions 2026-10-20): the owner sends the secret link from here
  * (an e-mail to edit, or copy it), and can make a new one. What the client does there shows here:
  * a cancelled session "danışan istedi", a session they want moved, and a wish to end therapy.
+ * Owner's review a5: Terapiyi sonlandır, Geri al and Sil live here (not in the Seans takip list);
+ * the side column is the chart, then the session details, then the client's page.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type Client } from '../../api/types';
@@ -19,7 +21,7 @@ import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type
 import { usePanel } from '../context';
 import { CalendarCheck, Icon } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
-import { linkMail, type Mail } from '../../lib/booking-mail';
+import { endMail, linkMail, revertMail, type Mail } from '../../lib/booking-mail';
 import { MailDialog } from './MailDialog';
 import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
 import { SessionChart } from './SessionChart';
@@ -34,6 +36,12 @@ const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s
 type Marking = { s: SessionRecord; status: 'cancelled' | 'postponed'; by: 'client' | 'owner'; note: string; day: string; time: string };
 type Adding = { kind: 'closing' | 'extra'; day: string; time: string };
 type Linking = { step: 'mail'; mail: Mail } | { step: 'renew' };
+type Ending = { mode: 'complete' | 'closing'; mail: Mail };
+
+const END_CHOICES = [
+  { mode: 'complete', label: 'Terapi tamamlandı', hint: 'Kişiye terapi sürecinin sona erdiğini bildiren e-posta gider. Danışan, bilgileriyle birlikte Seans takipten silinir; haftalık saat takvimde ve sitede yeniden açılır.' },
+  { mode: 'closing', label: 'Sonlandırma görüşmesi talep et', hint: 'Kişiye ücretsiz, 25–30 dakikalık sonlandırma görüşmesini anlatan bir davet gider. Danışan takipte kalır ve "Sonlandırma görüşmesi bekleniyor" diye işaretlenir; görüşmeden sonra "Terapi tamamlandı" ile kapatırsınız.' },
+] as const;
 
 export function ClientPage({ id }: { id: string }) {
   const { api } = usePanel();
@@ -44,6 +52,11 @@ export function ClientPage({ id }: { id: string }) {
   const [marking, setMarking] = useState<Marking | null>(null);
   const [adding, setAdding] = useState<Adding | null>(null);
   const [linking, setLinking] = useState<Linking | null>(null);
+  const [ending, setEnding] = useState<Ending | null>(null);
+  const [reverting, setReverting] = useState<Mail | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  /** What happened when the client left Seans takip (ended, deleted, put back). */
+  const [gone, setGone] = useState<{ text: string; requests?: boolean } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -106,10 +119,45 @@ export function ClientPage({ id }: { id: string }) {
     }
   };
 
+  /** Terapiyi sonlandır, Geri al, Sil. `leaves`: the client is no longer in Seans takip afterwards. */
+  const finish = async (job: () => Promise<void>, done: string, leaves: boolean, requests = false) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await job();
+      setEnding(null);
+      setReverting(null);
+      setDeleting(false);
+      if (leaves) {
+        setGone({ text: done, requests });
+        setClient(null);
+      } else {
+        setNotice(done);
+        setClient((c) => (c ? { ...c, status: 'closing' } : c));
+      }
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : 'İşlem yapılamadı. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const mark = (s: SessionRecord, status: SessionStatus) =>
     change({ op: 'mark', id, day: s.day, time: s.time, status }, status === 'planned' ? `${at(s)}: işaret kaldırıldı.` : `${at(s)}: ${STATUS_LABEL[status].toLocaleLowerCase('tr-TR')} olarak işaretlendi.`);
 
   if (client === undefined && !error) return <Spinner label="Danışan yükleniyor…" />;
+  if (!client && gone) {
+    return (
+      <section className="appt-page">
+        <Banner tone="success" action={gone.requests ? <a href="#/randevular">Randevu taleplerine git →</a> : undefined}>
+          {gone.text}
+        </Banner>
+        <a className="back-link" href="#/seans-takip">
+          ← Seans takibe dön
+        </a>
+      </section>
+    );
+  }
   if (!client) {
     return (
       <section className="appt-page">
@@ -210,6 +258,15 @@ export function ClientPage({ id }: { id: string }) {
           <Button onClick={() => setAdding({ kind: 'extra', day: '', time: '' })}>Ek seans ekle</Button>
         </div>
       </header>
+      <div className="row cl-end-actions">
+        <Button variant="primary" onClick={() => setEnding({ mode: 'complete', mail: endMail(client.contact, 'complete') })}>
+          Terapiyi sonlandır
+        </Button>
+        <Button onClick={() => setReverting(revertMail(client.contact))}>Geri al</Button>
+        <Button variant="ghost" onClick={() => setDeleting(true)}>
+          Sil
+        </Button>
+      </div>
       {notice && <Banner tone="success">{notice}</Banner>}
       {error && <Banner tone="error">{error}</Banner>}
       {client.endAsked && (
@@ -236,6 +293,10 @@ export function ClientPage({ id }: { id: string }) {
           </p>
         </div>
         <aside className="appt-side cl-side">
+          <div className="k-group">
+            <h3 className="tk-group-title">Seans grafiği</h3>
+            <SessionChart stats={stats} />
+          </div>
           <div className="k-group">
             <h3 className="tk-group-title">Seans bilgisi</h3>
             <dl className="cl-card cl-info">
@@ -272,10 +333,6 @@ export function ClientPage({ id }: { id: string }) {
                 </Button>
               </div>
             </div>
-          </div>
-          <div className="k-group">
-            <h3 className="tk-group-title">Seans grafiği</h3>
-            <SessionChart stats={stats} />
           </div>
         </aside>
       </div>
@@ -327,6 +384,75 @@ export function ClientPage({ id }: { id: string }) {
           )}
           <Field label="Not (isteğe bağlı)" value={marking.note} onChange={(note) => setMarking({ ...marking, note })} maxLength={300} />
           <p className="k-hint">Bu seansın saati takvimde ve sitede açılır. Kişiye e-posta gitmez.</p>
+        </Dialog>
+      )}
+
+      {ending && (
+        <MailDialog
+          title={`${client.number}: terapiyi sonlandır`}
+          to={client.contact}
+          mail={ending.mail}
+          onMail={(mail) => setEnding({ ...ending, mail })}
+          send={ending.mode === 'complete' ? 'Gönder ve takipten çıkar' : 'Daveti gönder'}
+          tone={ending.mode === 'complete' ? 'danger' : 'primary'}
+          busy={busy}
+          onClose={() => setEnding(null)}
+          onSend={() =>
+            ending.mode === 'complete'
+              ? finish(() => api.clientEnd({ id, mode: 'complete', ...ending.mail }), `E-posta gönderildi. ${client.number} Seans takipten çıkarıldı, bilgileri silindi; haftalık saat yeniden açık.`, true)
+              : finish(() => api.clientEnd({ id, mode: 'closing', ...ending.mail }), `Sonlandırma görüşmesi daveti gönderildi. ${client.number} Seans takipte "Sonlandırma aşamasında" bölümünde.`, false)
+          }
+        >
+          <div className="segmented end-choice" role="group" aria-label="E-posta türü">
+            {END_CHOICES.map((o) => (
+              <button key={o.mode} type="button" aria-pressed={ending.mode === o.mode} onClick={() => setEnding({ mode: o.mode, mail: endMail(client.contact, o.mode) })}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+          <p className="k-hint">{END_CHOICES.find((o) => o.mode === ending.mode)!.hint}</p>
+        </MailDialog>
+      )}
+
+      {reverting && (
+        <MailDialog
+          title={`${client.number}: geri al`}
+          to={client.contact}
+          mail={reverting}
+          onMail={setReverting}
+          send="Gönder ve geri al"
+          busy={busy}
+          onClose={() => setReverting(null)}
+          onSend={() =>
+            finish(
+              () => api.clientRevert({ id, ...reverting }),
+              `Özür e-postası gönderildi. Talep yeniden Randevu taleplerinde "Aktif talepler" bölümünde duruyor; ${client.number} numaralı haftalık saat açıldı.`,
+              true,
+              true,
+            )
+          }
+        >
+          <p>Yanlışlıkla takibe aldığınız kişi Randevu taleplerine, onay bekleyen bir talep olarak döner. Kişiye teknik bir sorundan özür dileyen ve doğru yanıtın bir sonraki e-postada geleceğini söyleyen bu e-posta gider.</p>
+        </MailDialog>
+      )}
+
+      {deleting && (
+        <Dialog
+          title={`${client.number} silinsin mi?`}
+          history
+          onClose={() => !busy && setDeleting(false)}
+          actions={
+            <>
+              <Button onClick={() => setDeleting(false)} disabled={busy}>
+                Vazgeç
+              </Button>
+              <Button variant="danger" busy={busy} onClick={() => finish(() => api.clientEnd({ id, mode: 'delete' }), `${client.number} silindi. Haftalık saat yeniden açık.`, true)}>
+                Sil
+              </Button>
+            </>
+          }
+        >
+          <p>Kişiye e-posta gitmez. Danışan bilgileriyle birlikte silinir; haftalık saat takvimde ve sitede yeniden açılır.</p>
         </Dialog>
       )}
 

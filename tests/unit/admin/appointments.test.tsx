@@ -172,45 +172,72 @@ describe('Randevu talepleri', () => {
 });
 
 describe('Seans takip', () => {
-  it('lists clients by number; Terapi tamamlandı sends the e-mail and removes the client', async () => {
-    const { api } = setup('tracking', [], [client()]);
-    const r = await row('KT007OGO');
-    expect(r.textContent).toContain('Her salı 10.00 · Bireysel terapi (50 dk)');
-    expect(r.textContent).not.toContain('Osman');
-    fireEvent.click(within(r).getByRole('button', { name: 'Terapiyi sonlandır' }));
+  const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+  const weekdayIn = (n: number) => new Date(`${day(n)}T12:00:00Z`).getUTCDay();
+
+  it('Aktif danışanlar: today first, then the coming sessions, nearest first; a row has the next session and the way to the page only', async () => {
+    setup('tracking', [], [
+      client({ id: 'c3', number: 'KT003CC', weekday: weekdayIn(5), time: '10:00', since: day(-30) }),
+      client({ id: 'c2', number: 'KT002BB', weekday: weekdayIn(1), time: '10:00', since: day(-30) }),
+      client({ id: 'c1', number: 'KT001AA', weekday: weekdayIn(0), time: '23:59', since: day(-30), sessions: [{ day: day(1), time: '10:00', kind: 'weekly', minutes: 50, status: 'planned', asked: 'reschedule' }] }),
+    ]);
+    const r1 = await row('KT001AA');
+    expect(screen.getByText('Aktif danışanlar (3)')).toBeTruthy();
+    expect(screen.getByText('Bugün (1)')).toBeTruthy();
+    expect(screen.getByText('Yaklaşan seanslar (2)')).toBeTruthy();
+    expect(r1.textContent).toContain('Bugün, 23.59');
+    expect(r1.textContent).not.toMatch(/Saat değişikliği|Osman/);
+    expect(within(r1).queryByRole('button')).toBeNull();
+    expect(within(r1).getByRole('link', { name: 'KT001AA: danışanın sayfasına git' }).getAttribute('href')).toBe('#/seans-takip/c1');
+    const coming = [...document.querySelectorAll('.tk-number')].map((e) => e.textContent);
+    expect(coming).toEqual(['KT001AA', 'KT002BB', 'KT003CC']);
+    expect((await row('KT002BB')).textContent).toContain('Yarın, 10.00');
+    // Randevu ekle is on Randevu talepleri only; here, the time now.
+    expect(screen.queryByRole('button', { name: 'Randevu ekle' })).toBeNull();
+    expect(screen.getByLabelText('Şu an')).toBeTruthy();
+  });
+
+  it("on the client's page, Terapi tamamlandı sends the e-mail and removes the client", async () => {
+    const { api } = setup('client:c1', [], [client()]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Terapiyi sonlandır' }));
     const dialog = screen.getByRole('dialog', { name: 'KT007OGO: terapiyi sonlandır' });
     expect(dialog.textContent).toContain('osman@example.com');
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Sayın Osman Güneş Özkurt,');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder ve takipten çıkar' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
     expect(api.state.sent[0]).toMatchObject({ to: 'osman@example.com', subject: 'Terapi sürecimizin sonlanması – klinikterapist.com' });
+    expect(await screen.findByText(/Seans takipten çıkarıldı/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: '← Seans takibe dön' })).toBeTruthy();
   });
 
-  it('Sonlandırma görüşmesi talep et sends the invitation and keeps the client, marked', async () => {
-    const { api } = setup('tracking', [], [client()]);
-    fireEvent.click(within(await row('KT007OGO')).getByRole('button', { name: 'Terapiyi sonlandır' }));
+  it('Sonlandırma görüşmesi talep et sends the invitation and keeps the client, marked; the list shows them in the closing stage', async () => {
+    const { api } = setup('client:c1', [], [client()]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Terapiyi sonlandır' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Sonlandırma görüşmesi talep et' }));
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('sonlandırma görüşmesi');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Daveti gönder' }));
     await waitFor(() => expect(api.state.clients[0].status).toBe('closing'));
     expect(await screen.findByText('Sonlandırma görüşmesi bekleniyor')).toBeTruthy();
-    expect(screen.getByText('Sonlandırma aşamasında (1)')).toBeTruthy();
+    cleanup();
+    setup('tracking', [], [{ ...client(), status: 'closing' }]);
+    expect(await screen.findByText('Sonlandırma aşamasında (1)')).toBeTruthy();
   });
 
   it('Geri al sends the apology and the person is back in Randevu talepleri', async () => {
-    const { api } = setup('tracking', [], [{ ...client(), origin: { ...session, day: '2030-01-03' } }]);
-    fireEvent.click(within(await row('KT007OGO')).getByRole('button', { name: 'Geri al' }));
+    const { api } = setup('client:c1', [], [{ ...client(), origin: { ...session, day: '2030-01-03' } }]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Geri al' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Gönder ve geri al' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
     expect(api.state.requests).toEqual([expect.objectContaining({ status: 'pending', name: 'Ayşe Yılmaz' })]);
     expect(api.state.calendar.some((e) => e.status === 'hold')).toBe(true);
     expect(api.state.sent[0].body).toContain('teknik bir sorun');
+    expect(await screen.findByRole('link', { name: 'Randevu taleplerine git →' })).toBeTruthy();
   });
 
   it('Sil removes the client with no e-mail', async () => {
-    const { api } = setup('tracking', [], [client()]);
-    fireEvent.click(within(await row('KT007OGO')).getByRole('button', { name: 'Sil' }));
+    const { api } = setup('client:c1', [], [client()]);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sil' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sil' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
     expect(api.state.sent).toEqual([]);
@@ -346,7 +373,8 @@ describe("the client's own page, seen from the panel", () => {
     expect(await screen.findByText(/danışana e-postayla gönderildi/)).toBeTruthy();
     cleanup();
     setup('tracking', [], [asked]);
-    expect(await screen.findByText('Sonlandırmak istiyor')).toBeTruthy();
-    expect(screen.getByText('Saat değişikliği istedi')).toBeTruthy();
+    await row('KT007OGO');
+    expect(screen.queryByText('Sonlandırmak istiyor')).toBeNull();
+    expect(screen.queryByText('Saat değişikliği istedi')).toBeNull();
   });
 });

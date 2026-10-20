@@ -17,7 +17,7 @@
  *   (`closed` in `booking.busy`) it is all the page shows
  *   [data-verify-note] where the result of an e-mail check link (`?dogrula=…`) is shown
  */
-import { closedOn, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
+import { PREVIEW_CLOSED_KEY, closedOn, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
 import { sameEmail } from '../../lib/email-check';
 import { mountEmailGuard } from './email-guard';
 import { mountWaitlist } from './waitlist-submit';
@@ -91,6 +91,15 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     history.replaceState(null, '', location.pathname);
   };
   void verify();
+
+  // Dev server only: the panel's trial mode closed booking (PREVIEW_CLOSED_KEY).
+  if (root.dataset.preview === '1') {
+    try {
+      if (localStorage.getItem(PREVIEW_CLOSED_KEY) === '1') close();
+    } catch {
+      /* no storage */
+    }
+  }
 
   /** Reads the taken times; a failure leaves the calendar as booking.json alone (the backend checks again). */
   const loadBusy = async () => {

@@ -3,12 +3,15 @@ import type { LucideIcon } from 'lucide-react';
 
 export {
   BookOpen,
+  BellRing,
   BookOpenText,
   CalendarCheck,
   CalendarDays,
   Bold,
+  ChevronRight,
   CircleCheck as CheckCircle2, // Lucide 1.x renamed it
   CircleCheck,
+  Clock,
   Ellipsis,
   ExternalLink,
   FileText,

@@ -5,7 +5,7 @@
  */
 import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
-import { INTRO_MINUTES, clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
+import { INTRO_MINUTES, PREVIEW_CLOSED_KEY, clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
 import { SessionError, applyChange, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
 
@@ -64,12 +64,17 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
   const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map() };
   let clientSeq = 0;
   if (opts.demoRequests) {
+    try {
+      state.open = localStorage.getItem(PREVIEW_CLOSED_KEY) !== '1';
+    } catch {
+      /* no storage: open */
+    }
     const now = (opts.now ?? Date.now)();
     const requests = demoRequests(now);
     state.requests.push(...requests);
     // Their 24-hour holds, and one client in Seans takip, so the calendar shows both marks.
     for (const r of requests) {
-      state.calendar.push({ id: r.holdId, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: now + 864e5 });
+      state.calendar.push({ id: r.holdId, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: r.createdAt + 864e5 });
     }
     // A client three weeks in: the intro call, two weekly sessions marked, one cancelled.
     const name = 'Zeynep Örnek';
@@ -369,7 +374,19 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         mail(c.contact.email, subject, body);
       }),
     bookingState: () => wait(() => ({ open: state.open, waiting: state.waitlist.length })),
-    bookingSetOpen: (open) => wait(() => void (state.open = open)),
+    bookingSetOpen: (open) =>
+      wait(() => {
+        state.open = open;
+        // The trial mode tells the booking pages on the dev server (PREVIEW_CLOSED_KEY).
+        if (opts.demoRequests) {
+          try {
+            if (open) localStorage.removeItem(PREVIEW_CLOSED_KEY);
+            else localStorage.setItem(PREVIEW_CLOSED_KEY, '1');
+          } catch {
+            /* no storage */
+          }
+        }
+      }),
     requestAdd: (input) =>
       wait(() => {
         if (input.name.trim().length < 2) throw new ApiFailure('bad_request', 'Ad soyad eksik.');
@@ -433,7 +450,7 @@ function demoRequests(now: number): BookingRequest[] {
   })();
   return [
     { id: 'demo-1', createdAt: now - 3 * 3600e3, kind: 'session', type: 'individual', day: day(3), time: '19:20', name: 'Ayşe Örnek', email: 'ayse@example.com', phone: '0532 000 00 00', note: 'Akşam saatleri benim için daha uygun.', lang: 'tr', status: 'pending', holdId: 'demo-hold-1' },
-    { id: 'demo-2', createdAt: now - 3600e3, kind: 'intro', day: weekend, time: '11:00', name: 'Mehmet Deneme', email: 'mehmet@example.com', phone: '0533 000 00 00', note: '', lang: 'tr', forWhom: 'couple', topics: [2, 3], before: 'no', age: 2, status: 'pending', holdId: 'demo-hold-2' },
+    { id: 'demo-2', createdAt: now - 26 * 3600e3, kind: 'intro', day: weekend, time: '11:00', name: 'Mehmet Deneme', email: 'mehmet@example.com', phone: '0533 000 00 00', note: '', lang: 'tr', forWhom: 'couple', topics: [2, 3], before: 'no', age: 2, status: 'pending', holdId: 'demo-hold-2' },
   ];
 }
 

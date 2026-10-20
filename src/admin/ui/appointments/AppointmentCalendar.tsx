@@ -238,7 +238,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
               <span className="mk-row mk-wait" aria-hidden="true">
                 <i className="mk" />
               </span>
-              Onay bekleyen talep (saat 24 saat tutulur)
+              Onay bekleyen talep (talep geldikten sonra 24 saat boyunca sizin için ayrılır)
             </li>
             <li>
               <span className="occ-legend-bar" aria-hidden="true" />

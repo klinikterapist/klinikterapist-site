@@ -28,6 +28,13 @@ export const SESSION_TYPES = [
 
 export const INTRO_MINUTES = 30;
 
+/**
+ * Preview only (owner's review a5): the panel's trial mode (`/admin/?mock`) keeps "Randevu alımı
+ * kapalı" here, and the booking pages on the dev server read it, so closing can be tried before the
+ * backend is live. The live site never reads it.
+ */
+export const PREVIEW_CLOSED_KEY = 'kt.preview.bookingClosed';
+
 /** How long an appointment lasts (without the rest). */
 export function minutesOf(kind: BookingKind, type?: string): number {
   if (kind === 'intro') return INTRO_MINUTES;
