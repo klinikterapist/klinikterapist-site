@@ -143,6 +143,8 @@ export type BookingRequest = {
   calendarId?: string;
   /** The person opened the link in the acknowledgement e-mail: the address is right. */
   verified?: boolean;
+  /** The owner was told its 24-hour hold is running out (review E3); told once. */
+  holdWarned?: boolean;
   /** `manual`: the owner put it in with "Randevu ekle". */
   source?: 'site' | 'manual';
 };

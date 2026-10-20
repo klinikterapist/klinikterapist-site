@@ -15,9 +15,10 @@ import { ApiError, badRequest } from './respond';
 import { activeEntries, addConfirmed, addHold, busyOf, removeEntry } from './calendar';
 import { readItems, writeItems } from './store';
 import { verifyLines, verifyLink } from './verify';
-import { BOOKING_LIMITS, INTRO_MINUTES, REQUEST_KEEP_DAYS, requestKeepUntil, SESSION_TYPES, clientNumber, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
+import { BOOKING_LIMITS, INTRO_MINUTES, REQUEST_KEEP_DAYS, requestKeepUntil, SESSION_TYPES, clientNumber, formatDay, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
 import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
+import { PANEL_URL, oneLine } from './text';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
 const REQUESTS = 'talepler.json';
@@ -149,6 +150,43 @@ export function addManual(gas: Gas, cfg: BookingConfig, p: Record<string, unknow
     write(gas, REQUESTS, [...liveRequests(gas), r]);
     return { request: r };
   });
+}
+
+const WARN_AFTER_MS = 20 * 3600 * 1000;
+const HOLD_MS = 24 * 3600 * 1000;
+
+/**
+ * Review E3 (hourly): waiting requests whose 24-hour hold runs out within four hours (or has run
+ * out) are listed to the owner in one e-mail, each request once. Undecided, the time opens on the
+ * site again and someone else may take it.
+ */
+export function warnExpiringHolds(gas: Gas): number {
+  const owner = gas.props.get('OWNER_EMAIL')?.trim();
+  if (!owner) return 0;
+  const due = gas.withLock(() => {
+    const now = gas.now();
+    const requests = liveRequests(gas);
+    const list = requests.filter((r) => r.status === 'pending' && r.holdId && !r.holdWarned && now - r.createdAt >= WARN_AFTER_MS);
+    if (list.length) write(gas, REQUESTS, requests.map((r) => (list.includes(r) ? { ...r, holdWarned: true } : r)));
+    return list;
+  });
+  if (!due.length) return 0;
+  const now = gas.now();
+  const left = (r: BookingRequest) => {
+    const m = Math.round((r.createdAt + HOLD_MS - now) / 60000);
+    return m <= 0 ? 'süre doldu, saat sitede yeniden açık' : `tutma ${Math.floor(m / 60)} sa ${m % 60} dk sonra bitiyor`;
+  };
+  const what = (r: BookingRequest) => (r.kind === 'intro' ? 'Ücretsiz ön görüşme' : `Seans randevusu (${SESSION_TYPES.find((t) => t.id === r.type)?.tr ?? 'Seans'})`);
+  const body = [
+    due.length === 1 ? 'Bu talebe henüz karar vermediniz:' : `Bu ${due.length} talebe henüz karar vermediniz:`,
+    '',
+    ...due.map((r) => `- ${oneLine(r.name)} · ${what(r)} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')} · ${left(r)}`),
+    '',
+    'Karar vermezseniz saat sitede yeniden açılır ve başka biri alabilir; talep ise 30 gün boyunca panelde kalır.',
+    `Randevu talepleri: ${PANEL_URL}#/randevular`,
+  ].join('\n');
+  gas.mail.send({ to: owner, replyTo: owner, subject: `[klinikterapist] ${due.length === 1 ? 'Bir talebin' : `${due.length} talebin`} tutma süresi doluyor`, body, name: 'klinikterapist.com randevu sistemi' });
+  return due.length;
 }
 
 /** Under the lock: dropping the old requests writes the file, and a request may be coming in. */

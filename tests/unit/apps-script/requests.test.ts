@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { handle } from '../../../apps-script/src/main';
+import { handle, runHourly } from '../../../apps-script/src/main';
 import { bookingBusy } from '../../../apps-script/src/booking';
 import { issueSession } from '../../../apps-script/src/auth';
 import { REQUEST_KEEP_MS } from '../../../apps-script/src/requests';
@@ -507,5 +507,26 @@ describe('E4: an approved request keeps its person until its appointment has pas
     s.gas.clock.now = at('2026-11-27T20:30:00');
     expect(s.requests()).toEqual([]);
     expect(s.gas.root.findFolder('randevular')!.findFile('takvim.json')!.read()).not.toContain('"confirmed"');
+  });
+});
+
+describe('E3: the owner hears of a hold running out', () => {
+  it('after 20 hours one e-mail lists the undecided requests, each only once; decided ones are left out', async () => {
+    const s = setup();
+    s.send(session);
+    s.send(intro);
+    const [, decided] = s.requests();
+    s.call('requests.decide', { id: decided.id, decision: 'approve', ...mail });
+    s.gas.mails.length = 0;
+    s.gas.clock.now = NOW + 19 * 3600 * 1000;
+    await runHourly(s.gas);
+    expect(s.gas.mails).toEqual([]);
+    s.gas.clock.now = NOW + 21 * 3600 * 1000;
+    await runHourly(s.gas);
+    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merhaba@klinikterapist.com', subject: '[klinikterapist] Bir talebin tutma süresi doluyor' })]);
+    expect(s.gas.mails[0].body).toContain('Ayşe Yılmaz · Seans randevusu (Çift terapisi) · 22 Ekim 2026, Perşembe, 19.20 · tutma 3 sa 0 dk sonra bitiyor');
+    expect(s.gas.mails[0].body).not.toContain('ön görüşme');
+    await runHourly(s.gas);
+    expect(s.gas.mails).toHaveLength(1);
   });
 });

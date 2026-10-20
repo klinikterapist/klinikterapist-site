@@ -14,7 +14,7 @@ import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, lis
 import { sendContact } from './contact';
 import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from './booking';
 import { addConfirmed, listEntries, removeEntry } from './calendar';
-import { addManual, assertFree, changeSession, decideRequest, endClient, listClients, listRequests, holdFor, requestToClient, revertClient, revertRequest } from './requests';
+import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor, listClients, listRequests, requestToClient, revertClient, revertRequest, warnExpiringHolds } from './requests';
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { recordHit, statsReads, statsSummary } from './stats';
@@ -170,6 +170,11 @@ export async function runHourly(gas: Gas): Promise<void> {
     await runScheduled(gas, new Date(gas.now()));
   } catch (e) {
     gas.log(`hourly/schedule: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  try {
+    warnExpiringHolds(gas);
+  } catch (e) {
+    gas.log(`hourly/holds: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
