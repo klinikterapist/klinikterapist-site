@@ -80,19 +80,20 @@ export function WaitlistTab({ version, onCount, onBook }: { version: number; onC
         <ul className="rq-list">
           {entries.map((e) => (
             <li key={e.id} className="rq-card rq-is-wait">
-              <div className="rq-kind">
-                <span className="rq-kind-tag">Bekleme listesi</span>
-                <span className="rq-kind-what">{e.kinds.map((k) => L[k as keyof typeof L]).join(' · ')}</span>
-              </div>
               <header className="rq-head">
                 <span className="rq-avatar" aria-hidden="true">
                   {initialsOf(e.name)}
                 </span>
                 <span className="rq-who">
                   <b>{e.name}</b>
+                  <span className="rq-type">{e.kinds.map((k) => L[k as keyof typeof L]).join(' · ')}</span>
                   <span>{`${formatDay(new Date(e.createdAt + 3 * 3600e3).toISOString().slice(0, 10), 'tr')} tarihinden beri bekliyor`}</span>
                 </span>
                 {e.offeredAt && <span className="rq-pill rq-pill-ok">Saat önerildi</span>}
+                <span className="rq-kindbox is-wait">
+                  <b>Bekleme</b>
+                  <small>Listesi</small>
+                </span>
               </header>
               <dl className="rq-rows">
                 <div>

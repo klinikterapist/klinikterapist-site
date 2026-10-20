@@ -151,3 +151,50 @@ export function applyChange(c: TrackedClient, ch: SessionChangeInput, closingMin
   if (base.kind === 'weekly' && status === 'planned' && !note) return { sessions };
   return { sessions: [...sessions, next] };
 }
+
+export type SessionStats = {
+  /** Paid sessions so far that took place or were due (attended, no-show, not marked yet). */
+  held: number;
+  /** Shares of the past paid sessions, cancelled and postponed included (they add up to `total`). */
+  attended: number;
+  noshow: number;
+  cancelled: number;
+  postponed: number;
+  unmarked: number;
+  total: number;
+  /** Free sessions so far (intro call, closing session). */
+  free: number;
+};
+
+const countsAsSession = (s: SessionRecord) => !FREE_KINDS.includes(s.kind) && !OFF.includes(s.status);
+
+/**
+ * The client's running count since therapy began (owner's review 2026-10-20: the page shows four
+ * sessions each way, but the counter goes on): every past session counted, not only those shown.
+ */
+export function sessionStats(c: TrackedClient, now: number): SessionStats {
+  const today = istanbulDay(now);
+  const first = [c.since, ...(c.sessions ?? []).map((s) => s.day)].sort()[0];
+  const past = sessionsOf(c, first < today ? first : today, today).filter((s) => slotInstant(s.day, s.time) <= now);
+  const t: SessionStats = { held: 0, attended: 0, noshow: 0, cancelled: 0, postponed: 0, unmarked: 0, total: 0, free: 0 };
+  for (const s of past) {
+    if (FREE_KINDS.includes(s.kind)) {
+      if (!OFF.includes(s.status)) t.free++;
+      continue;
+    }
+    t.total++;
+    if (s.status === 'planned') t.unmarked++;
+    else t[s.status]++;
+    if (countsAsSession(s)) t.held++;
+  }
+  return t;
+}
+
+/** Each paid session's number since therapy began ("7. seans"), by `sessionKey`; cancelled, postponed and free ones have none. */
+export function sessionNumbers(c: TrackedClient, upTo: string): Map<string, number> {
+  const first = [c.since, ...(c.sessions ?? []).map((s) => s.day)].sort()[0];
+  const out = new Map<string, number>();
+  let n = 0;
+  for (const s of sessionsOf(c, first, upTo)) if (countsAsSession(s)) out.set(sessionKey(s), ++n);
+  return out;
+}

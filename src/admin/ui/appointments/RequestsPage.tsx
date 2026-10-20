@@ -48,24 +48,26 @@ function Row({ label, children, wide }: { label: string; children: React.ReactNo
   );
 }
 
-/** What the request is, said loudly at the top of the card. */
-function KindBand({ r }: { r: BookingRequest }) {
-  if (r.kind === 'intro') {
-    return (
-      <div className="rq-kind">
-        <span className="rq-kind-tag">Ücretsiz ön görüşme</span>
-        <span className="rq-kind-what">30 dakika · tanışma görüşmesi</span>
-      </div>
-    );
-  }
-  const t = SESSION_TYPES.find((s) => s.id === r.type) ?? SESSION_TYPES[0];
-  return (
-    <div className="rq-kind">
-      <span className="rq-kind-tag">Seans randevusu</span>
-      <span className="rq-kind-what">{`${t.tr} · ${t.minutes} dakika`}</span>
-      {r.source === 'manual' && <span className="rq-kind-src">Elle eklendi</span>}
-    </div>
+/** What the request is, in its own box beside the date (owner's review 2026-10-20, a4). */
+function KindBox({ r }: { r: BookingRequest }) {
+  return r.kind === 'intro' ? (
+    <span className="rq-kindbox is-intro">
+      <b>Ön görüşme</b>
+      <small>Ücretsiz</small>
+    </span>
+  ) : (
+    <span className="rq-kindbox">
+      <b>Seans</b>
+      <small>Randevusu</small>
+    </span>
   );
+}
+
+/** The session type under the name: "Bireysel terapi · 50 dakika". */
+function typeLine(r: BookingRequest): string {
+  if (r.kind === 'intro') return 'Ücretsiz ön görüşme · 30 dakika';
+  const t = SESSION_TYPES.find((s) => s.id === r.type) ?? SESSION_TYPES[0];
+  return `${t.tr} · ${t.minutes} dakika${r.source === 'manual' ? ' · elle eklendi' : ''}`;
 }
 
 function RequestCard({ r, children }: { r: BookingRequest; children: React.ReactNode }) {
@@ -73,15 +75,15 @@ function RequestCard({ r, children }: { r: BookingRequest; children: React.React
   const [d, mon] = formatDay(r.day, 'tr').split(/[ ,]+/);
   return (
     <li className={`rq-card rq-is-${r.kind}`}>
-      <KindBand r={r} />
       <header className="rq-head">
         <span className="rq-avatar" aria-hidden="true">
           {initialsOf(r.name)}
         </span>
         <span className="rq-who">
           <b>{r.name}</b>
-          <span>{r.email}</span>
+          <span className="rq-type">{typeLine(r)}</span>
         </span>
+        <KindBox r={r} />
         <span className="rq-when" aria-label={`İstenen zaman: ${whenOf(r)}`}>
           <b>
             {d} {mon}

@@ -94,11 +94,12 @@ describe('Randevu talepleri', () => {
   it('shows each request with its details and the three buttons, beside the calendar', async () => {
     setup('requests');
     const c = await card('Ayşe Yılmaz');
-    expect(c.textContent).toContain('Seans randevusu');
-    expect(c.textContent).toContain('Çift terapisi · 60 dakika');
+    // The kind in its own box beside the date; the session type under the name, no e-mail there.
+    expect(c.querySelector('.rq-kindbox')!.textContent).toBe('SeansRandevusu');
+    expect(c.querySelector('.rq-who')!.textContent).toBe('Ayşe YılmazÇift terapisi · 60 dakika');
     expect(c.textContent).toContain('Konuşma dili');
     expect(c.textContent).toContain('E-posta henüz doğrulanmadı');
-    expect((await card('Ali Kaya')).textContent).toContain('Ücretsiz ön görüşme');
+    expect((await card('Ali Kaya')).querySelector('.rq-kindbox')!.textContent).toBe('Ön görüşmeÜcretsiz');
     expect(c.textContent).toContain('22 Ekim 2026, Perşembe, 19.20');
     expect(c.textContent).toContain('Akşam daha uygun.');
     for (const name of ['Onayla', 'Uygun değilim', 'İptal et']) expect(within(c).getByRole('button', { name })).toBeTruthy();
@@ -303,6 +304,13 @@ describe('a client’s page in Seans takip', () => {
     const { api } = setup('client:c1', [], [client({ weekday, time: '10:00', since: day(-14), sessions: [{ day: day(-20), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' }] })]);
     expect(await screen.findByText('KT007OGO')).toBeTruthy();
     expect(screen.getByText('Ücretsiz ön görüşme').className).toContain('is-free');
+    // Only the weekly time, the type and when therapy began; no name, e-mail or language.
+    const page = document.body.textContent!;
+    expect(page).toContain('Terapiye başlangıç');
+    expect(page).toContain('Görüşme türü');
+    expect(page).not.toMatch(/Osman|osman@example|Konuşma dili/);
+    expect(screen.getByRole('img', { name: /İşaretlenmedi %100/ })).toBeTruthy();
+    expect(screen.getAllByText(/1\. seans/).length).toBeGreaterThan(0);
     const past = screen.getByRole('heading', { name: /Geçmiş seanslar/ }).parentElement!;
     const rows = within(past).getAllByRole('listitem');
     expect(rows).toHaveLength(3);

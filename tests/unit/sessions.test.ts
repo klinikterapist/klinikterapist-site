@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyChange, clientsBusy, pastAndNext, sessionsOf, tally, SessionError, type TrackedClient } from '../../src/lib/sessions';
+import { applyChange, clientsBusy, pastAndNext, sessionNumbers, sessionStats, sessionsOf, tally, SessionError, type TrackedClient } from '../../src/lib/sessions';
 import { suggestEmail, sameEmail } from '../../src/lib/email-check';
 import { validateWaitlist } from '../../src/lib/waitlist-form';
 
@@ -43,6 +43,26 @@ describe('a client’s sessions', () => {
     expect(() => applyChange(c, { op: 'add', kind: 'extra', day: '2026-10-27', time: '18:00' }, 30)).toThrow(SessionError);
     expect(() => applyChange(c, { op: 'mark', day: '2026-10-28', time: '18:00', status: 'attended' }, 30)).toThrow('Bu tarihte bir seans yok.');
     expect(applyChange({ ...c, sessions: r.sessions }, { op: 'remove', day: '2026-11-05', time: '19:00' }, 30).sessions).toEqual([]);
+  });
+});
+
+describe('the running count and the chart', () => {
+  it('counts every past session since therapy began, not only the four shown; cancelled and free ones get no number', () => {
+    const long: TrackedClient = {
+      ...c,
+      sessions: [
+        { day: '2026-10-01', time: '11:00', kind: 'intro', minutes: 30, status: 'attended' },
+        { day: '2026-10-06', time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
+        { day: '2026-10-13', time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client' },
+        { day: '2026-10-20', time: '18:00', kind: 'weekly', minutes: 50, status: 'noshow' },
+      ],
+    };
+    // Seven weeks later: 6 Oct … 24 Nov past (8 Tuesdays).
+    const stats = sessionStats(long, at('2026-11-25T10:00:00'));
+    expect(stats).toEqual({ held: 7, attended: 1, noshow: 1, cancelled: 1, postponed: 0, unmarked: 5, total: 8, free: 1 });
+    const n = sessionNumbers(long, '2026-12-01');
+    expect([n.get('2026-10-06T18:00'), n.get('2026-10-13T18:00'), n.get('2026-10-20T18:00'), n.get('2026-12-01T18:00')]).toEqual([1, undefined, 2, 8]);
+    expect(n.get('2026-10-01T11:00')).toBeUndefined();
   });
 });
 

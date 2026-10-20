@@ -158,6 +158,17 @@ const id = (s: string) => `wl-${kind}-${s}`;
     gap: var(--space-4);
   }
 
+  /* Hidden until the panel says booking is closed: display: grid must not win over [hidden]. */
+  .waitlist[hidden],
+  [data-wl-form][hidden] {
+    display: none;
+  }
+
+  .waitlist .chips + .fields,
+  .waitlist .chips + .q {
+    margin-top: var(--space-3);
+  }
+
   .wl-intro {
     justify-items: start;
     border: 1.5px solid color-mix(in srgb, var(--sun-disc) 60%, transparent);

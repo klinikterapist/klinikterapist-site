@@ -5,17 +5,19 @@
  * call before therapy, the closing session at its end) look different. The owner adds the closing
  * session or a one-off extra here. Cancellations and postponements the client asks for on their
  * own page (still to come) will be written here the same way, marked "danışan istedi".
+ * Owner's review 2026-10-20 (a4): no name, e-mail or language on this page — only the weekly time,
+ * the session type and when therapy began; a chart of the sessions so far in percent, and a running
+ * count ("7. seans") that goes on past the four shown.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type Client } from '../../api/types';
 import { formatDay } from '../../../lib/booking-form';
-import { FREE_KINDS, pastAndNext, sessionKey, tally, type SessionRecord, type SessionStatus } from '../../../lib/sessions';
+import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type SessionRecord, type SessionStatus } from '../../../lib/sessions';
 import { usePanel } from '../context';
 import { CalendarCheck, Icon } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
-import { SESSION_KIND_LABEL, templateTimes } from './AppointmentCalendar';
-import { weeklyText } from './TrackingPage';
-import { VerifiedMark } from './WaitlistTab';
+import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
+import { SessionChart } from './SessionChart';
 
 const STATUS_LABEL: Record<SessionStatus, string> = { planned: 'Planlandı', attended: 'Katıldı', noshow: 'Gelmedi', cancelled: 'İptal edildi', postponed: 'Ertelendi' };
 const short = (day: string) => {
@@ -77,8 +79,10 @@ export function ClientPage({ id }: { id: string }) {
     );
   }
 
-  const { past, next } = pastAndNext(client, Date.now());
-  const t = tally(client);
+  const now = Date.now();
+  const { past, next } = pastAndNext(client, now);
+  const stats = sessionStats(client, now);
+  const numbers = sessionNumbers(client, next.at(-1)?.day ?? past.at(-1)?.day ?? client.since);
   const times = (day: string) => (day ? templateTimes(day) : []);
 
   const row = (s: SessionRecord, past: boolean) => {
@@ -96,7 +100,10 @@ export function ClientPage({ id }: { id: string }) {
             {w} · {s.time.replace(':', '.')}
             <span className="k-visually-hidden">{`, ${formatDay(s.day, 'tr')}`}</span>
           </b>
-          <span className={`ss-kind${free ? ' is-free' : ''}`}>{SESSION_KIND_LABEL[s.kind]}</span>
+          <span className={`ss-kind${free ? ' is-free' : ''}`}>
+            {numbers.has(sessionKey(s)) ? `${numbers.get(sessionKey(s))}. seans · ` : ''}
+            {SESSION_KIND_LABEL[s.kind]}
+          </span>
           {s.note && <span className="ss-note">{s.note}</span>}
         </span>
         <span className={`ss-status st-${s.status}`}>
@@ -144,16 +151,22 @@ export function ClientPage({ id }: { id: string }) {
       <a className="back-link" href="#/seans-takip">
         ← Seans takip
       </a>
-      <div className="screen-head">
-        <h2 id="cl-title">
-          <span className="tk-number tk-number-lg">{client.number}</span>
-          {client.status === 'closing' && <span className="tk-badge">Sonlandırma görüşmesi bekleniyor</span>}
-        </h2>
+      <header className="cl-hero">
+        <span className="cl-badge" aria-hidden="true">
+          <Icon as={CalendarCheck} size={26} />
+        </span>
+        <div className="cl-hero-text">
+          <h2 id="cl-title">
+            <span className="tk-number tk-number-lg">{client.number}</span>
+            {client.status === 'closing' && <span className="tk-badge">Sonlandırma görüşmesi bekleniyor</span>}
+          </h2>
+          <p>{`${labelOf({ kind: 'session', type: client.type })} · bugüne kadar ${stats.held} seans`}</p>
+        </div>
         <div className="head-actions">
           <Button onClick={() => setAdding({ kind: 'closing', day: '', time: '' })}>Sonlandırma görüşmesi ekle</Button>
           <Button onClick={() => setAdding({ kind: 'extra', day: '', time: '' })}>Ek seans ekle</Button>
         </div>
-      </div>
+      </header>
       {notice && <Banner tone="success">{notice}</Banner>}
       {error && <Banner tone="error">{error}</Banner>}
 
@@ -172,46 +185,27 @@ export function ClientPage({ id }: { id: string }) {
             işlenir. Danışanın kendi sayfasından yapacağı iptal ve erteleme talepleri (o sayfa açıldığında) buraya kendiliğinden "danışan istedi" diye yazılacak.
           </p>
         </div>
-        <aside className="appt-side">
-          <div className="cal-card">
-            <dl className="rq-rows cl-info">
+        <aside className="appt-side cl-side">
+          <div className="k-group">
+            <h3 className="tk-group-title">Seans bilgisi</h3>
+            <dl className="cl-card cl-info">
               <div>
                 <dt>Haftalık seans</dt>
-                <dd>{weeklyText(client)}</dd>
+                <dd>{`Her ${WEEKDAYS[client.weekday].toLocaleLowerCase('tr-TR')} ${client.time.replace(':', '.')}`}</dd>
               </div>
               <div>
-                <dt>Başlangıç</dt>
+                <dt>Görüşme türü</dt>
+                <dd>{labelOf({ kind: 'session', type: client.type })}</dd>
+              </div>
+              <div>
+                <dt>Terapiye başlangıç</dt>
                 <dd>{formatDay(client.since, 'tr')}</dd>
               </div>
-              <div>
-                <dt>Ad soyad</dt>
-                <dd>{client.contact.name}</dd>
-              </div>
-              <div>
-                <dt>E-posta</dt>
-                <dd>
-                  <a href={`mailto:${client.contact.email}`}>{client.contact.email}</a> <VerifiedMark ok={!!client.contact.verified} />
-                </dd>
-              </div>
-              <div>
-                <dt>Konuşma dili</dt>
-                <dd>{client.contact.lang === 'en' ? 'İngilizce' : 'Türkçe'}</dd>
-              </div>
             </dl>
-            <ul className="tally" aria-label="Seans özeti">
-              <li className="st-attended">
-                <b>{t.attended}</b> katıldı
-              </li>
-              <li className="st-noshow">
-                <b>{t.noshow}</b> gelmedi
-              </li>
-              <li className="st-cancelled">
-                <b>{t.cancelled}</b> iptal
-              </li>
-              <li className="st-postponed">
-                <b>{t.postponed}</b> ertelendi
-              </li>
-            </ul>
+          </div>
+          <div className="k-group">
+            <h3 className="tk-group-title">Seans grafiği</h3>
+            <SessionChart stats={stats} />
           </div>
         </aside>
       </div>
