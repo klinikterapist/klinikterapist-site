@@ -25,6 +25,7 @@ import { absoluteUrl, buildMeta } from '../lib/seo';
 import { blogPostingLd, breadcrumbLd } from '../lib/jsonld';
 import { formatDate, isoDay } from '../lib/date';
 import { categoryPath, pathFor, postPath } from '../i18n/routes';
+import { bookPath } from '../lib/booking-entry';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -149,7 +150,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="post-end">
         <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
         <ShareButtons lang={lang} title={data.title} url={absoluteUrl(path)} />
-        <a class="big-cta post-cta" href={pathFor('appointment', lang)}>
+        <a class="big-cta post-cta" href={bookPath(lang)}>
           <Icon name="calendar" size={18} />
           {t(lang, 'bookSession')}
         </a>

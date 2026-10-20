@@ -10,6 +10,7 @@
 import type { Lang } from '../../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../../lib/portrait-image';
 import { pathFor } from '../../i18n/routes';
+import { bookPath, bookingLive } from '../../lib/booking-entry';
 import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
@@ -49,17 +50,22 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
       {heading && <p class="tagline">{heading}</p>}
       {intro && <p class="lead">{intro}</p>}
       <div class="actions">
-        <a class="btn big book" href={pathFor('appointment', lang)}>
+        <a class="btn big book" href={bookPath(lang)}>
           <Icon name="booking" size={20} />
           {t(lang, 'bookSession')}
         </a>
-        <a class="pre" href={pathFor('preConsult', lang)}>
-          <span class="pre-ic"><Icon name="talk" size={20} /></span>
-          <span class="pre-lines">
-            <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
-            <span class="pre-name">{t(lang, 'preConsult')}</span>
-          </span>
-        </a>
+        {
+          /* With the booking start page live, the intro call is offered there (Faz 3). */
+          !bookingLive() && (
+            <a class="pre" href={pathFor('preConsult', lang)}>
+              <span class="pre-ic"><Icon name="talk" size={20} /></span>
+              <span class="pre-lines">
+                <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
+                <span class="pre-name">{t(lang, 'preConsult')}</span>
+              </span>
+            </a>
+          )
+        }
       </div>
       <span class="hero-wordmark">
         <Wordmark height={56} decorative />

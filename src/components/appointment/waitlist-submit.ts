@@ -7,7 +7,7 @@ import { sameEmail } from '../../lib/email-check';
 import { validateWaitlist, type WaitlistInput } from '../../lib/waitlist-form';
 import { mountEmailGuard } from './email-guard';
 
-export type WaitlistMessages = { sending: string; invalid: string; mismatch: string; failed: string };
+export type WaitlistMessages = { sending: string; invalid: string; mismatch: string; failed: string; emailDomain?: string };
 
 type Deps = { fetch: typeof fetch; timeoutMs?: number };
 
@@ -55,6 +55,7 @@ export function mountWaitlist(section: HTMLElement, endpoint: string, lang: 'tr'
     button.setAttribute('aria-busy', 'true');
     button.textContent = messages.sending;
     let sent = false;
+    let badDomain = false;
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 20000);
@@ -66,8 +67,9 @@ export function mountWaitlist(section: HTMLElement, endpoint: string, lang: 'tr'
           credentials: 'omit',
           signal: ctrl.signal,
         });
-        const out = (await res.json()) as { ok?: boolean };
+        const out = (await res.json()) as { ok?: boolean; data?: { reason?: string } };
         sent = res.ok && out?.ok === true;
+        badDomain = out?.data?.reason === 'email';
       } finally {
         clearTimeout(timer);
       }
@@ -77,7 +79,7 @@ export function mountWaitlist(section: HTMLElement, endpoint: string, lang: 'tr'
     button.removeAttribute('aria-busy');
     button.innerHTML = idle;
     button.disabled = false;
-    if (!sent) return say(messages.failed);
+    if (!sent) return say(badDomain ? (messages.emailDomain ?? messages.invalid) : messages.failed);
     section.querySelector<HTMLElement>('[data-wl-form]')?.setAttribute('hidden', '');
     const done = section.querySelector<HTMLElement>('[data-wl-done]');
     if (done) {

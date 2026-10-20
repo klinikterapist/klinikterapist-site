@@ -239,7 +239,7 @@ describe('page shell (every page but home)', () => {
   const pages = allPages().filter((p) => p !== '/' && p !== '/en/');
   const isPost = (p: string) => /^\/(en\/)?blog\/[^/]+\/$/.test(p);
   const langOf = (p: string) => (p.startsWith('/en/') ? 'en' : 'tr');
-  const NO_CTA = ['/randevum/', '/en/my-appointment/'];
+  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/'];
 
   /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
   const pageCss = (p: string) => {
@@ -487,10 +487,32 @@ describe('inner pages redesign (spec §5.9)', () => {
     }
   });
 
+  it('the booking start page: three ways (intro call recommended), the info form, out of search until booking is live', () => {
+    const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
+    for (const [path, intro, appt] of [['/randevu-al/', '/on-gorusme/', '/randevu/'], ['/en/book/', '/en/intro-call/', '/en/appointment/']] as const) {
+      const d = loadPage(path);
+      expect(d.querySelectorAll('main .way').length, path).toBe(3);
+      expect(d.querySelector('main .way.is-recommended a')?.getAttribute('href'), path).toBe(intro);
+      expect(d.querySelector(`main .way a[href="${appt}"]`), path).not.toBeNull();
+      const form = d.querySelector('main form[data-info]')!;
+      expect(form.querySelectorAll('input[name="info-topic"]').length, path).toBeGreaterThan(3);
+      expect(form.querySelector('input[name="info-email2"]'), path).not.toBeNull();
+      expect(form.querySelector('input[name="info-consent"]'), path).not.toBeNull();
+      // No fee amount in the answers offered.
+      expect(d.textContent, path).not.toMatch(/\d+\s*(TL|₺|€|\$)/);
+      expect(d.querySelector('meta[name=robots]')?.getAttribute('content'), path).toBe('noindex');
+      expect(sm).not.toContain(path);
+      expect(d.querySelector('.sticky-cta'), path).toBeNull();
+    }
+    // Until the forms are live, "Randevu Al" still goes to the booking page and the intro button stays on the home page.
+    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
+    expect(loadPage('/').querySelector('a.pre-cta')).not.toBeNull();
+  });
+
   it('the client’s own page and the booking pages load no Google Analytics, even where the site has it (real data build)', () => {
     const home = loadPage('/', DIST_SAMPLES).toString();
     expect(home).toContain('googletagmanager');
-    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
+    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/randevu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
       const d = loadPage(path, DIST_SAMPLES);
       expect(d.toString(), path).not.toContain('googletagmanager');
       expect(d.querySelector('[data-consent-bar]'), path).toBeNull();

@@ -26,6 +26,7 @@ import { EMPTY_IMAGE, portraitImage } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { renderMarkdown } from '../lib/markdown';
 import { pathFor } from '../i18n/routes';
+import { bookPath } from '../lib/booking-entry';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -93,7 +94,7 @@ const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter
         }
         {lead && <p class="lead">{lead}</p>}
       </div>
-      <a class="big-cta side-cta" href={pathFor('appointment', lang)}>
+      <a class="big-cta side-cta" href={bookPath(lang)}>
         <Icon name="calendar" size={18} />
         {t(lang, 'bookSession')}
       </a>

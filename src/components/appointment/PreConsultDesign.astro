@@ -178,7 +178,7 @@ const T = {
 }[lang];
 const notice = pathFor('privacyNotice', lang);
 const F = FORM_TEXT[lang];
-const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, verified: F.verified, verifyFailed: F.verifyFailed });
+const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain, verified: F.verified, verifyFailed: F.verifyFailed });
 ---
 
 <div class="wz preconsult" data-preconsult data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="intro" data-config={config} data-endpoint={endpoint} data-messages={messages}>

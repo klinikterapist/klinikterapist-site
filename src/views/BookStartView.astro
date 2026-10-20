@@ -1,0 +1,338 @@
+---
+/**
+ * The start page of booking, `/randevu-al/` and `/en/book/` (owner's decision 2026-10-20, Faz 3):
+ * every "Randevu Al" leads here. Three ways, each explained: meet first (the free intro call,
+ * recommended to anyone who wants to start), book a session, or only learn how it works ("Süreç
+ * bilgisi": the answers to the chosen topics by e-mail, no time taken). No Google Analytics, no
+ * "Randevu Al" bar; out of search until the booking forms are live (lib/booking-entry.ts).
+ */
+import PageShell from '../layouts/PageShell.astro';
+import PageHead from '../components/ui/PageHead.astro';
+import Icon from '../components/Icon.astro';
+import type { Lang } from '../lib/settings';
+import { buildMeta } from '../lib/seo';
+import { pathFor } from '../i18n/routes';
+import { ADMIN_CONFIG, MOCK_API_URL } from '../admin/config';
+import { ENTRY_PATH, bookingLive } from '../lib/booking-entry';
+import { INFO_TOPICS } from '../lib/info-answers';
+import { FORM_TEXT } from '../components/appointment/form-text';
+import type { InfoMessages } from '../components/appointment/info-submit';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
+const F = FORM_TEXT[lang];
+
+const T = {
+  tr: {
+    title: 'Nasıl başlamak istersiniz?',
+    lead: 'Size uygun yolu seçin. Terapiye başlamayı düşünüyorsanız önce ücretsiz bir ön görüşmede tanışmanızı öneririm.',
+    recommended: 'Önerilen',
+    meet: 'Önce tanışalım',
+    meetText: 'Ücretsiz, 25–30 dakikalık online bir ön görüşme. Neye ihtiyacınız olduğunu konuşur, birlikte çalışmanın size uygun olup olmadığına beraber karar veririz.',
+    meetGo: 'Ön görüşme planla',
+    ready: 'Başlamaya hazırım',
+    readyText: 'Daha önce görüştüysek ya da doğrudan başlamak istiyorsanız takvimden size uygun seans saatini seçin.',
+    readyGo: 'Seans randevusu al',
+    info: 'Önce bilgi almak istiyorum',
+    infoText: 'Süreç hakkında merak ettiklerinizi seçin; cevapları e-postanıza gelsin. Takvimden saat ayrılmaz.',
+    infoGo: 'Bilgi formunu aç',
+    topics: 'Merak ettikleriniz',
+    mail: 'E-posta',
+    consent: ['', 'Aydınlatma metnini', ' okudum. E-posta adresim yalnızca bu cevabı göndermek için kullanılır ve saklanmaz.'],
+    send: 'Cevapları gönder',
+    soon: 'Bu form yakında açılacak. Şimdilik e-postayla yazabilirsiniz.',
+    done: 'Cevaplar e-posta adresinize gönderildi. Gelen kutunuzda göremezseniz istenmeyen e-postalar klasörüne bakın.',
+    messages: { sending: 'Gönderiliyor…', invalid: 'E-posta adresini ve onay kutusunu kontrol edin.', topics: 'En az bir konu seçin.', failed: 'Gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da e-postayla yazın.' },
+  },
+  en: {
+    title: 'How would you like to start?',
+    lead: 'Choose the way that suits you. If you are thinking of starting therapy, I recommend meeting first in a free intro call.',
+    recommended: 'Recommended',
+    meet: 'Let’s meet first',
+    meetText: 'A free 25–30 minute online intro call. We talk about what you need and decide together whether working together suits you.',
+    meetGo: 'Plan an intro call',
+    ready: 'I’m ready to start',
+    readyText: 'If we have met before, or you would like to start straight away, choose a session time in the calendar.',
+    readyGo: 'Book a session',
+    info: 'I’d like some information first',
+    infoText: 'Choose what you would like to know; the answers come to your e-mail. No time is taken from the calendar.',
+    infoGo: 'Open the form',
+    topics: 'What you would like to know',
+    mail: 'E-mail',
+    consent: ['I have read the ', 'privacy notice', '. My address is used only to send this answer and is not kept.'],
+    send: 'Send me the answers',
+    soon: 'This form opens soon. For now, you can write by e-mail.',
+    done: 'The answers have been sent to your e-mail. If you cannot see them, please check your spam folder.',
+    messages: { sending: 'Sending…', invalid: 'Please check the e-mail address and the consent box.', topics: 'Please choose at least one topic.', failed: 'It could not be sent. Please try again later or write by e-mail.' },
+  },
+}[lang];
+
+const messages: InfoMessages = { ...T.messages, mismatch: F.mismatch, emailDomain: F.emailDomain };
+const meta = buildMeta({ lang, title: T.title, description: T.lead, path: ENTRY_PATH[lang], alternates: ENTRY_PATH });
+const notice = pathFor('privacyNotice', lang);
+---
+
+<PageShell lang={lang} meta={meta} alternatePaths={ENTRY_PATH} noindex={!bookingLive()} noAnalytics cta={false}>
+  <div class="container-text inner-page book-start">
+    <PageHead title={T.title}>
+      <p class="lead">{T.lead}</p>
+    </PageHead>
+
+    <ol class="ways">
+      <li class="way is-recommended">
+        <span class="way-badge">{T.recommended}</span>
+        <span class="way-icon" aria-hidden="true"><Icon name="talk" size={24} /></span>
+        <h2>{T.meet}</h2>
+        <p>{T.meetText}</p>
+        <a class="btn" href={pathFor('preConsult', lang)}>{T.meetGo}</a>
+      </li>
+      <li class="way">
+        <span class="way-icon" aria-hidden="true"><Icon name="calendar" size={24} /></span>
+        <h2>{T.ready}</h2>
+        <p>{T.readyText}</p>
+        <a class="btn btn-quiet" href={pathFor('appointment', lang)}>{T.readyGo}</a>
+      </li>
+      <li class="way">
+        <span class="way-icon" aria-hidden="true"><Icon name="help" size={24} /></span>
+        <h2>{T.info}</h2>
+        <p>{T.infoText}</p>
+        <details class="info-box" id="bilgi">
+          <summary class="btn btn-quiet">{T.infoGo}</summary>
+          <form class="info-form" method="post" data-info data-lang={lang} data-endpoint={endpoint} data-messages={JSON.stringify(messages)}>
+            <fieldset>
+              <legend>{T.topics}</legend>
+              {
+                INFO_TOPICS.map((t) => (
+                  <label class="check">
+                    <input type="checkbox" name="info-topic" value={t.id} />
+                    <span>{t.q[lang]}</span>
+                  </label>
+                ))
+              }
+            </fieldset>
+            <label class="field">
+              <span>{T.mail}</span>
+              <input type="email" name="info-email" autocomplete="email" inputmode="email" required maxlength="254" data-email />
+              <small class="email-hint" data-email-hint hidden></small>
+            </label>
+            <label class="field">
+              <span>{F.mail2}</span>
+              <input type="email" name="info-email2" autocomplete="off" inputmode="email" required maxlength="254" data-email-again />
+              <small class="email-hint is-error" data-email-mismatch hidden></small>
+            </label>
+            <label class="check">
+              <input type="checkbox" name="info-consent" value="1" required />
+              <span>{T.consent[0]}<a href={notice}>{T.consent[1]}</a>{T.consent[2]}</span>
+            </label>
+            <input class="hp" type="text" name="hp_field" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <p class="info-error" data-info-error tabindex="-1" role="alert" hidden></p>
+            <button class="btn" type="submit" disabled>{T.send}</button>
+            {!endpoint && <p class="info-soon">{T.soon}</p>}
+          </form>
+          <p class="info-done" data-info-done tabindex="-1" role="status" hidden>{T.done}</p>
+        </details>
+      </li>
+    </ol>
+  </div>
+</PageShell>
+
+<script>
+  import { mountInfoForm } from '../components/appointment/info-submit';
+
+  for (const form of document.querySelectorAll<HTMLFormElement>('[data-info]')) mountInfoForm(form);
+  // "#bilgi" opens the form.
+  if (location.hash === '#bilgi') document.querySelector<HTMLDetailsElement>('#bilgi')?.setAttribute('open', '');
+</script>
+
+<style>
+  .ways {
+    display: grid;
+    gap: var(--space-4);
+    margin: var(--space-6) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .way {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    padding: var(--space-5);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .way.is-recommended {
+    border-color: var(--sun-disc);
+    box-shadow: 0 0 0 1px var(--sun-disc);
+  }
+
+  .way-badge {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--sun-disc);
+    color: var(--sun-face);
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .way-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .way h2 {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+
+  .way p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .btn-quiet {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .btn-quiet:hover {
+    border-color: var(--text);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .info-box {
+    width: 100%;
+  }
+
+  .info-box summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .info-box summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .info-box[open] summary {
+    display: none;
+  }
+
+  .info-form {
+    display: grid;
+    gap: var(--space-4);
+    width: 100%;
+  }
+
+  .info-form fieldset {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .info-form legend {
+    margin-bottom: var(--space-2);
+    font-weight: 600;
+  }
+
+  .check {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    min-height: 44px;
+    line-height: 1.5;
+  }
+
+  .check input {
+    flex: none;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+    font-weight: 600;
+  }
+
+  .field input {
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-weight: 400;
+  }
+
+  .email-hint {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .info-error {
+    margin: 0;
+    padding: var(--space-3);
+    border-left: 4px solid var(--sun-disc);
+    background: var(--bg);
+  }
+
+  .info-done {
+    margin: 0;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    font-weight: 600;
+  }
+
+  .info-soon {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (min-width: 900px) {
+    .ways {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    /* The open information form takes the whole row. */
+    .way:has(details[open]) {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

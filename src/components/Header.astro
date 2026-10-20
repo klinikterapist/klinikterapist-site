@@ -7,6 +7,7 @@
 import type { Lang } from '../lib/settings';
 import { getProfile } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
+import { bookPath } from '../lib/booking-entry';
 import { t, type UiKey } from '../i18n/ui';
 import SunMark from './brand/SunMark.astro';
 import ThemeToggle from './ThemeToggle.astro';
@@ -55,7 +56,7 @@ const items = NAV.map(([href, label]) => {
     <div class="tools">
       <ThemeToggle lang={lang} variant="segmented" />
       <LangSwitch lang={lang} alternatePaths={alternatePaths} />
-      <a class="btn book" href={pathFor('appointment', lang)}>{t(lang, 'bookSession')}</a>
+      <a class="btn book" href={bookPath(lang)}>{t(lang, 'bookSession')}</a>
     </div>
   </div>
 </header>

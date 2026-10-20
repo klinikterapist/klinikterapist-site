@@ -23,7 +23,7 @@ import { mountEmailGuard } from './email-guard';
 import { mountWaitlist } from './waitlist-submit';
 import { mountWizard } from './wizard';
 
-export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string; mismatch: string; verified: string; verifyFailed: string };
+export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string; mismatch: string; emailDomain?: string; verified: string; verifyFailed: string };
 
 type Deps = { fetch: typeof fetch; now: () => number; timeoutMs?: number };
 
@@ -181,7 +181,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
     button.textContent = messages.sending;
-    let result: 'sent' | 'taken' | 'closed' | 'failed' = 'failed';
+    let result: 'sent' | 'taken' | 'closed' | 'email' | 'failed' = 'failed';
     try {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), deps.timeoutMs ?? 20000);
@@ -198,6 +198,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
         // The message check is for a backend from before `reason` was sent.
         else if (out?.data?.reason === 'taken' || out?.error?.message?.includes('artık uygun değil')) result = 'taken';
         else if (out?.data?.reason === 'closed') result = 'closed';
+        else if (out?.data?.reason === 'email') result = 'email';
       } finally {
         clearTimeout(timer);
       }
@@ -218,6 +219,9 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
       // Someone was quicker: show the calendar again with the fresh taken times.
       await loadBusy();
       say(messages.taken);
+    } else if (result === 'email') {
+      // The domain of the address takes no e-mail: a typo the person can fix (Faz 3).
+      say(messages.emailDomain ?? messages.invalid);
     } else if (result === 'closed') {
       // Booking closed while the page was open: the "Haber et" form takes over (owner's decision 2026-10-20).
       close();

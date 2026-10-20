@@ -26,6 +26,7 @@ import { portraitStyle } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { personLd, professionalServiceLd } from '../lib/jsonld';
 import { pathFor, postPath } from '../i18n/routes';
+import { bookPath, bookingLive } from '../lib/booking-entry';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -92,17 +93,22 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
         </span>
       </div>
       {intro && <p class="intro">{intro}</p>}
-      <a id="top-cta" class="top-cta" href={pathFor('appointment', lang)}>
+      <a id="top-cta" class="top-cta" href={bookPath(lang)}>
         <Icon name="booking" size={20} />
         {t(lang, 'bookSession')}
       </a>
-      <a class="pre-cta" href={pathFor('preConsult', lang)}>
-        <span class="pre-ic"><Icon name="talk" size={20} /></span>
-        <span class="pre-lines">
-          <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
-          <span class="pre-name">{t(lang, 'preConsult')}</span>
-        </span>
-      </a>
+      {
+        /* With the booking start page live, the intro call is offered there (Faz 3). */
+        !bookingLive() && (
+          <a class="pre-cta" href={pathFor('preConsult', lang)}>
+            <span class="pre-ic"><Icon name="talk" size={20} /></span>
+            <span class="pre-lines">
+              <small class="pre-sub">{t(lang, 'preConsultSub')}</small>
+              <span class="pre-name">{t(lang, 'preConsult')}</span>
+            </span>
+          </a>
+        )
+      }
 
       <div class="stack">
         <SocialAccordion lang={lang} />
@@ -200,7 +206,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     }
   </div>
 
-  <StickyCta mode="afterTopCta" href={pathFor('appointment', lang)} label={t(lang, 'bookSession')} />
+  <StickyCta mode="afterTopCta" href={bookPath(lang)} label={t(lang, 'bookSession')} />
 </BaseLayout>
 
 <style>
