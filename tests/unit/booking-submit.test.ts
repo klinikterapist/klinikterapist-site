@@ -6,7 +6,7 @@ import { mountBookingForm } from '../../src/components/appointment/booking-submi
 const config = readFileSync('src/data/booking.json', 'utf8');
 // Tuesday 20 October 2026, 10:00 Istanbul (07:00 UTC). The calendar reads local days; jsdom runs in UTC here.
 const NOW = Date.parse('2026-10-20T10:00:00+03:00');
-const messages = { sending: 'Gönderiliyor…', invalid: 'Eksik', taken: 'Dolu', failed: 'Gönderilemedi' };
+const messages = { sending: 'Gönderiliyor…', invalid: 'Eksik', taken: 'Dolu', failed: 'Gönderilemedi', mismatch: 'Aynı değil', verified: 'Doğrulandı', verifyFailed: 'Açılamadı' };
 
 function markup(endpoint: string | null) {
   document.body.innerHTML = `
@@ -18,7 +18,8 @@ function markup(endpoint: string | null) {
       <div data-cal-days></div><ul data-cal-note hidden></ul><p data-slots-title></p><div data-slots></div>
       <p data-step-error hidden></p></section>
     <section data-step="3" hidden><h2>Bilgiler</h2>
-      <input name="name" required /><input name="email" type="email" required /><input name="phone" required />
+      <input name="name" required /><input name="email" type="email" required data-email /><small data-email-hint hidden></small>
+      <input name="email2" type="email" required data-email-again /><small data-email-mismatch hidden></small><input name="phone" required />
       <textarea name="note"></textarea><input name="hp_field" /><input type="checkbox" name="consent" value="1" required />
       <p data-step-error hidden></p></section>
     <section data-step="4" data-hide-on-done hidden><h2>Özet</h2>
@@ -26,6 +27,16 @@ function markup(endpoint: string | null) {
       <p data-submit-error tabindex="-1" hidden></p><p data-soon>E-posta ile yazın</p></section>
     <section data-done tabindex="-1" hidden><h2>Alındı</h2></section>
     <div data-nav><button data-back hidden></button><button data-next><span data-next-label></span></button></div>
+    <p data-verify-note hidden></p>
+    <section data-closed hidden>
+      <div data-wl-form>
+        <input type="checkbox" name="wl-kinds" value="individual" checked />
+        <input name="wl-name" /><input name="wl-email" data-email /><small data-email-hint hidden></small><input name="wl-email2" data-email-again />
+        <input name="wl-phone" /><textarea name="wl-reason"></textarea><input type="checkbox" name="wl-consent" value="1" /><input type="checkbox" name="wl-health" value="1" />
+        <button data-wl-submit disabled>Haber et</button><p data-wl-error tabindex="-1" hidden></p><p data-wl-soon></p>
+      </div>
+      <section data-wl-done tabindex="-1" hidden></section>
+    </section>
   </div>`;
   const root = document.querySelector<HTMLElement>('[data-booking]')!;
   // Set as properties: the holiday names hold apostrophes (Astro escapes them in the real markup).
@@ -45,6 +56,7 @@ function fill() {
   $('[data-next]').click();
   $<HTMLInputElement>('[name=name]').value = 'Ayşe Yılmaz';
   $<HTMLInputElement>('[name=email]').value = 'ayse@example.com';
+  $<HTMLInputElement>('[name=email2]').value = 'ayse@example.com';
   $<HTMLInputElement>('[name=phone]').value = '0532 123 45 67';
   $<HTMLInputElement>('[name=consent]').checked = true;
   $('[data-next]').click();
@@ -134,5 +146,62 @@ describe('mountBookingForm', () => {
     await vi.waitFor(() => expect($('[data-submit-error]').textContent).toBe('Gönderilemedi'));
     expect($('[data-done]').hidden).toBe(true);
     expect($<HTMLButtonElement>('[data-submit]').disabled).toBe(false);
+  });
+});
+
+describe('e-mail check and closed booking on the site', () => {
+  it('two different addresses stop the request; a near-miss domain gets a one-tap fix', async () => {
+    const fetch = vi.fn(async (url: RequestInfo | URL) => new Response(JSON.stringify(String(url).includes('booking.busy') ? { ok: true, data: { busy: [] } } : { ok: true, data: { sent: true } })));
+    mountBookingForm(markup('https://api.example/exec'), { fetch, now: () => NOW });
+    const email = $<HTMLInputElement>('[name=email]');
+    email.value = 'ayse@gmial.com';
+    email.dispatchEvent(new Event('blur'));
+    expect($('[data-email-hint]').hidden).toBe(false);
+    expect($('[data-email-hint]').textContent).toContain('ayse@gmail.com');
+    $<HTMLButtonElement>('.email-fix').click();
+    expect(email.value).toBe('ayse@gmail.com');
+    fill();
+    $<HTMLInputElement>('[name=email2]').value = 'ayse@gmail.co';
+    $('[data-submit]').click();
+    await vi.waitFor(() => expect($('[data-submit-error]').textContent).toBe('Aynı değil'));
+    expect(fetch.mock.calls.filter(([u]) => !String(u).includes('booking.busy'))).toHaveLength(0);
+  });
+
+  it('closed in the panel: only "Haber et" shows, and it sends booking.waitlist', async () => {
+    const posts: Record<string, unknown>[] = [];
+    const fetch = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).includes('booking.busy')) return new Response(JSON.stringify({ ok: true, data: { busy: [], closed: true } }));
+      posts.push(JSON.parse(String(init!.body)));
+      return new Response(JSON.stringify({ ok: true, data: { sent: true } }));
+    });
+    const root = markup('https://api.example/exec');
+    mountBookingForm(root, { fetch, now: () => NOW });
+    await vi.waitFor(() => expect(root.classList.contains('is-closed')).toBe(true));
+    expect($('[data-closed]').hidden).toBe(false);
+    $<HTMLInputElement>('[name=wl-name]').value = 'Elif Bekler';
+    $<HTMLInputElement>('[name=wl-email]').value = 'elif@example.com';
+    $<HTMLInputElement>('[name=wl-email2]').value = 'elif@example.com';
+    $<HTMLInputElement>('[name=wl-phone]').value = '0534 000 00 00';
+    $<HTMLButtonElement>('[data-wl-submit]').click();
+    await vi.waitFor(() => expect($('[data-wl-error]').textContent).toBe('Eksik'));
+    $<HTMLInputElement>('[name=wl-consent]').checked = true;
+    $<HTMLButtonElement>('[data-wl-submit]').click();
+    await vi.waitFor(() => expect($('[data-wl-done]').hidden).toBe(false));
+    expect(posts).toEqual([expect.objectContaining({ action: 'booking.waitlist', name: 'Elif Bekler', kinds: ['individual'], consent: true, lang: 'tr' })]);
+  });
+
+  it('the check link in the acknowledgement e-mail says the address is confirmed', async () => {
+    history.replaceState(null, '', '/randevu/?dogrula=r%3Aabc.def');
+    const posts: Record<string, unknown>[] = [];
+    const fetch = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).includes('booking.busy')) return new Response(JSON.stringify({ ok: true, data: { busy: [] } }));
+      posts.push(JSON.parse(String(init!.body)));
+      return new Response(JSON.stringify({ ok: true, data: { verified: true } }));
+    });
+    mountBookingForm(markup('https://api.example/exec'), { fetch, now: () => NOW });
+    await vi.waitFor(() => expect($('[data-verify-note]').hidden).toBe(false));
+    expect($('[data-verify-note]').textContent).toBe('Doğrulandı');
+    expect(posts).toEqual([{ action: 'booking.verify', code: 'r:abc.def' }]);
+    expect(location.search).toBe('');
   });
 });

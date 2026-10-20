@@ -16,6 +16,8 @@ import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
+import WaitlistForm from './WaitlistForm.astro';
+import { FORM_TEXT } from './form-text';
 import './wizard.css';
 
 interface Props {
@@ -167,10 +169,13 @@ const T = {
   },
 }[lang];
 const notice = pathFor('privacyNotice', lang);
-const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed });
+const F = FORM_TEXT[lang];
+const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, verified: F.verified, verifyFailed: F.verifyFailed });
 ---
 
 <div class="wz booking" data-booking data-lang={lang} data-kind="session" data-config={config} data-endpoint={endpoint} data-messages={messages}>
+  <p class="verify-note" data-verify-note role="status" hidden></p>
+  <WaitlistForm lang={lang} kind="session" email={email} />
   <p class="preview-note" role="note" data-hide-on-done>
     <Icon name="alert" size={16} />
     {T.preview}
@@ -303,7 +308,13 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
           </label>
           <label class="field">
             <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
-            <input type="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" data-sum-src="contact" />
+            <input type="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" data-sum-src="contact" data-email />
+            <small class="email-hint" data-email-hint hidden></small>
+          </label>
+          <label class="field">
+            <span>{F.mail2} <span class="req" aria-hidden="true">*</span></span>
+            <input type="email" name="email2" autocomplete="off" inputmode="email" required maxlength="254" data-email-again />
+            <small class="email-hint is-error" data-email-mismatch hidden></small>
           </label>
           <label class="field">
             <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>

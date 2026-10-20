@@ -12,11 +12,18 @@
  *   [data-submit] the send button, [data-soon] the e-mail fallback line, [data-submit-error] the
  *   message under the button, [data-done] the thank-you panel (hidden), [data-hide-on-done] parts
  *   to hide after sending
+ *   email2 + email-guard.ts's hooks: the address typed twice, with a "did you mean" hint
+ *   [data-closed] the "Haber et" section (WaitlistForm.astro): when the panel has closed booking
+ *   (`closed` in `booking.busy`) it is all the page shows
+ *   [data-verify-note] where the result of an e-mail check link (`?dogrula=…`) is shown
  */
 import { closedOn, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
+import { sameEmail } from '../../lib/email-check';
+import { mountEmailGuard } from './email-guard';
+import { mountWaitlist } from './waitlist-submit';
 import { mountWizard } from './wizard';
 
-export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string };
+export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string; mismatch: string; verified: string; verifyFailed: string };
 
 type Deps = { fetch: typeof fetch; now: () => number; timeoutMs?: number };
 
@@ -46,13 +53,52 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   });
   // A couple session is longer: the taken times depend on the chosen type.
   root.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', () => wizard.refresh()));
+  const details = root.querySelector<HTMLElement>('[data-step="3"]');
+  if (details) mountEmailGuard(details, lang);
+
+  /** Booking closed in the panel: the page says every session is taken and offers "Haber et". */
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    root.classList.add('is-closed');
+    const section = root.querySelector<HTMLElement>('[data-closed]');
+    if (!section) return;
+    section.hidden = false;
+    mountWaitlist(section, endpoint, lang, messages, deps);
+  };
+
+  /** `?dogrula=…`: the link in an acknowledgement e-mail. */
+  const verify = async () => {
+    const code = new URLSearchParams(location.search).get('dogrula');
+    const note = root.querySelector<HTMLElement>('[data-verify-note]');
+    if (!code || !endpoint || !note) return;
+    let ok = false;
+    try {
+      const res = await deps.fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'booking.verify', code }),
+        credentials: 'omit',
+      });
+      ok = ((await res.json()) as { ok?: boolean })?.ok === true;
+    } catch {
+      ok = false;
+    }
+    note.textContent = ok ? messages.verified : messages.verifyFailed;
+    note.classList.toggle('is-error', !ok);
+    note.hidden = false;
+    history.replaceState(null, '', location.pathname);
+  };
+  void verify();
 
   /** Reads the taken times; a failure leaves the calendar as booking.json alone (the backend checks again). */
   const loadBusy = async () => {
     if (!endpoint) return;
     try {
       const res = await deps.fetch(`${endpoint}?action=booking.busy`, { credentials: 'omit' });
-      const out = (await res.json()) as { ok?: boolean; data?: { busy?: BusyInterval[] } };
+      const out = (await res.json()) as { ok?: boolean; data?: { busy?: BusyInterval[]; closed?: boolean } };
+      if (out?.ok && out.data?.closed === true) close();
       if (out?.ok && Array.isArray(out.data?.busy)) {
         busy = out.data.busy.filter((b) => typeof b?.start === 'number' && typeof b?.end === 'number');
         wizard.refresh();
@@ -116,6 +162,10 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     }
     if (Object.keys(errors).length) {
       say(messages.invalid);
+      return;
+    }
+    if (!sameEmail(input.email, value('email2'))) {
+      say(messages.mismatch);
       return;
     }
     button.disabled = true;

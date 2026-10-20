@@ -77,6 +77,7 @@ describe('Talepler (backend)', () => {
     expect(moved.data.client).toEqual({
       id: expect.any(String), number: 'KT001AY', type: 'couple', weekday: 4, time: '19:20', minutes: 60, since: '2026-10-22', status: 'active',
       contact: { name: 'Ayşe Yılmaz', email: 'ayse@example.com', lang: 'tr' },
+      sessions: [],
     });
     expect(requests()).toEqual([]);
     // Sealed on disk: nothing readable without the script's key.
@@ -193,5 +194,87 @@ describe('Sealing (seal.ts)', () => {
     expect(unseal(gas, [v, n, flipped, tag].join('.'))).toBeNull();
     expect(unseal(fakeGas({ now: NOW }), token)).toBeNull();
     expect(unseal(gas, 'not a token')).toBeNull();
+  });
+});
+
+describe('Randevu ekle, e-mail check, sessions, closing booking and "Haber et" (backend)', () => {
+  const codeIn = (body: string) => decodeURIComponent(body.match(/\?dogrula=([^\s]+)/)![1]);
+  const manual = { kind: 'session', type: 'individual', day: '2026-10-22', time: '19:20', name: 'Osman Güneş Özkurt', email: 'Osman@Example.com', phone: '', lang: 'tr', note: '' };
+
+  it('Randevu ekle confirms the time, keeps the person as approved, sends the e-mail with a check link; the link marks it checked', () => {
+    const s = setup();
+    const out = s.call<{ request: { id: string; status: string; source: string; email: string } }>('requests.add', { ...manual, mail });
+    expect(out.ok).toBe(true);
+    expect(out.data.request).toMatchObject({ status: 'approved', source: 'manual', email: 'osman@example.com' });
+    expect(s.call<{ entries: { status: string }[] }>('calendar.list').data.entries.map((e) => e.status)).toEqual(['confirmed']);
+    const sent = s.gas.mails.at(-1)!;
+    expect(sent).toMatchObject({ to: 'osman@example.com', subject: 'Konu' });
+    expect(sent.body).toContain('https://klinikterapist.com/randevu/?dogrula=');
+    expect(handle(s.gas, JSON.stringify({ action: 'booking.verify', code: codeIn(sent.body) }))).toMatchObject({ ok: true });
+    expect(s.requests()[0]).toMatchObject({ verified: true });
+    // A forged code does nothing.
+    expect(handle(s.gas, JSON.stringify({ action: 'booking.verify', code: `r:${out.data.request.id}.forged` }))).toMatchObject({ ok: false });
+    // The same time again clashes.
+    expect(s.call('requests.add', { ...manual, email: 'b@example.com' }).ok).toBe(false);
+    expect(s.call('requests.add', { ...manual, email: 'not-an-email', day: '2026-10-23' }).ok).toBe(false);
+  });
+
+  it('the site acknowledgement carries the check link; the client it becomes is checked too', () => {
+    const s = setup();
+    s.send(session);
+    const ack = s.gas.mails.find((m) => m.to === 'ayse@example.com')!;
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    s.call('requests.toClient', { id });
+    handle(s.gas, JSON.stringify({ action: 'booking.verify', code: codeIn(ack.body) }));
+    expect(s.call<{ clients: { contact: { verified?: boolean } }[] }>('clients.list').data.clients[0].contact.verified).toBe(true);
+  });
+
+  it('a cancelled weekly session frees its time on the site; a postponement takes the new one; a clash is refused', () => {
+    const s = setup();
+    s.send(session);
+    const id = s.requests()[0].id;
+    s.call('requests.decide', { id, decision: 'approve', ...mail });
+    const c = s.call<{ client: { id: string } }>('requests.toClient', { id }).data.client;
+    const busyAt = (t: string) => {
+      s.gas.cache.put('booking.busy', '', 1);
+      return bookingBusy(s.gas).busy.some((b) => b.start === at(t));
+    };
+    expect(busyAt('2026-10-29T19:20:00')).toBe(true);
+    expect(s.call('clients.session', { id: c.id, op: 'mark', day: '2026-10-29', time: '19:20', status: 'cancelled', by: 'client' }).ok).toBe(true);
+    expect(busyAt('2026-10-29T19:20:00')).toBe(false);
+    const moved = s.call<{ client: { sessions: { kind: string; day: string }[] } }>('clients.session', { id: c.id, op: 'mark', day: '2026-11-05', time: '19:20', status: 'postponed', by: 'owner', newDay: '2026-11-06', newTime: '10:00' });
+    expect(moved.ok).toBe(true);
+    expect(moved.data.client.sessions).toContainEqual(expect.objectContaining({ kind: 'extra', day: '2026-11-06' }));
+    expect(busyAt('2026-11-06T10:00:00')).toBe(true);
+    // Into the weekly session of 12 November: a clash.
+    expect(s.call('clients.session', { id: c.id, op: 'add', kind: 'extra', day: '2026-11-12', time: '19:50' })).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    expect(s.call('clients.session', { id: c.id, op: 'add', kind: 'closing', day: '2026-11-13', time: '10:00' }).ok).toBe(true);
+  });
+
+  it('closing booking: the site hears it, requests are refused, "Haber et" fills the list; the owner writes and takes people off', () => {
+    const s = setup();
+    expect(s.call('booking.setOpen', { open: false }).ok).toBe(true);
+    expect(bookingBusy(s.gas).closed).toBe(true);
+    expect(s.send(session)).toMatchObject({ ok: false });
+    const join = { action: 'booking.waitlist', name: 'Elif Bekler', email: 'elif@example.com', phone: '0534 000 00 00', kinds: ['individual'], times: ['weekend'], reason: 'İş stresi', consent: true, healthConsent: true, lang: 'tr' };
+    expect(handle(s.gas, JSON.stringify({ ...join, healthConsent: false }))).toMatchObject({ ok: false });
+    s.gas.mails.length = 0;
+    expect(handle(s.gas, JSON.stringify(join))).toMatchObject({ ok: true });
+    expect(s.gas.mails.map((m) => m.to)).toEqual(['merhaba@klinikterapist.com', 'elif@example.com']);
+    expect(s.gas.mails[1].body).toContain('bekleme listeme aldım');
+    expect(s.gas.root.findFolder('randevular')!.findFile('bekleme.json')!.read()).not.toContain('Elif');
+    const list = () => s.call<{ entries: { id: string; offeredAt?: number; verified?: boolean }[] }>('waitlist.list').data.entries;
+    expect(s.call<{ open: boolean; waiting: number }>('booking.state').data).toEqual({ open: false, waiting: 1 });
+    handle(s.gas, JSON.stringify({ action: 'booking.verify', code: codeIn(s.gas.mails[1].body) }));
+    expect(list()[0].verified).toBe(true);
+    const wid = list()[0].id;
+    expect(s.call('waitlist.mail', { id: wid, ...mail }).ok).toBe(true);
+    expect(list()[0].offeredAt).toBe(NOW);
+    expect(s.call('waitlist.mail', { id: wid, ...mail, remove: true }).ok).toBe(true);
+    expect(list()).toEqual([]);
+    s.call('booking.setOpen', { open: true });
+    expect(bookingBusy(s.gas).closed).toBe(false);
+    expect(s.send(session).ok).toBe(true);
   });
 });

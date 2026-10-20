@@ -201,3 +201,87 @@ export function revertMail(c: Contact): Mail {
     ].join('\n'),
   };
 }
+
+/**
+ * To someone on the "Haber et" list (owner's request 2026-10-20). `offer`: a time has freed up (a
+ * given day and time, kept for them until they answer); `open`: booking is open again, choose a
+ * time on the site; `remove`: no time is likely soon, so they come off the list and their details
+ * are deleted, with a nudge not to put off getting support.
+ */
+export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when?: { day: string; time: string }): Mail {
+  const name = c.name.trim();
+  const book = `${SITE}${pathFor('appointment', c.lang)}`;
+  const at = when ? `${formatDay(when.day, c.lang)}, ${c.lang === 'en' ? 'at ' : 'saat '}${when.time.replace(':', '.')}` : '';
+  if (c.lang === 'en') {
+    const hello = `Dear ${name},`;
+    if (mode === 'offer') {
+      return {
+        subject: 'A time has freed up – klinikterapist.com',
+        body: [
+          hello,
+          '',
+          'You asked me to let you know when a time freed up — one has.',
+          at ? `I can offer you ${at} (Turkey time). I am keeping it for you for now.` : 'I would be glad to find a time that suits you.',
+          'If you would like it, please reply to this e-mail and I will confirm your appointment. If it does not suit you, let me know too, and I will keep you on the list.',
+          '',
+          ...SIGN_EN,
+        ].join('\n'),
+      };
+    }
+    if (mode === 'open') {
+      return {
+        subject: 'Booking is open again – klinikterapist.com',
+        body: [hello, '', 'You asked me to let you know when I could take new clients again. Booking is open now.', `You can choose a time that suits you here: ${book}`, 'Times fill up fast, so I wanted you to hear first.', '', ...SIGN_EN].join('\n'),
+      };
+    }
+    return {
+      subject: 'About my waiting list – klinikterapist.com',
+      body: [
+        hello,
+        '',
+        'Thank you for waiting. Unfortunately I do not expect a time that suits you to free up soon, so I am taking you off my waiting list and deleting your details.',
+        'Please do not put off seeking support because of this; I recommend reaching out to another professional.',
+        `When booking opens again, you are welcome to request a time on my site: ${book}`,
+        '',
+        'I wish you all the best.',
+        '',
+        ...SIGN_EN,
+      ].join('\n'),
+    };
+  }
+  const hello = `Sayın ${name},`;
+  if (mode === 'offer') {
+    return {
+      subject: 'Bir saat boşaldı – klinikterapist.com',
+      body: [
+        hello,
+        '',
+        'Boşalan bir saat olduğunda size haber vermemi istemiştiniz; bir yer açıldı.',
+        at ? `Size ${at} saatini önerebilirim. Bu saati şimdilik sizin için ayırıyorum.` : 'Size uygun bir saat bulmaktan memnuniyet duyarım.',
+        'Uygunsa bu e-postayı yanıtlamanız yeterli; randevunuzu onaylayıp size bildireceğim. Size uymuyorsa da haber verin, sizi listede tutmaya devam edeyim.',
+        '',
+        ...SIGN_TR,
+      ].join('\n'),
+    };
+  }
+  if (mode === 'open') {
+    return {
+      subject: 'Randevu alımı yeniden açıldı – klinikterapist.com',
+      body: [hello, '', 'Yeni danışan alımına yeniden başladığımda size haber vermemi istemiştiniz. Randevu alımı şu an açık.', `Size uygun saati buradan seçebilirsiniz: ${book}`, 'Saatler çabuk dolduğu için ilk sizin haberiniz olsun istedim.', '', ...SIGN_TR].join('\n'),
+    };
+  }
+  return {
+    subject: 'Bekleme listem hakkında – klinikterapist.com',
+    body: [
+      hello,
+      '',
+      'Beklediğiniz için teşekkür ederim. Ne yazık ki yakın zamanda size uygun bir saatin açılacağını öngörmüyorum; bu nedenle kaydınızı bekleme listemden çıkarıyor, bilgilerinizi siliyorum.',
+      'Destek arayışınızı bu yüzden ertelemenizi istemem; başka bir uzmana başvurmanızı öneririm.',
+      `Randevu alımı yeniden açıldığında sitemden talepte bulunabilirsiniz: ${book}`,
+      '',
+      'Size iyi günler dilerim.',
+      '',
+      ...SIGN_TR,
+    ].join('\n'),
+  };
+}

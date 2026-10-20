@@ -3,9 +3,10 @@
  * Seeded with the real settings files and the fixture posts. Never shipped: the panel only
  * imports it behind `import.meta.env.DEV`.
  */
-import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
+import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
-import { clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
+import { INTRO_MINUTES, clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
+import { SessionError, applyChange, type SessionChangeInput } from '../../lib/sessions';
 
 const data = import.meta.glob('/src/data/**/*.{json,md}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const posts = import.meta.glob('/tests/fixtures/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -37,8 +38,12 @@ export type MockState = {
   calendar: CalendarEntry[];
   requests: BookingRequest[];
   clients: (Client & { origin?: BookingRequest })[];
-  /** E-mails the owner sent from Talepler. */
+  /** E-mails the owner sent from Randevu talepleri and Seans takip. */
   sent: { to: string; subject: string; body: string }[];
+  /** Randevu alımı açık mı. */
+  open: boolean;
+  /** "Haber et" list. */
+  waitlist: WaitlistEntry[];
 };
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
@@ -53,7 +58,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [] };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [] };
   let clientSeq = 0;
   if (opts.demoRequests) {
     const now = (opts.now ?? Date.now)();
@@ -63,11 +68,26 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const r of requests) {
       state.calendar.push({ id: r.holdId, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: now + 864e5 });
     }
+    // A client three weeks in: the intro call, two weekly sessions marked, one cancelled.
     const name = 'Zeynep Örnek';
+    const iso = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
+    let since = now - 24 * 864e5;
+    while (new Date(since + 3 * 3600e3).getUTCDay() !== 2) since += 864e5;
+    const tue = (n: number) => iso(since + n * 7 * 864e5);
     state.clients.push({
-      id: 'demo-client', number: clientNumber(++clientSeq, name), type: 'individual', weekday: 2, time: '18:00', minutes: 50, since: requests[0].day, status: 'active',
-      contact: { name, email: 'zeynep@example.com', lang: 'tr' },
+      id: 'demo-client', number: clientNumber(++clientSeq, name), type: 'individual', weekday: 2, time: '18:00', minutes: 50, since: tue(0), status: 'active',
+      contact: { name, email: 'zeynep@example.com', lang: 'tr', verified: true },
       origin: { ...requests[0], id: 'demo-0', name, email: 'zeynep@example.com', time: '18:00' },
+      sessions: [
+        { day: iso(since - 4 * 864e5), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' },
+        { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
+        { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', note: 'Hastalık' },
+        { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
+      ],
+    });
+    state.waitlist.push({
+      id: 'demo-wait', createdAt: now - 2 * 864e5, name: 'Elif Bekler', email: 'elif@example.com', phone: '0534 000 00 00', kinds: ['individual'], times: ['weekday-evening'],
+      reason: 'Son aylarda iş stresiyle baş etmekte zorlanıyorum.', lang: 'tr', verified: true,
     });
   }
   const mail = (to: string, subject: string, body: string) => {
@@ -316,6 +336,49 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         state.requests = state.requests.map((x) => (x.id === id ? { ...x, status: 'pending', holdId: holdAgain(x), calendarId: undefined } : x));
       }),
     clientsList: () => wait(() => ({ clients: state.clients.map(({ origin: _o, ...c }) => c).sort((a, b) => a.number.localeCompare(b.number)) })),
+    clientSession: ({ id, ...change }) =>
+      wait(() => {
+        const c = state.clients.find((x) => x.id === id);
+        if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
+        try {
+          c.sessions = applyChange(c, change as SessionChangeInput, INTRO_MINUTES).sessions;
+        } catch (e) {
+          if (e instanceof SessionError) throw new ApiFailure('bad_request', e.message);
+          throw e;
+        }
+        const { origin: _o, ...pub } = c;
+        return { client: structuredClone(pub) };
+      }),
+    bookingState: () => wait(() => ({ open: state.open, waiting: state.waitlist.length })),
+    bookingSetOpen: (open) => wait(() => void (state.open = open)),
+    requestAdd: (input) =>
+      wait(() => {
+        if (input.name.trim().length < 2) throw new ApiFailure('bad_request', 'Ad soyad eksik.');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(input.email.trim())) throw new ApiFailure('bad_request', 'E-posta adresi hatalı görünüyor.');
+        const start = slotInstant(input.day, input.time);
+        const minutes = minutesOf(input.kind, input.type);
+        if (state.calendar.some((e) => e.status === 'confirmed' && e.start < start + (minutes + 30) * 60e3 && start < e.start + (e.minutes + 30) * 60e3)) {
+          throw new ApiFailure('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
+        }
+        const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start, minutes, kind: input.kind, ...(input.type ? { type: input.type } : {}), status: 'confirmed' };
+        state.calendar.push(entry);
+        const request: BookingRequest = {
+          id: Math.random().toString(36).slice(2, 10), createdAt: clock(), kind: input.kind, ...(input.type ? { type: input.type } : {}), day: input.day, time: input.time,
+          name: input.name.trim(), email: input.email.trim().toLowerCase(), phone: input.phone.trim(), note: input.note.trim(), lang: input.lang, status: 'approved', holdId: '', calendarId: entry.id, source: 'manual',
+        };
+        if (input.mail) mail(request.email, input.mail.subject, input.mail.body);
+        state.requests.push(request);
+        return { request };
+      }),
+    waitlistList: () => wait(() => ({ entries: [...state.waitlist].sort((a, b) => a.createdAt - b.createdAt) })),
+    waitlistMail: ({ id, subject, body, remove }) =>
+      wait(() => {
+        const e = state.waitlist.find((x) => x.id === id);
+        if (!e) throw new ApiFailure('not_found', 'Bu kişi listede bulunamadı.');
+        mail(e.email, subject, body);
+        state.waitlist = remove ? state.waitlist.filter((x) => x.id !== id) : state.waitlist.map((x) => (x.id === id ? { ...x, offeredAt: clock() } : x));
+      }),
+    waitlistRemove: (id) => wait(() => void (state.waitlist = state.waitlist.filter((x) => x.id !== id))),
     clientEnd: ({ id, mode, subject = '', body = '' }) =>
       wait(() => {
         const c = state.clients.find((x) => x.id === id);

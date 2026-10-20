@@ -7,6 +7,7 @@ import type { StatsSummary } from '../../lib/stats-wire';
 import type { JSONContent } from '@tiptap/core';
 import type { Reference } from '../../lib/apa/types';
 import type { CropArea } from '../../lib/crop-area';
+import type { SessionRecord, SessionStatus } from '../../lib/sessions';
 
 export type ErrorCode =
   | 'unauthorized'
@@ -140,7 +141,48 @@ export type BookingRequest = {
   holdId: string;
   /** The calendar entry made when it was approved. */
   calendarId?: string;
+  /** The person opened the link in the acknowledgement e-mail: the address is right. */
+  verified?: boolean;
+  /** `manual`: the owner put it in with "Randevu ekle". */
+  source?: 'site' | 'manual';
 };
+
+/** "Haber et": someone who wants a time when one frees up (booking closed). Kept at most 90 days. */
+export type WaitlistEntry = {
+  id: string;
+  createdAt: number;
+  name: string;
+  email: string;
+  phone: string;
+  kinds: string[];
+  times: string[];
+  reason: string;
+  lang: 'tr' | 'en';
+  verified?: boolean;
+  /** The owner wrote to them about a free time (they stay on the list). */
+  offeredAt?: number;
+};
+
+/** "Randevu ekle": an appointment the owner puts in by hand, with the person's name and e-mail. */
+export type ManualAppointment = {
+  kind: 'session' | 'intro';
+  type?: string;
+  day: string;
+  time: string;
+  name: string;
+  email: string;
+  phone: string;
+  lang: 'tr' | 'en';
+  note: string;
+  /** The confirmation e-mail to send, as the owner edited it; none when left out. */
+  mail?: { subject: string; body: string };
+};
+
+/** A change to a client's sessions (Seans takip › the client's page). */
+export type SessionChange =
+  | { op: 'mark'; id: string; day: string; time: string; status: SessionStatus; by?: 'client' | 'owner'; note?: string; newDay?: string; newTime?: string }
+  | { op: 'add'; id: string; kind: 'closing' | 'extra'; day: string; time: string }
+  | { op: 'remove'; id: string; day: string; time: string };
 
 export type RequestDecision = 'approve' | 'unavailable' | 'cancel';
 
@@ -159,7 +201,9 @@ export type Client = {
   since: string;
   /** `closing`: the owner asked for a closing session; the weekly time stays until therapy ends. */
   status: 'active' | 'closing';
-  contact: { name: string; email: string; lang: 'tr' | 'en' };
+  contact: { name: string; email: string; lang: 'tr' | 'en'; verified?: boolean };
+  /** Marks on the weekly sessions and the other sessions (intro, closing, extra). */
+  sessions?: SessionRecord[];
 };
 
 /** How therapy ends: `complete` (e-mail: therapy is over), `closing` (e-mail: a free closing session), `delete` (no e-mail). */
@@ -223,6 +267,19 @@ export interface Api {
   clientEnd(input: { id: string; mode: ClientEnd; subject?: string; body?: string }): Promise<void>;
   /** Geri al: back to Randevu talepleri as a pending request, with the apology e-mail. */
   clientRevert(input: { id: string; subject: string; body: string }): Promise<void>;
+  /** Marks a session (attended, cancelled …), adds a closing or extra session, or removes one. */
+  clientSession(input: SessionChange): Promise<{ client: Client }>;
+  /** Whether the site takes bookings, and how many people wait to hear of a free time. */
+  bookingState(): Promise<{ open: boolean; waiting: number }>;
+  /** Randevu alımını kapat / aç: closed, the site says every session is taken and offers "Haber et". */
+  bookingSetOpen(open: boolean): Promise<void>;
+  /** Randevu ekle: an approved request with the person's details and the time confirmed. */
+  requestAdd(input: ManualAppointment): Promise<{ request: BookingRequest }>;
+  waitlistList(): Promise<{ entries: WaitlistEntry[] }>;
+  /** Writes to someone on the list; `remove` takes them off it (and deletes their details). */
+  waitlistMail(input: { id: string; subject: string; body: string; remove?: boolean }): Promise<void>;
+  /** Takes someone off the list without an e-mail. */
+  waitlistRemove(id: string): Promise<void>;
 }
 
 export class ApiFailure extends Error {
@@ -269,4 +326,11 @@ export const ACTIONS = {
   clientsList: 'clients.list',
   clientEnd: 'clients.end',
   clientRevert: 'clients.revert',
+  clientSession: 'clients.session',
+  bookingState: 'booking.state',
+  bookingSetOpen: 'booking.setOpen',
+  requestAdd: 'requests.add',
+  waitlistList: 'waitlist.list',
+  waitlistMail: 'waitlist.mail',
+  waitlistRemove: 'waitlist.remove',
 } as const satisfies Record<keyof Api, string>;

@@ -38,7 +38,7 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
   const [noTrack, setNoTrack] = useNoTrack();
   useEffect(() => setOpen(false), [route]);
   const current =
-    route.name === 'settings' ? `#/ayarlar/${route.screen}` : route.name === 'home' ? '#/' : route.name === 'posts' ? '#/yazilar' : route.name === 'trash' ? '#/cop-kutusu' : route.name === 'requests' ? '#/randevular' : route.name === 'tracking' ? '#/seans-takip' : '';
+    route.name === 'settings' ? `#/ayarlar/${route.screen}` : route.name === 'home' ? '#/' : route.name === 'posts' ? '#/yazilar' : route.name === 'trash' ? '#/cop-kutusu' : route.name === 'requests' ? '#/randevular' : route.name === 'tracking' || route.name === 'client' ? '#/seans-takip' : '';
   const link = (href: string, label: string, icon?: LucideIcon) => (
     <li key={href}>
       <a href={href} aria-current={current === href ? 'page' : undefined}>

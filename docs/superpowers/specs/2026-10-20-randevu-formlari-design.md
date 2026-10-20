@@ -74,6 +74,32 @@
 - **Güvenlik:** `talepler.json` ve `danisanlar.json` artık şifreli (`apps-script/src/seal.ts`, HMAC-SHA256 tabanlı şifreleme ve bütünlük etiketi). Anahtar Apps Script'in Script Properties'inde (`SEAL_KEY`, ilk kullanımda kendiliğinden oluşur). **Bu anahtar silinirse dosyalar açılamaz;** silinmemeli, başka yere kopyalanmamalı. Panel, dosya açılamazsa boş saymaz, hata verir (üzerine yazıp silmesin diye).
 - **Aydınlatma paragrafı (güncel taslak, avukata):** "Randevu ve ön görüşme talepleri: Formda yazdığınız bilgiler talebinizi yanıtlamak amacıyla bana e-postayla iletilir ve yanıtlanana kadar, en fazla 30 gün, Google hesabımda şifreli olarak saklanır. Talebiniz reddedilir ya da iptal edilirse hemen silinir. Terapiye başladığınızda randevularınız bir danışan numarasıyla takip edilir; size yazabilmem için adınız ve e-posta adresiniz terapi süresince şifreli olarak saklanır ve terapi sona erdiğinde silinir."
 
+## İnceleme: Randevu ekle, e-posta doğrulama, seans kayıtları, randevu alımını kapatma (sahibin isteği, 20 Ekim 2026 gece; uygulandı)
+
+1. **Randevu ekle:** sayfanın sağ üstünde (Randevu talepleri ve Seans takip).
+   - Alanlar: ad soyad, e-posta (yazım hatası önerisiyle), telefon, konuşma dili, tarih, saat, görüşme türü, not.
+   - Randevu takvime onaylı işlenir ve "Onaylanan"a düşer.
+   - İsteğe bağlı: onay e-postası (düzenlenebilir, altına doğrulama bağlantısı eklenir) ve doğrudan Seans takibe alma.
+2. **"Sayfa dili" yerine "Konuşma dili".**
+3. **Yanlış e-postaya karşı üç katman:**
+   - Yaygın alan adlarında yazım hatası önerisi (gmial.com → gmail.com; `src/lib/email-check.ts`).
+   - Sitede e-postayı iki kez yazdırma.
+   - Alındı e-postasındaki doğrulama bağlantısı (`?dogrula=…`, imzalı kod, `apps-script/src/verify.ts`); panelde "E-posta doğrulandı" ya da "henüz doğrulanmadı" görünür. Yanlış adrese giden e-posta sahibin Gmail'ine geri döner.
+4. **Danışan sayfası** (`#/seans-takip/<id>`):
+   - Son 4 ve sıradaki 4 seans. Katıldı / Gelmedi / İptal / Ertele (kim istedi, not, yeni tarih); işaret kaldırılabilir.
+   - İptal ya da ertelenen seansın saati takvimde ve sitede açılır; ertelenen seansın yeni tarihi takvime işlenir.
+   - Ücretsiz görüşmeler (ön görüşme, sonlandırma) yuvarlak, kesikli çizgili ve "ücretsiz" etiketli görünür.
+   - "Sonlandırma görüşmesi ekle" ve "Ek seans ekle" buradan yapılır. Seans özeti: katıldı / gelmedi / iptal / ertelendi sayıları.
+   - Danışanın kendi sayfası yapılınca onun talepleri buraya "danışan istedi" diye kendiliğinden yazılacak (`src/lib/sessions.ts`).
+5. **Doluluk çizgisi:** gün tamamen dolunca kırmızı.
+6. **Randevu alımını kapat / aç** (Randevu talepleri sağ üstte, kapatmadan önce sorar):
+   - Kapalıyken sitede randevu ve ön görüşme sayfalarında yalnızca "Şu an tüm seanslar dolu" ve **Haber et** formu görünür. Formda ad, e-posta (iki kez), telefon, aranan görüşme, uygun zamanlar ve başvuru sebebi (isteğe bağlı, yazılırsa açık rıza) var. `booking.request` reddedilir.
+   - Kayıtlar ayrı bir **Bekleme listesi**nde tutulur (`randevular/bekleme.json`, şifreli, en fazla 90 gün). Kişiye alındı e-postası gider (doğrulama bağlantılı); sahibe bildirim gelir.
+   - Panelde: "Saat öner" (belirli bir saat ya da "randevu alımı açıldı" e-postası), "Randevu ekle" (bilgiler hazır gelir, liste kaydı silinir), "Listeden çıkar" (nazik e-posta, başka uzmana yönlendirme), "Sil" (e-postasız).
+7. **Talep türü kartın en üstünde:** renkli bant ("SEANS RANDEVUSU · Çift terapisi · 60 dakika" ya da "ÜCRETSİZ ÖN GÖRÜŞME · 30 dakika"); ön görüşme kartları turuncu kenarlı.
+
+**Aydınlatma metnine eklenecekler (avukata):** bekleme listesi ("Haber et") kayıtları en fazla 90 gün şifreli saklanır; başvuru sebebi yazılırsa açık rıza alınır; e-posta doğrulama bağlantısı yalnızca adresin doğruluğunu işaretler.
+
 ## Sahibe açık sorular
 
 1. **Açık rıza metni** (ön görüşmede konu seçilince). Taslak: "Seçtiğim konuların ve yazdığım notun, ön görüşmeyi hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt'a e-postayla iletilmesine açık rıza veriyorum." Uygun mu? Yoksa konu sorusu tamamen kaldırılsın mı? (En az veri ilkesine göre kaldırmak da bir seçenek.)

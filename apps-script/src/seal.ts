@@ -114,3 +114,8 @@ export function unseal(gas: Gas, token: string): string | null {
     return null;
   }
 }
+
+/** A secret for one purpose (e.g. the e-mail check links), derived from the same key. */
+export function derive(gas: Gas, purpose: string): string {
+  return gas.hmac(keys(gas).mac, `derive:${purpose}`);
+}

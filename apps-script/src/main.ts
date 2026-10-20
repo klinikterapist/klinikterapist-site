@@ -12,9 +12,10 @@ import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
-import { bookingBusy, config as bookingConfig, sendBooking } from './booking';
+import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from './booking';
 import { addConfirmed, listEntries, removeEntry } from './calendar';
-import { decideRequest, endClient, listClients, listRequests, requestToClient, revertClient, revertRequest } from './requests';
+import { addManual, changeSession, decideRequest, endClient, listClients, listRequests, requestToClient, revertClient, revertRequest } from './requests';
+import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 
@@ -25,6 +26,8 @@ type Handler = (gas: Gas, p: Params) => unknown;
 export const PUBLIC_ACTIONS: Record<string, Handler> = {
   'contact.send': (gas, p) => sendContact(gas, p),
   'booking.request': (gas, p) => sendBooking(gas, p),
+  'booking.waitlist': (gas, p) => joinWaitlist(gas, p),
+  'booking.verify': (gas, p) => verifyEmail(gas, p),
   'stats.hit': (gas, p) => recordHit(gas, p),
   'stats.reads': (gas) => statsReads(gas),
 };
@@ -90,6 +93,21 @@ export const ACTIONS: Record<string, Handler> = {
     gas.cache.put('booking.busy', '', 1);
     return out;
   },
+  'clients.session': (gas, p) => {
+    const out = changeSession(gas, bookingConfig(gas), p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'requests.add': (gas, p) => {
+    const out = addManual(gas, bookingConfig(gas), p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'booking.state': (gas) => bookingState(gas),
+  'booking.setOpen': (gas, p) => setOpen(gas, p),
+  'waitlist.list': (gas) => listWaitlist(gas),
+  'waitlist.mail': (gas, p) => mailWaitlist(gas, p),
+  'waitlist.remove': (gas, p) => removeWaitlist(gas, p),
   'admin.triggers': (gas) => {
     gas.triggers.ensureHourly('hourly');
     return {};

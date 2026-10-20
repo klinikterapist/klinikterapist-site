@@ -11,6 +11,7 @@ import { Home } from './Home';
 import { TrashPage } from './TrashPage';
 import { RequestsPage } from './appointments/RequestsPage';
 import { TrackingPage } from './appointments/TrackingPage';
+import { ClientPage } from './appointments/ClientPage';
 import { PostsList } from './PostsList';
 import { EditorPage } from './editor/EditorPage';
 import { SettingsPage } from './settings/SettingsPage';
@@ -56,9 +57,11 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
             ) : route.name === 'trash' ? (
               <TrashPage />
             ) : route.name === 'requests' ? (
-              <RequestsPage add={route.add} />
+              <RequestsPage key={route.list ? 'list' : 'requests'} add={route.add} list={route.list} />
             ) : route.name === 'tracking' ? (
               <TrackingPage />
+            ) : route.name === 'client' ? (
+              <ClientPage key={route.id} id={route.id} />
             ) : (
               <PostsList tab={route.tab} />
             )}

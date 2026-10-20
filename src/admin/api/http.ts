@@ -82,5 +82,12 @@ export function createHttpApi(
     requestRevert: (input) => call(ACTIONS.requestRevert, input).then(() => undefined),
     clientEnd: (input) => call(ACTIONS.clientEnd, input).then(() => undefined),
     clientRevert: (input) => call(ACTIONS.clientRevert, input).then(() => undefined),
+    clientSession: (input) => call(ACTIONS.clientSession, input),
+    bookingState: () => call(ACTIONS.bookingState),
+    bookingSetOpen: (open) => call(ACTIONS.bookingSetOpen, { open }).then(() => undefined),
+    requestAdd: (input) => call(ACTIONS.requestAdd, input),
+    waitlistList: () => call(ACTIONS.waitlistList),
+    waitlistMail: (input) => call(ACTIONS.waitlistMail, input).then(() => undefined),
+    waitlistRemove: (id) => call(ACTIONS.waitlistRemove, { id }).then(() => undefined),
   };
 }

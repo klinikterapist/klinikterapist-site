@@ -1,0 +1,193 @@
+---
+/**
+ * "Şu an tüm seanslar dolu" + "Haber et" (owner's request 2026-10-20). Hidden until the panel says
+ * booking is closed (booking-submit.ts reads `closed` from `booking.busy`); then it is the only part
+ * of the booking or intro-call page that shows. The person leaves their details and what they look
+ * for; the owner writes to them when a time frees up (waitlist-submit.ts, `booking.waitlist`).
+ */
+import type { Lang } from '../../lib/settings';
+import { pathFor } from '../../i18n/routes';
+import { WAITLIST_KEEP_DAYS, WAITLIST_KINDS, WAITLIST_LABELS, WAITLIST_TIMES } from '../../lib/waitlist-form';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  /** The page it sits on: its own kinds are ticked to begin with. */
+  kind: 'session' | 'intro';
+  email: string;
+}
+const { lang, kind, email } = Astro.props;
+const L = WAITLIST_LABELS[lang];
+const T = {
+  tr: {
+    title: 'Şu an tüm seanslar dolu',
+    text: 'Yeni danışan alımına şu an kısa bir ara verdim. Benimle çalışmak istiyorsanız bilgilerinizi bırakın: boşalan bir saat ya da gün olduğunda ilk size haber vereyim, sürece oradan başlayalım.',
+    how: ['Formu doldurun, size bir alındı e-postası gelsin.', 'Bir saat boşaldığında size e-postayla yazarım.', 'Uygunsa randevunuzu birlikte planlarız.'],
+    kinds: 'Aradığınız görüşme',
+    times: 'Size uygun zamanlar (isteğe bağlı)',
+    name: 'Ad soyad',
+    mail: 'E-posta',
+    mail2: 'E-posta (tekrar)',
+    phone: 'Telefon',
+    reason: 'Başvuru sebebiniz (isteğe bağlı)',
+    reasonHint: 'Kısaca neyle ilgili destek aradığınızı yazabilirsiniz. Ayrıntıları görüşmede konuşuruz.',
+    consentA: 'Aydınlatma metnini',
+    consentB: ' okudum.',
+    health: 'Başvuru sebebimde paylaştığım bilgilerin, bana dönüş yapılması amacıyla işlenmesine açık rıza veriyorum (yalnızca başvuru sebebi yazdıysanız gerekir).',
+    keep: `Bilgileriniz yalnızca size haber vermek için kullanılır ve en fazla ${WAITLIST_KEEP_DAYS} gün saklanır.`,
+    submit: 'Haber et',
+    soon: 'Şimdilik e-posta ile yazabilirsiniz:',
+    doneTitle: 'Listeye alındınız',
+    doneText: 'Size bir alındı e-postası gönderdim; içindeki bağlantıyla e-posta adresinizi onaylayın. Boşalan ilk uygun saatte size yazacağım.',
+  },
+  en: {
+    title: 'All sessions are taken at the moment',
+    text: 'I have paused taking new clients for a short while. If you would like to work with me, leave your details: when a time or day frees up, you will be the first to hear, and we can start from there.',
+    how: ['Fill in the form; an acknowledgement arrives by e-mail.', 'When a time frees up, I write to you.', 'If it suits you, we plan your appointment together.'],
+    kinds: 'What you are looking for',
+    times: 'Times that suit you (optional)',
+    name: 'Full name',
+    mail: 'E-mail',
+    mail2: 'E-mail (again)',
+    phone: 'Phone',
+    reason: 'Why you are seeking support (optional)',
+    reasonHint: 'A few words on what you would like support with are enough. We will talk about the details in the session.',
+    consentA: 'I have read the ',
+    consentB: 'privacy notice.',
+    health: 'I give my explicit consent to the processing of what I wrote under "why" so that I can be contacted (needed only if you wrote something there).',
+    keep: `Your details are used only to let you know and are kept for at most ${WAITLIST_KEEP_DAYS} days.`,
+    submit: 'Let me know',
+    soon: 'For now, you can write by e-mail:',
+    doneTitle: 'You are on the list',
+    doneText: 'I have sent you an acknowledgement; please confirm your e-mail address with the link in it. I will write to you at the first time that suits.',
+  },
+}[lang];
+const notice = pathFor('privacyNotice', lang);
+const ticked = (k: string) => (kind === 'intro' ? k === 'intro' : k === 'individual');
+const id = (s: string) => `wl-${kind}-${s}`;
+---
+
+<section class="waitlist" data-closed data-waitlist hidden aria-labelledby={id('t')}>
+  <div class="card wl-intro">
+    <span class="wl-icon" aria-hidden="true"><Icon name="calendar" size={26} /></span>
+    <h2 id={id('t')}>{T.title}</h2>
+    <p>{T.text}</p>
+    <ol class="wl-how">
+      {T.how.map((s) => <li>{s}</li>)}
+    </ol>
+  </div>
+
+  <div class="card" data-wl-form>
+    <p class="q" id={id('k')}>{T.kinds} <span class="req" aria-hidden="true">*</span></p>
+    <div class="chips" role="group" aria-labelledby={id('k')}>
+      {
+        WAITLIST_KINDS.map((k) => (
+          <label class="chip">
+            <input type="checkbox" name="wl-kinds" value={k} checked={ticked(k)} />
+            <span>{L[k]}</span>
+          </label>
+        ))
+      }
+    </div>
+    <p class="q" id={id('w')}>{T.times}</p>
+    <div class="chips" role="group" aria-labelledby={id('w')}>
+      {
+        WAITLIST_TIMES.map((t) => (
+          <label class="chip">
+            <input type="checkbox" name="wl-times" value={t} />
+            <span>{L[t]}</span>
+          </label>
+        ))
+      }
+    </div>
+    <div class="fields">
+      <label class="field">
+        <span>{T.name} <span class="req" aria-hidden="true">*</span></span>
+        <input type="text" name="wl-name" autocomplete="name" required maxlength="100" />
+      </label>
+      <label class="field">
+        <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
+        <input type="tel" name="wl-phone" autocomplete="tel" inputmode="tel" required minlength="10" maxlength="20" />
+      </label>
+      <label class="field">
+        <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
+        <input type="email" name="wl-email" autocomplete="email" inputmode="email" required maxlength="254" data-email />
+        <small class="email-hint" data-email-hint hidden></small>
+      </label>
+      <label class="field">
+        <span>{T.mail2} <span class="req" aria-hidden="true">*</span></span>
+        <input type="email" name="wl-email2" autocomplete="off" inputmode="email" required maxlength="254" data-email-again />
+        <small class="email-hint is-error" data-email-mismatch hidden></small>
+      </label>
+      <label class="field field-wide">
+        <span>{T.reason}</span>
+        <textarea name="wl-reason" rows="3" maxlength="1000"></textarea>
+        <small>{T.reasonHint}</small>
+      </label>
+      <label class="hp" aria-hidden="true">
+        <span>Website</span>
+        <input type="text" name="hp_field" tabindex="-1" autocomplete="off" />
+      </label>
+      <label class="consent field-wide">
+        <input type="checkbox" name="wl-consent" value="1" required />
+        <span>
+          {lang === 'tr' ? <><a href={notice}>{T.consentA}</a>{T.consentB}</> : <>{T.consentA}<a href={notice}>{T.consentB}</a></>}
+          <span class="req" aria-hidden="true"> *</span>
+        </span>
+      </label>
+      <label class="consent field-wide">
+        <input type="checkbox" name="wl-health" value="1" />
+        <span>{T.health}</span>
+      </label>
+    </div>
+    <p class="wl-keep"><Icon name="shield" size={15} /> {T.keep}</p>
+    <button type="button" class="submit" data-wl-submit disabled><Icon name="send" size={18} /> {T.submit}</button>
+    <p class="step-error" data-wl-error role="alert" tabindex="-1" hidden></p>
+    <p class="soon" data-wl-soon>{T.soon} <a href={`mailto:${email}`}>{email}</a></p>
+  </div>
+
+  <section class="card done" data-wl-done tabindex="-1" aria-labelledby={id('d')} hidden>
+    <h2 id={id('d')}><Icon name="send" size={22} /> {T.doneTitle}</h2>
+    <p>{T.doneText}</p>
+  </section>
+</section>
+
+<style>
+  .waitlist {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .wl-intro {
+    justify-items: start;
+    border: 1.5px solid color-mix(in srgb, var(--sun-disc) 60%, transparent);
+    background: color-mix(in srgb, var(--sun-halo) 14%, var(--surface, transparent));
+  }
+
+  .wl-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--sun-disc);
+    color: #1f2e4a;
+  }
+
+  .wl-how {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding-left: 1.2rem;
+    font-size: var(--text-sm);
+  }
+
+  .wl-keep {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+  }
+</style>

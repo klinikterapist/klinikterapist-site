@@ -20,8 +20,10 @@ export type Route =
   | { name: 'posts'; tab: PostsTab }
   | { name: 'trash' }
   /** Randevu talepleri. `add`: a time to put in the calendar (`?ekle=YYYY-MM-DDTHH:MM&tur=…`). */
-  | { name: 'requests'; add: { day: string; time: string; type: string } | null }
+  | { name: 'requests'; add: { day: string; time: string; type: string } | null; list?: boolean }
   | { name: 'tracking' }
+  /** Seans takip › one client's sessions. */
+  | { name: 'client'; id: string }
   | { name: 'post'; key: string }
   | { name: 'settings'; screen: string };
 
@@ -31,10 +33,12 @@ export function parseRoute(hash: string): Route {
   const path = rawPath.replace(/(.)\/+$/, '$1');
   // The older /randevular/takvim and /randevular/danisanlar links still land on the right page.
   if (path === '/seans-takip' || path === '/randevular/danisanlar') return { name: 'tracking' };
+  const client = path.match(/^\/seans-takip\/([\w-]+)$/);
+  if (client) return { name: 'client', id: client[1] };
   if (path === '/randevular' || path === '/randevular/takvim') {
     const q = new URLSearchParams(query);
     const m = (q.get('ekle') ?? '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
-    return { name: 'requests', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null };
+    return { name: 'requests', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null, ...(q.has('liste') ? { list: true } : {}) };
   }
   let m = path.match(/^\/yazi\/([a-z0-9-]+)$/);
   if (m) return { name: 'post', key: m[1] };

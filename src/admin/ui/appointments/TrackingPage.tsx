@@ -12,8 +12,9 @@ import { ApiFailure, type Client } from '../../api/types';
 import { formatDay } from '../../../lib/booking-form';
 import { endMail, revertMail, type Mail } from '../../lib/booking-mail';
 import { usePanel } from '../context';
-import { CalendarCheck, Icon } from '../icons';
+import { CalendarCheck, Icon, Plus } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Spinner } from '../kit';
+import { AddAppointmentDialog } from './AddAppointmentDialog';
 import { AppointmentCalendar, WEEKDAYS, labelOf } from './AppointmentCalendar';
 import { MailDialog } from './MailDialog';
 
@@ -37,6 +38,7 @@ export function TrackingPage() {
   const [ending, setEnding] = useState<Ending | null>(null);
   const [reverting, setReverting] = useState<{ c: Client; mail: Mail } | null>(null);
   const [deleting, setDeleting] = useState<Client | null>(null);
+  const [adding, setAdding] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -73,11 +75,13 @@ export function TrackingPage() {
 
   const row = (c: Client) => (
     <li key={c.id} className="tk-row">
-      <span className="tk-number">{c.number}</span>
-      <span className="tk-what">
-        <b>{weeklyText(c)}</b>
-        <span>{`${formatDay(c.since, 'tr')} tarihinden beri`}</span>
-      </span>
+      <a className="tk-open" href={`#/seans-takip/${c.id}`} aria-label={`${c.number}: seansları aç`}>
+        <span className="tk-number">{c.number}</span>
+        <span className="tk-what">
+          <b>{weeklyText(c)}</b>
+          <span>{`${formatDay(c.since, 'tr')} tarihinden beri · seansları görmek için tıklayın`}</span>
+        </span>
+      </a>
       {c.status === 'closing' && <span className="tk-badge">Sonlandırma görüşmesi bekleniyor</span>}
       <span className="row tk-actions">
         <Button variant="primary" onClick={() => startEnd(c)}>
@@ -98,6 +102,12 @@ export function TrackingPage() {
           <Icon as={CalendarCheck} size={22} />
           Seans takip
         </h2>
+        <div className="head-actions">
+          <Button variant="primary" onClick={() => setAdding(true)}>
+            <Icon as={Plus} />
+            Randevu ekle
+          </Button>
+        </div>
       </div>
       <p className="settings-intro">
         Seans takipteki danışanlar ve haftalık seansları. Danışanlar numarayla görünür. Ad ve e-posta yalnızca onlara e-posta gönderebilmeniz için şifreli saklanır; terapi sonlandırılınca
@@ -166,6 +176,22 @@ export function TrackingPage() {
           </div>
           <p className="k-hint">{END_CHOICES.find((o) => o.mode === ending.mode)!.hint}</p>
         </MailDialog>
+      )}
+
+      {adding && (
+        <AddAppointmentDialog
+          initial={{}}
+          onClose={() => setAdding(false)}
+          onAdded={(r, client) => {
+            setAdding(false);
+            setNotice(
+              client
+                ? { text: `${r.name}, ${client.number} numarasıyla Seans takibe alındı: ${weeklyText(client)}.` }
+                : { text: `${r.name} için randevu eklendi. Randevu taleplerinde "Onaylanan" bölümünden Seans takibe geçirebilirsiniz.`, link: true },
+            );
+            setAttempt((n) => n + 1);
+          }}
+        />
       )}
 
       {reverting && (

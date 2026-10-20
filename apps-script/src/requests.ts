@@ -9,15 +9,16 @@
  * Both files are sealed (`seal.ts`): unreadable outside this script.
  * The weekly sessions take their times in the calendar every week (`allBusy`).
  */
-import type { BookingRequest, Client, ClientEnd, RequestDecision } from '../../src/admin/api/types';
-import type { FolderLike, Gas } from './gas';
+import type { BookingRequest, Client, ClientEnd, ManualAppointment, RequestDecision } from '../../src/admin/api/types';
+import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 import { activeEntries, addConfirmed, addHold, busyOf, removeEntry } from './calendar';
-import { seal, unseal } from './seal';
-import { clientNumber, holdOf, minutesOf, overlaps, weeklyBusy, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
+import { readItems, writeItems } from './store';
+import { verifyLines, verifyLink } from './verify';
+import { BOOKING_LIMITS, INTRO_MINUTES, SESSION_TYPES, clientNumber, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
+import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
 
 export const REQUEST_KEEP_MS = 30 * 24 * 3600 * 1000;
-const FOLDER = 'randevular';
 const REQUESTS = 'talepler.json';
 const CLIENTS = 'danisanlar.json';
 const SEQ = 'clients.seq';
@@ -27,40 +28,12 @@ const EMPTY_MAIL = 'E-postanın konusu ve metni boş olamaz.';
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function folder(gas: Gas): FolderLike {
-  const root = gas.drive.rootFolder();
-  return root.findFolder(FOLDER) ?? root.createFolder(FOLDER);
-}
-
 /** The request as it came, kept with a client so Geri al can put it back. */
 type Origin = Omit<BookingRequest, 'id' | 'createdAt' | 'status' | 'holdId' | 'calendarId'>;
-type StoredClient = Client & { origin: Origin };
+type StoredClient = Client & { origin: Origin; requestId?: string };
 
-function read<T>(gas: Gas, name: string): T[] {
-  const file = gas.drive.rootFolder().findFolder(FOLDER)?.findFile(name);
-  if (!file) return [];
-  let v: { items?: T[]; sealed?: string };
-  try {
-    v = JSON.parse(file.read()) as typeof v;
-  } catch {
-    return [];
-  }
-  if (typeof v.sealed === 'string') {
-    const text = unseal(gas, v.sealed);
-    // Never treat an unreadable file as empty: the next write would wipe it.
-    if (text === null) throw new ApiError('internal', 'Randevu dosyası açılamadı (şifre anahtarı uyuşmuyor). Dosyaya dokunmadan destek isteyin.');
-    v = JSON.parse(text) as typeof v;
-  }
-  return Array.isArray(v.items) ? v.items : [];
-}
-
-function write<T>(gas: Gas, name: string, items: T[]): void {
-  const f = folder(gas);
-  const text = JSON.stringify({ sealed: seal(gas, JSON.stringify({ items })) });
-  const file = f.findFile(name);
-  if (file) file.write(text);
-  else f.createFile(name, text, 'json');
-}
+const read = readItems;
+const write = writeItems;
 
 /** Requests younger than 30 days (older ones are dropped for good on every read). */
 function liveRequests(gas: Gas): BookingRequest[] {
@@ -88,9 +61,69 @@ export function saveRequest(gas: Gas, input: BookingInput, lang: 'tr' | 'en', ho
     ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age } : {}),
     status: 'pending',
     holdId,
+    source: 'site',
   };
   write(gas, REQUESTS, [...liveRequests(gas), r]);
   return r;
+}
+
+/** The e-mail check link was opened: the request (or the client it became) has a right address. */
+export function markVerified(gas: Gas, id: string): void {
+  gas.withLock(() => {
+    const requests = liveRequests(gas);
+    if (requests.some((r) => r.id === id && !r.verified)) write(gas, REQUESTS, requests.map((r) => (r.id === id ? { ...r, verified: true } : r)));
+    const clients = read<StoredClient>(gas, CLIENTS);
+    if (clients.some((c) => c.requestId === id && !c.contact.verified)) {
+      write(gas, CLIENTS, clients.map((c) => (c.requestId === id ? { ...c, contact: { ...c.contact, verified: true } } : c)));
+    }
+  });
+}
+
+const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
+
+/**
+ * Randevu ekle: an appointment the owner gives by phone or e-mail, with the person's name and
+ * e-mail. It goes into the calendar for good (a clash with a confirmed one is refused) and into
+ * Randevu talepleri as approved, ready for Seans takip. With `mail`, the confirmation goes too,
+ * with the e-mail check link under it.
+ */
+export function addManual(gas: Gas, cfg: BookingConfig, p: Record<string, unknown>): { request: BookingRequest } {
+  const i = p as Partial<ManualAppointment>;
+  const kind = i.kind === 'intro' ? 'intro' : 'session';
+  const type = kind === 'session' ? SESSION_TYPES.find((t) => t.id === i.type)?.id : undefined;
+  const name = typeof i.name === 'string' ? i.name.trim() : '';
+  const email = typeof i.email === 'string' ? i.email.trim().toLowerCase() : '';
+  if (kind === 'session' && !type) throw badRequest('Görüşme türünü seçin.');
+  if (name.length < 2 || name.length > BOOKING_LIMITS.nameMax) throw badRequest('Ad soyad eksik.');
+  if (!EMAIL_RE.test(email) || email.length > BOOKING_LIMITS.emailMax) throw badRequest('E-posta adresi hatalı görünüyor.');
+  const lang = i.lang === 'en' ? 'en' : 'tr';
+  return gas.withLock(() => {
+    const { entry } = addConfirmed(gas, cfg, { day: i.day, time: i.time, kind, type });
+    const r: BookingRequest = {
+      id: gas.uuid().slice(0, 12),
+      createdAt: gas.now(),
+      kind,
+      ...(type ? { type } : {}),
+      day: String(i.day),
+      time: String(i.time),
+      name,
+      email,
+      phone: typeof i.phone === 'string' ? i.phone.trim().slice(0, BOOKING_LIMITS.phoneMax) : '',
+      note: typeof i.note === 'string' ? i.note.trim().slice(0, BOOKING_LIMITS.noteMax) : '',
+      lang,
+      status: 'approved',
+      holdId: '',
+      calendarId: entry.id,
+      source: 'manual',
+    };
+    if (i.mail) {
+      const link = verifyLink(gas, `r:${r.id}`, kind === 'intro' ? 'preConsult' : 'appointment', lang);
+      const body = typeof i.mail.body === 'string' ? `${i.mail.body.trimEnd()}\n\n${verifyLines(link, lang).join('\n')}` : '';
+      sendMail(gas, email, { subject: i.mail.subject, body });
+    }
+    write(gas, REQUESTS, [...liveRequests(gas), r]);
+    return { request: r };
+  });
 }
 
 export function listRequests(gas: Gas): { requests: BookingRequest[] } {
@@ -202,6 +235,8 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
       type = r.forWhom ?? 'individual';
     }
     const { id: _id, createdAt: _c, status: _s, holdId: _h, calendarId: _cal, ...origin } = r;
+    // An intro call is where it began: it shows in the client's sessions, free and attended.
+    const sessions: SessionRecord[] = r.kind === 'intro' ? [{ day: r.day, time: r.time, kind: 'intro', minutes: INTRO_MINUTES, status: 'attended' }] : [];
     const client: StoredClient = {
       id: gas.uuid().slice(0, 12),
       number: nextNumber(gas, r.name),
@@ -211,8 +246,10 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
       minutes: minutesOf('session', type),
       since,
       status: 'active',
-      contact: { name: r.name, email: r.email, lang: r.lang },
+      contact: { name: r.name, email: r.email, lang: r.lang, ...(r.verified ? { verified: true } : {}) },
+      sessions,
       origin,
+      requestId: r.id,
     };
     // The weekly slot now holds this time; a one-off session entry at the same start would double it.
     if (r.kind === 'session' && r.calendarId) removeEntry(gas, { id: r.calendarId });
@@ -223,7 +260,7 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
 }
 
 /** What the panel sees: everything but the request as it came. */
-const publicClient = ({ origin: _o, ...c }: StoredClient): Client => ({ ...c, status: c.status ?? 'active' });
+const publicClient = ({ origin: _o, requestId: _r, ...c }: StoredClient): Client => ({ ...c, status: c.status ?? 'active' });
 
 export function listClients(gas: Gas): { clients: Client[] } {
   return { clients: read<StoredClient>(gas, CLIENTS).map(publicClient).sort((a, b) => a.number.localeCompare(b.number)) };
@@ -266,7 +303,38 @@ export function revertClient(gas: Gas, cfg: BookingConfig, p: Record<string, unk
   });
 }
 
-/** Everything that takes time from now on: calendar entries and the weekly sessions (next 8 weeks). */
-export function allBusy(gas: Gas, cfg: BookingConfig, now: number): BusyInterval[] {
-  return [...busyOf(activeEntries(gas, now), cfg.restMinutes), ...weeklyBusy(read<StoredClient>(gas, CLIENTS), cfg.restMinutes, now, now + 8 * 7 * 24 * 3600 * 1000)];
+/** Everything that takes time from now on: calendar entries and the clients' sessions (next 8 weeks). */
+export function allBusy(gas: Gas, cfg: BookingConfig, now: number, clients: Client[] = read<StoredClient>(gas, CLIENTS)): BusyInterval[] {
+  return [...busyOf(activeEntries(gas, now), cfg.restMinutes), ...clientsBusy(clients, cfg.restMinutes, now, now + 8 * 7 * 24 * 3600 * 1000)];
+}
+
+const CLASH = 'Bu saat dolu: başka bir randevu ya da seansla çakışıyor. Başka bir saat seçin.';
+
+/**
+ * Seans takip › a client's sessions (sessions.ts `applyChange`: mark, add, remove). A new time must
+ * be free from now on; the session being moved frees its own time first.
+ */
+export function changeSession(gas: Gas, cfg: BookingConfig, p: Record<string, unknown>): { client: Client } {
+  return gas.withLock(() => {
+    const clients = read<StoredClient>(gas, CLIENTS);
+    const c = clients.find((x) => x.id === p.id);
+    if (!c) throw new ApiError('not_found', NO_CLIENT);
+    let result: ReturnType<typeof applyChange>;
+    try {
+      result = applyChange(c, p as unknown as SessionChangeInput, INTRO_MINUTES);
+    } catch (e) {
+      if (e instanceof SessionError) throw badRequest(e.message);
+      throw e;
+    }
+    const updated: StoredClient = { ...c, sessions: result.sessions };
+    const { added } = result;
+    if (added) {
+      const now = gas.now();
+      const mine = holdOf(added.day, added.time, added.minutes, cfg.restMinutes);
+      const others = clients.map((x) => (x.id === c.id ? { ...updated, sessions: result.sessions.filter((s) => s !== added) } : x));
+      if (mine.start > now && allBusy(gas, cfg, now, others).some((b) => overlaps(mine, b))) throw new ApiError('conflict', CLASH);
+    }
+    write(gas, CLIENTS, clients.map((x) => (x.id === c.id ? updated : x)));
+    return { client: publicClient(updated) };
+  });
 }

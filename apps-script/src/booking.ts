@@ -15,7 +15,9 @@ import { ApiError, badRequest } from './respond';
 import { read } from './github';
 import { HONEYPOT, allowSend } from './contact';
 import { addHold } from './calendar';
-import { allBusy, saveRequest } from './requests';
+import { allBusy, markVerified, saveRequest } from './requests';
+import { isClosed, markWaitlistVerified } from './waitlist';
+import { refOf, verifyLines, verifyLink } from './verify';
 import { parseBooking } from '../../src/lib/schemas';
 import {
   AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
@@ -25,6 +27,7 @@ const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tek
 const TAKEN = 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.';
 const TOO_MANY = 'Şu anda çok fazla talep gönderildi. Lütfen daha sonra tekrar deneyin ya da doğrudan e-posta gönderin.';
 const NOT_READY = 'Randevu formu henüz kurulmadı. Lütfen doğrudan e-posta gönderin.';
+const CLOSED = 'Şu an tüm seanslar dolu. Sayfayı yenileyip "Haber et" formunu kullanabilirsiniz.';
 
 const CONFIG_CACHE = 'booking.config';
 const CONFIG_TTL = 10 * 60;
@@ -95,7 +98,7 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
     `Ad Soyad: ${name}`,
     `E-posta: ${i.email.trim().toLowerCase()}`,
     `Telefon: ${oneLine(i.phone)}`,
-    `Sayfa dili: ${lang === 'en' ? 'İngilizce' : 'Türkçe'}`,
+    `Konuşma dili: ${lang === 'en' ? 'İngilizce' : 'Türkçe'}`,
     `Gönderim: ${new Date(now).toISOString()}`,
     '',
     ...(i.note.trim() ? ['Not:', i.note.trim(), ''] : []),
@@ -110,8 +113,8 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
   return { subject: `[klinikterapist] ${label} — ${name} — ${formatDay(i.day, 'tr')} ${i.time}`, body };
 }
 
-/** Fixed text: nothing the visitor typed goes into it. */
-function visitorMail(i: BookingInput, lang: BookingLang): { subject: string; body: string } {
+/** Fixed text: nothing the visitor typed goes into it (the link is made here). */
+function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subject: string; body: string } {
   const when = `${formatDay(i.day, lang)}, ${i.time}`;
   if (lang === 'en') {
     const what = i.kind === 'session' ? SESSION_TYPES.find((t) => t.id === i.type)!.en : 'Free intro call';
@@ -122,6 +125,8 @@ function visitorMail(i: BookingInput, lang: BookingLang): { subject: string; bod
         '',
         `Your request has been received: ${what}, ${when} (Turkey time, GMT+3).`,
         'It is not confirmed yet. I will reply by e-mail to confirm the time or suggest another one.',
+        '',
+        ...verifyLines(link, 'en'),
         '',
         'If you did not send this request, you can ignore this e-mail.',
         '',
@@ -139,6 +144,8 @@ function visitorMail(i: BookingInput, lang: BookingLang): { subject: string; bod
       `Talebiniz alındı: ${what}, ${when} (Türkiye saati).`,
       'Henüz kesinleşmedi. Saati onaylamak ya da başka bir saat önermek için size e-postayla yazacağım.',
       '',
+      ...verifyLines(link, 'tr'),
+      '',
       'Bu talebi siz göndermediyseniz bu e-postayı dikkate almayın.',
       '',
       'Osman Güneş Özkurt',
@@ -153,16 +160,16 @@ const BUSY_CACHE = 'booking.busy';
  * `booking.busy` (public GET): the taken stretches from now on, rest included, as epoch ms — no
  * kinds, no names. The site's calendar marks the times that would overlap them "Dolu".
  */
-export function bookingBusy(gas: Gas): { busy: { start: number; end: number }[] } {
+export function bookingBusy(gas: Gas): { busy: { start: number; end: number }[]; closed: boolean } {
   const cached = gas.cache.get(BUSY_CACHE);
   if (cached) {
     try {
-      return JSON.parse(cached) as { busy: { start: number; end: number }[] };
+      return JSON.parse(cached) as { busy: { start: number; end: number }[]; closed: boolean };
     } catch {
       /* compute again */
     }
   }
-  const out = { busy: allBusy(gas, config(gas), gas.now()) };
+  const out = { busy: allBusy(gas, config(gas), gas.now()), closed: isClosed(gas) };
   gas.cache.put(BUSY_CACHE, JSON.stringify(out), 60);
   return out;
 }
@@ -172,6 +179,7 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
 
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw new ApiError('internal', NOT_READY);
+  if (isClosed(gas)) throw badRequest(CLOSED);
 
   const input = inputOf(p);
   const now = gas.now();
@@ -185,16 +193,26 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   // Two e-mails per request: count both against the shared limits.
   if (!allowSend(gas, email, 2)) throw badRequest(TOO_MANY);
   // Checked again under the lock, so two visitors cannot take the same time at once.
-  gas.withLock(() => {
+  const saved = gas.withLock(() => {
     if (validateBooking(input, cfg, now, allBusy(gas, cfg, now)).slot) throw badRequest(TAKEN);
     const hold = addHold(gas, now, input.day, input.time, input.kind, input.kind === 'session' ? input.type : undefined);
-    saveRequest(gas, input, lang, hold.id);
+    return saveRequest(gas, input, lang, hold.id);
   });
   gas.cache.put(BUSY_CACHE, '', 1);
 
   const o = ownerMail(input, lang, now);
   gas.mail.send({ to: owner, replyTo: email, subject: o.subject, body: o.body, name: 'klinikterapist.com randevu formu' });
-  const v = visitorMail(input, lang);
+  const v = visitorMail(input, lang, verifyLink(gas, `r:${saved.id}`, input.kind === 'intro' ? 'preConsult' : 'appointment', lang));
   gas.mail.send({ to: email, replyTo: owner, subject: v.subject, body: v.body, name: 'Osman Güneş Özkurt' });
   return { sent: true };
+}
+
+/** `booking.verify` (public): the link in an acknowledgement e-mail was opened. */
+export function verifyEmail(gas: Gas, p: Record<string, unknown>): { verified: true } {
+  const ref = refOf(gas, p.code);
+  if (!ref) throw badRequest('Bu doğrulama bağlantısı geçersiz. E-postadaki bağlantıyı yeniden açmayı deneyin.');
+  const id = ref.slice(2);
+  if (ref.startsWith('w:')) markWaitlistVerified(gas, id);
+  else markVerified(gas, id);
+  return { verified: true };
 }

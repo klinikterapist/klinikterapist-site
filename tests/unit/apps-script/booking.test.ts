@@ -55,7 +55,7 @@ describe('booking.request', () => {
     expect(owner.body).toContain('Konular: İlişki sorunları, Görüşmede konuşmayı tercih ederim');
     expect(owner.body).toContain('Yaş aralığı: 35–44');
     expect(owner.body).toContain('Kimin için: Partnerimle birlikte (çift terapisi)');
-    expect(owner.body).toContain('Sayfa dili: İngilizce');
+    expect(owner.body).toContain('Konuşma dili: İngilizce');
     expect(visitor.subject).toBe('Your request has been received – klinikterapist.com');
     expect(visitor.body).toContain('Free intro call, Saturday 24 October 2026, 12:00');
     expect(visitor.body).not.toContain('İlişki');

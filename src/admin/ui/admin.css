@@ -4081,6 +4081,11 @@ html[data-theme='dark'] {
   background: var(--p-accent);
 }
 
+/* A full day: the bar turns red. */
+.occ-day.is-full .occ-bar::after {
+  background: var(--p-err);
+}
+
 /* The marks: green dot = confirmed, amber ring = waiting */
 .mk-row {
   display: inline-flex;
@@ -4145,7 +4150,7 @@ html[data-theme='dark'] {
 .occ-legend-bar {
   height: 3px;
   border-radius: 2px;
-  background: linear-gradient(to right, var(--p-accent) 60%, color-mix(in srgb, var(--p-text) 12%, transparent) 60%);
+  background: linear-gradient(to right, var(--p-accent) 50%, var(--p-err) 50%);
 }
 
 .occ-legend-holiday {
@@ -4247,4 +4252,340 @@ html[data-theme='dark'] {
 .end-choice {
   flex-wrap: wrap;
   margin-bottom: var(--k-space-2);
+}
+
+/* ---------- Randevu ekle, randevu alımı, talep türü, danışan sayfası (owner's review 2026-10-20) ---------- */
+.appt-page .screen-head {
+  align-items: center;
+}
+
+.head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-space-2);
+}
+
+/* "Randevu alımı açık / kapalı" with its switch button */
+.intake {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 2px 12px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--p-text) 6%, transparent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.intake .k-btn {
+  min-height: 34px;
+}
+
+.intake-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--p-ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-ok) 25%, transparent);
+}
+
+.intake.is-closed .intake-dot {
+  background: var(--p-err);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-err) 25%, transparent);
+}
+
+/* What the request is: a band across the top of the card */
+.rq-card {
+  border-left: 5px solid var(--p-accent);
+}
+
+.rq-card.rq-is-intro {
+  border-left-color: var(--p-warn);
+}
+
+.rq-card.rq-is-wait {
+  border-left-color: color-mix(in srgb, var(--p-muted) 70%, transparent);
+}
+
+.rq-kind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px var(--k-space-5) 0;
+}
+
+.rq-kind-tag {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--p-accent);
+  color: var(--p-accent-text);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.rq-is-intro .rq-kind-tag {
+  background: var(--p-warn-bg);
+  color: var(--p-warn-text);
+  box-shadow: inset 0 0 0 1.5px var(--p-warn);
+}
+
+.rq-is-wait .rq-kind-tag {
+  background: color-mix(in srgb, var(--p-text) 10%, transparent);
+  color: var(--p-text);
+}
+
+.rq-kind-what {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.rq-kind-src {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+}
+
+.rq-pill {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rq-pill-ok {
+  background: var(--p-ok-bg);
+  color: var(--p-ok-text);
+}
+
+.rq-pill-wait {
+  background: var(--p-warn-bg);
+  color: var(--p-warn-text);
+}
+
+/* Randevu ekle */
+.add-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--k-space-3);
+  margin-bottom: var(--k-space-3);
+}
+
+.email-suggest {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+}
+
+.email-suggest button {
+  padding: 1px 10px;
+  border: 1px solid var(--p-accent);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--p-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.k-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: var(--k-space-2) 0;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.k-check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--p-accent);
+}
+
+/* Seans takip: the row opens the client's page */
+.tk-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--k-space-4);
+  min-width: 15rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.tk-open:hover .tk-what b {
+  color: var(--p-accent);
+}
+
+.tk-number-lg {
+  font-size: var(--text-lg);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: var(--k-space-2);
+  color: var(--p-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* The client's sessions */
+.ss-list {
+  margin: 0;
+  padding: 0 var(--k-space-4);
+  border: 1px solid color-mix(in srgb, var(--p-border) 70%, transparent);
+  border-radius: 18px;
+  background: var(--p-surface);
+  box-shadow: var(--k-shadow-1), 0 6px 20px rgb(0 0 0 / 0.04);
+  list-style: none;
+}
+
+.ss-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--k-space-2) var(--k-space-4);
+  padding: var(--k-space-3) 0;
+}
+
+.ss-row + .ss-row {
+  border-top: 1px solid color-mix(in srgb, var(--p-border) 70%, transparent);
+}
+
+.ss-date {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--p-accent) 12%, transparent);
+  line-height: 1.1;
+}
+
+.ss-date b {
+  font-size: var(--text-lg);
+}
+
+.ss-date span {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+
+/* The free sessions: dashed, warm, labelled "ücretsiz" */
+.ss-row.is-free .ss-date {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--p-warn);
+  border-radius: 50%;
+}
+
+.ss-what {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 11rem;
+}
+
+.ss-kind {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+}
+
+.ss-kind.is-free {
+  justify-self: start;
+  padding: 1px 8px;
+  border: 1.5px dashed var(--p-warn);
+  border-radius: var(--radius-pill);
+  color: var(--p-warn-text);
+  font-weight: 700;
+}
+
+.ss-note {
+  font-size: var(--text-xs);
+  font-style: italic;
+}
+
+.ss-status {
+  display: grid;
+  min-width: 7rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.ss-status small {
+  color: var(--p-muted);
+  font-weight: 500;
+}
+
+.st-attended {
+  color: var(--p-ok);
+}
+
+.st-noshow {
+  color: var(--p-err);
+}
+
+.st-cancelled {
+  color: var(--p-muted);
+}
+
+.st-postponed {
+  color: var(--p-warn-label);
+}
+
+.ss-row.ss-cancelled .ss-what b,
+.ss-row.ss-postponed .ss-what b {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.ss-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.ss-actions .k-btn {
+  min-height: 34px;
+  padding: 0 0.8rem;
+}
+
+.cl-info {
+  padding: 0;
+  border-top: 0;
+}
+
+.tally {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.tally li {
+  display: grid;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--p-text) 4%, transparent);
+}
+
+.tally b {
+  font-size: var(--text-lg);
+}
+
+.day-item.is-free {
+  box-shadow: inset 3px 0 0 var(--p-warn);
 }

@@ -3,6 +3,8 @@ import { afterEach, describe, it, expect } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { RequestsPage } from '../../../src/admin/ui/appointments/RequestsPage';
 import { TrackingPage } from '../../../src/admin/ui/appointments/TrackingPage';
+import { ClientPage } from '../../../src/admin/ui/appointments/ClientPage';
+import { templateTimes } from '../../../src/admin/ui/appointments/AppointmentCalendar';
 import { Panel, parseRoute } from '../../../src/admin/ui/context';
 import { createMockApi } from '../../../src/admin/api/mock';
 import { createSessionStore } from '../../../src/admin/api/session';
@@ -28,7 +30,7 @@ const client = (c: Partial<Client> = {}): Client => ({
   contact: { name: 'Osman Güneş Özkurt', email: 'osman@example.com', lang: 'tr' }, ...c,
 });
 
-function setup(page: 'requests' | 'tracking', requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
+function setup(page: 'requests' | 'tracking' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
   const api = createMockApi({ seed: {} });
   api.state.requests.push(...requests.map((r) => ({ ...r })));
   api.state.calendar.push(
@@ -37,7 +39,7 @@ function setup(page: 'requests' | 'tracking', requests: BookingRequest[] = [sess
   api.state.clients.push(...clients);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
-      {page === 'requests' ? <RequestsPage add={null} /> : <TrackingPage />}
+      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );
   return { api };
@@ -92,7 +94,11 @@ describe('Randevu talepleri', () => {
   it('shows each request with its details and the three buttons, beside the calendar', async () => {
     setup('requests');
     const c = await card('Ayşe Yılmaz');
-    expect(c.textContent).toContain('Randevu talebi · Çift terapisi');
+    expect(c.textContent).toContain('Seans randevusu');
+    expect(c.textContent).toContain('Çift terapisi · 60 dakika');
+    expect(c.textContent).toContain('Konuşma dili');
+    expect(c.textContent).toContain('E-posta henüz doğrulanmadı');
+    expect((await card('Ali Kaya')).textContent).toContain('Ücretsiz ön görüşme');
     expect(c.textContent).toContain('22 Ekim 2026, Perşembe, 19.20');
     expect(c.textContent).toContain('Akşam daha uygun.');
     for (const name of ['Onayla', 'Uygun değilim', 'İptal et']) expect(within(c).getByRole('button', { name })).toBeTruthy();
@@ -225,5 +231,89 @@ describe('the calendar (same on both pages)', () => {
     expect(screen.getByText('Onay bekleyen talep', { selector: 'small' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /29 Ekim 2026, Perşembe, Cumhuriyet Bayramı/ }).className).toContain('is-holiday');
     expect(screen.getByText('29 Ekim: Cumhuriyet Bayramı (kapalı)')).toBeTruthy();
+  });
+});
+
+describe('Randevu ekle, randevu alımı, bekleme listesi (owner’s review 2026-10-20)', () => {
+  it('Randevu ekle: name and e-mail typed by the owner (a near-miss domain gets a fix), the time confirmed, the e-mail sent', async () => {
+    const { api } = setup('requests', []);
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu ekle' }));
+    const dialog = screen.getByRole('dialog', { name: 'Randevu ekle' });
+    fireEvent.change(within(dialog).getByLabelText('Ad soyad'), { target: { value: 'Osman Güneş Özkurt' } });
+    fireEvent.change(within(dialog).getByLabelText('E-posta'), { target: { value: 'osman@gmial.com' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Düzelt' }));
+    expect((within(dialog).getByLabelText('E-posta') as HTMLInputElement).value).toBe('osman@gmail.com');
+    fireEvent.change(within(dialog).getByLabelText('Konuşma dili'), { target: { value: 'en' } });
+    fireEvent.change(within(dialog).getByLabelText('Tarih'), { target: { value: '2026-10-22' } });
+    fireEvent.change(within(dialog).getByLabelText('Saat'), { target: { value: '19:20' } });
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Dear Osman Güneş Özkurt,');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ekle ve e-postayı gönder' }));
+    await waitFor(() => expect(api.state.requests).toHaveLength(1));
+    expect(api.state.requests[0]).toMatchObject({ status: 'approved', source: 'manual', email: 'osman@gmail.com', lang: 'en' });
+    expect(api.state.sent[0]).toMatchObject({ to: 'osman@gmail.com', subject: 'Your appointment is confirmed – klinikterapist.com' });
+    expect(api.state.calendar.some((e) => e.status === 'confirmed')).toBe(true);
+  });
+
+  it('Randevu alımını kapat asks first, then the site shows "Haber et"; it opens again in one click', async () => {
+    const { api } = setup('requests', []);
+    fireEvent.click(await screen.findByRole('button', { name: 'Randevu alımını kapat' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'Randevu alımı kapatılsın mı?' })).getByRole('button', { name: 'Randevu alımını kapat' }));
+    await waitFor(() => expect(api.state.open).toBe(false));
+    expect(await screen.findByText('Randevu alımı kapalı')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Randevu alımını aç' }));
+    await waitFor(() => expect(api.state.open).toBe(true));
+  });
+
+  it('Bekleme listesi: offer a time with a ready e-mail, then take someone off the list', async () => {
+    const api0 = setup('requests', []).api;
+    api0.state.waitlist.push({ id: 'w1', createdAt: Date.now(), name: 'Elif Bekler', email: 'elif@example.com', phone: '0534', kinds: ['couple'], times: ['weekend'], reason: 'İletişim sorunları', lang: 'tr' });
+    fireEvent.click(await screen.findByRole('button', { name: /Bekleme listesi/ }));
+    const c = await card('Elif Bekler');
+    expect(c.textContent).toContain('Çift terapisi');
+    expect(c.textContent).toContain('İletişim sorunları');
+    fireEvent.click(within(c).getByRole('button', { name: 'Saat öner' }));
+    let dialog = screen.getByRole('dialog', { name: 'Saat öner' });
+    fireEvent.change(within(dialog).getByLabelText('Tarih (isteğe bağlı)'), { target: { value: '2026-10-22' } });
+    fireEvent.change(within(dialog).getByLabelText('Saat'), { target: { value: '19:20' } });
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('22 Ekim 2026, Perşembe, saat 19.20');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(api0.state.waitlist[0].offeredAt).toBeTruthy());
+    fireEvent.click(within(await card('Elif Bekler')).getByRole('button', { name: 'Listeden çıkar' }));
+    dialog = screen.getByRole('dialog', { name: 'Listeden çıkar' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder ve listeden çıkar' }));
+    await waitFor(() => expect(api0.state.waitlist).toHaveLength(0));
+    expect(api0.state.sent.map((m) => m.subject)).toEqual(['Bir saat boşaldı – klinikterapist.com', 'Bekleme listem hakkında – klinikterapist.com']);
+  });
+
+  it('a full day’s bar turns red', async () => {
+    const { api } = setup('tracking', []);
+    api.state.calendar.push(
+      ...templateTimes('2026-11-05').map((t, i) => ({ id: `f${i}`, start: Date.parse(`2026-11-05T${t}:00+03:00`), minutes: 50, kind: 'session' as const, status: 'confirmed' as const })),
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Sonraki ay' }));
+    const day = await screen.findByRole('button', { name: /5 Kasım 2026, Perşembe, tamamen dolu/ });
+    expect(day.className).toContain('is-full');
+  });
+});
+
+describe('a client’s page in Seans takip', () => {
+  it('the last and next sessions; mark attended; cancel as asked by the client; the free intro call shows as free', async () => {
+    const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+    const weekday = new Date(`${day(-7)}T12:00:00Z`).getUTCDay();
+    const { api } = setup('client:c1', [], [client({ weekday, time: '10:00', since: day(-14), sessions: [{ day: day(-20), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' }] })]);
+    expect(await screen.findByText('KT007OGO')).toBeTruthy();
+    expect(screen.getByText('Ücretsiz ön görüşme').className).toContain('is-free');
+    const past = screen.getByRole('heading', { name: /Geçmiş seanslar/ }).parentElement!;
+    const rows = within(past).getAllByRole('listitem');
+    expect(rows).toHaveLength(3);
+    fireEvent.click(within(rows[1]).getByRole('button', { name: 'Katıldı' }));
+    await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(-14), status: 'attended' })));
+    const next = screen.getByRole('heading', { name: /Sıradaki seanslar/ }).parentElement!;
+    fireEvent.click(within(within(next).getAllByRole('listitem')[0]).getByRole('button', { name: 'İptal' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Not (isteğe bağlı)'), { target: { value: 'Seyahat' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ status: 'cancelled', by: 'client', note: 'Seyahat' })));
+    expect(await screen.findByText('danışan istedi')).toBeTruthy();
   });
 });

@@ -3,17 +3,18 @@
  * 2026-10-20): the month with each day's occupancy, a green dot for every confirmed appointment
  * (approved requests, entries put in by hand and the weekly sessions of Seans takip) and an amber
  * ring for every request still waiting for an answer, a key to the marks, the month's holidays in
- * small type, the picked day's appointments, and adding one by hand. Only times, lengths and kinds.
+ * small type and the picked day's appointments (the free intro and closing sessions marked as such).
+ * The bar under a day is its occupancy; full, it turns red. Adding one is "Randevu ekle" at the top
+ * of the page (AddAppointmentDialog).
  */
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type CalendarEntry, type Client } from '../../api/types';
 import booking from '../../../data/booking.json';
-import {
-  SESSION_TYPES, closedOn, formatDay, holdOf, minutesOf, overlaps, timesFor, weeklyBusy, type BookingConfig, type BookingKind, type BusyInterval,
-} from '../../../lib/booking-form';
+import { SESSION_TYPES, closedOn, formatDay, holdOf, minutesOf, overlaps, timesFor, type BookingConfig, type BookingKind, type BusyInterval } from '../../../lib/booking-form';
+import { FREE_KINDS, clientsBusy, sessionsOf, type SessionKind } from '../../../lib/sessions';
 import { istanbulParts } from '../../lib/draft';
-import { go, usePanel } from '../context';
-import { Banner, Button, Dialog, Field, Select, Spinner } from '../kit';
+import { usePanel } from '../context';
+import { Banner, Button, Dialog, Spinner } from '../kit';
 
 export const cfg = booking as BookingConfig;
 
@@ -45,7 +46,15 @@ function occupancy(day: string, busy: BusyInterval[]): number | null {
   return taken / times.length;
 }
 
-type DayItem = { start: number; minutes: number; label: string; note: string; tone: 'ok' | 'wait'; entry?: CalendarEntry };
+type DayItem = { start: number; minutes: number; label: string; note: string; tone: 'ok' | 'wait'; free?: boolean; entry?: CalendarEntry };
+
+/** How a client's session reads in the day list. */
+export const SESSION_KIND_LABEL: Record<SessionKind, string> = {
+  weekly: 'Haftalık seans',
+  intro: 'Ücretsiz ön görüşme',
+  closing: 'Sonlandırma görüşmesi (ücretsiz)',
+  extra: 'Ek seans',
+};
 
 /** Up to three marks of one kind, then "+n". */
 function Marks({ n, tone }: { n: number; tone: 'ok' | 'wait' }) {
@@ -60,11 +69,8 @@ function Marks({ n, tone }: { n: number; tone: 'ok' | 'wait' }) {
   );
 }
 
-/**
- * `version`: bump it after the page changed something (an approval, a move), so the calendar loads
- * again. `add`: a time to put in by hand, from the old `?ekle=` links.
- */
-export function AppointmentCalendar({ version = 0, add = null }: { version?: number; add?: { day: string; time: string; type: string } | null }) {
+/** `version`: bump it after the page changed something (an approval, a move), so the calendar loads again. */
+export function AppointmentCalendar({ version = 0 }: { version?: number }) {
   const { api } = usePanel();
   const [entries, setEntries] = useState<CalendarEntry[] | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
@@ -73,8 +79,6 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [removing, setRemoving] = useState<CalendarEntry | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ day: '', time: '', kind: 'individual' });
   const today = partsOf(Date.now()).day;
   const [month, setMonth] = useState(today.slice(0, 7));
   const [picked, setPicked] = useState<string | null>(null);
@@ -102,7 +106,7 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
   const busyMonth = useMemo(
     () => [
       ...(entries ?? []).map((e) => ({ start: e.start, end: e.start + (e.minutes + cfg.restMinutes) * 60e3 })),
-      ...weeklyBusy(clients, cfg.restMinutes, first, last),
+      ...clientsBusy(clients, cfg.restMinutes, first, last),
     ],
     [entries, clients, first, last],
   );
@@ -117,29 +121,19 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
           ? { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onaylı randevu', tone: 'ok', entry: e }
           : { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onay bekleyen talep', tone: 'wait', entry: e },
       );
-    const weekday = new Date(`${day}T12:00:00Z`).getUTCDay();
-    const weekly: DayItem[] = weeklyBusy(clients, 0, from, to).map((b) => {
-      const c = clients.find((x) => partsOf(b.start).time === x.time && weekday === x.weekday);
-      return { start: b.start, minutes: c?.minutes ?? 50, label: labelOf({ kind: 'session', type: c?.type }), note: `Seans takip · ${c?.number ?? ''}`, tone: 'ok' };
-    });
-    return [...one, ...weekly].sort((a, b) => a.start - b.start);
-  };
-
-  const put = async (day: string, time: string, kindValue: string) => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.calendarAdd({ day, time, ...kindOf(kindValue) });
-      setNotice(`${formatDay(day, 'tr')}, ${time.replace(':', '.')} takvime işlendi. Bu saat sitede "Dolu" görünüyor.`);
-      if (add) go('#/randevular');
-      reload();
-      return true;
-    } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Takvime işlenemedi. Tekrar deneyin.');
-      return false;
-    } finally {
-      setBusy(false);
-    }
+    const tracked: DayItem[] = clients.flatMap((c) =>
+      sessionsOf(c, day, day)
+        .filter((s) => s.status !== 'cancelled' && s.status !== 'postponed')
+        .map((s) => ({
+          start: Date.parse(`${s.day}T${s.time}:00+03:00`),
+          minutes: s.minutes,
+          label: s.kind === 'weekly' ? labelOf({ kind: 'session', type: c.type }) : SESSION_KIND_LABEL[s.kind],
+          note: `Seans takip · ${c.number}`,
+          tone: 'ok' as const,
+          free: FREE_KINDS.includes(s.kind),
+        })),
+    );
+    return [...one, ...tracked].sort((a, b) => a.start - b.start);
   };
 
   const remove = async (e: CalendarEntry) => {
@@ -164,26 +158,10 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
   };
   const lead = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
   const holidays = cfg.closed.filter((c) => c.date.startsWith(month));
-  const times = form.day ? templateTimes(form.day) : [];
   const pickedItems = picked ? itemsOf(picked) : [];
 
   return (
     <section className="cal-card" aria-label="Randevu takvimi">
-      {add && (
-        <div className="cal-confirm" role="region" aria-label="Takvime işlenecek randevu">
-          <p>
-            <b>Bu randevuyu takvime işleyin:</b> {formatDay(add.day, 'tr')}, {add.time.replace(':', '.')} · {labelOf(kindOf(add.type))}
-          </p>
-          <div className="row">
-            <Button variant="primary" busy={busy} onClick={() => put(add.day, add.time, add.type)}>
-              Takvime işle
-            </Button>
-            <Button variant="ghost" onClick={() => go('#/randevular')}>
-              Vazgeç
-            </Button>
-          </div>
-        </div>
-      )}
       {notice && <Banner tone="success">{notice}</Banner>}
       {error && (
         <Banner tone="error" action={<Button onClick={reload}>Tekrar dene</Button>}>
@@ -232,9 +210,9 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
                 <button
                   key={day}
                   type="button"
-                  className={`occ-day${day === today ? ' is-today' : ''}${picked === day ? ' is-picked' : ''}${holiday && !holiday.from ? ' is-holiday' : ''}${day < today ? ' is-past' : ''}`}
+                  className={`occ-day${pct === 100 ? ' is-full' : ''}${day === today ? ' is-today' : ''}${picked === day ? ' is-picked' : ''}${holiday && !holiday.from ? ' is-holiday' : ''}${day < today ? ' is-past' : ''}`}
                   style={pct ? ({ '--occ': `${pct}%` } as React.CSSProperties) : undefined}
-                  aria-label={`${formatDay(day, 'tr')}${holiday ? `, ${holiday.name}` : ''}${pct === null ? '' : `, %${pct} dolu`}${counts ? `, ${counts}` : ''}`}
+                  aria-label={`${formatDay(day, 'tr')}${holiday ? `, ${holiday.name}` : ''}${pct === null ? '' : pct === 100 ? ', tamamen dolu' : `, %${pct} dolu`}${counts ? `, ${counts}` : ''}`}
                   aria-pressed={picked === day}
                   onClick={() => setPicked(day)}
                 >
@@ -264,7 +242,7 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
             </li>
             <li>
               <span className="occ-legend-bar" aria-hidden="true" />
-              Alttaki çizgi: günün doluluk oranı
+              Alttaki çizgi: günün doluluk oranı; gün tamamen dolunca kırmızı
             </li>
             <li>
               <span className="occ-legend-holiday" aria-hidden="true">
@@ -291,7 +269,7 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
               ) : (
                 <ul className="day-list">
                   {pickedItems.map((it) => (
-                    <li key={`${it.start}-${it.label}-${it.note}`} className={`day-item day-${it.tone}`}>
+                    <li key={`${it.start}-${it.label}-${it.note}`} className={`day-item day-${it.tone}${it.free ? ' is-free' : ''}`}>
                       <span className="mk-row" aria-hidden="true">
                         <i className="mk" />
                       </span>
@@ -314,40 +292,6 @@ export function AppointmentCalendar({ version = 0, add = null }: { version?: num
             </div>
           )}
 
-          {adding ? (
-            <div className="cal-form">
-              <Field label="Tarih" type="date" value={form.day} onChange={(day) => setForm({ ...form, day, time: '' })} />
-              <Select
-                label="Saat"
-                value={form.time}
-                options={[{ value: '', label: form.day ? (times.length ? 'Saat seçin…' : 'Bu gün kapalı') : 'Önce tarih seçin' }, ...times.map((t) => ({ value: t, label: t.replace(':', '.') }))]}
-                onChange={(time) => setForm({ ...form, time })}
-              />
-              <Select label="Görüşme" value={form.kind} options={KINDS} onChange={(kind) => setForm({ ...form, kind })} />
-              <div className="row">
-                <Button
-                  variant="primary"
-                  busy={busy}
-                  disabled={!form.day || !form.time}
-                  onClick={async () => {
-                    if (await put(form.day, form.time, form.kind)) {
-                      setForm({ day: '', time: '', kind: form.kind });
-                      setAdding(false);
-                    }
-                  }}
-                >
-                  Ekle
-                </Button>
-                <Button variant="ghost" onClick={() => setAdding(false)}>
-                  Vazgeç
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button className="cal-add" onClick={() => setAdding(true)}>
-              + Elle randevu ekle
-            </Button>
-          )}
         </>
       )}
 
