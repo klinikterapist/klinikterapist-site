@@ -1,7 +1,8 @@
 /**
- * The ready e-mails the owner sends from Talepler (owner's request 2026-10-20): personal, in the
- * language of the page the person used, with what they asked for. The panel shows them for editing
- * before they go; the backend sends exactly the edited text, to the address in the request only.
+ * The ready e-mails the owner sends from Randevu talepleri and Seans takip (owner's requests
+ * 2026-10-20): personal, in the language of the page the person used, with what they asked for. The
+ * panel shows them for editing before they go; the backend sends exactly the edited text, to the
+ * person's address only.
  */
 import type { BookingRequest, RequestDecision } from '../api/types';
 import { INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay } from '../../lib/booking-form';
@@ -86,5 +87,117 @@ export function decisionMail(r: BookingRequest, decision: RequestDecision): Mail
   return {
     subject: 'Talebiniz iptal edildi – klinikterapist.com',
     body: [hello, '', `${when} için gönderdiğiniz ${what(r, 'tr')} talebiniz iptal edilmiştir.`, `Yeniden randevu almak isterseniz buradan ulaşabilirsiniz: ${again}`, '', ...SIGN_TR].join('\n'),
+  };
+}
+
+type Contact = { name: string; lang: 'tr' | 'en' };
+
+/**
+ * Terapiyi sonlandır (owner's request 2026-10-20). `complete`: therapy is over and the process has
+ * ended. `closing`: an invitation to a free 25–30 minute closing session, why it matters and what
+ * it covers.
+ */
+export function endMail(c: Contact, mode: 'complete' | 'closing'): Mail {
+  const name = c.name.trim();
+  const again = `${SITE}${pathFor('appointment', c.lang)}`;
+  if (c.lang === 'en') {
+    const hello = `Dear ${name},`;
+    if (mode === 'complete') {
+      return {
+        subject: 'The end of our therapy – klinikterapist.com',
+        body: [
+          hello,
+          '',
+          'With this e-mail I would like to let you know that our therapy process has come to an end. Your weekly session has been removed from my calendar and your appointment details have been deleted from my booking system.',
+          'Thank you for the effort you put into this process and for everything you shared with me.',
+          `Should you need support again in the future, you are always welcome to request an appointment on my site: ${again}`,
+          '',
+          'I wish you all the best.',
+          '',
+          ...SIGN_EN,
+        ].join('\n'),
+      };
+    }
+    return {
+      subject: 'A closing session for our therapy – klinikterapist.com',
+      body: [
+        hello,
+        '',
+        'We are coming to the end of our therapy. So that we can bring the process to a good close, I would like to offer you a free closing session of 25–30 minutes.',
+        'The closing session is an important part of therapy. In it we will:',
+        '– look back together at the goals we set at the start and the changes you have made along the way,',
+        '– talk about what worked for you and how you can keep using it in everyday life,',
+        '– go over situations that may be hard in the future and what you can do at such times,',
+        '– make room for your feelings and thoughts about the process and any questions you may have.',
+        'The session is held online and there is no fee. Please reply to this e-mail with the days and times that suit you, and we will plan it together.',
+        '',
+        ...SIGN_EN,
+      ].join('\n'),
+    };
+  }
+  const hello = `Sayın ${name},`;
+  if (mode === 'complete') {
+    return {
+      subject: 'Terapi sürecimizin sonlanması – klinikterapist.com',
+      body: [
+        hello,
+        '',
+        'Birlikte yürüttüğümüz terapi sürecinin sona erdiğini bu e-postayla bildirmek isterim. Haftalık seans saatiniz takvimimden kaldırılmış, randevu bilgileriniz randevu sistemimden silinmiştir.',
+        'Bu süreçte gösterdiğiniz emek ve benimle paylaştıklarınız için teşekkür ederim.',
+        `İleride yeniden desteğe ihtiyaç duyarsanız sitemden her zaman randevu talebinde bulunabilirsiniz: ${again}`,
+        '',
+        'Size sağlıklı ve güzel günler dilerim.',
+        '',
+        ...SIGN_TR,
+      ].join('\n'),
+    };
+  }
+  return {
+    subject: 'Sonlandırma görüşmesi – klinikterapist.com',
+    body: [
+      hello,
+      '',
+      'Terapi sürecimizin sonuna yaklaşıyoruz. Süreci sağlıklı bir şekilde tamamlayabilmek için sizinle ücretsiz, 25–30 dakikalık bir sonlandırma görüşmesi yapmak istiyorum.',
+      'Sonlandırma görüşmesi terapinin önemli bir parçasıdır. Bu görüşmede:',
+      '– terapiye başlarken belirlediğimiz hedeflere ve bu süreçte yaşadığınız değişimlere birlikte bakacağız,',
+      '– sizin için nelerin işe yaradığını ve bunları gündelik hayatta nasıl sürdürebileceğinizi konuşacağız,',
+      '– ileride zorlanabileceğiniz durumları ve böyle anlarda neler yapabileceğinizi ele alacağız,',
+      '– süreçle ilgili duygularınızı, düşüncelerinizi ve varsa sorularınızı paylaşmanız için alan açacağız.',
+      'Görüşme online yapılacak ve ücret alınmayacak. Size uygun gün ve saatleri bu e-postayı yanıtlayarak iletirseniz görüşmeyi birlikte planlayalım.',
+      '',
+      ...SIGN_TR,
+    ].join('\n'),
+  };
+}
+
+/**
+ * Geri al (owner's request 2026-10-20): an approval or a move sent by mistake. The apology says a
+ * technical problem caused it and that a corrected answer follows in the next e-mail.
+ */
+export function revertMail(c: Contact): Mail {
+  const name = c.name.trim();
+  if (c.lang === 'en') {
+    return {
+      subject: 'Correction to my previous e-mail – klinikterapist.com',
+      body: [
+        `Dear ${name},`,
+        '',
+        'The previous e-mail I sent you about your request was sent by mistake because of a technical problem. Please disregard it; I apologise for any confusion it may have caused.',
+        'Your request is still with me. I will review it again and send you the correct answer in my next e-mail as soon as possible.',
+        '',
+        ...SIGN_EN,
+      ].join('\n'),
+    };
+  }
+  return {
+    subject: 'Önceki e-postamla ilgili düzeltme – klinikterapist.com',
+    body: [
+      `Sayın ${name},`,
+      '',
+      'Talebinizle ilgili size gönderdiğim önceki e-posta, teknik bir sorun nedeniyle yanlışlıkla gönderilmiştir. Lütfen o e-postayı dikkate almayın; yol açtığı karışıklık için özür dilerim.',
+      'Talebiniz bende duruyor. Yeniden değerlendirip doğru yanıtı bir sonraki e-postamda en kısa sürede size ileteceğim.',
+      '',
+      ...SIGN_TR,
+    ].join('\n'),
   };
 }

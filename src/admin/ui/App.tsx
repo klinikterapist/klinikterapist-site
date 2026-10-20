@@ -9,7 +9,8 @@ import { Login } from './Login';
 import { Shell } from './Shell';
 import { Home } from './Home';
 import { TrashPage } from './TrashPage';
-import { AppointmentsPage } from './appointments/AppointmentsPage';
+import { RequestsPage } from './appointments/RequestsPage';
+import { TrackingPage } from './appointments/TrackingPage';
 import { PostsList } from './PostsList';
 import { EditorPage } from './editor/EditorPage';
 import { SettingsPage } from './settings/SettingsPage';
@@ -54,8 +55,10 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <Home />
             ) : route.name === 'trash' ? (
               <TrashPage />
-            ) : route.name === 'calendar' ? (
-              <AppointmentsPage tab={route.tab} add={route.add} />
+            ) : route.name === 'requests' ? (
+              <RequestsPage add={route.add} />
+            ) : route.name === 'tracking' ? (
+              <TrackingPage />
             ) : (
               <PostsList tab={route.tab} />
             )}

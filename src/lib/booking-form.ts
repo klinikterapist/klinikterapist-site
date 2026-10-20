@@ -223,3 +223,21 @@ export function formatDay(day: string, lang: BookingLang): string {
   const wd = n.w[d.getUTCDay()];
   return lang === 'en' ? `${wd} ${dd} ${mm} ${yy}` : `${dd} ${mm} ${yy}, ${wd}`;
 }
+
+const FOLD: Record<string, string> = { Ç: 'C', Ğ: 'G', İ: 'I', I: 'I', Ö: 'O', Ş: 'S', Ü: 'U', Â: 'A', Î: 'I', Û: 'U' };
+
+/**
+ * A Seans takip number (owner's format 2026-10-20): KT, the running number in three digits and the
+ * initials of the name, Turkish letters folded — "Osman Güneş Özkurt", 1 → KT001OGO.
+ */
+export function clientNumber(seq: number, name: string): string {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toLocaleUpperCase('tr-TR'))
+    .map((c) => FOLD[c] ?? c)
+    .filter((c) => /[A-Z]/.test(c))
+    .slice(0, 4)
+    .join('');
+  return `KT${String(seq).padStart(3, '0')}${initials}`;
+}

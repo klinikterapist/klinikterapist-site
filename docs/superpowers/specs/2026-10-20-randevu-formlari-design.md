@@ -53,6 +53,27 @@
 - **Sitede:** Takvimin altında o ayın tatilleri küçük yazıyla yer alır.
 - **Aydınlatma paragrafı (güncel taslak):** "Randevu ve ön görüşme talepleri: Formda yazdığınız bilgiler talebinizi yanıtlamak amacıyla bana e-postayla iletilir ve yanıtlanana kadar, en fazla 30 gün, Google hesabımda saklanır. Talebiniz reddedilir ya da iptal edilirse hemen silinir. Terapiye başladığınızda adınız ve iletişim bilgileriniz bu sistemden silinir; randevularınız yalnızca bir danışan numarasıyla takip edilir." (Avukat onayı bekliyor.)
 
+## Randevu talepleri ve Seans takip ayrı sayfalar (sahibin tasarımı, 20 Ekim 2026 gece; uygulandı)
+
+Önceki "Randevular" sekmeleri ikiye ayrıldı ve Apple tarzında yeniden düzenlendi:
+- **Randevu talepleri** (`#/randevular`): Bekleyen / Onaylanan (segment düğmesi), her talep bir kart (baş harfler, istenen zaman, iOS tarzı satırlar). Onaylananlarda "Seans takibe geçir", "Geri al", "İptal et".
+- **Seans takip** (`#/seans-takip`): danışanlar numarayla ("Devam eden" ve "Sonlandırma aşamasında" grupları). Düğmeler:
+  - **Terapiyi sonlandır**, iki e-posta türüyle:
+    - **Terapi tamamlandı:** süreç bitti e-postası; danışan bilgileriyle silinir, haftalık saat açılır.
+    - **Sonlandırma görüşmesi talep et:** ücretsiz 25–30 dakikalık görüşme daveti; neden önemli olduğu ve neler konuşulacağı yazar. Danışan takipte kalır, işaretlenir.
+  - **Geri al:** teknik sorundan özür dileyen ve doğru yanıtın sonraki e-postada geleceğini söyleyen e-posta gider; kişi Randevu taleplerine bekleyen talep olarak döner (saat hâlâ ileride ve boşsa yeniden 24 saat tutulur).
+  - **Sil:** e-posta gitmez, danışan silinir.
+- **Danışan numarası:** `KT` + 3 haneli sıra + ad soyad baş harfleri (Türkçe harfler sadeleşir): Osman Güneş Özkurt → `KT001OGO`. Sıra numarası tekrar kullanılmaz.
+- **Ortak takvim** iki sayfada da yan sütunda:
+  - yeşil dolu nokta: onaylı randevu ya da Seans takipteki danışanın haftalık seansı;
+  - turuncu halka: onay bekleyen talep;
+  - alttaki çizgi: doluluk oranı;
+  - üstü çizili gün: tatil.
+  - İşaretlerin açıklaması takvimin altında yazar, ayın tatilleri de onun altında.
+- **Saklama değişti (sahibin isteği):** e-posta gönderebilmek için Seans takipteki kişinin adı, e-postası ve sayfa dili saklanır. Geri al için talebin kendisi de saklanır. Bunlar terapi sonlandırılınca ("Terapi tamamlandı" ya da "Sil") silinir.
+- **Güvenlik:** `talepler.json` ve `danisanlar.json` artık şifreli (`apps-script/src/seal.ts`, HMAC-SHA256 tabanlı şifreleme ve bütünlük etiketi). Anahtar Apps Script'in Script Properties'inde (`SEAL_KEY`, ilk kullanımda kendiliğinden oluşur). **Bu anahtar silinirse dosyalar açılamaz;** silinmemeli, başka yere kopyalanmamalı. Panel, dosya açılamazsa boş saymaz, hata verir (üzerine yazıp silmesin diye).
+- **Aydınlatma paragrafı (güncel taslak, avukata):** "Randevu ve ön görüşme talepleri: Formda yazdığınız bilgiler talebinizi yanıtlamak amacıyla bana e-postayla iletilir ve yanıtlanana kadar, en fazla 30 gün, Google hesabımda şifreli olarak saklanır. Talebiniz reddedilir ya da iptal edilirse hemen silinir. Terapiye başladığınızda randevularınız bir danışan numarasıyla takip edilir; size yazabilmem için adınız ve e-posta adresiniz terapi süresince şifreli olarak saklanır ve terapi sona erdiğinde silinir."
+
 ## Sahibe açık sorular
 
 1. **Açık rıza metni** (ön görüşmede konu seçilince). Taslak: "Seçtiğim konuların ve yazdığım notun, ön görüşmeyi hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt'a e-postayla iletilmesine açık rıza veriyorum." Uygun mu? Yoksa konu sorusu tamamen kaldırılsın mı? (En az veri ilkesine göre kaldırmak da bir seçenek.)

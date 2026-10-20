@@ -14,7 +14,7 @@ import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, lis
 import { sendContact } from './contact';
 import { bookingBusy, config as bookingConfig, sendBooking } from './booking';
 import { addConfirmed, listEntries, removeEntry } from './calendar';
-import { decideRequest, endClient, listClients, listRequests, requestToClient } from './requests';
+import { decideRequest, endClient, listClients, listRequests, requestToClient, revertClient, revertRequest } from './requests';
 import { recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 
@@ -74,9 +74,19 @@ export const ACTIONS: Record<string, Handler> = {
     gas.cache.put('booking.busy', '', 1);
     return out;
   },
+  'requests.revert': (gas, p) => {
+    const out = revertRequest(gas, bookingConfig(gas), p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
   'clients.list': (gas) => listClients(gas),
   'clients.end': (gas, p) => {
     const out = endClient(gas, p);
+    gas.cache.put('booking.busy', '', 1);
+    return out;
+  },
+  'clients.revert': (gas, p) => {
+    const out = revertClient(gas, bookingConfig(gas), p);
     gas.cache.put('booking.busy', '', 1);
     return out;
   },

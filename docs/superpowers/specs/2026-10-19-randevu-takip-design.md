@@ -22,7 +22,7 @@
 
 ## Durum (20 Ekim 2026)
 
-Panel tarafı yapıldı: Randevular › Danışanlar (numara ve haftalık seans), talepten "Randevu takibine geçir", "Terapi sona erdi". Kalan iş, **danışana açılan gizli sayfa** (kodlu bağlantı, iptal ve saat değişikliği talebi, sonlandırma talebi). Bunun için aşağıdaki T2 ve T5 görevleri, yeni `Client` kaydına bir kod özeti eklenerek uygulanacak.
+Panel tarafı yapıldı: **Seans takip** sayfası (KT001OGO numarası ve haftalık seans), talepten "Seans takibe geçir", "Terapiyi sonlandır" (iki e-posta türü), "Geri al", "Sil"; ayrıntı `2026-10-20-randevu-formlari-design.md` içinde. Kalan iş, **danışana açılan gizli sayfa** (kodlu bağlantı, iptal ve saat değişikliği talebi, sonlandırma talebi). Bunun için aşağıdaki T2 ve T5 görevleri, yeni `Client` kaydına bir kod özeti eklenerek uygulanacak.
 
 ## Kararlar (öneri)
 

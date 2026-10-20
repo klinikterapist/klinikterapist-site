@@ -5,7 +5,7 @@
  */
 import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
-import { minutesOf, slotInstant } from '../../lib/booking-form';
+import { clientNumber, minutesOf, slotInstant } from '../../lib/booking-form';
 
 const data = import.meta.glob('/src/data/**/*.{json,md}', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 const posts = import.meta.glob('/tests/fixtures/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
@@ -36,7 +36,7 @@ export type MockState = {
   /** The booking calendar. */
   calendar: CalendarEntry[];
   requests: BookingRequest[];
-  clients: Client[];
+  clients: (Client & { origin?: BookingRequest })[];
   /** E-mails the owner sent from Talepler. */
   sent: { to: string; subject: string; body: string }[];
 };
@@ -54,8 +54,34 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
   const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [] };
-  if (opts.demoRequests) state.requests.push(...demoRequests((opts.now ?? Date.now)()));
   let clientSeq = 0;
+  if (opts.demoRequests) {
+    const now = (opts.now ?? Date.now)();
+    const requests = demoRequests(now);
+    state.requests.push(...requests);
+    // Their 24-hour holds, and one client in Seans takip, so the calendar shows both marks.
+    for (const r of requests) {
+      state.calendar.push({ id: r.holdId, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: now + 864e5 });
+    }
+    const name = 'Zeynep Örnek';
+    state.clients.push({
+      id: 'demo-client', number: clientNumber(++clientSeq, name), type: 'individual', weekday: 2, time: '18:00', minutes: 50, since: requests[0].day, status: 'active',
+      contact: { name, email: 'zeynep@example.com', lang: 'tr' },
+      origin: { ...requests[0], id: 'demo-0', name, email: 'zeynep@example.com', time: '18:00' },
+    });
+  }
+  const mail = (to: string, subject: string, body: string) => {
+    if (!subject.trim() || !body.trim()) throw new ApiFailure('bad_request', 'E-postanın konusu ve metni boş olamaz.');
+    state.sent.push({ to, subject, body });
+  };
+  /** A request put back holds its time again for 24 hours when that time is still ahead. */
+  const holdAgain = (r: BookingRequest): string => {
+    const start = slotInstant(r.day, r.time);
+    if (start <= clock()) return '';
+    const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start, minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: clock() + 864e5 };
+    state.calendar.push(entry);
+    return entry.id;
+  };
   let head = 1;
   let status: SiteStatus = { state: 'success', commitSha: 'c1', url: null, updatedAt: null, tokenExpiresAt: '2027-10-01T09:00:00.000Z' };
   let pollsSinceCommit = 0;
@@ -247,8 +273,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       wait(() => {
         const r = state.requests.find((x) => x.id === id);
         if (!r) throw new ApiFailure('not_found', 'Bu talep bulunamadı.');
-        if (!subject.trim() || !body.trim()) throw new ApiFailure('bad_request', 'E-postanın konusu ve metni boş olamaz.');
-        state.sent.push({ to: r.email, subject, body });
+        mail(r.email, subject, body);
         if (decision === 'approve') {
           const entry: CalendarEntry = { id: Math.random().toString(36).slice(2, 10), start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'confirmed' };
           state.calendar = [...state.calendar.filter((e) => e.id !== r.holdId), entry];
@@ -268,24 +293,51 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         const type = session ? (r.type ?? 'individual') : (r.forWhom ?? 'individual');
         const client: Client = {
           id: Math.random().toString(36).slice(2, 10),
-          number: `D-${String(++clientSeq).padStart(3, '0')}`,
+          number: clientNumber(++clientSeq, r.name),
           type,
           weekday: session ? new Date(`${r.day}T12:00:00Z`).getUTCDay() : weekday!,
           time: session ? r.time : time!,
           minutes: minutesOf('session', type),
           since: session ? r.day : since!,
+          status: 'active',
+          contact: { name: r.name, email: r.email, lang: r.lang },
         };
         if (session) state.calendar = state.calendar.filter((e) => e.id !== r.calendarId);
-        state.clients.push(client);
+        state.clients.push({ ...client, origin: r });
         state.requests = state.requests.filter((x) => x.id !== id);
         return { client };
       }),
-    clientsList: () => wait(() => ({ clients: [...state.clients].sort((a, b) => a.number.localeCompare(b.number)) })),
-    clientEnd: (id) => wait(() => void (state.clients = state.clients.filter((c) => c.id !== id))),
+    requestRevert: ({ id, subject, body }) =>
+      wait(() => {
+        const r = state.requests.find((x) => x.id === id);
+        if (!r || r.status !== 'approved') throw new ApiFailure('not_found', 'Bu talep bulunamadı.');
+        mail(r.email, subject, body);
+        state.calendar = state.calendar.filter((e) => e.id !== r.calendarId);
+        state.requests = state.requests.map((x) => (x.id === id ? { ...x, status: 'pending', holdId: holdAgain(x), calendarId: undefined } : x));
+      }),
+    clientsList: () => wait(() => ({ clients: state.clients.map(({ origin: _o, ...c }) => c).sort((a, b) => a.number.localeCompare(b.number)) })),
+    clientEnd: ({ id, mode, subject = '', body = '' }) =>
+      wait(() => {
+        const c = state.clients.find((x) => x.id === id);
+        if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
+        if (mode !== 'delete') mail(c.contact.email, subject, body);
+        state.clients = mode === 'closing' ? state.clients.map((x) => (x.id === id ? { ...x, status: 'closing' } : x)) : state.clients.filter((x) => x.id !== id);
+      }),
+    clientRevert: ({ id, subject, body }) =>
+      wait(() => {
+        const c = state.clients.find((x) => x.id === id);
+        if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
+        mail(c.contact.email, subject, body);
+        state.clients = state.clients.filter((x) => x.id !== id);
+        if (c.origin) {
+          const back: BookingRequest = { ...c.origin, id: Math.random().toString(36).slice(2, 10), createdAt: clock(), status: 'pending', calendarId: undefined, holdId: '' };
+          state.requests.push({ ...back, holdId: holdAgain(back) });
+        }
+      }),
   };
 }
 
-/** Two made-up requests (a session and an intro call), so Talepler has something to show in dev. */
+/** Two made-up requests (a session and an intro call), so Randevu talepleri has something to show in dev. */
 function demoRequests(now: number): BookingRequest[] {
   const day = (n: number) => {
     const d = new Date(now + n * 24 * 3600e3);

@@ -144,8 +144,26 @@ export type BookingRequest = {
 
 export type RequestDecision = 'approve' | 'unavailable' | 'cancel';
 
-/** A client in Randevu takibi: a number and a weekly session, nothing that names them. */
-export type Client = { id: string; number: string; type: string; weekday: number; time: string; minutes: number; since: string };
+/**
+ * A client in Seans takip: a number (KT001OGO: KT, a running number, the initials) and a weekly
+ * session. The name, e-mail and page language are kept, sealed in the owner's Drive, only so the
+ * owner can write to them (ending therapy, an apology); they go when therapy ends.
+ */
+export type Client = {
+  id: string;
+  number: string;
+  type: string;
+  weekday: number;
+  time: string;
+  minutes: number;
+  since: string;
+  /** `closing`: the owner asked for a closing session; the weekly time stays until therapy ends. */
+  status: 'active' | 'closing';
+  contact: { name: string; email: string; lang: 'tr' | 'en' };
+};
+
+/** How therapy ends: `complete` (e-mail: therapy is over), `closing` (e-mail: a free closing session), `delete` (no e-mail). */
+export type ClientEnd = 'complete' | 'closing' | 'delete';
 
 /** One snapshot of a draft (the stored copy as it was before a later save). */
 export type VersionSummary = { name: string; rev: number; savedAt: string };
@@ -191,9 +209,20 @@ export interface Api {
   requestDecide(input: { id: string; decision: RequestDecision; subject: string; body: string }): Promise<void>;
   /** Moves an approved request to Randevu takibi: its personal data is deleted, a client number is made. */
   requestToClient(input: { id: string; weekday?: number; time?: string; since?: string }): Promise<{ client: Client }>;
+  /**
+   * Geri al: an approval sent by mistake. The apology e-mail goes, the confirmed time is freed and
+   * the request is pending again.
+   */
+  requestRevert(input: { id: string; subject: string; body: string }): Promise<void>;
   clientsList(): Promise<{ clients: Client[] }>;
-  /** Therapy ended: the client and their weekly session are removed. */
-  clientEnd(id: string): Promise<void>;
+  /**
+   * Terapiyi sonlandır. `complete` and `delete` remove the client with their details and free the
+   * weekly time (`complete` sends the owner's e-mail first); `closing` sends the closing-session
+   * e-mail and marks the client.
+   */
+  clientEnd(input: { id: string; mode: ClientEnd; subject?: string; body?: string }): Promise<void>;
+  /** Geri al: back to Randevu talepleri as a pending request, with the apology e-mail. */
+  clientRevert(input: { id: string; subject: string; body: string }): Promise<void>;
 }
 
 export class ApiFailure extends Error {
@@ -236,6 +265,8 @@ export const ACTIONS = {
   requestsList: 'requests.list',
   requestDecide: 'requests.decide',
   requestToClient: 'requests.toClient',
+  requestRevert: 'requests.revert',
   clientsList: 'clients.list',
   clientEnd: 'clients.end',
+  clientRevert: 'clients.revert',
 } as const satisfies Record<keyof Api, string>;

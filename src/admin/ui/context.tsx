@@ -14,14 +14,14 @@ export function usePanel(): PanelContext {
 }
 
 export type PostsTab = 'live' | 'drafts' | 'planned';
-export type AppointmentsTab = 'requests' | 'calendar' | 'clients';
 
 export type Route =
   | { name: 'home' }
   | { name: 'posts'; tab: PostsTab }
   | { name: 'trash' }
-  /** Randevular: Talepler, Takvim, Danışanlar. `add`: a time to put in the calendar (`?ekle=YYYY-MM-DDTHH:MM&tur=…`). */
-  | { name: 'calendar'; tab: AppointmentsTab; add: { day: string; time: string; type: string } | null }
+  /** Randevu talepleri. `add`: a time to put in the calendar (`?ekle=YYYY-MM-DDTHH:MM&tur=…`). */
+  | { name: 'requests'; add: { day: string; time: string; type: string } | null }
+  | { name: 'tracking' }
   | { name: 'post'; key: string }
   | { name: 'settings'; screen: string };
 
@@ -29,12 +29,12 @@ export function parseRoute(hash: string): Route {
   // A trailing slash (#/yazilar/) goes to the same screen.
   const [rawPath, query = ''] = hash.replace(/^#/, '').split('?');
   const path = rawPath.replace(/(.)\/+$/, '$1');
-  const appointments: Record<string, AppointmentsTab> = { '/randevular': 'requests', '/randevular/takvim': 'calendar', '/randevular/danisanlar': 'clients' };
-  if (appointments[path]) {
+  // The older /randevular/takvim and /randevular/danisanlar links still land on the right page.
+  if (path === '/seans-takip' || path === '/randevular/danisanlar') return { name: 'tracking' };
+  if (path === '/randevular' || path === '/randevular/takvim') {
     const q = new URLSearchParams(query);
     const m = (q.get('ekle') ?? '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
-    const add = m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null;
-    return { name: 'calendar', tab: add ? 'calendar' : appointments[path], add };
+    return { name: 'requests', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null };
   }
   let m = path.match(/^\/yazi\/([a-z0-9-]+)$/);
   if (m) return { name: 'post', key: m[1] };

@@ -1,7 +1,9 @@
 /**
- * Randevular › Takvim (owner's design 2026-10-20): the month at a glance with each day's occupancy,
- * the month's holidays in small type, the day's appointments (one-off entries and the weekly
- * sessions of Randevu takibi), and adding one by hand. Only times, lengths and kinds — no names.
+ * The appointment calendar, the same on Randevu talepleri and Seans takip (owner's design
+ * 2026-10-20): the month with each day's occupancy, a green dot for every confirmed appointment
+ * (approved requests, entries put in by hand and the weekly sessions of Seans takip) and an amber
+ * ring for every request still waiting for an answer, a key to the marks, the month's holidays in
+ * small type, the picked day's appointments, and adding one by hand. Only times, lengths and kinds.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type CalendarEntry, type Client } from '../../api/types';
@@ -11,8 +13,7 @@ import {
 } from '../../../lib/booking-form';
 import { istanbulParts } from '../../lib/draft';
 import { go, usePanel } from '../context';
-import { CalendarDays } from '../icons';
-import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
+import { Banner, Button, Dialog, Field, Select, Spinner } from '../kit';
 
 export const cfg = booking as BookingConfig;
 
@@ -26,6 +27,7 @@ const partsOf = (ms: number) => istanbulParts(new Date(ms).toISOString());
 export const clock = (ms: number) => partsOf(ms).time.replace(':', '.');
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const pad = (n: number) => String(n).padStart(2, '0');
+const DAY_MS = 24 * 3600e3;
 
 /** Every template time of a day, whichever kind it belongs to, ignoring notice and window. */
 export function templateTimes(day: string, kind?: BookingKind): string[] {
@@ -43,9 +45,26 @@ function occupancy(day: string, busy: BusyInterval[]): number | null {
   return taken / times.length;
 }
 
-type DayItem = { start: number; minutes: number; label: string; note: string; entry?: CalendarEntry };
+type DayItem = { start: number; minutes: number; label: string; note: string; tone: 'ok' | 'wait'; entry?: CalendarEntry };
 
-export function CalendarTab({ add }: { add: { day: string; time: string; type: string } | null }) {
+/** Up to three marks of one kind, then "+n". */
+function Marks({ n, tone }: { n: number; tone: 'ok' | 'wait' }) {
+  if (!n) return null;
+  return (
+    <span className={`mk-row mk-${tone}`} aria-hidden="true">
+      {Array.from({ length: Math.min(n, 3) }, (_, i) => (
+        <i key={i} className="mk" />
+      ))}
+      {n > 3 && <small>+{n - 3}</small>}
+    </span>
+  );
+}
+
+/**
+ * `version`: bump it after the page changed something (an approval, a move), so the calendar loads
+ * again. `add`: a time to put in by hand, from the old `?ekle=` links.
+ */
+export function AppointmentCalendar({ version = 0, add = null }: { version?: number; add?: { day: string; time: string; type: string } | null }) {
   const { api } = usePanel();
   const [entries, setEntries] = useState<CalendarEntry[] | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
@@ -54,6 +73,7 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [removing, setRemoving] = useState<CalendarEntry | null>(null);
+  const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ day: '', time: '', kind: 'individual' });
   const today = partsOf(Date.now()).day;
   const [month, setMonth] = useState(today.slice(0, 7));
@@ -71,13 +91,13 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
     return () => {
       alive = false;
     };
-  }, [api, attempt]);
+  }, [api, attempt, version]);
 
   const reload = () => setAttempt((n) => n + 1);
   const [y, m] = month.split('-').map(Number);
   const first = Date.parse(`${month}-01T00:00:00+03:00`);
   const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const last = first + daysInMonth * 24 * 3600e3;
+  const last = first + daysInMonth * DAY_MS;
 
   const busyMonth = useMemo(
     () => [
@@ -89,13 +109,18 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
 
   const itemsOf = (day: string): DayItem[] => {
     const from = Date.parse(`${day}T00:00:00+03:00`);
-    const to = from + 24 * 3600e3;
+    const to = from + DAY_MS;
     const one: DayItem[] = (entries ?? [])
       .filter((e) => e.start >= from && e.start < to)
-      .map((e) => ({ start: e.start, minutes: e.minutes, label: labelOf(e), note: e.status === 'confirmed' ? 'Onaylı' : 'Talep (24 saat tutuluyor)', entry: e }));
+      .map((e) =>
+        e.status === 'confirmed'
+          ? { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onaylı randevu', tone: 'ok', entry: e }
+          : { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onay bekleyen talep', tone: 'wait', entry: e },
+      );
+    const weekday = new Date(`${day}T12:00:00Z`).getUTCDay();
     const weekly: DayItem[] = weeklyBusy(clients, 0, from, to).map((b) => {
-      const c = clients.find((x) => partsOf(b.start).time === x.time && new Date(`${day}T12:00:00Z`).getUTCDay() === x.weekday)!;
-      return { start: b.start, minutes: c?.minutes ?? 50, label: labelOf({ kind: 'session', type: c?.type }), note: `Haftalık seans · ${c?.number ?? ''}` };
+      const c = clients.find((x) => partsOf(b.start).time === x.time && weekday === x.weekday);
+      return { start: b.start, minutes: c?.minutes ?? 50, label: labelOf({ kind: 'session', type: c?.type }), note: `Seans takip · ${c?.number ?? ''}`, tone: 'ok' };
     });
     return [...one, ...weekly].sort((a, b) => a.start - b.start);
   };
@@ -106,7 +131,7 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
     try {
       await api.calendarAdd({ day, time, ...kindOf(kindValue) });
       setNotice(`${formatDay(day, 'tr')}, ${time.replace(':', '.')} takvime işlendi. Bu saat sitede "Dolu" görünüyor.`);
-      if (add) go('#/randevular/takvim');
+      if (add) go('#/randevular');
       reload();
       return true;
     } catch (e) {
@@ -140,14 +165,10 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
   const lead = (new Date(Date.UTC(y, m - 1, 1)).getUTCDay() + 6) % 7;
   const holidays = cfg.closed.filter((c) => c.date.startsWith(month));
   const times = form.day ? templateTimes(form.day) : [];
+  const pickedItems = picked ? itemsOf(picked) : [];
 
   return (
-    <div className="appt-tab">
-      <p className="k-hint">
-        Her randevu, süresi kadar ve ardından {cfg.restMinutes} dakika dinlenme payı kadar yer tutar; site bunlarla çakışan saatleri "Dolu" gösterir. Takvimde yalnızca saat ve
-        görüşme türü saklanır.
-      </p>
-
+    <section className="cal-card" aria-label="Randevu takvimi">
       {add && (
         <div className="cal-confirm" role="region" aria-label="Takvime işlenecek randevu">
           <p>
@@ -157,7 +178,7 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
             <Button variant="primary" busy={busy} onClick={() => put(add.day, add.time, add.type)}>
               Takvime işle
             </Button>
-            <Button variant="ghost" onClick={() => go('#/randevular/takvim')}>
+            <Button variant="ghost" onClick={() => go('#/randevular')}>
               Vazgeç
             </Button>
           </div>
@@ -172,17 +193,22 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
       {!entries && !error && <Spinner label="Takvim yükleniyor…" />}
 
       {entries && (
-        <section className="occ" aria-label="Aylık doluluk">
+        <>
           <div className="occ-head">
-            <Button variant="ghost" aria-label="Önceki ay" onClick={() => shift(-1)}>
-              ‹
-            </Button>
-            <b>
-              {MONTHS[m - 1]} {y}
+            <b className="occ-month">
+              {MONTHS[m - 1]} <span>{y}</span>
             </b>
-            <Button variant="ghost" aria-label="Sonraki ay" onClick={() => shift(1)}>
-              ›
-            </Button>
+            <span className="occ-nav">
+              <Button variant="ghost" aria-label="Önceki ay" onClick={() => shift(-1)}>
+                ‹
+              </Button>
+              <Button variant="ghost" onClick={() => (setMonth(today.slice(0, 7)), setPicked(today))}>
+                Bugün
+              </Button>
+              <Button variant="ghost" aria-label="Sonraki ay" onClick={() => shift(1)}>
+                ›
+              </Button>
+            </span>
           </div>
           <div className="occ-grid" role="grid">
             {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((d) => (
@@ -198,24 +224,57 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
               const occ = occupancy(day, busyMonth);
               const holiday = closedOn(cfg, day);
               const pct = occ === null ? null : Math.round(occ * 100);
+              const items = itemsOf(day);
+              const ok = items.filter((it) => it.tone === 'ok').length;
+              const wait = items.length - ok;
+              const counts = [ok ? `${ok} onaylı` : '', wait ? `${wait} bekleyen talep` : ''].filter(Boolean).join(', ');
               return (
                 <button
                   key={day}
                   type="button"
-                  className={`occ-day${day === today ? ' is-today' : ''}${picked === day ? ' is-picked' : ''}${holiday && !holiday.from ? ' is-holiday' : ''}`}
+                  className={`occ-day${day === today ? ' is-today' : ''}${picked === day ? ' is-picked' : ''}${holiday && !holiday.from ? ' is-holiday' : ''}${day < today ? ' is-past' : ''}`}
                   style={pct ? ({ '--occ': `${pct}%` } as React.CSSProperties) : undefined}
-                  aria-label={`${formatDay(day, 'tr')}${holiday ? `, ${holiday.name}` : ''}${pct === null ? '' : `, %${pct} dolu`}`}
+                  aria-label={`${formatDay(day, 'tr')}${holiday ? `, ${holiday.name}` : ''}${pct === null ? '' : `, %${pct} dolu`}${counts ? `, ${counts}` : ''}`}
                   aria-pressed={picked === day}
                   onClick={() => setPicked(day)}
                 >
                   <span className="occ-n">{i + 1}</span>
-                  {pct !== null && <span className="occ-pct">%{pct}</span>}
+                  <span className="occ-marks">
+                    <Marks n={ok} tone="ok" />
+                    <Marks n={wait} tone="wait" />
+                  </span>
+                  {pct !== null && <span className="occ-bar" aria-hidden="true" />}
                 </button>
               );
             })}
           </div>
+
+          <ul className="occ-legend" aria-label="Takvim işaretleri">
+            <li>
+              <span className="mk-row mk-ok" aria-hidden="true">
+                <i className="mk" />
+              </span>
+              Onaylı randevu ya da Seans takipteki danışan
+            </li>
+            <li>
+              <span className="mk-row mk-wait" aria-hidden="true">
+                <i className="mk" />
+              </span>
+              Onay bekleyen talep (saat 24 saat tutulur)
+            </li>
+            <li>
+              <span className="occ-legend-bar" aria-hidden="true" />
+              Alttaki çizgi: günün doluluk oranı
+            </li>
+            <li>
+              <span className="occ-legend-holiday" aria-hidden="true">
+                12
+              </span>
+              Üstü çizili: tatil, kapalı
+            </li>
+          </ul>
           {holidays.length > 0 && (
-            <ul className="occ-note">
+            <ul className="occ-note" aria-label="Bu ayın tatilleri">
               {holidays.map((h) => (
                 <li key={h.date}>
                   {Number(h.date.slice(8))} {MONTHS[m - 1]}: {h.name} ({h.from ? `${h.from.replace(':', '.')}’ten sonra kapalı` : 'kapalı'})
@@ -223,20 +282,26 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
               ))}
             </ul>
           )}
+
           {picked && (
             <div className="occ-detail">
               <h3>{formatDay(picked, 'tr')}</h3>
-              {itemsOf(picked).length === 0 ? (
+              {pickedItems.length === 0 ? (
                 <p className="k-hint">Bu gün dolu saat yok.</p>
               ) : (
-                <ul className="cal-rows">
-                  {itemsOf(picked).map((it) => (
-                    <li key={`${it.start}-${it.label}`} className="cal-row">
-                      <span className="cal-time">
+                <ul className="day-list">
+                  {pickedItems.map((it) => (
+                    <li key={`${it.start}-${it.label}-${it.note}`} className={`day-item day-${it.tone}`}>
+                      <span className="mk-row" aria-hidden="true">
+                        <i className="mk" />
+                      </span>
+                      <span className="day-time">
                         {clock(it.start)}–{clock(it.start + it.minutes * 60e3)}
                       </span>
-                      <span className="cal-kind">{it.label}</span>
-                      <span className={`badge ${it.entry?.status === 'hold' ? 'badge-planned' : 'badge-live'}`}>{it.note}</span>
+                      <span className="day-what">
+                        {it.label}
+                        <small>{it.note}</small>
+                      </span>
                       {it.entry && (
                         <Button variant="ghost" onClick={() => setRemoving(it.entry!)}>
                           Sil
@@ -248,32 +313,43 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
               )}
             </div>
           )}
-        </section>
-      )}
-      {entries && entries.length === 0 && clients.length === 0 && <EmptyState icon={CalendarDays}>Önümüzdeki günlerde dolu saat yok.</EmptyState>}
 
-      <h3 className="home-section-title">Elle randevu ekle</h3>
-      <p className="k-hint">Telefonla ya da e-postayla verdiğiniz bir randevuyu buradan ekleyin; o saat sitede "Dolu" görünür.</p>
-      <div className="cal-form">
-        <Field label="Tarih" type="date" value={form.day} onChange={(day) => setForm({ ...form, day, time: '' })} />
-        <Select
-          label="Saat"
-          value={form.time}
-          options={[{ value: '', label: form.day ? (times.length ? 'Saat seçin…' : 'Bu gün kapalı') : 'Önce tarih seçin' }, ...times.map((t) => ({ value: t, label: t.replace(':', '.') }))]}
-          onChange={(time) => setForm({ ...form, time })}
-        />
-        <Select label="Görüşme" value={form.kind} options={KINDS} onChange={(kind) => setForm({ ...form, kind })} />
-        <Button
-          variant="primary"
-          busy={busy}
-          disabled={!form.day || !form.time}
-          onClick={async () => {
-            if (await put(form.day, form.time, form.kind)) setForm({ day: '', time: '', kind: form.kind });
-          }}
-        >
-          Ekle
-        </Button>
-      </div>
+          {adding ? (
+            <div className="cal-form">
+              <Field label="Tarih" type="date" value={form.day} onChange={(day) => setForm({ ...form, day, time: '' })} />
+              <Select
+                label="Saat"
+                value={form.time}
+                options={[{ value: '', label: form.day ? (times.length ? 'Saat seçin…' : 'Bu gün kapalı') : 'Önce tarih seçin' }, ...times.map((t) => ({ value: t, label: t.replace(':', '.') }))]}
+                onChange={(time) => setForm({ ...form, time })}
+              />
+              <Select label="Görüşme" value={form.kind} options={KINDS} onChange={(kind) => setForm({ ...form, kind })} />
+              <div className="row">
+                <Button
+                  variant="primary"
+                  busy={busy}
+                  disabled={!form.day || !form.time}
+                  onClick={async () => {
+                    if (await put(form.day, form.time, form.kind)) {
+                      setForm({ day: '', time: '', kind: form.kind });
+                      setAdding(false);
+                    }
+                  }}
+                >
+                  Ekle
+                </Button>
+                <Button variant="ghost" onClick={() => setAdding(false)}>
+                  Vazgeç
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button className="cal-add" onClick={() => setAdding(true)}>
+              + Elle randevu ekle
+            </Button>
+          )}
+        </>
+      )}
 
       {removing && (
         <Dialog
@@ -296,6 +372,6 @@ export function CalendarTab({ add }: { add: { day: string; time: string; type: s
           </p>
         </Dialog>
       )}
-    </div>
+    </section>
   );
 }

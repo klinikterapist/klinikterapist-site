@@ -79,6 +79,8 @@ export function createHttpApi(
     requestDecide: (input) => call(ACTIONS.requestDecide, input).then(() => undefined),
     requestToClient: (input) => call(ACTIONS.requestToClient, input),
     clientsList: () => call(ACTIONS.clientsList),
-    clientEnd: (id) => call(ACTIONS.clientEnd, { id }).then(() => undefined),
+    requestRevert: (input) => call(ACTIONS.requestRevert, input).then(() => undefined),
+    clientEnd: (input) => call(ACTIONS.clientEnd, input).then(() => undefined),
+    clientRevert: (input) => call(ACTIONS.clientRevert, input).then(() => undefined),
   };
 }
