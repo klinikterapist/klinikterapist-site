@@ -91,8 +91,8 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       origin: { ...requests[0], id: 'demo-0', name, email: 'zeynep@example.com', time: '18:00' },
       sessions: [
         { day: iso(since - 4 * 864e5), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' },
-        { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
-        { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended' },
+        { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended', paid: since - 864e5 },
+        { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended', paid: since + 13 * 864e5 },
         // Cancelled on their own page less than 24 hours before (full fee).
         { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', note: 'Hastalık', late: true },
       ],

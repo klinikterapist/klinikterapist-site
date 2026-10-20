@@ -4762,6 +4762,19 @@ html[data-theme='dark'] {
 }
 
 /* The client's own page: what they asked for there, and the link card */
+.ss-status small.ss-paid {
+  color: var(--p-ok);
+  font-weight: 600;
+}
+
+.ss-status small.ss-unpaid {
+  color: var(--p-muted);
+}
+
+.pay-form .add-grid {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
 .ss-status small.ss-late {
   color: var(--p-err-text);
   font-weight: 600;

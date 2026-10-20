@@ -377,3 +377,36 @@ describe("the client's own page, seen from the panel", () => {
     expect(screen.queryByText('Sonlandırmak istiyor')).toBeNull();
   });
 });
+
+describe('Faz 1: payments on the client’s page', () => {
+  it('Ödendi sends the thank-you (or not) and marks the session; Ödeme hatırlat sends the reminder with the fee', async () => {
+    const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+    const weekday = new Date(`${day(3)}T12:00:00Z`).getUTCDay();
+    const { api } = setup('client:c1', [], [client({ weekday, since: day(3) })]);
+    api.state.payment = { year: 2026, fees: { individual: 1500, couple: 0, accessible: 0 }, bank: 'TR00 ÖRNEK', link: '', dueHours: 24 };
+    const next = (await screen.findByRole('heading', { name: /Sıradaki seanslar/ })).parentElement!;
+    const first = () => within(next).getAllByRole('listitem')[0];
+    expect(first().textContent).toContain('Ödenmedi');
+    fireEvent.click(within(first()).getByRole('button', { name: 'Ödeme hatırlat' }));
+    let dialog = await screen.findByRole('dialog');
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Seans ücreti: 1.500 TL.');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Seans ödemesi hatırlatması – klinikterapist.com' })));
+    fireEvent.click(within(first()).getByRole('button', { name: 'Ödendi' }));
+    dialog = await screen.findByRole('dialog');
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('ödemesi alınmıştır. Teşekkür ederim.');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'İşaretle ve gönder' }));
+    await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(3), paid: expect.any(Number) })));
+    expect(api.state.sent.at(-1)).toMatchObject({ subject: 'Ödemeniz alındı – klinikterapist.com' });
+    expect(await within(next).findByText(/^Ödendi · /)).toBeTruthy();
+    // Only marking: no e-mail.
+    const sent = api.state.sent.length;
+    const second = within(next).getAllByRole('listitem')[1];
+    fireEvent.click(within(second).getByRole('button', { name: 'Ödendi' }));
+    dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yalnızca işaretle' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'İşaretle' }));
+    await waitFor(() => expect(api.state.clients[0].sessions?.filter((x) => x.paid)).toHaveLength(2));
+    expect(api.state.sent).toHaveLength(sent);
+  });
+});

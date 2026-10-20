@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type RequestDecision, type WaitlistEntry } from '../../api/types';
 import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, REQUEST_KEEP_DAYS, SESSION_TYPES, clientNumber, formatDay, requestKeepUntil } from '../../../lib/booking-form';
 import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
+import type { PaymentSettings } from '../../../lib/payment';
 import { go, usePanel } from '../context';
 import { BellRing, CircleCheck, Icon, Inbox, Plus } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
@@ -165,6 +166,18 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
   const [adding, setAdding] = useState<{ initial: AddInitial; from?: WaitlistEntry } | null>(add ? { initial: { day: add.day, time: add.time, kind: add.type } } : null);
   const [booking, setBooking] = useState<{ open: boolean; waiting: number } | null>(null);
   const [closing, setClosing] = useState(false);
+  // The fee and payment details go into a session's approval e-mail (Faz 1).
+  const [payment, setPayment] = useState<PaymentSettings | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    api
+      .paymentGet()
+      .then(({ payment }) => alive && setPayment(payment))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api]);
   // The "… önce" times move on every minute.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -194,7 +207,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
       send: DECISION_SEND[decision],
       tone: decision === 'approve' ? 'primary' : 'danger',
       r,
-      mail: decisionMail(r, decision),
+      mail: decisionMail(r, decision, payment),
       run: async (m) => {
         await api.requestDecide({ id: r.id, decision, ...m });
         return decision === 'approve'

@@ -14,6 +14,9 @@
  * before), and a wish to end therapy.
  * Owner's review a5: Terapiyi sonlandır, Geri al and Sil live here (not in the Seans takip list);
  * the side column is the chart, then the session details, then the client's page.
+ * Faz 1: each paid session can be marked "Ödendi" (with a thank-you e-mail the owner can edit or
+ * leave out) or get a payment reminder; a late cancellation keeps its fee, a postponed session's
+ * payment moves with it.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type Client } from '../../api/types';
@@ -23,6 +26,7 @@ import { usePanel } from '../context';
 import { CalendarCheck, Icon } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { endMail, linkMail, revertMail, type Mail } from '../../lib/booking-mail';
+import { EMPTY_PAYMENT, paymentReminderMail, thanksMail, type PaymentSettings } from '../../../lib/payment';
 import { MailDialog } from './MailDialog';
 import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
 import { SessionChart } from './SessionChart';
@@ -31,6 +35,11 @@ const STATUS_LABEL: Record<SessionStatus, string> = { planned: 'Planlandı', att
 const short = (day: string) => {
   const [d, m, , w] = formatDay(day, 'tr').split(/[ ,]+/);
   return { d, m: m.slice(0, 3), w };
+};
+/** "20 Eki": the day a payment was marked (Istanbul). */
+const paidOn = (ms: number) => {
+  const { d, m } = short(new Date(ms + 3 * 3600e3).toISOString().slice(0, 10));
+  return `${d} ${m}`;
 };
 const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s.time.replace(':', '.')}`;
 
@@ -53,6 +62,49 @@ export function ClientPage({ id }: { id: string }) {
   const [marking, setMarking] = useState<Marking | null>(null);
   const [adding, setAdding] = useState<Adding | null>(null);
   const [linking, setLinking] = useState<Linking | null>(null);
+  const [payment, setPayment] = useState<PaymentSettings>(EMPTY_PAYMENT);
+  const [paying, setPaying] = useState<{ s: SessionRecord; mail: Mail; send: boolean } | null>(null);
+  const [reminding, setReminding] = useState<{ s: SessionRecord; mail: Mail } | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    api
+      .paymentGet()
+      .then(({ payment }) => alive && setPayment(payment))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api]);
+
+  /** Ödendi (with or without the thank-you) or taking the mark off. */
+  const pay = async (s: SessionRecord, paid: boolean, mail?: Mail) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const { client } = await api.clientPay({ id, day: s.day, time: s.time, paid, ...(mail ? { mail } : {}) });
+      setClient(client);
+      setNotice(paid ? `${at(s)}: ödendi olarak işaretlendi${mail ? '; teşekkür e-postası gönderildi' : ''}.` : `${at(s)}: ödeme işareti kaldırıldı.`);
+      setPaying(null);
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : 'Kaydedilemedi. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const remind = async (s: SessionRecord, mail: Mail) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.clientMail({ id, ...mail });
+      setNotice(`${at(s)} için ödeme hatırlatması gönderildi.`);
+      setReminding(null);
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : 'E-posta gönderilemedi. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
   const [ending, setEnding] = useState<Ending | null>(null);
   const [reverting, setReverting] = useState<Mail | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -180,6 +232,9 @@ export function ClientPage({ id }: { id: string }) {
     const { d, m, w } = short(s.day);
     const free = FREE_KINDS.includes(s.kind);
     const added = s.kind !== 'weekly';
+    // A session with a fee: not the free ones, not one postponed (its payment went with it); a late
+    // cancellation keeps its full fee.
+    const payable = !free && s.status !== 'postponed' && (s.status !== 'cancelled' || !!s.late);
     return (
       <li key={sessionKey(s)} className={`ss-row ss-${s.status}${free ? ' is-free' : ''}`}>
         <span className="ss-date" aria-hidden="true">
@@ -202,6 +257,7 @@ export function ClientPage({ id }: { id: string }) {
           {s.by && <small>{s.by === 'client' ? 'danışan istedi' : 'siz'}</small>}
           {s.late && <small className="ss-late">24 saatten az kala · tam ücret</small>}
           {s.movedTo && <small>{`→ ${short(s.movedTo.day).d} ${short(s.movedTo.day).m} ${s.movedTo.time.replace(':', '.')}`}</small>}
+          {payable && (s.paid ? <small className="ss-paid">{`Ödendi · ${paidOn(s.paid)}`}</small> : <small className="ss-unpaid">Ödenmedi</small>)}
         </span>
         <span className="ss-actions">
           {s.status === 'planned' ? (
@@ -233,6 +289,21 @@ export function ClientPage({ id }: { id: string }) {
               İşareti kaldır
             </Button>
           )}
+          {payable &&
+            (s.paid ? (
+              <Button variant="ghost" disabled={busy} onClick={() => pay(s, false)}>
+                Ödemeyi geri al
+              </Button>
+            ) : (
+              <>
+                <Button disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s), send: true })}>
+                  Ödendi
+                </Button>
+                <Button variant="ghost" disabled={busy} onClick={() => setReminding({ s, mail: paymentReminderMail(client.contact, s, client.type, payment) })}>
+                  Ödeme hatırlat
+                </Button>
+              </>
+            ))}
         </span>
       </li>
     );
@@ -456,6 +527,70 @@ export function ClientPage({ id }: { id: string }) {
         >
           <p>Kişiye e-posta gitmez. Danışan bilgileriyle birlikte silinir; haftalık saat takvimde ve sitede yeniden açılır.</p>
         </Dialog>
+      )}
+
+      {paying &&
+        (paying.send ? (
+          <MailDialog
+            title={`${at(paying.s)}: ödendi`}
+            to={client.contact}
+            mail={paying.mail}
+            onMail={(mail) => setPaying({ ...paying, mail })}
+            send="İşaretle ve gönder"
+            busy={busy}
+            onClose={() => setPaying(null)}
+            onSend={() => pay(paying.s, true, paying.mail)}
+          >
+            <div className="segmented end-choice" role="group" aria-label="Teşekkür e-postası">
+              <button type="button" aria-pressed={paying.send} onClick={() => setPaying({ ...paying, send: true })}>
+                Teşekkür e-postası gönder
+              </button>
+              <button type="button" aria-pressed={!paying.send} onClick={() => setPaying({ ...paying, send: false })}>
+                Yalnızca işaretle
+              </button>
+            </div>
+          </MailDialog>
+        ) : (
+          <Dialog
+            title={`${at(paying.s)}: ödendi`}
+            history
+            onClose={() => !busy && setPaying(null)}
+            actions={
+              <>
+                <Button onClick={() => setPaying(null)} disabled={busy}>
+                  Vazgeç
+                </Button>
+                <Button variant="primary" busy={busy} onClick={() => pay(paying.s, true)}>
+                  İşaretle
+                </Button>
+              </>
+            }
+          >
+            <div className="segmented end-choice" role="group" aria-label="Teşekkür e-postası">
+              <button type="button" aria-pressed={paying.send} onClick={() => setPaying({ ...paying, send: true })}>
+                Teşekkür e-postası gönder
+              </button>
+              <button type="button" aria-pressed={!paying.send} onClick={() => setPaying({ ...paying, send: false })}>
+                Yalnızca işaretle
+              </button>
+            </div>
+            <p className="k-hint">Seans ödendi olarak işaretlenir; danışana e-posta gitmez.</p>
+          </Dialog>
+        ))}
+
+      {reminding && (
+        <MailDialog
+          title={`${at(reminding.s)}: ödeme hatırlatması`}
+          to={client.contact}
+          mail={reminding.mail}
+          onMail={(mail) => setReminding({ ...reminding, mail })}
+          send="Gönder"
+          busy={busy}
+          onClose={() => setReminding(null)}
+          onSend={() => remind(reminding.s, reminding.mail)}
+        >
+          {!payment.bank && !payment.link && <p className="k-hint">Ödeme bilgileri henüz girilmedi (Seans takip › Ücret ve ödeme). Metin "ödeme bilgilerini ayrıca ileteceğim" diyor.</p>}
+        </MailDialog>
       )}
 
       {linking?.step === 'mail' && (

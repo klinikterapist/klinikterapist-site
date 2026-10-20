@@ -3,7 +3,8 @@
  * appointment calendar. Under "Aktif danışanlar", those with a session today first, then "Yaklaşan
  * seanslar", always the nearest session first; then the clients in their closing stage. A row shows
  * only the number, the next session and the way to the client's page, where everything else is
- * (Terapiyi sonlandır, Geri al, Sil included). Top right: the date and time now.
+ * (Terapiyi sonlandır, Geri al, Sil included). Top right: the date and time now and "Ücret ve ödeme"
+ * (Faz 1), with a reminder when the fees are for an earlier year.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type Client } from '../../api/types';
@@ -12,6 +13,8 @@ import { pastAndNext, sessionKey, type SessionRecord } from '../../../lib/sessio
 import { usePanel } from '../context';
 import { CalendarCheck, ChevronRight, Clock, Icon } from '../icons';
 import { Banner, Button, EmptyState, Spinner } from '../kit';
+import { feesOutdated, type PaymentSettings } from '../../../lib/payment';
+import { PaymentDialog } from './PaymentDialog';
 import { AppointmentCalendar, WEEKDAYS, labelOf } from './AppointmentCalendar';
 
 export const weeklyText = (c: Pick<Client, 'weekday' | 'time' | 'type'>) =>
@@ -54,6 +57,19 @@ export function TrackingPage() {
   const [clients, setClients] = useState<Client[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [payment, setPayment] = useState<PaymentSettings | null>(null);
+  const [paying, setPaying] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    api
+      .paymentGet()
+      .then(({ payment }) => alive && setPayment(payment))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api]);
 
   useEffect(() => {
     let alive = true;
@@ -100,6 +116,7 @@ export function TrackingPage() {
         </h2>
         <div className="head-actions">
           <NowClock />
+          <Button onClick={() => setPaying(true)}>Ücret ve ödeme</Button>
         </div>
       </div>
       <p className="settings-intro">
@@ -108,6 +125,13 @@ export function TrackingPage() {
 
       <div className="appt-layout">
         <div className="appt-main">
+          {payment && feesOutdated(payment, now) && (
+            <Banner tone="warning" action={<Button onClick={() => setPaying(true)}>Ücretleri girin</Button>}>
+              {payment.year
+                ? `Ücretler ${payment.year} yılı için girilmiş. Yeni yılın ücretlerini girin; hatırlatma ve onay e-postaları bunları kullanır.`
+                : 'Ücret ve ödeme bilgileri henüz girilmedi. Onay ve hatırlatma e-postaları ücret yerine "ödeme bilgilerini ayrıca ileteceğim" der.'}
+            </Banner>
+          )}
           {error && (
             <Banner tone="error" action={<Button onClick={() => setAttempt((n) => n + 1)}>Tekrar dene</Button>}>
               {error}
@@ -141,6 +165,7 @@ export function TrackingPage() {
           <AppointmentCalendar version={attempt} />
         </aside>
       </div>
+      {paying && <PaymentDialog onClose={() => setPaying(false)} onSaved={setPayment} />}
     </section>
   );
 }

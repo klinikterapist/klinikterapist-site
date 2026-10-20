@@ -119,8 +119,8 @@ const TR: Texts = {
       icon: 'clock',
       q: 'Randevumu nasıl iptal eder ya da değiştiririm?',
       body: [
-        'Randevunuzdan en az 24 saat önce e-postayla haber vermeniz yeterli; size uygun yeni bir zaman birlikte belirleriz. Randevudan bir gün önce de size hatırlatma e-postası gönderilir.',
-        'Son 24 saat içinde yapılan iptaller için nasıl bir yol izleneceğini ilk seansta birlikte konuşuruz.',
+        'Seansınızdan 3 gün önce size bir hatırlatma e-postası gelir. Düzenli seanslarınız için size özel bir randevu sayfası bağlantısı gönderilir; seansınızı oradan iptal edebilir ya da takvimdeki boş bir saate erteleyebilirsiniz. Dilerseniz e-postayla da haber verebilirsiniz.',
+        'Seansa 24 saatten az kala yapılan iptal ve ertelemelerde seans ücretinin tamamı ödenir.',
       ],
     },
     {
@@ -259,8 +259,8 @@ const EN: Texts = {
       icon: 'clock',
       q: 'How do I cancel or change my appointment?',
       body: [
-        'Letting me know by e-mail at least 24 hours ahead is enough; we will find a new time together. You also get a reminder e-mail a day before.',
-        'We talk in the first session about what happens with cancellations in the last 24 hours.',
+        'You get a reminder e-mail three days before your session. For regular sessions you receive a link to your own appointment page, where you can cancel a session or move it to a free time in the calendar. You can also let me know by e-mail.',
+        'For a session cancelled or moved less than 24 hours before it starts, the full session fee is due.',
       ],
     },
     {
