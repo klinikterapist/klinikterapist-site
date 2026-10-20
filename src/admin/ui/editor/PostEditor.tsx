@@ -24,9 +24,8 @@ import { CitationEditDialog, CitationMenu, type MenuAction } from './CitationMen
 import { ReferenceDialog, ReferenceEditDialog, type InsertRequest } from './ReferenceDialog';
 import type { Reference } from '../../../lib/apa';
 import { sanitizeCiteItems } from '../../../lib/citations';
-
-/** Same rule as the site's Markdown renderer: https, mailto or a site path. */
-const SAFE_LINK = /^(https:\/\/|mailto:|\/(?![\/\\]))/i;
+// The site's Markdown renderer's rule: https, mailto or a site path.
+import { SAFE_LINK } from '../../../lib/safe-link';
 
 export function normalizeLink(input: string): string | null {
   let v = input.trim();
