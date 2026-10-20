@@ -204,7 +204,8 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
   else if (email.length > BOOKING_LIMITS.emailMax || !EMAIL_RE.test(email)) errors.email = 'invalid';
   const digits = phoneDigits(phone);
   if (!phone) errors.phone = 'required';
-  else if (digits < BOOKING_LIMITS.phoneMin || digits > BOOKING_LIMITS.phoneMax) errors.phone = 'invalid';
+  // The form allows at most phoneMax characters, separators included; spaces cannot make it longer.
+  else if (digits < BOOKING_LIMITS.phoneMin || phone.length > BOOKING_LIMITS.phoneMax) errors.phone = 'invalid';
   if (input.note.trim().length > BOOKING_LIMITS.noteMax) errors.note = 'tooLong';
   if (!input.consent) errors.consent = 'required';
   if (input.kind === 'intro') {

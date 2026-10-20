@@ -86,6 +86,7 @@ describe('validateBooking', () => {
     expect(validateBooking(session({ email: 'ayse@' }), cfg, NOW).email).toBe('invalid');
     expect(validateBooking(session({ phone: '123' }), cfg, NOW).phone).toBe('invalid');
     expect(validateBooking(session({ phone: 'ara beni 0532' }), cfg, NOW).phone).toBe('invalid');
+    expect(validateBooking(session({ phone: `0532 ${' '.repeat(5000)}123 45 67` }), cfg, NOW).phone).toBe('invalid');
     expect(validateBooking(session({ phone: '+90 (532) 123-45-67' }), cfg, NOW).phone).toBeUndefined();
     expect(validateBooking(session({ note: 'x'.repeat(501) }), cfg, NOW).note).toBe('tooLong');
     expect(validateBooking(session({ consent: false }), cfg, NOW).consent).toBe('required');
