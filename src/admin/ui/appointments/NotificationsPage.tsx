@@ -1,7 +1,8 @@
 /**
- * Bildirimler (owner's decision 2026-10-20, Faz 2): first what needs attention now (worked out from
- * the clients and the requests: lib/attention.ts), then what happened (the backend's event stream),
- * by day, newest first, with a filter by kind. Events newer than the last visit are marked "yeni"
+ * Bildirimler (owner's decision 2026-10-20, Faz 2; redesigned on the owner's review 2026-10-21): on
+ * the left what needs attention now (worked out from the clients and the requests: lib/attention.ts),
+ * each with a "Git" button, and the kinds with their counts; on the right what happened (the backend's
+ * event stream) as a timeline by day, newest first, each event with its kind's icon and tone. Events newer than the last visit are marked "yeni"
  * (the time of the last visit stays in this browser only).
  */
 import { useEffect, useState } from 'react';
@@ -9,8 +10,8 @@ import { ApiFailure, type BookingRequest, type Client, type PanelEvent, type Pan
 import { formatDay } from '../../../lib/booking-form';
 import { attentionOf } from '../../lib/attention';
 import { usePanel } from '../context';
-import { Activity, BellDot, BellRing, CheckCheck, CircleAlert, Icon, TriangleAlert } from '../icons';
-import { EventRow } from '../NotificationBell';
+import { BellRing, CalendarClock, CheckCheck, ChevronRight, CircleAlert, Icon, Inbox, MessagesSquare, TriangleAlert, UsersRound, Wallet, type LucideIcon } from '../icons';
+import { EVENT_LOOK, dayGroup, timeOf } from '../NotificationBell';
 import { markSeen, readSeen } from '../notifications';
 import { Banner, Button, EmptyState, Spinner } from '../kit';
 
@@ -53,24 +54,26 @@ export function NotificationsPage() {
   const shown = (data?.events ?? []).filter((e) => !kinds || kinds.includes(e.kind));
   const days = [...new Set(shown.map((e) => dayOf(e.at)))];
 
-  // The last 14 days' events, for the activity strip.
-  const strip = Array.from({ length: 14 }, (_, i) => {
-    const d = dayOf(now - (13 - i) * 864e5);
-    return { day: d, count: (data?.events ?? []).filter((e) => dayOf(e.at) === d).length };
-  });
-  const peak = Math.max(1, ...strip.map((x) => x.count));
+  const counts = Object.fromEntries(FILTERS.map((f) => [f.id, (data?.events ?? []).filter((e) => !f.kinds || f.kinds.includes(e.kind)).length]));
   const unseen = (data?.events ?? []).filter((e) => e.at > seen).length;
-  const today = strip[13].count;
+  const icons: Record<string, LucideIcon> = { all: Inbox, request: MessagesSquare, client: UsersRound, payment: Wallet, reminder: CalendarClock };
+  const tones: Record<string, string> = { all: 'lacivert', request: 'kiremit', client: 'adacayi', payment: 'gunes', reminder: 'lavanta' };
 
   return (
-    <section className="appt-page nt-page" aria-labelledby="nt-title">
+    <section className="appt-page nt-page nt-v3" aria-labelledby="nt-title">
       <div className="screen-head">
         <h2 id="nt-title">
           <Icon as={BellRing} size={22} />
           Bildirimler
         </h2>
+        {data && (
+          <span className="nt-head-meta">
+            {unseen ? `${unseen} yeni hareket` : 'Hepsi okundu'}
+            <span aria-hidden="true"> · </span>
+            {`${attention.length} konu dikkat istiyor`}
+          </span>
+        )}
       </div>
-      <p className="settings-intro">Şu an ilgilenmeniz gerekenler ve son 90 günde olanlar. Kişiler baş harfleriyle ya da danışan numarasıyla görünür.</p>
       {error && (
         <Banner tone="error" action={<Button onClick={() => setAttempt((n) => n + 1)}>Tekrar dene</Button>}>
           {error}
@@ -78,84 +81,80 @@ export function NotificationsPage() {
       )}
       {!data && !error && <Spinner label="Bildirimler yükleniyor…" />}
       {data && (
-        <>
-          <ul className="v2-tiles" aria-label="Özet">
-            <li className="v2-tile tone-kiremit">
-              <span className="tone-tile" aria-hidden="true">
-                <Icon as={CircleAlert} size={18} />
-              </span>
-              <b>{attention.length}</b>
-              <span>Dikkat isteyen</span>
-            </li>
-            <li className="v2-tile tone-gunes">
-              <span className="tone-tile" aria-hidden="true">
-                <Icon as={BellDot} size={18} />
-              </span>
-              <b>{unseen}</b>
-              <span>Son ziyaretten beri yeni</span>
-            </li>
-            <li className="v2-tile tone-adacayi">
-              <span className="tone-tile" aria-hidden="true">
-                <Icon as={Activity} size={18} />
-              </span>
-              <b>{today}</b>
-              <span>Bugünkü hareket</span>
-            </li>
-            <li className="v2-tile v2-tile-chart tone-deniz">
-              <span className="v2-tile-label">Son 14 gün</span>
-              <span className="nt-strip" role="img" aria-label={`Son 14 günde ${strip.reduce((a, x) => a + x.count, 0)} hareket`}>
-                {strip.map((x) => (
-                  <i key={x.day} style={{ height: `${Math.max(6, (x.count / peak) * 100)}%` }} className={x.count ? '' : 'is-zero'} title={`${formatDay(x.day, 'tr')}: ${x.count}`} />
-                ))}
-              </span>
-            </li>
-          </ul>
-          <div className="nt-layout">
-            <div className="k-group">
-              <h3 className="tk-group-title">{`Dikkat isteyenler (${attention.length})`}</h3>
+        <div className="nt3">
+          <aside className="nt3-side">
+            <section className="nt3-card" aria-labelledby="nt3-att">
+              <h3 id="nt3-att">Şimdi ilgilenin</h3>
               {attention.length ? (
-                <ul className="nt-att-list">
+                <ul className="nt3-att">
                   {attention.map((a) => (
-                    <li key={a.key} className={`nt-att nt-att-${a.tone}`}>
+                    <li key={a.key} className={`nt3-att-item is-${a.tone}`}>
                       <Icon as={a.tone === 'err' ? CircleAlert : TriangleAlert} size={18} />
-                      <a href={a.link}>{a.text}</a>
+                      <span>{a.text}</span>
+                      <a href={a.link} aria-label={`${a.text}: git`}>
+                        Git
+                        <Icon as={ChevronRight} size={14} />
+                      </a>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <EmptyState icon={CheckCheck}>Şu an ilgilenmeniz gereken bir şey yok.</EmptyState>
+                <p className="nt3-calm">
+                  <Icon as={CheckCheck} size={18} />
+                  Şu an ilgilenmeniz gereken bir şey yok.
+                </p>
               )}
-            </div>
-            <div className="k-group">
-              <div className="nt-head">
-                <h3 className="tk-group-title">Hareketler</h3>
-                <div className="segmented" role="group" aria-label="Hareket türü">
-                  {FILTERS.map((f) => (
-                    <button key={f.id} type="button" aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
+            </section>
+            <nav className="nt3-card nt3-filters" aria-label="Hareket türü">
+              <h3>Türe göre</h3>
+              <div role="group" aria-label="Hareket türü">
+                {FILTERS.map((f) => (
+                  <button key={f.id} type="button" className={`tone-${tones[f.id]}`} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
+                    <span className="tone-tile tone-tile-sm" aria-hidden="true">
+                      <Icon as={icons[f.id]} size={15} />
+                    </span>
+                    <span>{f.label}</span>
+                    <span className="nt3-count">{counts[f.id]}</span>
+                  </button>
+                ))}
               </div>
-              {shown.length === 0 ? (
-                <EmptyState icon={BellRing}>Bu türde hareket yok.</EmptyState>
-              ) : (
-                days.map((day) => (
-                  <div key={day} className="nt-day">
-                    <h4>{formatDay(day, 'tr')}</h4>
-                    <ul className="ev-list">
-                      {shown
-                        .filter((e) => dayOf(e.at) === day)
-                        .map((e) => (
-                          <EventRow key={e.id} e={e} isNew={e.at > seen} now={now} />
-                        ))}
-                    </ul>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </>
+            </nav>
+          </aside>
+          <section className="nt3-card nt3-feed" aria-labelledby="nt3-feed">
+            <h3 id="nt3-feed">{`Hareketler · ${FILTERS.find((f) => f.id === filter)?.label}`}</h3>
+            {shown.length === 0 ? (
+              <EmptyState icon={BellRing}>Bu türde hareket yok.</EmptyState>
+            ) : (
+              days.map((day) => (
+                <div key={day} className="nt3-day">
+                  <h4>{dayGroup(Date.parse(`${day}T12:00:00Z`) - 3 * 3600e3, now) === 'Daha önce' ? formatDay(day, 'tr') : `${dayGroup(Date.parse(`${day}T12:00:00Z`) - 3 * 3600e3, now)} · ${formatDay(day, 'tr')}`}</h4>
+                  <ol className="nt3-line">
+                    {shown
+                      .filter((e) => dayOf(e.at) === day)
+                      .map((e) => {
+                        const look = EVENT_LOOK[e.kind] ?? EVENT_LOOK.info;
+                        return (
+                          <li key={e.id} className={`nt3-ev tone-${look.tone}${e.at > seen ? ' is-new' : ''}`}>
+                            <span className="nt3-dot" aria-hidden="true">
+                              <Icon as={look.icon} size={14} />
+                            </span>
+                            <span className="nt3-ev-body">
+                              {e.link ? <a href={e.link}>{e.text}</a> : <span>{e.text}</span>}
+                              <span className="nt3-ev-meta">{look.label}</span>
+                            </span>
+                            <span className="nt3-ev-time">
+                              {e.at > seen && <span className="nt3-new">Yeni</span>}
+                              {timeOf(e.at)}
+                            </span>
+                          </li>
+                        );
+                      })}
+                  </ol>
+                </div>
+              ))
+            )}
+          </section>
+        </div>
       )}
     </section>
   );

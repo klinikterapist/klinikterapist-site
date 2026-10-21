@@ -64,8 +64,12 @@ html[data-theme="light"] {
   --shadow-soft: 0 1px 2px rgb(42 36 32 / 0.04), 0 4px 16px rgb(42 36 32 / 0.06);
 }
 
+/* The same selectors as the day values above, so a chosen theme (data-theme) keeps the wide gutter
+   too; with `:root` alone, html[data-theme="light"] won and the page edge jumped 16 px on a switch. */
 @media (min-width: 768px) {
-  :root {
+  :root,
+  html[data-theme="light"],
+  html[data-theme="dark"] {
     --gutter: 2rem;
   }
 }

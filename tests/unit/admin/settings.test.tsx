@@ -235,21 +235,24 @@ describe('settings screens', () => {
 
   it('Kategoriler: a category in use cannot be deleted', async () => {
     setup('kategoriler');
-    const row = (await screen.findByDisplayValue('Yaşam')).closest('li')!;
-    // Usage is checked after the list shows; wait for it before looking at the buttons.
-    expect(await within(row).findByText(/Kullanımda/)).toBeTruthy();
-    expect((within(row).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(true);
-    const unused = screen.getByDisplayValue('Araştırma').closest('li')!;
-    expect((within(unused).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(false);
+    const card = await screen.findByRole('button', { name: /^Yaşam/ });
+    // Usage is checked after the list shows; wait for it before opening the card.
+    expect(await within(card).findByText(/kullanımda/)).toBeTruthy();
+    fireEvent.click(card);
+    expect((within(screen.getByRole('dialog')).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tamam' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Araştırma/ }));
+    expect((within(screen.getByRole('dialog')).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('Kategoriler: when usage cannot be checked, nothing can be deleted (review I5)', async () => {
     setup('kategoriler', (api) => {
       api.listDrafts = () => Promise.reject(new Error('ağ yok'));
     });
-    const unused = (await screen.findByDisplayValue('Araştırma')).closest('li')!;
+    const unused = await screen.findByRole('button', { name: /^Araştırma/ });
     await waitFor(() => expect(within(unused).getByText(/Kontrol edilemedi/)).toBeTruthy());
-    expect((within(unused).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(unused);
+    expect((within(screen.getByRole('dialog')).getByRole('button', { name: /Sil/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('an unknown screen says so', async () => {

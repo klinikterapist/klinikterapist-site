@@ -2,6 +2,8 @@
  * Panel frame (owner's decisions 2026-10-21, SITE-GUNCELLEMESI.md karar 6 and 7): the sidebar in five
  * parts — Genel Bakış, then the groups Danışanlar ve Randevular, İçerik, Site Sayfaları and Ayarlar,
  * each folding open and shut (remembered in this browser; the group of the open screen always shows).
+ * Owner's review 2026-10-21: "Yeni Yazı" and "Seans Ekle" sit above Genel Bakış; "Menüyü daralt" and
+ * "Siteyi Aç" under it.
  * Every group has its tone, shown as the colour of its icon tiles. The sidebar stays put beside the
  * screen, without a scrollbar, and narrows to an icon rail with the button at its top (remembered;
  * also in Ayarlar › Görünüm), names then showing as tooltips. Karanlık Mod, Siteyi Aç, Görünüm and
@@ -28,9 +30,10 @@ import {
   Menu,
   Moon,
   Palette,
+  PencilLine,
+  CalendarPlus,
   PanelLeftClose,
   PanelLeftOpen,
-  Plus,
   Settings,
   Sun,
   Trash2,
@@ -46,7 +49,7 @@ export { SETTINGS_SCREENS };
 
 export type Tone = 'lacivert' | 'gunes' | 'adacayi' | 'kiremit' | 'lavanta' | 'deniz';
 type NavItem = { href: string; label: string; icon: LucideIcon; badge?: number };
-type NavGroup = { id: string; label: string; icon: LucideIcon; tone: Tone; items: NavItem[]; newPost?: boolean };
+type NavGroup = { id: string; label: string; icon: LucideIcon; tone: Tone; items: NavItem[] };
 
 const screen = (id: string): NavItem => {
   const s = SETTINGS_SCREENS.find((x) => x.id === id)!;
@@ -75,7 +78,6 @@ export function navGroups(badges: { requests: number; notifications: number }): 
       label: 'İçerik',
       icon: FileText,
       tone: 'lavanta',
-      newPost: true,
       items: [{ href: '#/yazilar', label: 'Yazılar', icon: FileText }, screen('kategoriler'), { href: '#/cop-kutusu', label: 'Silinen Yazılar', icon: Trash2 }],
     },
     { id: 'site', label: 'Site Sayfaları', icon: Globe, tone: 'deniz', items: SITE_PAGES.map(screen) },
@@ -160,18 +162,36 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
             <img className="logo-light" src="/admin/logo-black.png" alt="klinikterapist" />
             <img className="logo-dark" src="/admin/logo-white.png" alt="klinikterapist" />
           </a>
+        </div>
+        {/* Owner's review 2026-10-21: the two things started most often, above everything else. */}
+        <div className="nav-quick">
+          <Button variant="primary" className="nav-new" data-tip="Yeni Yazı" aria-label="Yeni Yazı" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
+            <Icon as={PencilLine} />
+            <span className="nav-label">Yeni Yazı</span>
+          </Button>
+          <a className="k-btn k-btn-secondary nav-session" href="#/randevular?ekle=yeni" data-tip="Seans Ekle" aria-label="Seans Ekle">
+            <Icon as={CalendarPlus} />
+            <span className="nav-label">Seans Ekle</span>
+          </a>
+        </div>
+        <ul className="nav-home">{link({ href: '#/', label: 'Genel Bakış', icon: House }, 'gunes')}</ul>
+        <div className="nav-tools">
           <button
             type="button"
-            className="nav-rail-toggle"
+            className="nav-tool"
             aria-pressed={rail}
             aria-label={rail ? 'Menüyü genişlet' : 'Menüyü daralt'}
             data-tip={rail ? 'Menüyü genişlet' : 'Menüyü daralt'}
             onClick={() => setRail(!rail)}
           >
-            <Icon as={rail ? PanelLeftOpen : PanelLeftClose} size={18} />
+            <Icon as={rail ? PanelLeftOpen : PanelLeftClose} size={17} />
+            <span className="nav-label">Menüyü daralt</span>
           </button>
+          <a className="nav-tool" href="/" target="_blank" rel="noreferrer" aria-label="Siteyi Aç (yeni sekmede)" data-tip="Siteyi Aç ↗">
+            <Icon as={ExternalLink} size={17} />
+            <span className="nav-label">Siteyi Aç</span>
+          </a>
         </div>
-        <ul className="nav-home">{link({ href: '#/', label: 'Genel Bakış', icon: House }, 'gunes')}</ul>
         {groups.map((g) => {
           const here = g.items.some((x) => x.href === current);
           const shut = !rail && folded.includes(g.id) && !here;
@@ -183,12 +203,6 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
               </button>
               {!shut && (
                 <div id={`nav-${g.id}`}>
-                  {g.newPost && (
-                    <Button variant="primary" className="nav-new" data-tip="Yeni Yazı" aria-label="Yeni Yazı" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
-                      <Icon as={Plus} />
-                      <span className="nav-label">Yeni Yazı</span>
-                    </Button>
-                  )}
                   <ul>{g.items.map((x) => link(x, g.tone))}</ul>
                 </div>
               )}
@@ -201,9 +215,6 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
           </button>
           <a className="nav-end-btn" href="#/ayarlar/gorunum" aria-label="Görünüm" data-tip="Görünüm">
             <Icon as={Palette} />
-          </a>
-          <a className="nav-end-btn" href="/" target="_blank" rel="noreferrer" aria-label="Siteyi Aç (yeni sekmede)" data-tip="Siteyi Aç ↗">
-            <Icon as={ExternalLink} />
           </a>
           <button type="button" className="nav-end-btn" onClick={() => api.logout().catch(() => {}).finally(() => store.clear())} aria-label="Çıkış Yap" data-tip="Çıkış Yap">
             <Icon as={LogOut} />

@@ -119,10 +119,13 @@ export function ProfilePage() {
             ))}
           </ul>
           <WeekStrip items={next} now={now} />
-          <div className="appt-layout">
-            <div className="appt-main">
-              <div className="k-group">
-                <h3 className="tk-group-title">Yaklaşan seanslar (7 gün)</h3>
+          {/* Owner's review 2026-10-21: one grid, so the blocks line up — the week's sessions and requests
+              beside the calendar, then this month, occupancy and tools, then notifications, the chart and
+              the e-mail addresses. */}
+          <div className="pf-grid">
+            <div className="pf-col">
+              <article className="pf-card" aria-labelledby="pf-next">
+                <h3 id="pf-next">Yaklaşan seanslar (7 gün)</h3>
                 {next.length ? (
                   <ul className="tk-list">
                     {next.map((u) => (
@@ -141,9 +144,9 @@ export function ProfilePage() {
                 ) : (
                   <p className="k-hint">Önümüzdeki 7 günde seans yok.</p>
                 )}
-              </div>
-              <div className="k-group">
-                <h3 className="tk-group-title">{`Gelen talepler (${pending.length})`}</h3>
+              </article>
+              <article className="pf-card" aria-labelledby="pf-req">
+                <h3 id="pf-req">{`Gelen talepler (${pending.length})`}</h3>
                 {pending.length ? (
                   <ul className="ev-list">
                     {pending.slice(0, 5).map((r) => (
@@ -161,9 +164,20 @@ export function ProfilePage() {
                 ) : (
                   <p className="k-hint">Bekleyen talep yok.</p>
                 )}
-              </div>
-              <div className="k-group">
-                <h3 className="tk-group-title">Bildirimler</h3>
+              </article>
+            </div>
+            <article className="pf-card pf-cal" aria-label="Takvim">
+              <AppointmentCalendar version={attempt} />
+            </article>
+          </div>
+          <div className="pf-row3">
+            <MonthCard clients={data.clients} now={now} />
+            <OccupancyCard clients={data.clients} now={now} />
+            <ToolsCard />
+          </div>
+          <div className="pf-row3">
+            <article className="pf-card" aria-labelledby="pf-notes">
+                <h3 id="pf-notes">Bildirimler</h3>
                 {attention.length > 0 && (
                   <ul className="nt-att-list">
                     {attention.slice(0, 3).map((a) => (
@@ -185,16 +199,7 @@ export function ProfilePage() {
                 <a className="back-link" href="#/bildirimler">
                   Tüm bildirimler →
                 </a>
-              </div>
-            </div>
-            <aside className="appt-side">
-              <AppointmentCalendar version={attempt} />
-            </aside>
-          </div>
-          <div className="pf-cards">
-            <MonthCard clients={data.clients} now={now} />
-            <OccupancyCard clients={data.clients} now={now} />
-            <ToolsCard />
+              </article>
             <article className="pf-card" aria-labelledby="pf-chart">
               <h3 id="pf-chart">Toplam seans grafiği</h3>
               <SessionChart stats={total(data.clients, now)} />

@@ -201,7 +201,8 @@ describe('Seans takip', () => {
 
   it("on the client's page, Terapi tamamlandı sends the e-mail and removes the client", async () => {
     const { api } = setup('client:c1', [], [client()]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Terapiyi sonlandır' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Sonlandırma' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Terapiyi sonlandır' }));
     const dialog = screen.getByRole('dialog', { name: 'KT007OGO: terapiyi sonlandır' });
     expect(dialog.textContent).toContain('osman@example.com');
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Sayın Osman Güneş Özkurt,');
@@ -209,12 +210,13 @@ describe('Seans takip', () => {
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
     expect(api.state.sent[0]).toMatchObject({ to: 'osman@example.com', subject: 'Terapi sürecimizin sonlanması – klinikterapist.com' });
     expect(await screen.findByText(/Seans takipten çıkarıldı/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: '← Seans takibe dön' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: '← Danışanlara dön' })).toBeTruthy();
   });
 
   it('Sonlandırma görüşmesi talep et sends the invitation and keeps the client, marked; the list shows them in the closing stage', async () => {
     const { api } = setup('client:c1', [], [client()]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Terapiyi sonlandır' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Sonlandırma' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Terapiyi sonlandır' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Sonlandırma görüşmesi talep et' }));
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('sonlandırma görüşmesi');
@@ -228,7 +230,8 @@ describe('Seans takip', () => {
 
   it('Geri al sends the apology and the person is back in Randevu talepleri', async () => {
     const { api } = setup('client:c1', [], [{ ...client(), origin: { ...session, day: '2030-01-03' } }]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Geri al' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Diğer işlemler' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Geri al' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Gönder ve geri al' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
     expect(api.state.requests).toEqual([expect.objectContaining({ status: 'pending', name: 'Ayşe Yılmaz' })]);
@@ -239,7 +242,8 @@ describe('Seans takip', () => {
 
   it('Sil removes the client with no e-mail', async () => {
     const { api } = setup('client:c1', [], [client()]);
-    fireEvent.click(await screen.findByRole('button', { name: 'Sil' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Diğer işlemler' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Sil' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Sil' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
     expect(api.state.sent).toEqual([]);
@@ -347,7 +351,8 @@ describe('a client’s page in Seans takip', () => {
     fireEvent.click(within(rows[1]).getByRole('button', { name: 'Katıldı' }));
     await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(-13), status: 'attended' })));
     const next = screen.getByRole('heading', { name: /Sıradaki seanslar/ }).parentElement!;
-    fireEvent.click(within(within(next).getAllByRole('listitem')[0]).getByRole('button', { name: 'İptal' }));
+    fireEvent.click(within(within(next).getAllByRole('listitem')[0]).getByRole('button', { name: /diğer işlemler/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'İptal' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('Not (isteğe bağlı)'), { target: { value: 'Seyahat' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
@@ -389,7 +394,8 @@ describe('Faz 1: payments on the client’s page', () => {
     const next = (await screen.findByRole('heading', { name: /Sıradaki seanslar/ })).parentElement!;
     const first = () => within(next).getAllByRole('listitem')[0];
     expect(first().textContent).toContain('Ödenmedi');
-    fireEvent.click(within(first()).getByRole('button', { name: 'Ödeme hatırlat' }));
+    fireEvent.click(within(first()).getByRole('button', { name: /diğer işlemler/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Ödeme hatırlat' }));
     let dialog = await screen.findByRole('dialog');
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Seans ücreti: 1.500 TL.');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
@@ -437,7 +443,7 @@ describe('Faz 2: Terapist profili, Bildirimler, Saat kapat', () => {
     expect(await screen.findByText('KT007OGO: 1 seansın ödemesi işaretlenmedi')).toBeTruthy();
     expect(screen.getByText('KT007OGO: 1 geçmiş seans işaretlenmeyi bekliyor')).toBeTruthy();
     expect(screen.getByText('KT007OGO seansını iptal etti')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Ödemeler' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Ödemeler/ }));
     expect(screen.queryByText('KT007OGO seansını iptal etti')).toBeNull();
   });
 

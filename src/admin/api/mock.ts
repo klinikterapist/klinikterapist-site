@@ -93,7 +93,8 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     state.requests.push(...requests);
     // Their 24-hour holds, and one client in Seans takip, so the calendar shows both marks.
     for (const r of requests) {
-      state.calendar.push({ id: r.holdId, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: r.createdAt + 864e5 });
+      if (r.status === 'approved') state.calendar.push({ id: r.calendarId!, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'confirmed' });
+      else state.calendar.push({ id: r.holdId, start: slotInstant(r.day, r.time), minutes: minutesOf(r.kind, r.type), kind: r.kind, ...(r.type ? { type: r.type } : {}), status: 'hold', holdUntil: r.createdAt + 864e5 });
     }
     // A client three weeks in: the intro call, two weekly sessions marked, one cancelled.
     const name = 'Zeynep Örnek';
@@ -554,6 +555,15 @@ function demoRequests(now: number): BookingRequest[] {
   return [
     { id: 'demo-1', createdAt: now - 3 * 3600e3, kind: 'session', type: 'individual', day: day(3), time: '19:20', name: 'Ayşe Örnek', email: 'ayse@example.com', phone: '0532 000 00 00', note: 'Akşam saatleri benim için daha uygun.', lang: 'tr', status: 'pending', holdId: 'demo-hold-1' },
     { id: 'demo-2', createdAt: now - 26 * 3600e3, kind: 'intro', day: weekend, time: '11:00', name: 'Mehmet Deneme', email: 'mehmet@example.com', phone: '0533 000 00 00', note: '', lang: 'tr', forWhom: 'couple', topics: [2, 3], before: 'no', age: 2, status: 'pending', holdId: 'demo-hold-2' },
+    // More of them (owner's review 2026-10-21: see the page when it is busy).
+    { id: 'demo-3', createdAt: now - 45 * 60e3, kind: 'intro', day: day(2), time: '10:00', name: 'Selin Kaya', email: 'selin@example.com', phone: '', note: 'Daha önce hiç terapi almadım, nasıl ilerlediğini merak ediyorum.', lang: 'tr', forWhom: 'individual', topics: [0, 1], before: 'no', age: 1, status: 'pending', holdId: 'demo-hold-3', verified: true },
+    { id: 'demo-4', createdAt: now - 5 * 3600e3, kind: 'session', type: 'couple', day: day(4), time: '20:30', name: 'Can ve Ece Yıldız', email: 'can@example.com', phone: '0535 000 00 00', note: 'İkimiz de çalışıyoruz, akşam saatleri uygun.', lang: 'tr', status: 'pending', holdId: 'demo-hold-4', verified: true },
+    { id: 'demo-5', createdAt: now - 9 * 3600e3, kind: 'session', type: 'accessible', day: day(5), time: '14:40', name: 'Deniz Arı', email: 'deniz@example.com', phone: '', note: 'Üniversite öğrencisiyim.', lang: 'tr', status: 'pending', holdId: 'demo-hold-5' },
+    { id: 'demo-6', createdAt: now - 14 * 3600e3, kind: 'intro', day: day(6), time: '17:00', name: 'Laura Smith', email: 'laura@example.com', phone: '', note: 'I live in Istanbul but I prefer English.', lang: 'en', forWhom: 'individual', topics: [4], before: 'yes', age: 2, status: 'pending', holdId: 'demo-hold-6', verified: true },
+    { id: 'demo-7', createdAt: now - 21 * 3600e3, kind: 'session', type: 'individual', day: day(7), time: '09:00', name: 'Burak Demir', email: 'burak@example.com', phone: '0536 000 00 00', note: '', lang: 'tr', status: 'pending', holdId: 'demo-hold-7' },
+    { id: 'demo-8', createdAt: now - 30 * 3600e3, kind: 'intro', day: day(8), time: '12:00', name: 'Hatice Ünal', email: 'hatice@example.com', phone: '', note: 'Annem için bilgi almak istiyorum.', lang: 'tr', forWhom: 'accessible', topics: [1, 5], before: 'no', age: 4, status: 'pending', holdId: 'demo-hold-8' },
+    { id: 'demo-9', createdAt: now - 2 * 864e5, kind: 'session', type: 'individual', day: day(9), time: '18:00', name: 'Ozan Er', email: 'ozan@example.com', phone: '0537 000 00 00', note: 'Haftalık düzenli görüşme istiyorum.', lang: 'tr', status: 'approved', holdId: '', calendarId: 'demo-cal-9', verified: true },
+    { id: 'demo-10', createdAt: now - 3 * 864e5, kind: 'intro', day: day(1), time: '15:00', name: 'Nilay Taş', email: 'nilay@example.com', phone: '', note: '', lang: 'tr', forWhom: 'individual', topics: [2], before: 'yes', age: 1, status: 'approved', holdId: '', calendarId: 'demo-cal-10', verified: true },
   ];
 }
 

@@ -46,7 +46,9 @@ export function parseRoute(hash: string): Route {
   if (path === '/randevular' || path === '/randevular/takvim') {
     const q = new URLSearchParams(query);
     const m = (q.get('ekle') ?? '').match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/);
-    return { name: 'requests', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null, ...(q.has('liste') ? { list: true } : {}) };
+    // "Seans Ekle" in the menu: the dialog opens empty (?ekle=yeni).
+    const blank = q.get('ekle') === 'yeni' ? { day: '', time: '', type: q.get('tur') ?? 'individual' } : null;
+    return { name: 'requests', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : blank, ...(q.has('liste') ? { list: true } : {}) };
   }
   let m = path.match(/^\/yazi\/([a-z0-9-]+)$/);
   if (m) {

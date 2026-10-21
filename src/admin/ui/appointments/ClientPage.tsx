@@ -13,6 +13,8 @@
  * a cancelled or postponed session "danışan istedi" (with "tam ücret" when it was less than 24 hours
  * before), and a wish to end therapy.
  * Owner's review a5: Terapiyi sonlandır, Geri al and Sil live here (not in the Seans takip list);
+ * review 2026-10-21: they sit with the other steps at the top right (Ek seans ekle, E-posta yaz,
+ * Sonlandırma ▾, ⋯), and a session row shows only the step due now, the rest under its "⋯";
  * the side column is the chart, then the session details, then the client's page.
  * Faz 1: each paid session can be marked "Ödendi" (with a thank-you e-mail the owner can edit or
  * leave out) or get a payment reminder; a late cancellation keeps its fee, a postponed session's
@@ -23,7 +25,8 @@ import { ApiFailure, type Client } from '../../api/types';
 import { formatDay } from '../../../lib/booking-form';
 import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type SessionRecord, type SessionStatus } from '../../../lib/sessions';
 import { usePanel } from '../context';
-import { CalendarCheck, Icon } from '../icons';
+import { ArrowLeft, CalendarCheck, CalendarPlus, Flag, Icon, Mail as MailIcon, Trash2, Undo2 } from '../icons';
+import { ActionMenu } from '../ActionMenu';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { endMail, linkMail, revertMail, type Mail } from '../../lib/booking-mail';
 import { EMPTY_PAYMENT, paymentReminderMail, thanksMail, type PaymentSettings } from '../../../lib/payment';
@@ -109,6 +112,8 @@ export function ClientPage({ id }: { id: string }) {
   const [ending, setEnding] = useState<Ending | null>(null);
   const [reverting, setReverting] = useState<Mail | null>(null);
   const [deleting, setDeleting] = useState(false);
+  /** "E-posta yaz": a free e-mail to the client (owner's review 2026-10-21). */
+  const [writing, setWriting] = useState<Mail | null>(null);
   /** What happened when the client left Seans takip (ended, deleted, put back). */
   const [gone, setGone] = useState<{ text: string; requests?: boolean } | null>(null);
 
@@ -207,7 +212,7 @@ export function ClientPage({ id }: { id: string }) {
           {gone.text}
         </Banner>
         <a className="back-link" href="#/seans-takip">
-          ← Seans takibe dön
+          ← Danışanlara dön
         </a>
       </section>
     );
@@ -216,7 +221,7 @@ export function ClientPage({ id }: { id: string }) {
     return (
       <section className="appt-page">
         {error && <Banner tone="error">{error}</Banner>}
-        <EmptyState icon={CalendarCheck} action={<a href="#/seans-takip">← Seans takibe dön</a>}>
+        <EmptyState icon={CalendarCheck} action={<a href="#/seans-takip">← Danışanlara dön</a>}>
           Bu danışan bulunamadı. Takipten çıkarılmış olabilir.
         </EmptyState>
       </section>
@@ -259,50 +264,43 @@ export function ClientPage({ id }: { id: string }) {
           {payable && (s.paid ? <small className="ss-paid">{`Ödendi · ${paidOn(s.paid)}`}</small> : <small className="ss-unpaid">Ödenmedi</small>)}
         </span>
         <span className="ss-actions">
-          {s.status === 'planned' ? (
-            <>
-              {past && (
-                <>
-                  <Button variant="primary" disabled={busy} onClick={() => mark(s, 'attended')}>
-                    Katıldı
-                  </Button>
-                  <Button disabled={busy} onClick={() => mark(s, 'noshow')}>
-                    Gelmedi
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" onClick={() => setMarking({ s, status: 'cancelled', by: 'client', note: '', day: '', time: '' })}>
-                İptal
+          {/* Owner's review 2026-10-21: the step that is due now as a button, the rest in "Diğer". */}
+          {s.status === 'planned' && past && (
+            <span className="ss-quick" role="group" aria-label="Seansı işaretle">
+              <Button variant="primary" disabled={busy} onClick={() => mark(s, 'attended')}>
+                Katıldı
               </Button>
-              <Button variant="ghost" onClick={() => setMarking({ s, status: 'postponed', by: 'client', note: '', day: '', time: '' })}>
-                Ertele
+              <Button disabled={busy} onClick={() => mark(s, 'noshow')}>
+                Gelmedi
               </Button>
-              {added && !s.from && (
-                <Button variant="ghost" onClick={() => change({ op: 'remove', id, day: s.day, time: s.time }, `${at(s)} silindi.`)}>
-                  Sil
-                </Button>
-              )}
-            </>
-          ) : (
-            <Button variant="ghost" disabled={busy} onClick={() => mark(s, 'planned')}>
-              İşareti kaldır
+            </span>
+          )}
+          {payable && !s.paid && (
+            <Button className="ss-pay" disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s), send: true })}>
+              Ödendi
             </Button>
           )}
-          {payable &&
-            (s.paid ? (
-              <Button variant="ghost" disabled={busy} onClick={() => pay(s, false)}>
-                Ödemeyi geri al
-              </Button>
-            ) : (
-              <>
-                <Button disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s), send: true })}>
-                  Ödendi
-                </Button>
-                <Button variant="ghost" disabled={busy} onClick={() => setReminding({ s, mail: paymentReminderMail(client.contact, s, client.type, payment) })}>
-                  Ödeme hatırlat
-                </Button>
-              </>
-            ))}
+          <ActionMenu
+            compact
+            label={`${at(s)}: diğer işlemler`}
+            items={[
+              ...(s.status === 'planned'
+                ? [
+                    { label: 'İptal', hint: 'Saat takvimde ve sitede açılır', onSelect: () => setMarking({ s, status: 'cancelled', by: 'client', note: '', day: '', time: '' }) },
+                    { label: 'Ertele', hint: 'Yeni tarih takvime işlenir', onSelect: () => setMarking({ s, status: 'postponed', by: 'client', note: '', day: '', time: '' }) },
+                    ...(added && !s.from ? [{ label: 'Sil', hint: 'Eklenen seansı listeden kaldırır', danger: true, onSelect: () => change({ op: 'remove', id, day: s.day, time: s.time }, `${at(s)} silindi.`) }] : []),
+                  ]
+                : [{ label: 'İşareti kaldır', hint: 'Seans yeniden işaretlenmemiş olur', onSelect: () => mark(s, 'planned') }]),
+              ...(payable
+                ? [
+                    'divider' as const,
+                    ...(s.paid
+                      ? [{ label: 'Ödemeyi geri al', hint: 'Ödendi işareti kalkar', onSelect: () => pay(s, false) }]
+                      : [{ label: 'Ödeme hatırlat', hint: 'Ücret ve ödeme bilgisiyle e-posta', onSelect: () => setReminding({ s, mail: paymentReminderMail(client.contact, s, client.type, payment) }) }]),
+                  ]
+                : []),
+            ]}
+          />
         </span>
       </li>
     );
@@ -310,8 +308,9 @@ export function ClientPage({ id }: { id: string }) {
 
   return (
     <section className="appt-page client-page" aria-labelledby="cl-title">
-      <a className="back-link" href="#/seans-takip">
-        ← Seans takip
+      <a className="editor-back" href="#/seans-takip" aria-label="Danışanlara dön">
+        <Icon as={ArrowLeft} size={18} />
+        <span>Danışanlar</span>
       </a>
       <header className="cl-hero">
         <span className="cl-badge" aria-hidden="true">
@@ -324,23 +323,39 @@ export function ClientPage({ id }: { id: string }) {
           </h2>
           <p>{`${labelOf({ kind: 'session', type: client.type })} · bugüne kadar ${stats.held} seans`}</p>
         </div>
-        <div className="head-actions">
-          <Button onClick={() => setAdding({ kind: 'closing', day: '', time: '' })}>Sonlandırma görüşmesi ekle</Button>
-          <Button onClick={() => setAdding({ kind: 'extra', day: '', time: '' })}>Ek seans ekle</Button>
+        {/* Owner's review 2026-10-21: every step about this client in one place, grouped by what it does. */}
+        <div className="head-actions cl-actions">
+          <Button variant="primary" onClick={() => setAdding({ kind: 'extra', day: '', time: '' })}>
+            <Icon as={CalendarPlus} size={16} />
+            Ek seans ekle
+          </Button>
+          <Button onClick={() => setWriting({ subject: '', body: '' })}>
+            <Icon as={MailIcon} size={16} />
+            E-posta yaz
+          </Button>
+          <ActionMenu
+            label="Sonlandırma"
+            icon={Flag}
+            items={[
+              { label: 'Sonlandırma görüşmesi ekle', hint: 'Ücretsiz son görüşmeyi takvime ekler', icon: CalendarPlus, onSelect: () => setAdding({ kind: 'closing', day: '', time: '' }) },
+              { label: 'Terapiyi sonlandır', hint: 'Tamamlandı ya da sonlandırma görüşmesi daveti', icon: Flag, onSelect: () => setEnding({ mode: 'complete', mail: endMail(client.contact, 'complete') }) },
+            ]}
+          />
+          <ActionMenu
+            compact
+            label="Diğer işlemler"
+            items={[
+              { label: 'Geri al', hint: 'Takipten çıkarır, talebe döndürür ve özür e-postası gönderir', icon: Undo2, onSelect: () => setReverting(revertMail(client.contact)) },
+              'divider',
+              { label: 'Sil', hint: 'Danışanı ve seanslarını e-posta göndermeden siler', icon: Trash2, danger: true, onSelect: () => setDeleting(true) },
+            ]}
+          />
         </div>
       </header>
-      <div className="row cl-end-actions">
-        {/* Rare and weighty: quiet buttons, Sil in red (they all ask before acting). */}
-        <Button onClick={() => setEnding({ mode: 'complete', mail: endMail(client.contact, 'complete') })}>Terapiyi sonlandır</Button>
-        <Button onClick={() => setReverting(revertMail(client.contact))}>Geri al</Button>
-        <Button variant="danger" onClick={() => setDeleting(true)}>
-          Sil
-        </Button>
-      </div>
       {notice && <Banner tone="success">{notice}</Banner>}
       {error && <Banner tone="error">{error}</Banner>}
       {client.endAsked && (
-        <Banner tone="warning" action={<a href="#/seans-takip">Seans takip › Terapiyi sonlandır →</a>}>
+        <Banner tone="warning" action={<span className="k-hint">Sağ üstte: Sonlandırma › Terapiyi sonlandır</span>}>
           {`${formatDay(new Date(client.endAsked.at + 3 * 3600e3).toISOString().slice(0, 10), 'tr')} tarihinde kendi sayfasından terapiyi sonlandırmak istediğini bildirdi.`}
           {client.endAsked.note && <span className="ss-note">{`Notu: ${client.endAsked.note}`}</span>}
         </Banner>
@@ -575,6 +590,33 @@ export function ClientPage({ id }: { id: string }) {
             <p className="k-hint">Seans ödendi olarak işaretlenir; danışana e-posta gitmez.</p>
           </Dialog>
         ))}
+
+      {writing && (
+        <MailDialog
+          title={`${client.number}: e-posta yaz`}
+          to={client.contact}
+          mail={writing}
+          onMail={setWriting}
+          send="Gönder"
+          busy={busy}
+          onClose={() => setWriting(null)}
+          onSend={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              await api.clientMail({ id, ...writing });
+              setNotice('E-posta gönderildi.');
+              setWriting(null);
+            } catch (e) {
+              setError(e instanceof ApiFailure ? e.message : 'E-posta gönderilemedi. Tekrar deneyin.');
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <p className="k-hint">Danışanın adresine sizin adınıza gider. Sağlık bilgisi yazmamaya özen gösterin.</p>
+        </MailDialog>
+      )}
 
       {reminding && (
         <MailDialog

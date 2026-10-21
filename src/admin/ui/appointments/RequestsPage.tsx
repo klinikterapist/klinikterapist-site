@@ -19,7 +19,7 @@ import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, REQUEST_KEEP_DAYS, SESSION_TYPES, 
 import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
 import type { PaymentSettings } from '../../../lib/payment';
 import { go, usePanel } from '../context';
-import { BellRing, CircleCheck, Icon, Inbox, Plus } from '../icons';
+import { BellRing, ChevronDown, CircleCheck, Icon, Inbox, Plus } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { AddAppointmentDialog, type AddInitial } from './AddAppointmentDialog';
 import { AppointmentCalendar, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
@@ -97,11 +97,16 @@ function typeLine(r: BookingRequest): string {
   return `${t.tr} · ${t.minutes} dakika${r.source === 'manual' ? ' · elle eklendi' : ''}`;
 }
 
-function RequestCard({ r, children }: { r: BookingRequest; children: React.ReactNode }) {
+/**
+ * A request as a closed card (owner's review 2026-10-21): name, kind, the wished time and the buttons
+ * show; the person's details open with the card's head ("Ayrıntılar"), so a busy list stays short.
+ */
+function RequestCard({ r, open, onToggle, children }: { r: BookingRequest; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   const forWhom = INTRO_FOR.find((f) => f.id === r.forWhom);
   const [d, mon] = formatDay(r.day, 'tr').split(/[ ,]+/);
+  const detailsId = `rq-details-${r.id}`;
   return (
-    <li className={`rq-card rq-is-${r.kind}`}>
+    <li className={`rq-card rq-is-${r.kind}${open ? ' is-open' : ''}`}>
       <header className="rq-head">
         <span className="rq-avatar" aria-hidden="true">
           {initialsOf(r.name)}
@@ -119,8 +124,12 @@ function RequestCard({ r, children }: { r: BookingRequest; children: React.React
             {formatDay(r.day, 'tr').split(', ')[1]} · {r.time.replace(':', '.')}
           </span>
         </span>
+        <button type="button" className="rq-toggle" aria-expanded={open} aria-controls={detailsId} onClick={onToggle}>
+          <span>{open ? 'Gizle' : 'Ayrıntılar'}</span>
+          <Icon as={ChevronDown} size={16} />
+        </button>
       </header>
-      <dl className="rq-rows">
+      <dl className="rq-rows" id={detailsId} hidden={!open}>
         <Row label="İstenen zaman">{whenOf(r)}</Row>
         <Row label="E-posta">
           <a href={`mailto:${r.email}`}>{r.email}</a> <VerifiedMark ok={!!r.verified} />
@@ -161,6 +170,8 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [view, setView] = useState<View>(list ? 'waitlist' : 'pending');
+  /** Cards whose details are open (closed by default). */
+  const [openCards, setOpenCards] = useState<Set<string>>(() => new Set());
   const [sending, setSending] = useState<Sending | null>(null);
   const [moving, setMoving] = useState<{ r: BookingRequest; weekday: number; time: string; since: string } | null>(null);
   const [adding, setAdding] = useState<{ initial: AddInitial; from?: WaitlistEntry } | null>(add ? { initial: { day: add.day, time: add.time, kind: add.type } } : null);
@@ -365,9 +376,26 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
                 <EmptyState icon={Inbox}>{view === 'pending' ? 'Aktif talep yok.' : 'Seans takibe geçirilmeyi bekleyen onaylı talep yok.'}</EmptyState>
               )}
               {requests && shown.length > 0 && (
+                <>
+                <div className="rq-list-head">
+                  <span className="k-hint">{`${shown.length} talep · ayrıntılar kapalı; bir kartın başlığına basarak açın.`}</span>
+                  <Button variant="ghost" onClick={() => setOpenCards(openCards.size ? new Set() : new Set(shown.map((x) => x.id)))}>
+                    {openCards.size ? 'Tümünü kapat' : 'Tümünü aç'}
+                  </Button>
+                </div>
                 <ul className="rq-list">
                   {shown.map((r) => (
-                    <RequestCard key={r.id} r={r}>
+                    <RequestCard
+                      key={r.id}
+                      r={r}
+                      open={openCards.has(r.id)}
+                      onToggle={() => {
+                        const next = new Set(openCards);
+                        if (next.has(r.id)) next.delete(r.id);
+                        else next.add(r.id);
+                        setOpenCards(next);
+                      }}
+                    >
                       {r.status === 'pending' ? (
                         <footer className="rq-foot">
                           <SentLine r={r} now={now} />
@@ -408,6 +436,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
                     </RequestCard>
                   ))}
                 </ul>
+                </>
               )}
             </>
           )}

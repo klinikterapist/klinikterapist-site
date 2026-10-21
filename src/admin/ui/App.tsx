@@ -59,7 +59,7 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
             ) : route.name === 'trash' ? (
               <TrashPage />
             ) : route.name === 'requests' ? (
-              <RequestsPage key={route.list ? 'list' : 'requests'} add={route.add} list={route.list} />
+              <RequestsPage key={route.list ? 'list' : route.add ? 'add' : 'requests'} add={route.add} list={route.list} />
             ) : route.name === 'profile' ? (
               <ProfilePage />
             ) : route.name === 'notifications' ? (

@@ -2,6 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 export {
+  Flag,
   ArrowDown,
   ArrowUp,
   ClipboardList,

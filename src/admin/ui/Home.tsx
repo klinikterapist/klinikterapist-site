@@ -10,10 +10,11 @@ import { ApiFailure, type BookingRequest, type Client, type DraftSummary } from 
 import { dashboard, greeting, istanbulHour, todayAgenda, waitingRequests } from '../lib/dashboard';
 import { formatSchedule } from '../lib/draft';
 import { formatDay } from '../../lib/booking-form';
-import { cachedDrafts, ensureTriggersOnce, loadDrafts, loadSiteState, type SiteState } from '../lib/posts-repo';
+import { cachedDrafts, coverPathOf, ensureTriggersOnce, loadDrafts, loadSiteState, type LoadedPost, type SiteState } from '../lib/posts-repo';
+import { readingTime } from '../../lib/readingTime';
 import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
-import { CalendarCheck, CalendarX, CheckCircle2, ChevronRight, ExternalLink, FileText, Icon, Inbox, PencilLine, UsersRound, type LucideIcon } from './icons';
+import { CalendarCheck, CalendarClock, CalendarPlus, CalendarX, CheckCircle2, ChevronRight, CircleAlert, FileText, Icon, Inbox, PencilLine, Sparkles, UsersRound, Zap, type LucideIcon } from './icons';
 import { go } from './context';
 import { startNewPost } from '../lib/new-post';
 import { Banner, Button, EmptyState, Spinner } from './kit';
@@ -84,6 +85,19 @@ export function Home() {
   }, [api, attempt]);
 
   const d = useMemo(() => (data ? dashboard(data.site.posts, data.drafts, now) : null), [data, now]);
+  const [lastCover, setLastCover] = useState<string | null>(null);
+  const coverPath = d?.lastLive ? coverPathOf(d.lastLive) : null;
+  useEffect(() => {
+    if (!coverPath) return;
+    let alive = true;
+    api
+      .read([coverPath])
+      .then(({ files }) => alive && files[0] && setLastCover(`data:${coverPath.endsWith('.jpg') ? 'image/jpeg' : 'image/webp'};base64,${files[0].content}`))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api, coverPath]);
   const agenda = useMemo(() => (appts ? todayAgenda(appts.clients, now) : []), [appts, now]);
   const waiting = useMemo(() => (appts ? waitingRequests(appts.requests, now) : { pending: [], late: 0 }), [appts, now]);
   const fmt = (iso: string) => new Date(iso).toLocaleDateString('tr-TR');
@@ -92,15 +106,18 @@ export function Home() {
 
   return (
     <section className="home" aria-labelledby="home-title">
-      <header className="home-hero">
-        <h2 id="home-title" className="home-eyebrow">
-          Genel Bakış
-        </h2>
-        <p className="home-greet">{greeting(istanbulHour(now))}</p>
-        <p className="home-summary">
-          <span>{formatDay(today, 'tr')}</span>
-          {appts && <span> · {summaryLine(agenda.length, waiting.pending.length)}</span>}
-        </p>
+      <header className="home-hero home-banner">
+        <div>
+          <h2 id="home-title" className="home-eyebrow">
+            Genel Bakış
+          </h2>
+          <p className="home-greet">{greeting(istanbulHour(now))}</p>
+          <p className="home-summary">
+            <span>{formatDay(today, 'tr')}</span>
+            {appts && <span> · {summaryLine(agenda.length, waiting.pending.length)}</span>}
+          </p>
+        </div>
+        <span className="home-sun" aria-hidden="true" />
       </header>
 
       {error && (
@@ -195,13 +212,19 @@ export function Home() {
           {d && (
             <div className="home-grid">
               <article className="home-card" aria-labelledby="hc-last">
-                <h3 id="hc-last">Son yayınlanan</h3>
+                <h3 id="hc-last" className="hc-title">
+                  <span className="tone-tile tone-tile-sm tone-adacayi" aria-hidden="true">
+                    <Icon as={Sparkles} size={15} />
+                  </span>
+                  Son yayınlanan
+                </h3>
                 {d.lastLive ? (
                   <>
-                    <a className="home-card-title" href={`#/yazi/${d.lastLive.key}`}>
-                      {d.lastLive.tr.fm.title}
+                    <a className="home-last" href={`#/yazi/${d.lastLive.key}`}>
+                      {lastCover ? <img src={lastCover} alt="" /> : <span className="home-last-empty" aria-hidden="true" />}
+                      <span className="home-card-title">{d.lastLive.tr.fm.title}</span>
                     </a>
-                    <p className="home-card-meta">{fmt(d.lastLive.tr.fm.publishedAt)}</p>
+                    <p className="home-card-meta">{`${fmt(d.lastLive.tr.fm.publishedAt)} · ${readingTime((d.lastLive as LoadedPost).body.tr)} dk okuma`}</p>
                     <p className={`home-site home-site-${phase}`}>{SITE_LABEL[phase]}</p>
                   </>
                 ) : (
@@ -210,7 +233,12 @@ export function Home() {
               </article>
               <article className="home-card" aria-labelledby="hc-drafts">
                 <div className="home-card-head">
-                  <h3 id="hc-drafts">Taslaklar</h3>
+                  <h3 id="hc-drafts" className="hc-title">
+                  <span className="tone-tile tone-tile-sm tone-gunes" aria-hidden="true">
+                    <Icon as={FileText} size={15} />
+                  </span>
+                  Taslaklar
+                </h3>
                   <a href="#/yazilar/taslaklar">Tümü</a>
                 </div>
                 {d.recentDrafts.length === 0 ? (
@@ -218,8 +246,9 @@ export function Home() {
                 ) : (
                   <ul className="home-list">
                     {d.recentDrafts.map((x) => (
-                      <li key={x.key}>
+                      <li key={x.key} className="home-draft">
                         <a href={`#/yazi/${x.key}`}>{x.title.tr.trim() || x.title.en.trim() || 'Başlıksız taslak'}</a>
+                        <span className="home-card-meta">{`Son düzenleme: ${new Date(x.updatedAt).toLocaleDateString('tr-TR')}`}</span>
                       </li>
                     ))}
                   </ul>
@@ -228,7 +257,12 @@ export function Home() {
               {d.scheduled.length > 0 && (
                 <article className="home-card" aria-labelledby="hc-planned">
                   <div className="home-card-head">
-                    <h3 id="hc-planned">Planlanan</h3>
+                    <h3 id="hc-planned" className="hc-title">
+                  <span className="tone-tile tone-tile-sm tone-lavanta" aria-hidden="true">
+                    <Icon as={CalendarClock} size={15} />
+                  </span>
+                  Planlanan
+                </h3>
                     <a href="#/yazilar/planlanan">Tümü</a>
                   </div>
                   <ul className="home-list">
@@ -242,7 +276,12 @@ export function Home() {
                 </article>
               )}
               <article className="home-card home-actions" aria-labelledby="hc-actions">
-                <h3 id="hc-actions">Hızlı işlemler</h3>
+                <h3 id="hc-actions" className="hc-title">
+                  <span className="tone-tile tone-tile-sm tone-deniz" aria-hidden="true">
+                    <Icon as={Zap} size={15} />
+                  </span>
+                  Hızlı işlemler
+                </h3>
                 <ul>
                   <li>
                     <button type="button" className="quick tone-lavanta" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
@@ -269,17 +308,22 @@ export function Home() {
                     </a>
                   </li>
                   <li>
-                    <a className="quick tone-deniz" href="/" target="_blank" rel="noreferrer">
+                    <a className="quick tone-deniz" href="#/randevular?ekle=yeni">
                       <span className="tone-tile" aria-hidden="true">
-                        <Icon as={ExternalLink} size={18} />
+                        <Icon as={CalendarPlus} size={18} />
                       </span>
-                      Siteyi aç ↗
+                      Seans ekle
                     </a>
                   </li>
                 </ul>
               </article>
               <article className="home-card" aria-labelledby="hc-missing">
-                <h3 id="hc-missing">Eksikler</h3>
+                <h3 id="hc-missing" className="hc-title">
+                  <span className="tone-tile tone-tile-sm tone-kiremit" aria-hidden="true">
+                    <Icon as={CircleAlert} size={15} />
+                  </span>
+                  Eksikler
+                </h3>
                 {d.incomplete.length === 0 ? (
                   <EmptyState icon={CheckCircle2}>Eksik yok.</EmptyState>
                 ) : (
