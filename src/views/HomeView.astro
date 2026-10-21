@@ -26,8 +26,8 @@ import { portraitStyle } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { personLd, professionalServiceLd } from '../lib/jsonld';
 import { pathFor, postPath } from '../i18n/routes';
-import { bookPath, bookingLive } from '../lib/booking-entry';
-import { bookingClosed } from '../lib/booking-intake';
+import { bookingLive } from '../lib/booking-entry';
+import { bookHref, bookingClosed } from '../lib/booking-intake';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -96,13 +96,13 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       {intro && <p class="intro">{intro}</p>}
       {
         bookingClosed(lang) ? (
-          <a id="top-cta" class="top-cta is-closed" href={bookPath(lang)}>
+          <a id="top-cta" class="top-cta is-closed" href={bookHref(lang)}>
             <Icon name="booking" size={20} />
             {t(lang, 'bookSession')}
             <span class="closed-badge">{t(lang, 'bookingClosed')}</span>
           </a>
         ) : (
-          <a id="top-cta" class="top-cta" href={bookPath(lang)}>
+          <a id="top-cta" class="top-cta" href={bookHref(lang)}>
             <Icon name="booking" size={20} />
             {t(lang, 'bookSession')}
           </a>
@@ -217,7 +217,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     }
   </div>
 
-  {!bookingClosed(lang) && <StickyCta mode="afterTopCta" href={bookPath(lang)} label={t(lang, 'bookSession')} />}
+  {!bookingClosed(lang) && <StickyCta mode="afterTopCta" href={bookHref(lang)} label={t(lang, 'bookSession')} />}
 </BaseLayout>
 
 <style>

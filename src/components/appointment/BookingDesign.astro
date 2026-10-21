@@ -176,10 +176,15 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
 <div class="wz booking" data-booking data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="session" data-config={config} data-endpoint={endpoint} data-messages={messages}>
   <p class="verify-note" data-verify-note role="status" hidden></p>
   <WaitlistForm lang={lang} kind="session" email={email} />
-  <p class="preview-note" role="note" data-hide-on-done>
-    <Icon name="alert" size={16} />
-    {T.preview}
-  </p>
+  {
+    /* Dev server only: the live site shows the form without the note. */
+    import.meta.env.DEV && (
+      <p class="preview-note" role="note" data-hide-on-done>
+        <Icon name="alert" size={16} />
+        {T.preview}
+      </p>
+    )
+  }
 
   <div class="first-time" data-first-time data-hide-on-done>
     <a class="ft-link" href={pathFor('preConsult', lang)}>

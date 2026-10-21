@@ -28,7 +28,9 @@ describe('static pages', () => {
       expect(d.querySelector('link[rel=canonical]')?.getAttribute('href'), p).toMatch(/^https:\/\//);
       // node-html-parser has no reliable :not([alt]); filter by hand.
       expect(d.querySelectorAll('img').filter((i) => !i.hasAttribute('alt')).length, p).toBe(0);
-      expect(d.textContent, p).not.toMatch(/Lefkoşa|İstanbul|yüz yüze|NFC/i);
+      expect(d.textContent, p).not.toMatch(/Lefkoşa|İstanbul|NFC/i);
+      // The booking forms name face-to-face therapy only as "not available now" (owner's design); no other page mentions it.
+      if (!['/randevu/', '/on-gorusme/'].includes(p)) expect(d.textContent, p).not.toMatch(/yüz yüze/i);
     }
   });
 
@@ -47,9 +49,9 @@ describe('static pages', () => {
     expect(enLd.find((d) => d['@type'] === 'FAQPage').mainEntity).toHaveLength(2);
   });
 
-  it('home links to the free intro call page, which exists in both languages', () => {
-    expect(loadPage('/').querySelector('a[href="/on-gorusme/"]')).not.toBeNull();
-    expect(loadPage('/en/').querySelector('a[href="/en/intro-call/"]')).not.toBeNull();
+  it('the free intro call is offered on the start page and exists in both languages', () => {
+    expect(loadPage('/randevu-al/').querySelector('a[href="/on-gorusme/#pc-form"]')).not.toBeNull();
+    expect(loadPage('/en/book/').querySelector('a[href="/en/intro-call/#pc-form"]')).not.toBeNull();
     expect(loadPage('/on-gorusme/').querySelector('h1')?.text).toBe('Ücretsiz Ön Görüşme');
     expect(loadPage('/en/intro-call/').querySelector('h1')?.text).toBe('Free Intro Call');
   });
@@ -68,11 +70,10 @@ describe('static pages', () => {
 
   it('home has one top booking CTA', () => {
     expect(loadPage('/').querySelectorAll('#top-cta').length).toBe(1);
-    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
-    // English booking closed (booking.json intake): the button still leads to the page that says so.
+    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu-al/');
+    // English booking closed (booking.json intake): the button leads straight to the page that says so.
     expect(loadPage('/en/').querySelector('#top-cta')?.getAttribute('href')).toBe('/en/appointment/');
-    expect(loadPage('/en/appointment/').querySelector('.lead')?.text).toBe('Booking is closed at the moment. You can reach me by e-mail.');
-    expect(loadPage('/randevu/').querySelector('.lead')?.text).toContain('çok yakında');
+    expect(loadPage('/en/appointment/').querySelector('meta[name=description]')?.getAttribute('content')).toBe('Booking is closed at the moment. You can reach me by e-mail.');
   });
 
   it.each(['/on-gorusme/', '/en/intro-call/'])('%s marks its questions as FAQPage, the same ones the page shows', (p) => {
@@ -103,22 +104,22 @@ describe('static pages', () => {
     expect(home.querySelectorAll('.post-card').length).toBeGreaterThan(0);
   });
 
-  it('appointment page explains booking is coming soon and offers e-mail', () => {
+  it('booking pages hold the live form, with e-mail as the fallback and "Haber et" for a closed language', () => {
     const tr = loadPage('/randevu/');
     expect(tr.querySelector('h1')?.text).toBe('Randevu Al');
-    expect(tr.textContent).toContain('Online randevu sistemi çok yakında burada. Şimdilik e-posta ile ulaşabilirsiniz.');
-    expect(tr.querySelector('main a[href^="mailto:"]')?.getAttribute('href')).toBe('mailto:iletisim@example.com');
-    expect(tr.querySelector('main a[href="/iletisim/"]')).not.toBeNull();
+    expect(tr.querySelector('main [data-booking][data-lang="tr"]')).not.toBeNull();
+    expect(tr.querySelector('main a[href="mailto:iletisim@example.com"]')).not.toBeNull();
     const en = loadPage('/en/appointment/');
-    expect(en.querySelector('main a[href^="mailto:"]')).not.toBeNull();
-    expect(en.querySelector('main a[href="/en/contact/"]')).not.toBeNull();
+    // English is closed in booking.json: the page's script opens on "Haber et" (booking-submit.ts).
+    expect(JSON.parse(en.querySelector('main [data-booking]')!.getAttribute('data-config')!).intake ?? { en: false }).toMatchObject({ en: false });
+    expect(en.querySelector('main [data-closed]')).not.toBeNull();
   });
 
   it('contact page has the form, the channels and the emergency note', () => {
     const d = loadPage('/iletisim/');
     expect(d.querySelectorAll('main form')).toHaveLength(1);
     expect(d.textContent).toContain('112');
-    expect(d.querySelector('main a[href="/randevu/"]')).not.toBeNull();
+    expect(d.querySelector('main a[href="/randevu-al/"]')).not.toBeNull();
   });
 
   it('contact form: fields, fixed topics, consent linking the privacy notice, honeypot, appointment note', () => {
@@ -159,7 +160,7 @@ describe('static pages', () => {
       expect(form.querySelector('button[type=submit]')?.hasAttribute('disabled')).toBe(true);
       expect(form.querySelector('.result')?.hasAttribute('aria-live')).toBe(false);
       expect(form.querySelector('.result')?.hasAttribute('role')).toBe(false);
-      expect(d.querySelector('main .contact-form .note a')?.getAttribute('href')).toBe(lang === 'tr' ? '/randevu/' : '/en/appointment/');
+      expect(d.querySelector('main .contact-form .note a')?.getAttribute('href')).toBe(lang === 'tr' ? '/randevu-al/' : '/en/appointment/');
     }
     expect(squash(loadPage('/iletisim/').querySelector('main .contact-form .note')?.text)).toBe(
       'Randevu ve seanslarla ilgili sorularınız için Randevu sayfasını kullanın.',
@@ -251,7 +252,8 @@ describe('page shell (every page but home)', () => {
   const pages = allPages().filter((p) => p !== '/' && p !== '/en/');
   const isPost = (p: string) => /^\/(en\/)?blog\/[^/]+\/$/.test(p);
   const langOf = (p: string) => (p.startsWith('/en/') ? 'en' : 'tr');
-  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/'];
+  // No bottom bar on the client's page, the start page and the forms themselves.
+  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/randevu/', '/on-gorusme/'];
 
   /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
   const pageCss = (p: string) => {
@@ -303,7 +305,7 @@ describe('page shell (every page but home)', () => {
     expect(sticky).toHaveLength(1);
     expect(sticky[0].getAttribute('data-mode')).toBe('always');
     expect(sticky[0].getAttribute('aria-hidden')).toBeUndefined();
-    expect(sticky[0].querySelector('a')?.getAttribute('href')).toBe('/randevu/');
+    expect(sticky[0].querySelector('a')?.getAttribute('href')).toBe('/randevu-al/');
     expect(sticky[0].text).toContain('Randevu Al');
   });
 
@@ -346,7 +348,7 @@ describe('inner pages redesign (spec §5.9)', () => {
   });
 
   it('about: desktop has a sticky side column (portrait, name, memberships, Randevu Al) beside the open CV sections', () => {
-    for (const [path, appt] of [['/hakkimda/', '/randevu/'], ['/en/about/', '/en/appointment/']] as const) {
+    for (const [path, appt] of [['/hakkimda/', '/randevu-al/'], ['/en/about/', '/en/appointment/']] as const) {
       const d = loadPage(path);
       const about = d.querySelector('main .about')!;
       const [top, side, main, cv] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
@@ -483,7 +485,10 @@ describe('inner pages redesign (spec §5.9)', () => {
   it('appointment, legal and 404 keep their content in the new look', () => {
     const appt = loadPage('/randevu/');
     expect(appt.querySelector('main .page-head h1')?.text).toBe('Randevu Al');
-    expect(appt.querySelector('main a.list-item[href^="mailto:"]')).toBeTruthy();
+    // The live booking form, without the dev server's preview note.
+    expect(appt.querySelector('main [data-booking][data-endpoint]')).toBeTruthy();
+    expect(appt.querySelector('main .preview-note')).toBeNull();
+    expect(loadPage('/on-gorusme/').querySelector('main [data-preconsult] .preview-note')).toBeNull();
     expect(loadPage('/gizlilik/').querySelector('main article.legal.legal-page')).toBeTruthy();
     const nf = loadPage('/404.html');
     expect(nf.querySelector('main .not-found svg.sun-mark')).toBeTruthy();
@@ -506,7 +511,7 @@ describe('inner pages redesign (spec §5.9)', () => {
     }
   });
 
-  it('the booking start page: three ways (intro call recommended), the info form, out of search until booking is live', () => {
+  it('the booking start page: three ways (intro call recommended), the info form, in search now that booking is live', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
     for (const [path, intro, appt] of [['/randevu-al/', '/on-gorusme/#pc-form', '/randevu/'], ['/en/book/', '/en/intro-call/#pc-form', '/en/appointment/']] as const) {
       const d = loadPage(path);
@@ -519,13 +524,13 @@ describe('inner pages redesign (spec §5.9)', () => {
       expect(form.querySelector('input[name="info-consent"]'), path).not.toBeNull();
       // No fee amount in the answers offered.
       expect(d.textContent, path).not.toMatch(/\d+\s*(TL|₺|€|\$)/);
-      expect(d.querySelector('meta[name=robots]')?.getAttribute('content'), path).toBe('noindex');
-      expect(sm).not.toContain(path);
+      expect(d.querySelector('meta[name=robots]'), path).toBeNull();
+      expect(sm).toContain(path);
       expect(d.querySelector('.sticky-cta'), path).toBeNull();
     }
-    // Until the forms are live, "Randevu Al" still goes to the booking page and the intro button stays on the home page.
-    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
-    expect(loadPage('/').querySelector('a.pre-cta')).not.toBeNull();
+    // With the forms live, "Randevu Al" opens the start page and the intro button leaves the home page.
+    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu-al/');
+    expect(loadPage('/').querySelector('a.pre-cta')).toBeNull();
   });
 
   it('the client’s own page and the booking pages load no Google Analytics, even where the site has it (real data build)', () => {

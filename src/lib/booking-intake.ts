@@ -2,6 +2,8 @@
 import type { Lang } from './settings';
 import { getBooking } from './settings';
 import { intakeOpen } from './booking-form';
+import { bookPath } from './booking-entry';
+import { pathFor } from '../i18n/routes';
 
 /**
  * Booking closed in a language (booking.json `intake`, switched in the panel's Ayarlar › Önemli
@@ -10,3 +12,9 @@ import { intakeOpen } from './booking-form';
  * a "Randevu alımına kapalı" badge, and there is no bottom booking bar.
  */
 export const bookingClosed = (lang: Lang): boolean => !intakeOpen(getBooking(), lang);
+
+/**
+ * Where the site's "Randevu Al" links go: the start page (booking-entry `bookPath`), or, while
+ * booking is closed in that language, straight to the booking page that says so and offers "Haber et".
+ */
+export const bookHref = (lang: Lang): string => (bookingClosed(lang) ? pathFor('appointment', lang) : bookPath(lang));

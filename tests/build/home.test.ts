@@ -31,7 +31,8 @@ describe('home (phone)', () => {
     expect([...at].sort((a, b) => a - b)).toEqual(at);
     // The contact card is not a home list item; "Randevu Al" and the social box do its job.
     expect(d.querySelector('.home-phone a.list-item[href="/iletisim/"]')).toBeNull();
-    expect(d.querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
+    // The booking forms are live (2026-10-21): "Randevu Al" opens the start page.
+    expect(d.querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu-al/');
   });
 
   it('shows name, title with "Online görüşme", the TPD line and the intro', () => {
@@ -156,11 +157,10 @@ describe('home (desktop)', () => {
     expect(en().querySelector('.home-desk .desktop-hero h1.greeting .me')?.text).toBe("I'm Psychologist Osman Güneş Özkurt.");
     expect(hero.querySelector('p.tagline')?.text).toBe('Daha iyi bir yaşam mümkün.');
     expect(hero.text).toContain('Kendini anlamak');
-    expect(hero.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();
-    // Owner's review 2026-10-19: "Ön Görüşme" with a "Ücretsiz" tag replaces "İlk görüşme nasıl geçer?".
-    expect(hero.querySelector('a[href="/on-gorusme/"]')?.text).toContain('Ön Görüşme');
-    expect(hero.querySelector('a[href="/on-gorusme/"] .pre-sub')?.text).toBe('Ücretsiz · Online');
-    expect(en().querySelector('.home-desk .desktop-hero a[href="/en/intro-call/"]')).toBeTruthy();
+    expect(hero.querySelector('a.btn[href="/randevu-al/"]')).toBeTruthy();
+    // With the forms live (Faz 3, one way in) the intro call is offered on the start page, not beside "Randevu Al".
+    expect(hero.querySelector('a.pre')).toBeNull();
+    expect(en().querySelector('.home-desk .desktop-hero a.book.is-closed')?.getAttribute('href')).toBe('/en/appointment/');
     expect(hero.querySelector('a[href="/sik-sorulan-sorular/#ilk-gorusme"]')).toBeNull();
     // No membership / response-time line on the desktop hero (owner's review 2026-10-18).
     expect(hero.querySelector('.trust')).toBeNull();
@@ -267,7 +267,7 @@ describe('desktop header and footer', () => {
     ]);
     expect(h.querySelector('.theme-segmented')).toBeTruthy();
     expect(h.querySelector('a.lang-switch')).toBeTruthy();
-    expect(h.querySelector('a.btn[href="/randevu/"]')).toBeTruthy();
+    expect(h.querySelector('a.btn[href="/randevu-al/"]')).toBeTruthy();
     expect(h.querySelector('details')).toBeNull();
   });
 

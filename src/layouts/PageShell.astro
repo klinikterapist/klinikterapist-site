@@ -8,8 +8,7 @@
 import type { Lang } from '../lib/settings';
 import type { Meta } from '../lib/seo';
 import { pathFor } from '../i18n/routes';
-import { bookPath } from '../lib/booking-entry';
-import { bookingClosed } from '../lib/booking-intake';
+import { bookHref, bookingClosed } from '../lib/booking-intake';
 import { t } from '../i18n/ui';
 import BaseLayout from './BaseLayout.astro';
 import TopBar from '../components/ui/TopBar.astro';
@@ -44,7 +43,7 @@ const { lang, meta, jsonLd, alternatePaths, noindex, back, cta = true, noAnalyti
     }
   </div>
   <slot />
-  {cta && !bookingClosed(lang) && <StickyCta mode="always" href={bookPath(lang)} label={t(lang, 'bookSession')} />}
+  {cta && !bookingClosed(lang) && <StickyCta mode="always" href={bookHref(lang)} label={t(lang, 'bookSession')} />}
 </BaseLayout>
 
 <style>

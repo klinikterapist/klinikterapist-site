@@ -7,6 +7,7 @@
  * No second author line at the end: the byline at the top is enough (owner's review 2026-10-18).
  */
 import { render } from 'astro:content';
+import { bookHref } from '../lib/booking-intake';
 import { Image, getImage } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import PageShell from '../layouts/PageShell.astro';
@@ -25,7 +26,6 @@ import { absoluteUrl, buildMeta } from '../lib/seo';
 import { blogPostingLd, breadcrumbLd } from '../lib/jsonld';
 import { formatDate, isoDay } from '../lib/date';
 import { categoryPath, pathFor, postPath } from '../i18n/routes';
-import { bookPath } from '../lib/booking-entry';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -150,7 +150,7 @@ const rss = lang === 'tr' ? '/rss.xml' : '/en/rss.xml';
       <div class="post-end">
         <References references={data.references ?? []} body={post.body ?? ''} lang={lang} />
         <ShareButtons lang={lang} title={data.title} url={absoluteUrl(path)} />
-        <a class="big-cta post-cta" href={bookPath(lang)}>
+        <a class="big-cta post-cta" href={bookHref(lang)}>
           <Icon name="calendar" size={18} />
           {t(lang, 'bookSession')}
         </a>

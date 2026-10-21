@@ -339,8 +339,11 @@ describe('blog list redesign (spec §5.8)', () => {
     }
     // With featured posts (the samples build) the page is indexed and listed.
     const samples = readFileSync(join('dist-test-samples', 'sitemap-0.xml'), 'utf8');
-    const listed = loadPage('/blog/populer/', 'dist-test-samples').querySelectorAll('main .post-rows a').length > 0;
-    expect(samples.includes('/blog/populer/</loc>')).toBe(listed);
+    const popular = loadPage('/blog/populer/', 'dist-test-samples');
+    const listed = popular.querySelectorAll('main .post-rows a').length > 0;
+    // The real seo.json may keep the whole site out of search (owner, 2026-10-21): then nothing is listed.
+    const hidden = popular.querySelector('meta[name=robots]')?.getAttribute('content')?.includes('noindex') ?? false;
+    expect(samples.includes('/blog/populer/</loc>')).toBe(listed && !hidden);
   });
 
   it('popular section has the #popular anchor in both languages when posts qualify', () => {
@@ -466,7 +469,7 @@ describe('post page redesign (spec §5.8)', () => {
       if (!d.querySelector('article')) continue;
       expect(d.querySelector('a.author-line, .author-box'), path).toBeNull();
       const end = d.querySelector('.post-end')!;
-      expect(end.querySelectorAll('a[href$="/randevu/"], a[href$="/appointment/"]'), path).toHaveLength(1);
+      expect(end.querySelectorAll('a[href$="/randevu-al/"], a[href$="/appointment/"]'), path).toHaveLength(1);
       expect(end.innerHTML.indexOf('data-share')).toBeLessThan(end.innerHTML.indexOf('post-cta'));
     }
     expect(loadPage(POST).querySelector('.post-cta')?.text).toContain('Randevu Al');

@@ -15,6 +15,7 @@ import { getFaq } from '../lib/settings';
 import type { Lang } from '../lib/settings';
 import { getContact } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
+import { bookingLive } from '../lib/booking-entry';
 import { pathFor } from '../i18n/routes';
 import { bookingClosed } from '../lib/booking-intake';
 import { t } from '../i18n/ui';
@@ -25,7 +26,7 @@ interface Props {
 const { lang } = Astro.props;
 const title = t(lang, 'bookSession');
 const { email } = getContact();
-const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
+const design = bookingLive();
 // Closed in this language (Ayarlar › Önemli ayarlar): the e-mail page says so instead of "soon".
 const lead = t(lang, bookingClosed(lang) ? 'appointmentClosed' : 'appointmentSoon');
 const { meta, alternatePaths } = pageMeta('appointment', lang, title, lead);

@@ -10,8 +10,8 @@
 import type { Lang } from '../../lib/settings';
 import { EMPTY_IMAGE, portraitImage } from '../../lib/portrait-image';
 import { pathFor } from '../../i18n/routes';
-import { bookPath, bookingLive } from '../../lib/booking-entry';
-import { bookingClosed } from '../../lib/booking-intake';
+import { bookingLive } from '../../lib/booking-entry';
+import { bookHref, bookingClosed } from '../../lib/booking-intake';
 import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 import SunMark from '../brand/SunMark.astro';
@@ -53,13 +53,13 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
       <div class="actions">
         {
           bookingClosed(lang) ? (
-            <a class="big book is-closed" href={bookPath(lang)}>
+            <a class="big book is-closed" href={bookHref(lang)}>
               <Icon name="booking" size={20} />
               {t(lang, 'bookSession')}
               <span class="closed-badge">{t(lang, 'bookingClosed')}</span>
             </a>
           ) : (
-            <a class="btn big book" href={bookPath(lang)}>
+            <a class="btn big book" href={bookHref(lang)}>
               <Icon name="booking" size={20} />
               {t(lang, 'bookSession')}
             </a>

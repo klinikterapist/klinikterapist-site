@@ -7,11 +7,11 @@
  * bots. Success and failure texts are in the markup; the failure text carries a mailto fallback.
  */
 import type { Lang } from '../../lib/settings';
+import { bookHref } from '../../lib/booking-intake';
 import { CONTACT_LIMITS, CONTACT_TOPICS } from '../../lib/contact-form';
 import type { ContactMessages } from '../../lib/contact-client';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
 import { pathFor } from '../../i18n/routes';
-import { bookPath } from '../../lib/booking-entry';
 import { t } from '../../i18n/ui';
 import Icon from '../Icon.astro';
 
@@ -46,7 +46,7 @@ const id = (name: string) => `cf-${name}`;
   <h2 id="cf-title" class="section-label">{t(lang, 'formTitle')}</h2>
   <p class="note">
     <Icon name="calendar" size={18} />
-    <span>{noteBefore}<a href={bookPath(lang)}>{t(lang, 'formAppointmentLink')}</a>{noteAfter}</span>
+    <span>{noteBefore}<a href={bookHref(lang)}>{t(lang, 'formAppointmentLink')}</a>{noteAfter}</span>
   </p>
 
   <form method="post" data-contact-form data-endpoint={endpoint} data-lang={lang} data-messages={JSON.stringify(messages)}>

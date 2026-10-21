@@ -12,6 +12,7 @@
  * (`.about-main`); CSS shows one of the two.
  */
 import PageShell from '../layouts/PageShell.astro';
+import { bookHref } from '../lib/booking-intake';
 import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import TilePair from '../components/ui/TilePair.astro';
@@ -27,7 +28,6 @@ import { pageMeta } from '../lib/seo';
 import { profilePageLd } from '../lib/jsonld';
 import { renderMarkdown } from '../lib/markdown';
 import { pathFor } from '../i18n/routes';
-import { bookPath } from '../lib/booking-entry';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -96,7 +96,7 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
         }
         {lead && <p class="lead">{lead}</p>}
       </div>
-      <a class="big-cta side-cta" href={bookPath(lang)}>
+      <a class="big-cta side-cta" href={bookHref(lang)}>
         <Icon name="calendar" size={18} />
         {t(lang, 'bookSession')}
       </a>
