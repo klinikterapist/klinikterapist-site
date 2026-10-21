@@ -23,6 +23,7 @@ import { askTracking, clientLink, mailClientLink, viewTracking } from './trackin
 import { flushStats, recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 import { readMailboxes, saveMailboxes, testMailboxes } from './mailboxes';
+import { checkHourly, stampHourly } from './watchdog';
 
 type Params = Record<string, unknown>;
 type Handler = (gas: Gas, p: Params) => unknown;
@@ -146,7 +147,17 @@ export const ACTIONS: Record<string, Handler> = {
   },
 };
 
+/** Never lets the "Saatlik görev durdu" check (watchdog.ts) fail a request. */
+function watch(gas: Gas): void {
+  try {
+    checkHourly(gas);
+  } catch (e) {
+    gas.log(`watchdog: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 export function handle(gas: Gas, body: string): ApiResponse {
+  watch(gas);
   let req: Params;
   try {
     const parsed: unknown = JSON.parse(body);
@@ -184,6 +195,7 @@ export function doPost(e: { postData?: { contents?: string } }) {
  * without any draft text; the draft keeps its plan and the next hour tries again.
  */
 export async function runHourly(gas: Gas): Promise<void> {
+  stampHourly(gas);
   try {
     await runScheduled(gas, new Date(gas.now()));
   } catch (e) {
@@ -211,6 +223,7 @@ export function hourly() {
 }
 
 export function doGet(e?: { parameter?: Record<string, string> }) {
+  watch(realGas());
   if (e?.parameter?.action === 'booking.busy') {
     let out: ApiResponse;
     try {
