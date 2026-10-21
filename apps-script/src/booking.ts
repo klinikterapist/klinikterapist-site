@@ -135,12 +135,11 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
     `Gönderim: ${new Date(now).toISOString()}`,
     '',
     ...(i.note.trim() ? ['Not:', i.note.trim(), ''] : []),
-    'Bu saat 24 saat boyunca sitede "Dolu" görünüyor. Panelde Talepler ekranından onaylayın ya da yanıtlayın; karar vermezseniz saat 24 saat sonra kendiliğinden açılır:',
-    `Talepler: ${PANEL_URL}#/randevular`,
+    'Bu saat 24 saat boyunca sitede "Dolu" görünüyor. Panelde Randevu Talepleri ekranından onaylayın ya da yanıtlayın; karar vermezseniz saat 24 saat sonra kendiliğinden açılır:',
+    `Randevu Talepleri: ${PANEL_URL}#/randevular`,
     '',
     '—',
     'Yanıtla dediğinizde e-posta danışana gider; onayı ya da başka bir saat önerisini oradan yazabilirsiniz.',
-    'Site bu bilgileri saklamaz; yalnızca bu e-postada bulunur.',
   ].join('\n');
   const label = i.kind === 'session' ? 'Randevu talebi' : 'Ön görüşme talebi';
   return { subject: `[klinikterapist] ${label} — ${name} — ${formatDay(i.day, 'tr')} ${i.time}`, body };

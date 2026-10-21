@@ -45,7 +45,7 @@ export const INFO_TOPICS: InfoTopic[] = [
     q: { tr: 'Gizlilik nasıl korunur?', en: 'How is confidentiality kept?' },
     a: {
       tr: [
-        'Seanslarda konuşulanlar meslek etiği ve gizlilik ilkeleri gereği ikimizin arasında kalır. Bu ilkenin yasal ve etik sınırları (örneğin sizin ya da bir başkasının ciddi bir tehlike altında olması) ilk seansta açıkça konuşulur.',
+        'Seanslarda konuşulanlar meslek etiği ve gizlilik ilkeleri gereği aramızda kalır. Bu ilkenin yasal ve etik sınırları (örneğin sizin ya da bir başkasının ciddi bir tehlike altında olması) ilk seansta açıkça konuşulur.',
         'Kişisel verileriniz KVKK kapsamında, yalnızca gerektiği kadar ve güvenli biçimde saklanır.',
       ],
       en: [

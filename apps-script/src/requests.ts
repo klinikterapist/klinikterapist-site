@@ -187,7 +187,7 @@ export function warnExpiringHolds(gas: Gas): number {
     ...due.map((r) => `- ${oneLine(r.name)} · ${what(r)} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')} · ${left(r)}`),
     '',
     'Karar vermezseniz saat sitede yeniden açılır ve başka biri alabilir; talep ise 30 gün boyunca panelde kalır.',
-    `Randevu talepleri: ${PANEL_URL}#/randevular`,
+    `Randevu Talepleri: ${PANEL_URL}#/randevular`,
   ].join('\n');
   gas.mail.send({ to: notifyTo(gas, owner), replyTo: owner, subject: `[klinikterapist] ${due.length === 1 ? 'Bir talebin' : `${due.length} talebin`} tutma süresi doluyor`, body, name: 'klinikterapist.com randevu sistemi' });
   return due.length;
