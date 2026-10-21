@@ -17,6 +17,7 @@ import { Button, Dialog, Field } from '../kit';
 import { Callout, Figure, Youtube } from './nodes';
 import type { ImageStore } from './images';
 import { Toolbar } from './Toolbar';
+import { SelectionMenu } from './SelectionMenu';
 import { CoverBlock, type CoverPatch } from './CoverBlock';
 import { DropCap } from './dropcap';
 import { Citation, citationAtCursor, citedRefs, syncCitationRefs, type CitationAttrs } from './Citation';
@@ -254,6 +255,7 @@ export function PostEditor(props: {
       />
       {props.cover && <CoverBlock {...props.cover} images={images} onError={onError} lang={lang} alt={fields.coverAlt} />}
       <EditorContent editor={editor} />
+      {editor && <SelectionMenu editor={editor} onLink={() => setAsk({ kind: 'link', value: String(editor.getAttributes('link').href ?? ''), error: null })} />}
       <input ref={file} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
       {uploading && <p className="ed-muted" role="status">Görsel küçültülüp yükleniyor…</p>}
       {cite?.kind === 'add' && (

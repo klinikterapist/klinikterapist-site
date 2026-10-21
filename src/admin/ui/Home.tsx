@@ -13,9 +13,12 @@ import { formatDay } from '../../lib/booking-form';
 import { cachedDrafts, ensureTriggersOnce, loadDrafts, loadSiteState, type SiteState } from '../lib/posts-repo';
 import { usePanel } from './context';
 import { useDeploy } from './DeployStatus';
-import { CalendarCheck, CheckCircle2, ChevronRight, FileText, Icon, Inbox, UserRound, type LucideIcon } from './icons';
+import { CalendarCheck, CalendarX, CheckCircle2, ChevronRight, ExternalLink, FileText, Icon, Inbox, PencilLine, UsersRound, type LucideIcon } from './icons';
+import { go } from './context';
+import { startNewPost } from '../lib/new-post';
 import { Banner, Button, EmptyState, Spinner } from './kit';
 import { StatsPanel } from './home/StatsPanel';
+import type { Tone } from './Shell';
 import { SESSION_KIND_LABEL, labelOf } from './appointments/AppointmentCalendar';
 
 const NO_POSTS: SiteState['posts'] = [];
@@ -24,9 +27,9 @@ const SITE_LABEL = { ok: 'Sitede yayında', updating: 'Site güncelleniyor…', 
 
 type Appointments = { clients: Client[]; requests: BookingRequest[] };
 
-function Tile({ href, icon, label, value, note, tone }: { href: string; icon: LucideIcon; label: string; value: ReactNode; note: string; tone?: 'warn' }) {
+function Tile({ href, icon, label, value, note, tone, hue }: { href: string; icon: LucideIcon; label: string; value: ReactNode; note: string; tone?: 'warn'; hue: Tone }) {
   return (
-    <a className={`home-tile${tone ? ` home-tile-${tone}` : ''}`} href={href}>
+    <a className={`home-tile tone-${hue}${tone ? ` home-tile-${tone}` : ''}`} href={href}>
       <span className="home-tile-icon" aria-hidden="true">
         <Icon as={icon} size={18} />
       </span>
@@ -107,17 +110,18 @@ export function Home() {
       )}
 
       <nav className="home-tiles" aria-label="Özet">
-        <Tile href="#/seans-takip" icon={CalendarCheck} label="Bugünkü seanslar" value={appts ? agenda.length : dash} note="Seans takibe git" />
+        <Tile href="#/seans-takip" hue="adacayi" icon={CalendarCheck} label="Bugünkü seanslar" value={appts ? agenda.length : dash} note="Danışanlara git" />
         <Tile
           href="#/randevular"
+          hue="kiremit"
           icon={Inbox}
           label="Bekleyen talepler"
           value={appts ? waiting.pending.length : dash}
           note={waiting.late ? `${waiting.late} talep 20 saati geçti` : 'Randevu taleplerine git'}
           tone={waiting.late ? 'warn' : undefined}
         />
-        <Tile href="#/seans-takip" icon={UserRound} label="Aktif danışanlar" value={appts ? appts.clients.length : dash} note="Seans takipteki danışanlar" />
-        <Tile href="#/yazilar" icon={FileText} label="Bu ay" value={d ? d.publishedThisMonth : dash} note="yayınlanan yazı" />
+        <Tile href="#/seans-takip" hue="deniz" icon={UsersRound} label="Aktif danışanlar" value={appts ? appts.clients.length : dash} note="Terapisi süren danışanlar" />
+        <Tile href="#/yazilar" hue="lavanta" icon={FileText} label="Bu ay" value={d ? d.publishedThisMonth : dash} note="yayınlanan yazı" />
       </nav>
 
       {d && d.scheduleErrors.length > 0 && (
@@ -237,6 +241,43 @@ export function Home() {
                   </ul>
                 </article>
               )}
+              <article className="home-card home-actions" aria-labelledby="hc-actions">
+                <h3 id="hc-actions">Hızlı işlemler</h3>
+                <ul>
+                  <li>
+                    <button type="button" className="quick tone-lavanta" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
+                      <span className="tone-tile" aria-hidden="true">
+                        <Icon as={PencilLine} size={18} />
+                      </span>
+                      Yeni yazı başlat
+                    </button>
+                  </li>
+                  <li>
+                    <a className="quick tone-kiremit" href="#/randevular">
+                      <span className="tone-tile" aria-hidden="true">
+                        <Icon as={Inbox} size={18} />
+                      </span>
+                      Talepleri yanıtla
+                    </a>
+                  </li>
+                  <li>
+                    <a className="quick tone-adacayi" href="#/seans-takip">
+                      <span className="tone-tile" aria-hidden="true">
+                        <Icon as={CalendarX} size={18} />
+                      </span>
+                      Saat kapat
+                    </a>
+                  </li>
+                  <li>
+                    <a className="quick tone-deniz" href="/" target="_blank" rel="noreferrer">
+                      <span className="tone-tile" aria-hidden="true">
+                        <Icon as={ExternalLink} size={18} />
+                      </span>
+                      Siteyi aç ↗
+                    </a>
+                  </li>
+                </ul>
+              </article>
               <article className="home-card" aria-labelledby="hc-missing">
                 <h3 id="hc-missing">Eksikler</h3>
                 {d.incomplete.length === 0 ? (

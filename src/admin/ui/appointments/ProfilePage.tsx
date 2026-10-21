@@ -11,7 +11,8 @@ import { formatDay, slotInstant } from '../../../lib/booking-form';
 import { sessionKey, sessionStats, sessionsOf, type SessionStats } from '../../../lib/sessions';
 import { attentionOf, hasFee } from '../../lib/attention';
 import { usePanel } from '../context';
-import { CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, UsersRound } from '../icons';
+import { CalendarCheck, CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, MessagesSquare, TriangleAlert, UsersRound } from '../icons';
+import { EventRow } from '../NotificationBell';
 import { WeekStrip } from './WeekStrip';
 import { Banner, Button, Spinner } from '../kit';
 import { AppointmentCalendar, SESSION_KIND_LABEL, labelOf } from './AppointmentCalendar';
@@ -141,10 +142,16 @@ export function ProfilePage() {
               <div className="k-group">
                 <h3 className="tk-group-title">{`Gelen talepler (${pending.length})`}</h3>
                 {pending.length ? (
-                  <ul className="nt-list">
+                  <ul className="ev-list">
                     {pending.slice(0, 5).map((r) => (
-                      <li key={r.id} className="nt-item">
-                        <a href="#/randevular">{`${r.name} · ${r.kind === 'intro' ? 'Ön görüşme' : 'Seans'} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')}`}</a>
+                      <li key={r.id} className="ev-row">
+                        <span className={`tone-tile ${r.kind === 'intro' ? 'tone-kiremit' : 'tone-adacayi'}`} aria-hidden="true">
+                          <Icon as={r.kind === 'intro' ? MessagesSquare : CalendarCheck} size={16} />
+                        </span>
+                        <span className="ev-body">
+                          <a href="#/randevular">{`${r.name} · ${r.kind === 'intro' ? 'Ön görüşme' : 'Seans'}`}</a>
+                          <span className="ev-meta">{`${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')}`}</span>
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -154,18 +161,23 @@ export function ProfilePage() {
               </div>
               <div className="k-group">
                 <h3 className="tk-group-title">Bildirimler</h3>
-                <ul className="nt-list">
-                  {attention.slice(0, 3).map((a) => (
-                    <li key={a.key} className={`nt-item nt-${a.tone}`}>
-                      <a href={a.link}>{a.text}</a>
-                    </li>
-                  ))}
-                  {data.events.slice(0, 5).map((e) => (
-                    <li key={e.id} className="nt-item">
-                      <span className="nt-time">{formatDay(istanbulDay(e.at), 'tr').split(' ').slice(0, 2).join(' ')}</span>
-                      {e.link ? <a href={e.link}>{e.text}</a> : <span>{e.text}</span>}
-                    </li>
-                  ))}
+                {attention.length > 0 && (
+                  <ul className="nt-att-list">
+                    {attention.slice(0, 3).map((a) => (
+                      <li key={a.key} className={`nt-att nt-att-${a.tone}`}>
+                        <Icon as={a.tone === 'err' ? CircleAlert : TriangleAlert} size={18} />
+                        <a href={a.link}>{a.text}</a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <ul className="ev-list">
+                  {[...data.events]
+                    .sort((a, b) => b.at - a.at)
+                    .slice(0, 5)
+                    .map((e) => (
+                      <EventRow key={e.id} e={e} isNew={false} now={now} />
+                    ))}
                 </ul>
                 <a className="back-link" href="#/bildirimler">
                   Tüm bildirimler →

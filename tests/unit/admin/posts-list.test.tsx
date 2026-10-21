@@ -45,7 +45,8 @@ describe('PostsList', () => {
   it('lists live posts with their status, and filters by Turkish-aware search and category', async () => {
     setup();
     expect(await screen.findByText('Kaygı ile yaşamak')).toBeTruthy();
-    expect(screen.getAllByText('Yayında')).toHaveLength(2);
+    // Two status badges, and the count above the tabs.
+    expect(screen.getAllByText('Yayında', { selector: '.badge' })).toHaveLength(2);
     fireEvent.change(screen.getByLabelText('Ara'), { target: { value: 'İYİ' } });
     expect(screen.queryByText('Kaygı ile yaşamak')).toBeNull();
     expect(screen.getByText('İyi bir uyku')).toBeTruthy();
@@ -83,7 +84,7 @@ describe('PostsList', () => {
   it('sorts by updatedAt, newest first by default', async () => {
     setup();
     await screen.findByText('İyi bir uyku');
-    const titles = () => screen.getAllByRole('link').filter((a) => a.className === 'post-row').map((a) => a.querySelector('.post-row-title')!.textContent);
+    const titles = () => screen.getAllByRole('link').filter((a) => a.classList.contains('post-row')).map((a) => a.querySelector('.post-row-title')!.textContent);
     expect(titles()).toEqual(['İyi bir uyku', 'Kaygı ile yaşamak']);
     fireEvent.change(screen.getByLabelText('Sırala'), { target: { value: 'oldest' } });
     expect(titles()).toEqual(['Kaygı ile yaşamak', 'İyi bir uyku']);

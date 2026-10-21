@@ -6,9 +6,65 @@ import { startNewPost } from '../lib/new-post';
 import { STATUS_LABEL, cachedDrafts, loadDrafts, loadSiteState, mergeList, type PostRow, type SiteState } from '../lib/posts-repo';
 import { formatSchedule } from '../lib/draft';
 import { go, usePanel, type PostsTab } from './context';
-import { FileText, Icon, Search } from './icons';
+import { CalendarClock, ChevronRight, FileText, Icon, PencilLine, Search, Sparkles, type LucideIcon } from './icons';
+import type { Tone } from './Shell';
 import { Banner, Button, EmptyState, Field, Select, Spinner } from './kit';
 
+
+/** How each status looks in the list: a tone and an icon beside the title. */
+const STATUS_LOOK: Record<PostRow['status'], { tone: Tone; icon: LucideIcon }> = {
+  yayında: { tone: 'adacayi', icon: Sparkles },
+  'yayında-değişiklik-var': { tone: 'kiremit', icon: PencilLine },
+  taslak: { tone: 'gunes', icon: FileText },
+  planlandı: { tone: 'lavanta', icon: CalendarClock },
+};
+
+/**
+ * Above the tabs (owner's brief 2026-10-21: visualise): the three counts and how the live posts share
+ * out over the categories, as one bar with a key.
+ */
+function PostsOverview({ rows, label, counts }: { rows: PostRow[]; label: (id: string) => string; counts: { live: number; drafts: number; planned: number } }) {
+  const live = rows.filter((r) => r.live);
+  const byCat = [...new Set(live.map((r) => r.category))]
+    .map((id) => ({ id, name: label(id), n: live.filter((r) => r.category === id).length }))
+    .sort((a, b) => b.n - a.n);
+  return (
+    <section className="posts-overview" aria-label="Yazıların özeti">
+      <dl className="posts-counts">
+        <div className="tone-adacayi">
+          <dt>Yayında</dt>
+          <dd>{counts.live}</dd>
+        </div>
+        <div className="tone-gunes">
+          <dt>Taslak</dt>
+          <dd>{counts.drafts}</dd>
+        </div>
+        <div className="tone-lavanta">
+          <dt>Planlanan</dt>
+          <dd>{counts.planned}</dd>
+        </div>
+      </dl>
+      {live.length > 0 && (
+        <div className="posts-cats">
+          <span className="v2-tile-label">Yayındaki yazıların kategorileri</span>
+          <span className="cat-bar" role="img" aria-label={byCat.map((c) => `${c.name}: ${c.n}`).join(', ')}>
+            {byCat.map((c, i) => (
+              <i key={c.id} style={{ flexGrow: c.n, background: `var(--p-chart-cat-${(i % 6) + 1})` }} />
+            ))}
+          </span>
+          <ul className="cat-key">
+            {byCat.map((c, i) => (
+              <li key={c.id}>
+                <i style={{ background: `var(--p-chart-cat-${(i % 6) + 1})` }} aria-hidden="true" />
+                {c.name} <b>{c.n}</b>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
 
 /** Drafts tab: new drafts and unsaved edits of live posts; planned ones have their own tab. */
 const inDrafts = (r: PostRow) => r.status === 'taslak' || r.status === 'yayında-değişiklik-var';
@@ -81,6 +137,7 @@ export function PostsList({ tab }: { tab: PostsTab }) {
           Yeni yazı
         </Button>
       </div>
+      {rows && rows.length > 0 && <PostsOverview rows={rows} label={label} counts={counts} />}
       <nav className="tabs" aria-label="Yazı grupları">
         <a className={`tab ${tab === 'live' ? 'is-active' : ''}`} href="#/yazilar" aria-current={tab === 'live' ? 'page' : undefined}>
           {`Yayında ${counts.live}`}
@@ -137,15 +194,24 @@ export function PostsList({ tab }: { tab: PostsTab }) {
         <ul className="post-rows">
           {shown.map((r) => (
             <li key={r.key}>
-              <a className="post-row" href={`#/yazi/${r.key}`}>
-                <span className="post-row-title">{r.title}</span>
-                <span className="post-row-meta">
-                  <span className={`badge ${r.status === 'taslak' ? '' : r.status === 'planlandı' ? 'badge-planned' : 'badge-live'}`}>
-                    {r.scheduledAt ? `${STATUS_LABEL[r.status]} · ${formatSchedule(r.scheduledAt)}` : STATUS_LABEL[r.status]}
-                  </span>
-                  <span>{label(r.category)}</span>
-                  {r.updatedAt && <span>{new Date(r.updatedAt).toLocaleDateString('tr-TR')}</span>}
+              <a className="post-row post-row-v2" href={`#/yazi/${r.key}`}>
+                <span className={`tone-tile tone-tile-lg tone-${STATUS_LOOK[r.status].tone}`} aria-hidden="true">
+                  <Icon as={STATUS_LOOK[r.status].icon} size={20} />
                 </span>
+                <span className="post-row-main">
+                  <span className="post-row-title">{r.title}</span>
+                  <span className="post-row-meta">
+                    <span className={`badge ${r.status === 'taslak' ? '' : r.status === 'planlandı' ? 'badge-planned' : 'badge-live'}`}>
+                      {r.scheduledAt ? `${STATUS_LABEL[r.status]} · ${formatSchedule(r.scheduledAt)}` : STATUS_LABEL[r.status]}
+                    </span>
+                    <span className="tone-chip tone-lavanta">{label(r.category)}</span>
+                    <span className="post-langs" title={r.titleEn.trim() ? 'Türkçe ve İngilizce' : 'Yalnızca Türkçe'}>
+                      TR{r.titleEn.trim() ? ' · EN' : ''}
+                    </span>
+                    {r.updatedAt && <span>{new Date(r.updatedAt).toLocaleDateString('tr-TR')}</span>}
+                  </span>
+                </span>
+                <Icon as={ChevronRight} size={18} />
               </a>
             </li>
           ))}

@@ -2,6 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 export {
+  PencilLine,
   ArchiveRestore,
   CalendarRange,
   ListChecks,

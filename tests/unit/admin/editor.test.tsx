@@ -288,8 +288,8 @@ describe('EditorPage', () => {
     const names = Array.from(bar.querySelectorAll('button, select'))
       .map((el) => el.getAttribute('aria-label') ?? el.textContent);
     expect(names).toEqual([
-      'Geri al', 'Yinele', 'Paragraf türü', 'Kalın', 'İtalik', 'Üstü çizili', 'Vurgula', 'Bağlantı', 'Görsel', 'YouTube',
-      'Alıntı', 'Madde listesi', 'Numaralı liste', 'Referans ekle', 'Daha fazla',
+      'Geri al', 'Yinele', 'Paragraf türü', 'Kalın', 'İtalik', 'Üstü çizili', 'Vurgula', 'Alıntı', 'Madde listesi', 'Numaralı liste',
+      'Bağlantı', 'Görsel', 'YouTube', 'Referans ekle', 'Daha fazla',
     ]);
     const select = within(bar).getByRole('combobox', { name: 'Paragraf türü' });
     expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Paragraf', 'Alt başlık', 'Küçük alt başlık']);
@@ -613,5 +613,13 @@ describe('EditorPage', () => {
     expect(section.textContent).not.toContain('Uncited book');
     fireEvent.click(screen.getByRole('button', { name: /English Page/ }));
     expect(document.querySelector('.editor-references')).toBeNull();
+  });
+});
+
+describe('toolbar tooltips', () => {
+  it('name each tool with its keyboard shortcut', async () => {
+    const { SHORTCUT } = await import('../../../src/admin/ui/editor/Toolbar');
+    expect(SHORTCUT['Kalın'].aria).toMatch(/^(Control|Meta)\+B$/);
+    expect(SHORTCUT['Yinele'].aria).toMatch(/\+Shift\+Z$/);
   });
 });
