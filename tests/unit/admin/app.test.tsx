@@ -136,6 +136,6 @@ describe('grouped menu and the bell (owner 2026-10-21)', () => {
     const bell = await screen.findByRole('button', { name: /^Bildirimler/ });
     fireEvent.click(bell);
     const preview = await screen.findByRole('dialog', { name: 'Son bildirimler' });
-    expect(within(preview).getByRole('link', { name: 'Tümünü gör' }).getAttribute('href')).toBe('#/bildirimler');
+    expect(within(preview).getByRole('link', { name: 'Tüm bildirimler' }).getAttribute('href')).toBe('#/bildirimler');
   });
 });

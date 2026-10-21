@@ -1,11 +1,12 @@
 /**
- * The bell in the corner and the menu badges (owner's request 2026-10-21): the latest events and the
- * waiting requests, fetched when the panel opens and again every few minutes while the tab is in view,
- * so a new request or a client's change shows without reloading. "Seen" is the time of the last look
- * (the bell or Bildirimler), kept in this browser only.
+ * The bell in the corner and the menu badges (owner's request 2026-10-21): the latest events, the
+ * waiting requests and what needs attention now, fetched when the panel opens and again every few
+ * minutes while the tab is in view, so a new request or a client's change shows without reloading.
+ * "Seen" is the time of the last look (the bell or Bildirimler), kept in this browser only.
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { Api, PanelEvent } from '../api/types';
+import { attentionOf, type Attention } from '../lib/attention';
 
 export const SEEN_KEY = 'kt.events.seen';
 const SEEN_EVENT = 'kt:events-seen';
@@ -30,23 +31,24 @@ export function markSeen(at = Date.now()) {
   window.dispatchEvent(new Event(SEEN_EVENT));
 }
 
-export type NotificationState = { events: PanelEvent[]; pending: number; seen: number; loaded: boolean; failed: boolean };
+export type NotificationState = { events: PanelEvent[]; pending: number; attention: Attention[]; seen: number; loaded: boolean; failed: boolean };
 
 /** Newest first. */
 export const unseenOf = (events: PanelEvent[], seen: number) => events.filter((e) => e.at > seen).length;
 
 export function useNotifications(api: Api): NotificationState & { refresh: () => void } {
-  const [state, setState] = useState<NotificationState>(() => ({ events: [], pending: 0, seen: readSeen(), loaded: false, failed: false }));
+  const [state, setState] = useState<NotificationState>(() => ({ events: [], pending: 0, attention: [], seen: readSeen(), loaded: false, failed: false }));
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
 
   useEffect(() => {
     let alive = true;
-    Promise.all([api.eventsList(), api.requestsList()])
-      .then(([ev, rq]) => {
+    Promise.all([api.eventsList(), api.requestsList(), api.clientsList()])
+      .then(([ev, rq, cl]) => {
         if (!alive) return;
         const events = [...ev.events].sort((a, b) => b.at - a.at);
-        setState((s) => ({ ...s, events, pending: rq.requests.filter((r) => r.status === 'pending').length, loaded: true, failed: false }));
+        const pending = rq.requests.filter((r) => r.status === 'pending').length;
+        setState((s) => ({ ...s, events, pending, attention: attentionOf(cl.clients, rq.requests, Date.now()), loaded: true, failed: false }));
       })
       .catch(() => alive && setState((s) => ({ ...s, failed: true })));
     return () => {

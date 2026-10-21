@@ -11,7 +11,8 @@ import { formatDay, slotInstant } from '../../../lib/booking-form';
 import { sessionKey, sessionStats, sessionsOf, type SessionStats } from '../../../lib/sessions';
 import { attentionOf, hasFee } from '../../lib/attention';
 import { usePanel } from '../context';
-import { Icon, UserRound } from '../icons';
+import { CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, UsersRound } from '../icons';
+import { WeekStrip } from './WeekStrip';
 import { Banner, Button, Spinner } from '../kit';
 import { AppointmentCalendar, SESSION_KIND_LABEL, labelOf } from './AppointmentCalendar';
 import { MailboxesCard } from './MailboxesCard';
@@ -76,10 +77,10 @@ export function ProfilePage() {
   const weekEnd = now + 7 * DAY;
   const tiles = data
     ? [
-        { label: 'Aktif danışan', value: data.clients.length, link: '#/seans-takip' },
-        { label: 'Önümüzdeki 7 gün', value: next.filter((u) => u.at < weekEnd).length, link: '#/seans-takip' },
-        { label: 'Bekleyen talep', value: pending.length, link: '#/randevular' },
-        { label: 'Dikkat isteyen', value: attention.length, link: '#/bildirimler' },
+        { label: 'Aktif danışan', value: data.clients.length, link: '#/seans-takip', icon: UsersRound, tone: 'adacayi' },
+        { label: 'Önümüzdeki 7 gün', value: next.filter((u) => u.at < weekEnd).length, link: '#/seans-takip', icon: CalendarRange, tone: 'lavanta' },
+        { label: 'Bekleyen talep', value: pending.length, link: '#/randevular', icon: Inbox, tone: 'kiremit' },
+        { label: 'Dikkat isteyen', value: attention.length, link: '#/bildirimler', icon: CircleAlert, tone: 'gunes' },
       ]
     : [];
 
@@ -87,7 +88,7 @@ export function ProfilePage() {
     <section className="appt-page profile-page" aria-labelledby="pf-title">
       <div className="screen-head">
         <h2 id="pf-title">
-          <Icon as={UserRound} size={22} />
+          <Icon as={CalendarClock} size={22} />
           Randevu Özeti
         </h2>
         <div className="head-actions">
@@ -102,16 +103,18 @@ export function ProfilePage() {
       {!data && !error && <Spinner label="Yükleniyor…" />}
       {data && (
         <>
-          <ul className="pf-tiles" aria-label="Özet">
+          <ul className="v2-tiles" aria-label="Özet">
             {tiles.map((t) => (
-              <li key={t.label}>
-                <a href={t.link}>
-                  <b>{t.value}</b>
-                  <span>{t.label}</span>
-                </a>
+              <li key={t.label} className={`v2-tile tone-${t.tone}`}>
+                <span className="tone-tile" aria-hidden="true">
+                  <Icon as={t.icon} size={18} />
+                </span>
+                <b>{t.value}</b>
+                <a href={t.link}>{t.label}</a>
               </li>
             ))}
           </ul>
+          <WeekStrip items={next} now={now} />
           <div className="appt-layout">
             <div className="appt-main">
               <div className="k-group">

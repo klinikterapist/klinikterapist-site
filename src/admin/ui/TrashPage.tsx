@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { ApiFailure, type TrashItem } from '../api/types';
 import { go, usePanel } from './context';
-import { Trash2 } from './icons';
+import { Icon, Trash2 } from './icons';
 import { Banner, Button, Dialog, EmptyState, Spinner } from './kit';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -69,7 +69,10 @@ export function TrashPage() {
   return (
     <section aria-labelledby="trash-title">
       <div className="screen-head">
-        <h2 id="trash-title">Silinen Yazılar</h2>
+        <h2 id="trash-title">
+          <Icon as={Trash2} size={22} />
+          Silinen Yazılar
+        </h2>
       </div>
       <p className="screen-lead">Silinen taslaklar burada 30 gün durur; sonra kalıcı olarak silinir. Bu süre içinde istediğinizi geri alabilirsiniz.</p>
       {notice && (

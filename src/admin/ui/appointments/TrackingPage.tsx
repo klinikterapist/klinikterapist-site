@@ -11,7 +11,7 @@ import { ApiFailure, type Client } from '../../api/types';
 import { formatDay } from '../../../lib/booking-form';
 import { pastAndNext, sessionKey, type SessionRecord } from '../../../lib/sessions';
 import { usePanel } from '../context';
-import { CalendarCheck, ChevronRight, Clock, Icon } from '../icons';
+import { CalendarCheck, CalendarRange, ChevronRight, Clock, HandHeart, Icon, UsersRound } from '../icons';
 import { Banner, Button, EmptyState, Spinner } from '../kit';
 import { feesOutdated, type PaymentSettings } from '../../../lib/payment';
 import { PaymentDialog } from './PaymentDialog';
@@ -92,6 +92,7 @@ export function TrackingPage() {
   const todays = active.filter((x) => x.next?.day === today);
   const coming = active.filter((x) => x.next?.day !== today);
   const closing = withNext.filter((x) => x.c.status === 'closing');
+  const weekEnd = istanbulDay(now + 6 * 864e5);
 
   const row = ({ c, next }: { c: Client; next?: SessionRecord }) => (
     <li key={c.id} className="tk-row">
@@ -111,7 +112,7 @@ export function TrackingPage() {
     <section className="appt-page" aria-labelledby="tk-title">
       <div className="screen-head">
         <h2 id="tk-title">
-          <Icon as={CalendarCheck} size={22} />
+          <Icon as={UsersRound} size={22} />
           Danışanlar
         </h2>
         <div className="head-actions">
@@ -122,6 +123,39 @@ export function TrackingPage() {
       <p className="settings-intro">
         Seans takipteki danışanlar, en yakın seanstan başlayarak. Danışanlar numarayla görünür. Seansları işaretlemek, terapiyi sonlandırmak ya da geri almak için danışanın sayfasına gidin.
       </p>
+
+      {clients && (
+        <ul className="v2-tiles" aria-label="Özet">
+          <li className="v2-tile tone-adacayi">
+            <span className="tone-tile" aria-hidden="true">
+              <Icon as={UsersRound} size={18} />
+            </span>
+            <b>{active.length}</b>
+            <span>Aktif danışan</span>
+          </li>
+          <li className="v2-tile tone-gunes">
+            <span className="tone-tile" aria-hidden="true">
+              <Icon as={CalendarCheck} size={18} />
+            </span>
+            <b>{todays.length}</b>
+            <span>Bugün seansı olan</span>
+          </li>
+          <li className="v2-tile tone-lavanta">
+            <span className="tone-tile" aria-hidden="true">
+              <Icon as={CalendarRange} size={18} />
+            </span>
+            <b>{coming.filter((x) => x.next && x.next.day <= weekEnd).length + todays.length}</b>
+            <span>Önümüzdeki 7 gün</span>
+          </li>
+          <li className="v2-tile tone-kiremit">
+            <span className="tone-tile" aria-hidden="true">
+              <Icon as={HandHeart} size={18} />
+            </span>
+            <b>{closing.length}</b>
+            <span>Sonlandırma aşamasında</span>
+          </li>
+        </ul>
+      )}
 
       <div className="appt-layout">
         <div className="appt-main">
@@ -139,7 +173,7 @@ export function TrackingPage() {
           )}
           {!clients && !error && <Spinner label="Danışanlar yükleniyor…" />}
           {clients && clients.length === 0 && (
-            <EmptyState icon={CalendarCheck}>Seans takipte danışan yok. Onaylanan talepleri Randevu talepleri sayfasından buraya geçirebilirsiniz.</EmptyState>
+            <EmptyState icon={CalendarCheck}>Henüz danışan yok. Onaylanan talepleri Randevu Talepleri sayfasından buraya geçirebilirsiniz.</EmptyState>
           )}
           {active.length > 0 && (
             <div className="k-group tk-active">

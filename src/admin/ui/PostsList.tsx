@@ -6,7 +6,7 @@ import { startNewPost } from '../lib/new-post';
 import { STATUS_LABEL, cachedDrafts, loadDrafts, loadSiteState, mergeList, type PostRow, type SiteState } from '../lib/posts-repo';
 import { formatSchedule } from '../lib/draft';
 import { go, usePanel, type PostsTab } from './context';
-import { FileText, Search } from './icons';
+import { FileText, Icon, Search } from './icons';
 import { Banner, Button, EmptyState, Field, Select, Spinner } from './kit';
 
 
@@ -73,7 +73,10 @@ export function PostsList({ tab }: { tab: PostsTab }) {
   return (
     <section aria-labelledby="posts-title">
       <div className="screen-head">
-        <h2 id="posts-title">Yazılar</h2>
+        <h2 id="posts-title">
+          <Icon as={FileText} size={22} />
+          Yazılar
+        </h2>
         <Button variant="primary" onClick={create}>
           Yeni yazı
         </Button>

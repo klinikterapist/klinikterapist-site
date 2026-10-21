@@ -1,0 +1,105 @@
+/*
+ * "Gün & Gece" tones (owner's brief 2026-10-21, SITE-GUNCELLEMESI.md karar 7): six companions of the
+ * site's navy, cream and sun, named after the site's own world, each with a day and a night value
+ * chosen against that theme's surface (not inverted), plus a soft background ("-bg") for tiles and chips.
+ *
+ *   lacivert  navy       the brand, primary actions, Ayarlar
+ *   gunes     sun        highlights, "new", Genel Bakış
+ *   adacayi   sage       sessions, clients, success
+ *   kiremit   terracotta intro calls, requests, warnings that are not errors
+ *   lavanta   lavender   content (posts, categories)
+ *   deniz     sea teal   the site's pages, statistics
+ *
+ * Charts use them in this order (--p-chart-cat-1 … 6), so a series keeps its colour in both themes.
+ * Never colour alone: every tone comes with an icon or a label.
+ */
+:root {
+  --p-tone-lacivert: #1F2E4A;
+  --p-tone-gunes: #8A5D00;
+  --p-tone-adacayi: #3F6448;
+  --p-tone-kiremit: #9A4A33;
+  --p-tone-lavanta: #55548F;
+  --p-tone-deniz: #24605F;
+
+  --p-tone-lacivert-bg: #E3E7EF;
+  --p-tone-gunes-bg: #FBEBC2;
+  --p-tone-adacayi-bg: #DDEBDF;
+  --p-tone-kiremit-bg: #F5DDD3;
+  --p-tone-lavanta-bg: #E6E5F3;
+  --p-tone-deniz-bg: #D6ECEA;
+
+  --p-chart-cat-1: #1F2E4A;
+  --p-chart-cat-2: #E0A21B;
+  --p-chart-cat-3: #5E8A69;
+  --p-chart-cat-4: #C0634A;
+  --p-chart-cat-5: #7A7FB0;
+  --p-chart-cat-6: #3F8586;
+}
+
+html[data-theme='dark'] {
+  --p-tone-lacivert: #C9D6EE;
+  --p-tone-gunes: #FCD873;
+  --p-tone-adacayi: #9CCAA8;
+  --p-tone-kiremit: #F0A88E;
+  --p-tone-lavanta: #BFC0F0;
+  --p-tone-deniz: #8ED3CF;
+
+  --p-tone-lacivert-bg: #2C3E62;
+  --p-tone-gunes-bg: #4A3F1C;
+  --p-tone-adacayi-bg: #24433A;
+  --p-tone-kiremit-bg: #4B2E2A;
+  --p-tone-lavanta-bg: #33355E;
+  --p-tone-deniz-bg: #1E4447;
+
+  --p-chart-cat-1: #9FC1F0;
+  --p-chart-cat-2: #F6B92B;
+  --p-chart-cat-3: #8DB89A;
+  --p-chart-cat-4: #E59A7F;
+  --p-chart-cat-5: #B3B6E6;
+  --p-chart-cat-6: #7CC4C2;
+}
+
+/* A tone on any element: an icon tile, a chip, a badge. */
+.tone-lacivert { --tone: var(--p-tone-lacivert); --tone-bg: var(--p-tone-lacivert-bg); }
+.tone-gunes { --tone: var(--p-tone-gunes); --tone-bg: var(--p-tone-gunes-bg); }
+.tone-adacayi { --tone: var(--p-tone-adacayi); --tone-bg: var(--p-tone-adacayi-bg); }
+.tone-kiremit { --tone: var(--p-tone-kiremit); --tone-bg: var(--p-tone-kiremit-bg); }
+.tone-lavanta { --tone: var(--p-tone-lavanta); --tone-bg: var(--p-tone-lavanta-bg); }
+.tone-deniz { --tone: var(--p-tone-deniz); --tone-bg: var(--p-tone-deniz-bg); }
+
+/* The icon tile: a rounded square in the tone's soft background (Apple Settings style). */
+.tone-tile {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--tone-bg, var(--p-selected));
+  color: var(--tone, var(--p-heading));
+}
+
+.tone-tile-sm {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+}
+
+.tone-tile-lg {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.tone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tone-bg);
+  color: var(--tone);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}

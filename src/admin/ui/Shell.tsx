@@ -1,9 +1,11 @@
 /**
- * Panel frame (owner's decision 2026-10-21, SITE-GUNCELLEMESI.md karar 6): the sidebar in five parts —
- * Genel Bakış, then the groups Danışanlar ve Randevular, İçerik, Site Sayfaları and Ayarlar, each one
- * folding open and shut (remembered in this browser; the group of the open screen always shows) —
- * with Karanlık Mod, Siteyi Aç and Çıkış Yap at the bottom. On phones the sidebar is a drawer.
- * Top right: the notification bell. Waiting requests and new notifications show as badges.
+ * Panel frame (owner's decisions 2026-10-21, SITE-GUNCELLEMESI.md karar 6 and 7): the sidebar in five
+ * parts — Genel Bakış, then the groups Danışanlar ve Randevular, İçerik, Site Sayfaları and Ayarlar,
+ * each folding open and shut (remembered in this browser; the group of the open screen always shows).
+ * Every group has its tone, shown as the colour of its icon tiles. The sidebar stays put beside the
+ * screen, without a scrollbar, and narrows to an icon rail with the button at its top (remembered;
+ * also in Ayarlar › Görünüm), names then showing as tooltips. Karanlık Mod, Siteyi Aç, Görünüm and
+ * Çıkış Yap sit in a row at the bottom. On phones the sidebar is a drawer. Top right: the bell.
  */
 import { useEffect, useState, type ReactNode } from 'react';
 import { go, usePanel, type Route } from './context';
@@ -13,6 +15,7 @@ import { Button } from './kit';
 import {
   BellRing,
   CalendarCheck,
+  CalendarClock,
   ChevronDown,
   ExternalLink,
   FileText,
@@ -23,22 +26,27 @@ import {
   LogOut,
   Menu,
   Moon,
+  Palette,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plus,
   Settings,
   Sun,
   Trash2,
-  UserRound,
+  UsersRound,
   type LucideIcon,
 } from './icons';
 import { SETTINGS_SCREENS } from './settings/screens';
 import { NotificationBell } from './NotificationBell';
 import { unseenOf, useNotifications } from './notifications';
 import { useNoTrack } from './no-track';
+import { RAIL_KEY, usePref } from './prefs';
 
 export { SETTINGS_SCREENS };
 
+export type Tone = 'lacivert' | 'gunes' | 'adacayi' | 'kiremit' | 'lavanta' | 'deniz';
 type NavItem = { href: string; label: string; icon: LucideIcon; badge?: number };
-type NavGroup = { id: string; label: string; icon: LucideIcon; items: NavItem[]; newPost?: boolean };
+type NavGroup = { id: string; label: string; icon: LucideIcon; tone: Tone; items: NavItem[]; newPost?: boolean };
 
 const screen = (id: string): NavItem => {
   const s = SETTINGS_SCREENS.find((x) => x.id === id)!;
@@ -46,7 +54,7 @@ const screen = (id: string): NavItem => {
 };
 
 export const SITE_PAGES = ['ana-sayfa', 'hakkimda', 'sss', 'kaynaklar', 'iletisim', 'yasal'];
-export const SETTINGS = ['profil', 'linkler', 'seo', 'gizlilik'];
+export const SETTINGS = ['profil', 'linkler', 'seo', 'gizlilik', 'gorunum'];
 
 export function navGroups(badges: { requests: number; notifications: number }): NavGroup[] {
   return [
@@ -54,10 +62,11 @@ export function navGroups(badges: { requests: number; notifications: number }): 
       id: 'danisan',
       label: 'Danışanlar ve Randevular',
       icon: CalendarCheck,
+      tone: 'adacayi',
       items: [
-        { href: '#/profil', label: 'Randevu Özeti', icon: UserRound },
+        { href: '#/profil', label: 'Randevu Özeti', icon: CalendarClock },
         { href: '#/randevular', label: 'Randevu Talepleri', icon: Inbox, badge: badges.requests },
-        { href: '#/seans-takip', label: 'Danışanlar', icon: CalendarCheck },
+        { href: '#/seans-takip', label: 'Danışanlar', icon: UsersRound },
         { href: '#/bildirimler', label: 'Bildirimler', icon: BellRing, badge: badges.notifications },
       ],
     },
@@ -65,12 +74,18 @@ export function navGroups(badges: { requests: number; notifications: number }): 
       id: 'icerik',
       label: 'İçerik',
       icon: FileText,
+      tone: 'lavanta',
       newPost: true,
       items: [{ href: '#/yazilar', label: 'Yazılar', icon: FileText }, screen('kategoriler'), { href: '#/cop-kutusu', label: 'Silinen Yazılar', icon: Trash2 }],
     },
-    { id: 'site', label: 'Site Sayfaları', icon: Globe, items: SITE_PAGES.map(screen) },
-    { id: 'ayarlar', label: 'Ayarlar', icon: Settings, items: SETTINGS.map(screen) },
+    { id: 'site', label: 'Site Sayfaları', icon: Globe, tone: 'deniz', items: SITE_PAGES.map(screen) },
+    { id: 'ayarlar', label: 'Ayarlar', icon: Settings, tone: 'lacivert', items: SETTINGS.map(screen) },
   ];
+}
+
+/** The tone of a menu entry's group, for its screen header (Genel Bakış is the sun's). */
+export function toneOf(href: string): Tone {
+  return navGroups({ requests: 0, notifications: 0 }).find((g) => g.items.some((x) => x.href === href))?.tone ?? 'gunes';
 }
 
 /** The menu entry of the open screen. */
@@ -97,51 +112,32 @@ export function currentHref(route: Route): string {
   }
 }
 
-const FOLD_KEY = 'kt.nav.closed';
-
-/** The groups the owner folded shut, remembered in this browser. */
-function useFolded(): [string[], (id: string) => void] {
-  const [closed, setClosed] = useState<string[]>(() => {
-    try {
-      const v = JSON.parse(localStorage.getItem(FOLD_KEY) ?? '[]');
-      return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
-    } catch {
-      return [];
-    }
-  });
-  const toggle = (id: string) =>
-    setClosed((c) => {
-      const next = c.includes(id) ? c.filter((x) => x !== id) : [...c, id];
-      try {
-        localStorage.setItem(FOLD_KEY, JSON.stringify(next));
-      } catch {
-        /* private mode: folds last for this visit */
-      }
-      return next;
-    });
-  return [closed, toggle];
-}
-
 export function Shell({ route, children }: { route: Route; children: ReactNode }) {
   const { api, store } = usePanel();
   const [open, setOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
-  const [closed, toggleFold] = useFolded();
+  const [closed, setClosed] = usePref<string[]>('kt.nav.closed', []);
+  const [rail, setRail] = usePref<boolean>(RAIL_KEY, false);
   const notes = useNotifications(api);
   // Writes the default ("do not count me") on the first visit, as before; the switch is in Gizlilik ve Analitik.
   useNoTrack();
   useEffect(() => setOpen(false), [route]);
   const current = currentHref(route);
   const groups = navGroups({ requests: notes.pending, notifications: unseenOf(notes.events, notes.seen) });
+  const folded = Array.isArray(closed) ? closed : [];
+  const toggleFold = (id: string) => setClosed(folded.includes(id) ? folded.filter((x) => x !== id) : [...folded, id]);
 
-  const link = ({ href, label, icon, badge }: NavItem) => (
+  const link = ({ href, label, icon, badge }: NavItem, tone: Tone) => (
     <li key={href}>
-      <a href={href} aria-current={current === href ? 'page' : undefined}>
-        <Icon as={icon} />
+      <a href={href} aria-current={current === href ? 'page' : undefined} data-tip={label}>
+        <span className={`tone-tile tone-tile-sm tone-${tone}`} aria-hidden="true">
+          <Icon as={icon} size={16} />
+        </span>
         <span className="nav-label">{label}</span>
         {!!badge && (
-          <span className="nav-badge" aria-label={`${badge} yeni`}>
+          <span className="nav-badge">
             {badge > 99 ? '99+' : badge}
+            <span className="k-visually-hidden"> yeni</span>
           </span>
         )}
       </a>
@@ -149,68 +145,73 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
   );
 
   return (
-    <div className="shell">
+    <div className={`shell${rail ? ' is-rail' : ''}`}>
       <div className="panel-top">
         <Button variant="ghost" className="menu-toggle" aria-expanded={open} aria-controls="panel-nav" onClick={() => setOpen(!open)}>
           <Icon as={Menu} size={20} />
           Menü
         </Button>
-        <NotificationBell events={notes.events} seen={notes.seen} failed={notes.failed} />
+        <NotificationBell notes={notes} />
       </div>
       <nav id="panel-nav" className={`panel-nav ${open ? 'open' : ''}`} aria-label="Panel menüsü">
-        <a className="nav-logo" href="#/">
-          <img className="logo-light" src="/admin/logo-black.png" alt="klinikterapist" />
-          <img className="logo-dark" src="/admin/logo-white.png" alt="klinikterapist" />
-        </a>
-        <ul>{link({ href: '#/', label: 'Genel Bakış', icon: House })}</ul>
+        <div className="nav-brand">
+          <a className="nav-logo" href="#/">
+            <img className="logo-light" src="/admin/logo-black.png" alt="klinikterapist" />
+            <img className="logo-dark" src="/admin/logo-white.png" alt="klinikterapist" />
+          </a>
+          <button
+            type="button"
+            className="nav-rail-toggle"
+            aria-pressed={rail}
+            aria-label={rail ? 'Menüyü genişlet' : 'Menüyü daralt'}
+            data-tip={rail ? 'Menüyü genişlet' : 'Menüyü daralt'}
+            onClick={() => setRail(!rail)}
+          >
+            <Icon as={rail ? PanelLeftOpen : PanelLeftClose} size={18} />
+          </button>
+        </div>
+        <ul className="nav-home">{link({ href: '#/', label: 'Genel Bakış', icon: House }, 'gunes')}</ul>
         {groups.map((g) => {
           const here = g.items.some((x) => x.href === current);
-          const shut = closed.includes(g.id) && !here;
+          const shut = !rail && folded.includes(g.id) && !here;
           return (
             <div key={g.id} className="nav-section">
               <button type="button" className="nav-fold" aria-expanded={!shut} aria-controls={`nav-${g.id}`} onClick={() => toggleFold(g.id)}>
                 <span>{g.label}</span>
-                <Icon as={ChevronDown} size={16} />
+                <Icon as={ChevronDown} size={14} />
               </button>
               {!shut && (
                 <div id={`nav-${g.id}`}>
                   {g.newPost && (
-                    <Button variant="primary" className="nav-new" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
+                    <Button variant="primary" className="nav-new" data-tip="Yeni Yazı" aria-label="Yeni Yazı" onClick={() => go(startNewPost(window.localStorage, new Date()))}>
                       <Icon as={Plus} />
-                      Yeni Yazı
+                      <span className="nav-label">Yeni Yazı</span>
                     </Button>
                   )}
-                  <ul>{g.items.map(link)}</ul>
+                  <ul>{g.items.map((x) => link(x, g.tone))}</ul>
                 </div>
               )}
             </div>
           );
         })}
-        <ul className="nav-end">
-          <li>
-            <button type="button" className="linklike" onClick={toggleTheme}>
-              <Icon as={theme === 'dark' ? Sun : Moon} />
-              {theme === 'dark' ? 'Açık Mod' : 'Karanlık Mod'}
-            </button>
-          </li>
-          <li>
-            <a href="/" target="_blank" rel="noreferrer">
-              <Icon as={ExternalLink} />
-              Siteyi Aç ↗
-            </a>
-          </li>
-          <li>
-            <button type="button" className="linklike" onClick={() => api.logout().catch(() => {}).finally(() => store.clear())}>
-              <Icon as={LogOut} />
-              Çıkış Yap
-            </button>
-          </li>
-        </ul>
+        <div className="nav-end">
+          <button type="button" className="nav-end-btn" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Açık Mod' : 'Karanlık Mod'} data-tip={theme === 'dark' ? 'Açık Mod' : 'Karanlık Mod'}>
+            <Icon as={theme === 'dark' ? Sun : Moon} />
+          </button>
+          <a className="nav-end-btn" href="#/ayarlar/gorunum" aria-label="Görünüm" data-tip="Görünüm">
+            <Icon as={Palette} />
+          </a>
+          <a className="nav-end-btn" href="/" target="_blank" rel="noreferrer" aria-label="Siteyi Aç (yeni sekmede)" data-tip="Siteyi Aç ↗">
+            <Icon as={ExternalLink} />
+          </a>
+          <button type="button" className="nav-end-btn" onClick={() => api.logout().catch(() => {}).finally(() => store.clear())} aria-label="Çıkış Yap" data-tip="Çıkış Yap">
+            <Icon as={LogOut} />
+          </button>
+        </div>
       </nav>
-      <main className="panel-main" id="panel-main">
+      <main className={`panel-main tone-${toneOf(current)}`} id="panel-main">
         {children}
       </main>
     </div>
   );
 }
-
