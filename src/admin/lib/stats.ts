@@ -178,3 +178,12 @@ export function aggregate(s: StatsSummary, r: Range, posts: LivePost[]): Dashboa
     clicks: sortDesc(clicks),
   };
 }
+
+/** Reads per post key over every day in the summary ("okunma sayısı" on the posts list). */
+export function readsByPost(s: StatsSummary): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const c of Object.values(s.days)) {
+    for (const [k, n] of Object.entries(c)) if (k.startsWith('rd|')) out.set(k.slice(3), (out.get(k.slice(3)) ?? 0) + n);
+  }
+  return out;
+}

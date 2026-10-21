@@ -84,7 +84,7 @@ describe('PostsList', () => {
   it('sorts by updatedAt, newest first by default', async () => {
     setup();
     await screen.findByText('İyi bir uyku');
-    const titles = () => screen.getAllByRole('link').filter((a) => a.classList.contains('post-row')).map((a) => a.querySelector('.post-row-title')!.textContent);
+    const titles = () => Array.from(document.querySelectorAll('.post-row .post-row-title')).map((t) => t.textContent);
     expect(titles()).toEqual(['İyi bir uyku', 'Kaygı ile yaşamak']);
     fireEvent.change(screen.getByLabelText('Sırala'), { target: { value: 'oldest' } });
     expect(titles()).toEqual(['Kaygı ile yaşamak', 'İyi bir uyku']);

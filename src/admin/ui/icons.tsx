@@ -2,6 +2,11 @@
 import type { LucideIcon } from 'lucide-react';
 
 export {
+  ClipboardList,
+  CalendarPlus,
+  Rocket,
+  History,
+  ArrowLeft,
   PencilLine,
   ArchiveRestore,
   CalendarRange,

@@ -51,7 +51,7 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
         <DeployProvider api={api}>
           <Shell route={route}>
             {route.name === 'post' ? (
-              <EditorPage key={route.key} postKey={route.key} />
+              <EditorPage key={route.key} postKey={route.key} intent={route.intent} />
             ) : route.name === 'settings' ? (
               <SettingsPage key={route.screen} screen={route.screen} />
             ) : route.name === 'home' ? (

@@ -1,13 +1,14 @@
 /**
- * The editor's top bar (spec §5.3): ← Yazılar · save status · language buttons · Önizle · Yayınla ·
- * "⋯" (Yayından kaldır, Değişiklikleri at / Taslağı sil).
+ * The editor's top bar (spec §5.3; owner's review 2026-10-21): ← Yazılar · save status · words and
+ * reading time · Sürüm geçmişi · language buttons · Önizle · Yayınla · "⋯" (Yayından kaldır,
+ * Değişiklikleri at / Taslağı sil).
  */
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Draft } from '../../api/types';
 import type { Lang } from '../../../lib/schemas';
 import type { ChecklistItem } from '../../lib/checklist';
 import { useHistoryLayer } from '../history-layer';
-import { Ellipsis, Icon } from '../icons';
+import { ArrowLeft, Clock3, Ellipsis, History, Icon } from '../icons';
 import { Button } from '../kit';
 import { LangButtons } from './LangButtons';
 
@@ -100,12 +101,27 @@ export function EditorTopBar(props: {
   /** A future date and time is set: the button plans instead of publishing. */
   planning?: boolean;
   more: MoreAction[];
+  /** "Sürüm geçmişi" (owner's review 2026-10-21: in the top bar, not at the page's foot). */
+  onVersions: () => void;
+  /** "120 kelime · 1 dk okuma". */
+  stats: string;
 }) {
   return (
     <div className="editor-top">
-      <a href="#/yazilar">← Yazılar</a>
+      <a className="editor-back" href="#/yazilar" aria-label="Yazılara dön">
+        <Icon as={ArrowLeft} size={18} />
+        <span>Yazılar</span>
+      </a>
       {props.status}
+      <span className="editor-stats" title="Kelime sayısı ve tahmini okuma süresi">
+        <Icon as={Clock3} size={15} />
+        {props.stats}
+      </span>
       <div className="editor-top-actions">
+        <Button variant="ghost" className="editor-versions" onClick={props.onVersions}>
+          <Icon as={History} size={17} />
+          Sürüm geçmişi
+        </Button>
         <LangButtons checklist={props.checklist} lang={props.lang} onLang={props.onLang} />
         <Button onClick={props.onPreview}>Önizle</Button>
         <Button variant="primary" busy={props.publishing} onClick={props.onPublish}>

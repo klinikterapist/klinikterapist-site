@@ -1,6 +1,7 @@
 /**
- * Terapist profili (owner's decision 2026-10-20, Faz 2): the start screen above Randevu talepleri
- * and Seans takip. At a glance: the time now, a few numbers (active clients, sessions this week,
+ * Randevu Özeti, once Terapist profili (owner's decision 2026-10-20, Faz 2; review 2026-10-21): the
+ * start screen above Randevu Talepleri and Danışanlar. Under the lists and the calendar, a row of cards:
+ * this month, the week's occupancy, tools, the session chart and the e-mail addresses. At a glance: the time now, a few numbers (active clients, sessions this week,
  * waiting requests, unpaid sessions), the next seven days' sessions, the waiting requests, what
  * needs attention and the latest events (Bildirimler, in short), the appointment calendar with
  * "Saat kapat", the chart of all clients' sessions so far, and the system's e-mail addresses (Faz 4).
@@ -12,12 +13,13 @@ import { sessionKey, sessionStats, sessionsOf, type SessionStats } from '../../.
 import { attentionOf, hasFee } from '../../lib/attention';
 import { usePanel } from '../context';
 import { CalendarCheck, CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, MessagesSquare, TriangleAlert, UsersRound } from '../icons';
-import { EventRow } from '../NotificationBell';
+import { EventRow, NotificationBell } from '../NotificationBell';
 import { WeekStrip } from './WeekStrip';
 import { Banner, Button, Spinner } from '../kit';
 import { AppointmentCalendar, SESSION_KIND_LABEL, labelOf } from './AppointmentCalendar';
 import { MailboxesCard } from './MailboxesCard';
 import { SessionChart } from './SessionChart';
+import { MonthCard, OccupancyCard, ToolsCard } from './ProfileTools';
 import { NowClock, whenText } from './TrackingPage';
 
 const DAY = 24 * 3600e3;
@@ -94,6 +96,7 @@ export function ProfilePage() {
         </h2>
         <div className="head-actions">
           <NowClock />
+          <NotificationBell />
         </div>
       </div>
       {error && (
@@ -186,12 +189,19 @@ export function ProfilePage() {
             </div>
             <aside className="appt-side">
               <AppointmentCalendar version={attempt} />
-              <div className="k-group">
-                <h3 className="tk-group-title">Toplam seans grafiği</h3>
-                <SessionChart stats={total(data.clients, now)} />
-              </div>
-              <MailboxesCard />
             </aside>
+          </div>
+          <div className="pf-cards">
+            <MonthCard clients={data.clients} now={now} />
+            <OccupancyCard clients={data.clients} now={now} />
+            <ToolsCard />
+            <article className="pf-card" aria-labelledby="pf-chart">
+              <h3 id="pf-chart">Toplam seans grafiği</h3>
+              <SessionChart stats={total(data.clients, now)} />
+            </article>
+            <div className="pf-card pf-card-plain">
+              <MailboxesCard />
+            </div>
           </div>
         </>
       )}

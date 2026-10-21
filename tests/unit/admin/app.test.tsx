@@ -132,6 +132,7 @@ describe('grouped menu and the bell (owner 2026-10-21)', () => {
   it('the bell opens a preview of the latest notifications with a way to all of them', async () => {
     const store = createSessionStore(localStorage);
     store.set('s', Date.now() + 3600e3);
+    location.hash = '#/profil';
     render(<App api={createMockApi()} store={store} config={config} />);
     const bell = await screen.findByRole('button', { name: /^Bildirimler/ });
     fireEvent.click(bell);

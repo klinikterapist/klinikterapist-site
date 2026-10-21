@@ -16,6 +16,7 @@ import { Banner, Button, EmptyState, Spinner } from '../kit';
 import { feesOutdated, type PaymentSettings } from '../../../lib/payment';
 import { PaymentDialog } from './PaymentDialog';
 import { AppointmentCalendar, WEEKDAYS, labelOf } from './AppointmentCalendar';
+import { NotificationBell } from '../NotificationBell';
 
 export const weeklyText = (c: Pick<Client, 'weekday' | 'time' | 'type'>) =>
   `Her ${WEEKDAYS[c.weekday].toLocaleLowerCase('tr-TR')} ${c.time.replace(':', '.')} · ${labelOf({ kind: 'session', type: c.type })}`;
@@ -117,6 +118,7 @@ export function TrackingPage() {
         </h2>
         <div className="head-actions">
           <NowClock />
+          <NotificationBell />
           <Button onClick={() => setPaying(true)}>Ücret ve ödeme</Button>
         </div>
       </div>

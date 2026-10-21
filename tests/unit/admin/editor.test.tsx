@@ -53,7 +53,7 @@ const base = () => ({ ...newDraft(new Date('2026-10-17T10:00:00')), category: 't
 describe('EditorPage', () => {
   it('the back links go to the posts list, not to Ana sayfa', async () => {
     setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
-    expect((await screen.findByRole('link', { name: '← Yazılar' })).getAttribute('href')).toBe('#/yazilar');
+    expect((await screen.findByRole('link', { name: 'Yazılara dön' })).getAttribute('href')).toBe('#/yazilar');
   });
 
   it('a post that cannot be found links back to the posts list', async () => {

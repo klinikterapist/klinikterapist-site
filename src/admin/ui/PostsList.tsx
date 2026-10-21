@@ -6,7 +6,8 @@ import { startNewPost } from '../lib/new-post';
 import { STATUS_LABEL, cachedDrafts, loadDrafts, loadSiteState, mergeList, type PostRow, type SiteState } from '../lib/posts-repo';
 import { formatSchedule } from '../lib/draft';
 import { go, usePanel, type PostsTab } from './context';
-import { CalendarClock, ChevronRight, FileText, Icon, PencilLine, Search, Sparkles, type LucideIcon } from './icons';
+import { CalendarCheck, CalendarClock, Clock3, Eye, FileText, Icon, PencilLine, Rocket, Search, Sparkles, Trash2, Undo2, type LucideIcon } from './icons';
+import { readsByPost } from '../lib/stats';
 import type { Tone } from './Shell';
 import { Banner, Button, EmptyState, Field, Select, Spinner } from './kit';
 
@@ -18,6 +19,75 @@ const STATUS_LOOK: Record<PostRow['status'], { tone: Tone; icon: LucideIcon }> =
   taslak: { tone: 'gunes', icon: FileText },
   planlandı: { tone: 'lavanta', icon: CalendarClock },
 };
+
+/** Covers of the live posts, read once from the repo in one call and kept for this visit. */
+const coverCache = new Map<string, string>();
+
+function useCovers(api: ReturnType<typeof usePanel>['api'], rows: PostRow[] | null): Map<string, string> {
+  const [map, setMap] = useState<Map<string, string>>(() => new Map(coverCache));
+  useEffect(() => {
+    const want = (rows ?? []).filter((r) => r.coverPath && !coverCache.has(r.key));
+    if (!want.length) return;
+    let alive = true;
+    api
+      .read(want.map((r) => r.coverPath!))
+      .then(({ files }) => {
+        for (const r of want) {
+          const f = files.find((x) => x.path === r.coverPath);
+          if (f) coverCache.set(r.key, `data:${r.coverPath!.endsWith('.jpg') ? 'image/jpeg' : 'image/webp'};base64,${f.content}`);
+        }
+        if (alive) setMap(new Map(coverCache));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api, rows]);
+  return map;
+}
+
+/** The cover on the left; without one, the status icon in a soft square. */
+function PostThumb({ row, url }: { row: PostRow; url?: string }) {
+  const look = STATUS_LOOK[row.status];
+  if (url) return <img className="post-thumb" src={url} alt="" loading="lazy" />;
+  return (
+    <span className={`post-thumb post-thumb-empty tone-${look.tone}`} aria-hidden="true">
+      <Icon as={look.icon} size={22} />
+    </span>
+  );
+}
+
+/**
+ * The buttons on the right (owner's review 2026-10-21). Live: Düzenle, Taslağa al (takes it off the
+ * site; it stays as a draft). Drafts: Yayınla, Planla, Düzenle, Sil. Each opens the post and starts
+ * that step there, with the editor's own checks and confirmation.
+ */
+function PostActions({ row }: { row: PostRow }) {
+  const to = (intent?: string) => `#/yazi/${row.key}${intent ? `?islem=${intent}` : ''}`;
+  const act = (href: string, label: string, icon: LucideIcon, kind = '') => (
+    <a className={`post-act ${kind}`} href={href} title={label}>
+      <Icon as={icon} size={15} />
+      <span>{label}</span>
+    </a>
+  );
+  return (
+    <div className="post-acts" aria-label={`${row.title}: işlemler`} role="group">
+      {row.live ? (
+        <>
+          {act(to(), 'Düzenle', PencilLine, 'is-main')}
+          {act(to('kaldir'), 'Taslağa al', Undo2)}
+        </>
+      ) : (
+        <>
+          {act(to('yayinla'), 'Yayınla', Rocket, 'is-main')}
+          {act(to('planla'), row.status === 'planlandı' ? 'Planı değiştir' : 'Planla', CalendarClock)}
+          {act(to(), 'Düzenle', PencilLine)}
+          {act(to('sil'), 'Sil', Trash2, 'is-danger')}
+        </>
+      )}
+    </div>
+  );
+}
 
 /**
  * Above the tabs (owner's brief 2026-10-21: visualise): the three counts and how the live posts share
@@ -99,6 +169,20 @@ export function PostsList({ tab }: { tab: PostsTab }) {
     };
   }, [api, attempt]);
 
+  const covers = useCovers(api, rows);
+  const [reads, setReads] = useState<Map<string, number> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const today = new Date().toISOString().slice(0, 10);
+    api
+      .statsSummary({ from: '2024-01-01', to: today })
+      .then((s) => alive && setReads(readsByPost(s)))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [api]);
+
   const counts = useMemo(
     () => ({
       live: (rows ?? []).filter((r) => r.live).length,
@@ -134,20 +218,29 @@ export function PostsList({ tab }: { tab: PostsTab }) {
           Yazılar
         </h2>
         <Button variant="primary" onClick={create}>
+          <Icon as={PencilLine} size={17} />
           Yeni yazı
         </Button>
       </div>
       {rows && rows.length > 0 && <PostsOverview rows={rows} label={label} counts={counts} />}
       <nav className="tabs" aria-label="Yazı grupları">
-        <a className={`tab ${tab === 'live' ? 'is-active' : ''}`} href="#/yazilar" aria-current={tab === 'live' ? 'page' : undefined}>
-          {`Yayında ${counts.live}`}
-        </a>
-        <a className={`tab ${tab === 'drafts' ? 'is-active' : ''}`} href="#/yazilar/taslaklar" aria-current={tab === 'drafts' ? 'page' : undefined}>
-          {`Taslaklar ${counts.drafts}`}
-        </a>
-        <a className={`tab ${tab === 'planned' ? 'is-active' : ''}`} href="#/yazilar/planlanan" aria-current={tab === 'planned' ? 'page' : undefined}>
-          {`Planlanan ${counts.planned}`}
-        </a>
+        {(
+          [
+            { id: 'live', href: '#/yazilar', label: 'Yayında', n: counts.live, icon: Sparkles, tone: 'adacayi' },
+            { id: 'drafts', href: '#/yazilar/taslaklar', label: 'Taslaklar', n: counts.drafts, icon: FileText, tone: 'gunes' },
+            { id: 'planned', href: '#/yazilar/planlanan', label: 'Planlanan', n: counts.planned, icon: CalendarClock, tone: 'lavanta' },
+          ] as const
+        ).map((t) => (
+          <a key={t.id} className={`tab tab-v2 tone-${t.tone} ${tab === t.id ? 'is-active' : ''}`} href={t.href} aria-current={tab === t.id ? 'page' : undefined} aria-label={`${t.label} ${t.n}`}>
+            <span className="tone-tile tone-tile-sm" aria-hidden="true">
+              <Icon as={t.icon} size={15} />
+            </span>
+            {t.label}
+            <span className="tab-count" aria-hidden="true">
+              {t.n}
+            </span>
+          </a>
+        ))}
       </nav>
       <div className="filters">
         <Field label="Ara" value={query} onChange={setQuery} placeholder="Başlıkta ara (Türkçe ya da İngilizce)" />
@@ -194,11 +287,9 @@ export function PostsList({ tab }: { tab: PostsTab }) {
         <ul className="post-rows">
           {shown.map((r) => (
             <li key={r.key}>
-              <a className="post-row post-row-v2" href={`#/yazi/${r.key}`}>
-                <span className={`tone-tile tone-tile-lg tone-${STATUS_LOOK[r.status].tone}`} aria-hidden="true">
-                  <Icon as={STATUS_LOOK[r.status].icon} size={20} />
-                </span>
-                <span className="post-row-main">
+              <div className={`post-row post-row-v2${r.coverPath ? '' : ' no-cover'}`}>
+                <PostThumb row={r} url={covers.get(r.key)} />
+                <a className="post-row-main" href={`#/yazi/${r.key}`}>
                   <span className="post-row-title">{r.title}</span>
                   <span className="post-row-meta">
                     <span className={`badge ${r.status === 'taslak' ? '' : r.status === 'planlandı' ? 'badge-planned' : 'badge-live'}`}>
@@ -208,11 +299,37 @@ export function PostsList({ tab }: { tab: PostsTab }) {
                     <span className="post-langs" title={r.titleEn.trim() ? 'Türkçe ve İngilizce' : 'Yalnızca Türkçe'}>
                       TR{r.titleEn.trim() ? ' · EN' : ''}
                     </span>
-                    {r.updatedAt && <span>{new Date(r.updatedAt).toLocaleDateString('tr-TR')}</span>}
                   </span>
-                </span>
-                <Icon as={ChevronRight} size={18} />
-              </a>
+                  <span className="post-row-facts">
+                    {r.publishedAt ? (
+                      <span>
+                        <Icon as={CalendarCheck} size={14} />
+                        Yayınlanma tarihi: {new Date(`${r.publishedAt.slice(0, 10)}T12:00:00Z`).toLocaleDateString('tr-TR')}
+                      </span>
+                    ) : (
+                      r.updatedAt && (
+                        <span>
+                          <Icon as={PencilLine} size={14} />
+                          Son düzenleme: {new Date(r.updatedAt).toLocaleDateString('tr-TR')}
+                        </span>
+                      )
+                    )}
+                    {r.minutes != null && (
+                      <span>
+                        <Icon as={Clock3} size={14} />
+                        {r.minutes} dk okuma
+                      </span>
+                    )}
+                    {r.live && reads && (
+                      <span>
+                        <Icon as={Eye} size={14} />
+                        {(reads.get(r.key) ?? 0).toLocaleString('tr-TR')} okunma
+                      </span>
+                    )}
+                  </span>
+                </a>
+                <PostActions row={r} />
+              </div>
             </li>
           ))}
         </ul>

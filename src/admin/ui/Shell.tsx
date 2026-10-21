@@ -5,7 +5,8 @@
  * Every group has its tone, shown as the colour of its icon tiles. The sidebar stays put beside the
  * screen, without a scrollbar, and narrows to an icon rail with the button at its top (remembered;
  * also in Ayarlar › Görünüm), names then showing as tooltips. Karanlık Mod, Siteyi Aç, Görünüm and
- * Çıkış Yap sit in a row at the bottom. On phones the sidebar is a drawer. Top right: the bell.
+ * Çıkış Yap sit in a row at the bottom. On phones the sidebar is a drawer. The notifications are fetched
+ * here for the menu badges and handed to the bell on the appointment screens (NotesContext).
  */
 import { useEffect, useState, type ReactNode } from 'react';
 import { go, usePanel, type Route } from './context';
@@ -37,8 +38,7 @@ import {
   type LucideIcon,
 } from './icons';
 import { SETTINGS_SCREENS } from './settings/screens';
-import { NotificationBell } from './NotificationBell';
-import { unseenOf, useNotifications } from './notifications';
+import { NotesContext, unseenOf, useNotifications } from './notifications';
 import { useNoTrack } from './no-track';
 import { RAIL_KEY, usePref } from './prefs';
 
@@ -151,7 +151,6 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
           <Icon as={Menu} size={20} />
           Menü
         </Button>
-        <NotificationBell notes={notes} />
       </div>
       <nav id="panel-nav" className={`panel-nav ${open ? 'open' : ''}`} aria-label="Panel menüsü">
         <div className="nav-brand">
@@ -210,7 +209,7 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
         </div>
       </nav>
       <main className={`panel-main tone-${toneOf(current)}`} id="panel-main">
-        {children}
+        <NotesContext.Provider value={notes}>{children}</NotesContext.Provider>
       </main>
     </div>
   );

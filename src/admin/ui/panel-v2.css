@@ -8,11 +8,36 @@
 /* ---------- sidebar ---------- */
 
 .nav-brand {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
+  min-height: 40px;
   margin: 2px 0 var(--space-2);
+}
+
+/* The rail switch: always in the sidebar's top right corner, turning as it opens and shuts. */
+.nav-rail-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid color-mix(in srgb, var(--p-border) 80%, transparent);
+  background: var(--p-surface);
+  box-shadow: var(--k-shadow-1);
+  transform: translateY(-50%);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.25s ease;
+}
+
+.nav-rail-toggle:hover {
+  background: var(--p-selected);
+  color: var(--p-heading);
+}
+
+.nav-rail-toggle:active {
+  transform: translateY(-50%) scale(0.94);
 }
 
 .nav-brand .nav-logo {
@@ -81,28 +106,48 @@
   margin-bottom: var(--space-1);
 }
 
+/* Owner's review 2026-10-21: the earlier, larger type (15–16 px) reads better. */
 .panel-nav a {
-  min-height: 31px;
-  margin-block: 0;
+  min-height: 36px;
+  margin-block: 1px;
+  font-size: 1rem;
 }
 
 .panel-nav .tone-tile-sm {
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
 }
 
 .nav-section {
-  margin-top: 6px;
+  margin-top: var(--space-2);
 }
 
 .panel-nav .nav-fold {
-  min-height: 22px;
+  min-height: 26px;
+  font-size: 0.8125rem;
 }
 
 .panel-nav .nav-section .nav-new {
-  min-height: 32px;
-  margin: 2px 0 4px;
+  min-height: 38px;
+  margin: 2px 0 6px;
+  font-size: 1rem;
+}
+
+/* "Yeni Yazı" keeps its colour under the pointer (it used to fade to the pale sun at night). */
+.panel-nav .nav-new:hover:not(:disabled) {
+  background: var(--p-accent);
+  filter: brightness(1.06) saturate(1.05);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--p-accent) 35%, transparent);
+}
+
+html[data-theme='dark'] .k-btn-primary:hover:not(:disabled) {
+  background: #ffc53d;
+}
+
+/* The page keeps the scrollbar's room, so nothing slides sideways when the theme or a screen changes. */
+html:has(body.admin) {
+  scrollbar-gutter: stable;
 }
 
 @media (min-width: 900px) {
@@ -138,6 +183,54 @@
     justify-content: center;
   }
 
+  .is-rail .nav-rail-toggle {
+    position: static;
+    transform: none;
+  }
+
+  .is-rail .nav-rail-toggle:active {
+    transform: scale(0.94);
+  }
+
+  /* Every rail entry the same 40 × 40 square, centred; the open one filled, its tile kept. */
+  .is-rail .panel-nav ul {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+  }
+
+  .is-rail .panel-nav a {
+    width: 40px;
+    min-height: 40px;
+    height: 40px;
+    border-radius: 11px;
+  }
+
+  .is-rail .panel-nav a[aria-current='page'] {
+    background: var(--p-accent);
+  }
+
+  .is-rail .panel-nav .tone-tile-sm {
+    width: 28px;
+    height: 28px;
+  }
+
+  .is-rail .panel-nav .nav-section .nav-new {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    min-height: 40px;
+    height: 40px;
+    min-width: 0;
+    margin: 4px auto;
+    padding: 0;
+    border-radius: 11px;
+  }
+
+  .is-rail .panel-nav .nav-new .nav-icon {
+    margin: 0;
+  }
+
   .is-rail .nav-logo,
   .is-rail .nav-label,
   .is-rail .nav-fold span,
@@ -156,13 +249,6 @@
 
   .is-rail .panel-nav a {
     justify-content: center;
-    padding: 0;
-  }
-
-  .is-rail .panel-nav .nav-new {
-    width: 40px;
-    min-width: 0;
-    margin-inline: auto;
     padding: 0;
   }
 
@@ -1068,4 +1154,77 @@
 .sel-tool.is-active {
   background: rgb(252 216 115 / 0.22);
   color: #fcd873;
+}
+
+/* The bell sits beside the clock on the appointment screens; on wide screens the top row is empty. */
+@media (min-width: 900px) {
+  .panel-top {
+    display: none;
+  }
+}
+
+.head-actions .bell {
+  margin-left: 0;
+}
+
+/* The preview fits the window: its list scrolls inside, the head and "Tüm bildirimler" stay put. */
+.bell-preview {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  max-height: min(78vh, 620px);
+  overflow: hidden;
+}
+
+.bell-scroll {
+  max-height: none;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* ---------- editor top bar (owner's review 2026-10-21) ---------- */
+
+.editor-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px 0 8px;
+  border: 1px solid color-mix(in srgb, var(--p-border) 80%, transparent);
+  border-radius: 999px;
+  background: var(--p-surface);
+  box-shadow: var(--k-shadow-1);
+  color: var(--p-heading) !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none !important;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.editor-back:hover {
+  background: var(--p-tone-lavanta-bg);
+}
+
+.editor-back:hover .nav-icon {
+  transform: translateX(-2px);
+}
+
+.editor-back .nav-icon {
+  transition: transform 0.15s ease;
+}
+
+.editor-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-text) 6%, transparent);
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.editor-versions {
+  gap: 6px;
 }

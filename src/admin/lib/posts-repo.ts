@@ -6,6 +6,7 @@ import { normalizeDraft } from './draft';
 import { parsePost, type PostFrontmatter } from './frontmatter';
 import { markdownToDoc } from './markdown';
 import type { LivePost, RedirectsFile } from './publish';
+import { readingTime } from '../../lib/readingTime';
 
 export type LoadedPost = LivePost & { body: Record<Lang, string> };
 export type SiteState = {
@@ -124,7 +125,30 @@ export function ensureTriggersOnce(api: Api): void {
 
 export type PostStatus = 'taslak' | 'yayında' | 'yayında-değişiklik-var' | 'planlandı';
 /** `live`: a version of the post is on the site; `scheduledAt`: when a planned draft goes live. */
-export type PostRow = { key: string; title: string; titleEn: string; category: string; status: PostStatus; updatedAt: string; live: boolean; scheduledAt: string | null };
+export type PostRow = {
+  key: string;
+  title: string;
+  titleEn: string;
+  category: string;
+  status: PostStatus;
+  updatedAt: string;
+  live: boolean;
+  scheduledAt: string | null;
+  /** The live post's date (Yayınlanma tarihi); null for a draft never published. */
+  publishedAt?: string | null;
+  /** Reading time of the live Turkish text, in minutes (as the site shows it); null when unknown. */
+  minutes?: number | null;
+  /** Repo path of the live post's cover, for the list's thumbnail; null without one. */
+  coverPath?: string | null;
+};
+
+/** The live post's cover file in the repo (`src/content/posts/<key>/cover.webp`), or null. */
+export function coverPathOf(p: LivePost): string | null {
+  const name = p.tr.fm.cover?.replace(/^\.\//, '');
+  return name ? `src/content/posts/${p.key}/${name}` : null;
+}
+
+const minutesOf = (p: LivePost) => ('body' in p ? readingTime((p as LoadedPost).body.tr) : null);
 
 export const STATUS_LABEL: Record<PostStatus, string> = {
   taslak: 'Taslak',
@@ -137,7 +161,8 @@ export function mergeList(live: LivePost[], drafts: DraftSummary[]): PostRow[] {
   const rows: PostRow[] = [];
   const draftByKey = new Map(drafts.map((d) => [d.key, d]));
   for (const d of drafts) {
-    const isLive = live.some((p) => p.key === d.key);
+    const lp = live.find((p) => p.key === d.key);
+    const isLive = !!lp;
     rows.push({
       key: d.key,
       title: d.title.tr.trim() || d.title.en.trim() || 'Başlıksız taslak',
@@ -147,6 +172,9 @@ export function mergeList(live: LivePost[], drafts: DraftSummary[]): PostRow[] {
       updatedAt: d.updatedAt,
       live: isLive,
       scheduledAt: d.scheduledAt ?? null,
+      publishedAt: lp ? lp.tr.fm.publishedAt : null,
+      minutes: lp ? minutesOf(lp) : null,
+      coverPath: lp ? coverPathOf(lp) : null,
     });
   }
   for (const p of live) {
@@ -160,6 +188,9 @@ export function mergeList(live: LivePost[], drafts: DraftSummary[]): PostRow[] {
       updatedAt: p.tr.fm.updatedAt ?? p.tr.fm.publishedAt,
       live: true,
       scheduledAt: null,
+      publishedAt: p.tr.fm.publishedAt,
+      minutes: minutesOf(p),
+      coverPath: coverPathOf(p),
     });
   }
   return rows;

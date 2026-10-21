@@ -2,7 +2,7 @@
  * One post: loads the Drive draft (or the live post, or this device's copy of a new draft), edits
  * it with autosave, and publishes / unpublishes / deletes it.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ApiFailure, type Draft, type LangFields } from '../../api/types';
 import type { Category, Lang } from '../../../lib/schemas';
 import { postPath } from '../../../i18n/routes';
@@ -14,7 +14,7 @@ import { UnknownReferenceError, citedIds, renderReferencesSection } from '../../
 import { countWords, readingTime } from '../../../lib/readingTime';
 import { ensureTriggersOnce, liveToDraft, loadSiteState, type LoadedPost } from '../../lib/posts-repo';
 import { PublishError, buildUnpublishChangeset } from '../../lib/publish';
-import { go, usePanel } from '../context';
+import { go, usePanel, type PostIntent } from '../context';
 import { useDeploy } from '../DeployStatus';
 import { Banner, Button, Dialog, Spinner } from '../kit';
 import { ImageStore } from './images';
@@ -43,7 +43,7 @@ const STATUS_TEXT: Record<AutosaveStatus, string> = {
   silinmiş: 'Bu taslak başka bir cihazda yayınlanmış ya da silinmiş',
 };
 
-export function EditorPage({ postKey }: { postKey: string }) {
+export function EditorPage({ postKey, intent }: { postKey: string; intent?: PostIntent }) {
   const { api } = usePanel();
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -89,12 +89,12 @@ export function EditorPage({ postKey }: { postKey: string }) {
     );
   }
   if (!loaded) return <Spinner label="Yazı yükleniyor…" />;
-  return <Editing loaded={loaded} />;
+  return <Editing loaded={loaded} intent={intent} />;
 }
 
 type Done = { kind: 'published' | 'unpublished' | 'deleted'; urls?: { tr: string; en: string }; notices?: string[] };
 
-function Editing({ loaded }: { loaded: Loaded }) {
+function Editing({ loaded, intent }: { loaded: Loaded; intent?: PostIntent }) {
   const { api } = usePanel();
   const deploy = useDeploy();
   const auto = useAutosave(loaded.draft, api);
@@ -237,6 +237,22 @@ function Editing({ loaded }: { loaded: Loaded }) {
     setFocusField('checklist');
   };
 
+  // A button on the posts list (Yayınla, Planla, Taslağa al, Sil) opens the post and starts that step
+  // here, with its usual checks and confirmation; the address then drops the request.
+  const intentDone = useRef(false);
+  useEffect(() => {
+    if (!intent || intentDone.current) return;
+    intentDone.current = true;
+    window.history.replaceState(null, '', `#/yazi/${loaded.draft.key}`);
+    if (intent === 'yayinla') onPublish();
+    else if (intent === 'planla') {
+      setRail('settings');
+      setFocusField('planTime');
+    } else if (intent === 'kaldir' && loaded.live && draft.published) setConfirm('unpublish');
+    else if (intent === 'sil' && !draft.published) setConfirm('delete');
+    // Once, on opening.
+  }, [intent]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const replaceDraft = (d: Draft) => {
     auto.replace(d);
     setVersion((v) => v + 1);
@@ -373,6 +389,8 @@ function Editing({ loaded }: { loaded: Loaded }) {
         publishing={busy && confirm === 'publish'}
         planning={planning}
         more={more}
+        onVersions={() => setVersioning(true)}
+        stats={`${words} kelime · ${minutes} dk okuma`}
       />
 
       {restore && (
@@ -463,13 +481,6 @@ function Editing({ loaded }: { loaded: Loaded }) {
           dots={{ seo: scoreTone(seoScore[lang]), seoScore: seoScore[lang], checklistMissing: blocked }}
         />
       </div>
-
-      <footer className="editor-footer">
-        <span className="editor-footer-left"><Button variant="ghost" onClick={() => setVersioning(true)}>
-            Sürüm geçmişi
-          </Button></span>
-        <span>{`${words} kelime · ${minutes} dk okuma`}</span>
-      </footer>
 
       {versioning && <VersionsDialog api={api} draftKey={draft.key} lang={lang} onRestore={restoreVersion} onClose={closeVersions} />}
       {previewing && <PreviewDialog draft={draft} lang={lang} images={images} onClose={closePreview} />}

@@ -15,6 +15,10 @@ export function usePanel(): PanelContext {
 
 export type PostsTab = 'live' | 'drafts' | 'planned';
 
+/** What the posts list asked the editor to start with (owner's review 2026-10-21). */
+export type PostIntent = 'yayinla' | 'planla' | 'kaldir' | 'sil';
+const INTENTS: PostIntent[] = ['yayinla', 'planla', 'kaldir', 'sil'];
+
 export type Route =
   | { name: 'home' }
   | { name: 'posts'; tab: PostsTab }
@@ -26,7 +30,7 @@ export type Route =
   | { name: 'notifications' }
   /** Seans takip › one client's sessions. */
   | { name: 'client'; id: string }
-  | { name: 'post'; key: string }
+  | { name: 'post'; key: string; intent?: PostIntent }
   | { name: 'settings'; screen: string };
 
 export function parseRoute(hash: string): Route {
@@ -45,7 +49,10 @@ export function parseRoute(hash: string): Route {
     return { name: 'requests', add: m ? { day: m[1], time: m[2], type: q.get('tur') ?? 'individual' } : null, ...(q.has('liste') ? { list: true } : {}) };
   }
   let m = path.match(/^\/yazi\/([a-z0-9-]+)$/);
-  if (m) return { name: 'post', key: m[1] };
+  if (m) {
+    const intent = new URLSearchParams(query).get('islem') as PostIntent | null;
+    return { name: 'post', key: m[1], ...(intent && INTENTS.includes(intent) ? { intent } : {}) };
+  }
   m = path.match(/^\/ayarlar\/([a-z-]+)$/);
   if (m) return { name: 'settings', screen: m[1] };
   if (path === '/yazilar') return { name: 'posts', tab: 'live' };

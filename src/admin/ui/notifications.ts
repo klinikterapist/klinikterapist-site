@@ -4,7 +4,7 @@
  * minutes while the tab is in view, so a new request or a client's change shows without reloading.
  * "Seen" is the time of the last look (the bell or Bildirimler), kept in this browser only.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Api, PanelEvent } from '../api/types';
 import { attentionOf, type Attention } from '../lib/attention';
 
@@ -71,3 +71,7 @@ export function useNotifications(api: Api): NotificationState & { refresh: () =>
 
   return { ...state, refresh };
 }
+
+/** The panel-wide state, shared by the menu badges and the bell on the appointment screens. */
+export const NotesContext = createContext<NotificationState | null>(null);
+export const useNotes = () => useContext(NotesContext);

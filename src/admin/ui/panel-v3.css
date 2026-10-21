@@ -1,0 +1,375 @@
+/*
+ * Panel v3 (owner's review 2026-10-21, "Düzeltmeler"): the posts list with covers and actions, the
+ * appointment summary's new layout and tools, the social links list, FAQ and resources screens, the
+ * text dialogs of the site pages and the privacy settings. Loaded after panel-v2.css.
+ */
+
+/* ---------- Yazılar: tabs with icons ---------- */
+
+.tabs .tab.tab-v2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--p-text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tabs .tab.tab-v2:hover {
+  background: color-mix(in srgb, var(--tone-bg) 50%, transparent);
+}
+
+.tabs .tab.tab-v2.is-active {
+  border-color: color-mix(in srgb, var(--tone) 35%, transparent);
+  background: var(--tone-bg);
+  color: var(--tone);
+  box-shadow: none;
+}
+
+.tabs .tab.tab-v2.is-active::after {
+  display: none;
+}
+
+.tab-count {
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-text) 8%, transparent);
+  color: inherit;
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.tabs:has(.tab-v2) {
+  gap: var(--space-2);
+  border-bottom: 0;
+}
+
+/* ---------- Yazılar: rows with cover, facts and actions ---------- */
+
+.post-row.post-row-v2 {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3);
+}
+
+.post-row-v2:hover {
+  border-color: color-mix(in srgb, var(--p-accent) 50%, var(--p-border));
+}
+
+.post-thumb {
+  display: block;
+  width: 112px;
+  height: 72px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--p-selected);
+}
+
+.post-thumb-empty {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--tone-bg), color-mix(in srgb, var(--tone) 18%, var(--tone-bg)));
+  color: var(--tone);
+}
+
+.post-row-v2 .post-row-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--p-text) !important;
+  text-decoration: none !important;
+}
+
+.post-row-v2 .post-row-main:hover .post-row-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.post-row-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+}
+
+.post-row-facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.post-acts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 22rem;
+}
+
+.post-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid color-mix(in srgb, var(--p-border) 85%, transparent);
+  border-radius: 9px;
+  background: var(--p-surface);
+  color: var(--p-text) !important;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none !important;
+  white-space: nowrap;
+}
+
+.post-act:hover {
+  background: var(--p-selected);
+}
+
+.post-act.is-main {
+  border-color: transparent;
+  background: var(--p-accent);
+  color: var(--p-accent-text) !important;
+}
+
+.post-act.is-main:hover {
+  filter: brightness(1.06);
+}
+
+.post-act.is-danger {
+  color: var(--p-err-label) !important;
+}
+
+.post-act.is-danger:hover {
+  background: var(--p-err-bg);
+}
+
+@media (max-width: 760px) {
+  .post-row.post-row-v2 {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .post-thumb {
+    width: 72px;
+    height: 56px;
+  }
+
+  .post-acts {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    max-width: none;
+  }
+}
+
+/* ---------- Randevu Özeti: cards under the lists ---------- */
+
+.pf-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  grid-auto-flow: dense;
+  align-items: start;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.pf-card {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--k-space-4);
+  border: 1px solid color-mix(in srgb, var(--p-border) 70%, transparent);
+  border-radius: var(--k-radius);
+  background: var(--p-surface);
+  box-shadow: var(--k-shadow-1);
+}
+
+.pf-card-plain {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.admin .pf-card h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.pf-lead {
+  margin: 0;
+  color: var(--p-muted);
+  font-size: var(--text-sm);
+}
+
+.pf-month {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.pf-ring {
+  position: relative;
+  display: grid;
+  flex: none;
+  place-content: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  text-align: center;
+}
+
+.pf-ring::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  background: var(--p-surface);
+}
+
+.pf-ring > * {
+  position: relative;
+}
+
+.pf-ring b {
+  color: var(--p-heading);
+  font-family: var(--font-serif);
+  font-size: var(--text-xl);
+  line-height: 1;
+}
+
+.pf-ring span {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+}
+
+.pf-facts {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+  margin: 0;
+}
+
+.pf-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-bottom: 6px;
+  border-bottom: 1px solid color-mix(in srgb, var(--p-border) 60%, transparent);
+  font-size: var(--text-sm);
+}
+
+.pf-facts div:last-child {
+  border-bottom: 0;
+}
+
+.pf-facts dt {
+  color: var(--p-muted);
+}
+
+.pf-facts dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-facts .is-warn dd {
+  color: var(--p-warn-label);
+}
+
+.pf-facts .is-err dd {
+  color: var(--p-err-label);
+}
+
+.pf-bars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-bars li {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.pf-bar {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 34px;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--p-text) 6%, transparent);
+}
+
+.pf-bar i {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  background: var(--p-tone-adacayi);
+}
+
+.pf-bar i.is-full {
+  background: var(--p-tone-kiremit);
+}
+
+.pf-bar i.is-off {
+  background: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--p-text) 8%, transparent) 5px 10px);
+}
+
+.pf-bar-day {
+  color: var(--p-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pf-bar-n {
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.pf-tools ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-tool {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: 10px;
+  color: var(--p-text) !important;
+  text-decoration: none !important;
+}
+
+.pf-tool:hover {
+  background: color-mix(in srgb, var(--tone-bg) 60%, transparent);
+}
+
+.pf-tool > span:last-child {
+  display: grid;
+  gap: 1px;
+}
+
+.pf-tool b {
+  font-size: var(--text-sm);
+}
+
+.pf-tool > span:last-child > span {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+}

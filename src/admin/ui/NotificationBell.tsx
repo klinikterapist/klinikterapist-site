@@ -1,5 +1,5 @@
 /**
- * The bell in the top right corner (owner's requests 2026-10-21): a badge with the number of events
+ * The bell beside the clock on the appointment screens (owner's requests 2026-10-21): a badge with the number of events
  * since the last look; on a press, a notification centre: "Şimdi ilgilenin" (what needs attention,
  * worked out from the clients and requests), then the latest events by day (Bugün, Dün, Daha önce),
  * each with its kind's icon and tone, filtered by tabs, "Tümünü okundu say" and "Tüm bildirimler".
@@ -9,7 +9,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { PanelEvent, PanelEventKind } from '../api/types';
 import { formatDay } from '../../lib/booking-form';
 import { Bell, BellDot, CalendarClock, CheckCheck, CircleAlert, HandHeart, Icon, Inbox, TriangleAlert, UserRoundCheck, Wallet, type LucideIcon } from './icons';
-import { markSeen, unseenOf, type NotificationState } from './notifications';
+import { markSeen, unseenOf, useNotes, type NotificationState } from './notifications';
+
+const EMPTY: NotificationState = { events: [], pending: 0, attention: [], seen: 0, loaded: false, failed: false };
 import type { Tone } from './Shell';
 
 /** How each kind of event looks, here and on Bildirimler. */
@@ -30,7 +32,8 @@ const TABS: { id: string; label: string; kinds?: PanelEventKind[] }[] = [
   { id: 'payment', label: 'Ödemeler', kinds: ['payment'] },
 ];
 
-const PREVIEW = 8;
+/** The preview stays short (owner's review 2026-10-21); everything else is on Bildirimler. */
+const PREVIEW = 5;
 const dayOf = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
 export const timeOf = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(11, 16).replace(':', '.');
 
@@ -71,7 +74,8 @@ export function EventRow({ e, isNew, now, onGo }: { e: PanelEvent; isNew: boolea
   );
 }
 
-export function NotificationBell({ notes }: { notes: NotificationState }) {
+export function NotificationBell() {
+  const notes = useNotes() ?? EMPTY;
   const { events, seen, failed, attention } = notes;
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState('all');
@@ -126,7 +130,7 @@ export function NotificationBell({ notes }: { notes: NotificationState }) {
             <section className="bell-attention" aria-label="Şimdi ilgilenin">
               <h4>Şimdi ilgilenin</h4>
               <ul>
-                {attention.slice(0, 3).map((a) => (
+                {attention.slice(0, 2).map((a) => (
                   <li key={a.key} className={`bell-att bell-att-${a.tone}`}>
                     <Icon as={a.tone === 'err' ? CircleAlert : TriangleAlert} size={16} />
                     <a href={a.link} onClick={() => setOpen(false)}>
@@ -135,7 +139,7 @@ export function NotificationBell({ notes }: { notes: NotificationState }) {
                   </li>
                 ))}
               </ul>
-              {attention.length > 3 && <p className="bell-more">{`ve ${attention.length - 3} konu daha`}</p>}
+              {attention.length > 2 && <p className="bell-more">{`ve ${attention.length - 2} konu daha`}</p>}
             </section>
           )}
 
