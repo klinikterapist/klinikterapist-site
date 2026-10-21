@@ -58,7 +58,7 @@ const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl
           <ul class="post-grid" aria-label={title}>
             {posts.map((p) => (
               <li>
-                <PostCard post={p} lang={lang} level={2} />
+                <PostCard post={p} lang={lang} variant="wide" level={2} />
               </li>
             ))}
           </ul>
@@ -188,14 +188,15 @@ const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl
 
     .post-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
     }
   }
 
+  /* Horizontal cards (PostCard "wide"): one column on tablets, two on wide screens. */
   @media (min-width: 1024px) {
     .post-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>

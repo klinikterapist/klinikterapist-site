@@ -8,6 +8,8 @@ import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import Icon from '../components/Icon.astro';
+import ToneTile from '../components/ui/ToneTile.astro';
+import { RESOURCE_TONES } from '../lib/tones';
 import type { Lang, Resource } from '../lib/settings';
 import { getResources } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
@@ -36,7 +38,7 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths}>
   <div class="container-text inner-page resources">
-    <PageHead title={title}>
+    <PageHead title={title} icon="book" tone="lavanta">
       <p class="lead">{note || t(lang, 'resourcesLead')}</p>
     </PageHead>
 
@@ -52,7 +54,7 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
               )}
             </span>
             <span class="bt">
-              <small class="label">
+              <small class="label chip" style={`--chip-fg: var(--tone-${RESOURCE_TONES[featured.type]}); --chip-bg: var(--tone-${RESOURCE_TONES[featured.type]}-bg)`}>
                 {upper(t(lang, 'featured'))} · {upper(typeName(featured.type))}
               </small>
               <b class="title">{featured.title}</b>
@@ -74,7 +76,7 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
                 <li>
                   {hasType(type) ? (
                     <a class="tile" href={`#${anchor(type)}`}>
-                      <Icon name={type} size={22} />
+                      <ToneTile icon={type} tone={RESOURCE_TONES[type]} size={40} />
                       <b>{typesName(type)}</b>
                     </a>
                   ) : (
@@ -96,6 +98,7 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
             class="type-acc"
             id={anchor(g.type)}
             icon={g.type}
+            tone={RESOURCE_TONES[g.type]}
             title={typesName(g.type)}
             subtitle={tCount(lang, 'resourcesOne', 'resourcesMany', g.items.length)}
             open={i === 0}
@@ -174,6 +177,15 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
     letter-spacing: 0.04em;
   }
 
+  /* The featured card's "ÖNE ÇIKAN · KİTAP" in the type's tone. */
+  .label.chip {
+    align-self: flex-start;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--chip-bg);
+    color: var(--chip-fg);
+  }
+
   .title {
     font-family: var(--font-serif);
     font-size: 1.125rem;
@@ -219,7 +231,7 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
     overflow-wrap: anywhere;
   }
 
-  .type-tiles :global(.icon) {
+  .type-tiles .tile > :global(.icon) {
     color: var(--link);
   }
 
@@ -230,7 +242,7 @@ const hasType = (type: Resource['type']) => groups.some((g) => g.type === type);
     color: var(--muted);
   }
 
-  .type-tiles .tile-empty :global(.icon) {
+  .type-tiles .tile-empty > :global(.icon) {
     color: var(--muted);
   }
 

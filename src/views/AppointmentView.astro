@@ -36,7 +36,7 @@ const bookingFaq = getFaq(lang, 'booking').map((f) => ({ id: f.id, icon: f.icon 
   {
     design ? (
       <div class="container inner-page appointment-design">
-        <PageHead title={title} />
+        <PageHead title={title} icon="booking" tone="adacayi" />
         <BookingDesign lang={lang} email={email} />
         <div class="booking-info">
           {
@@ -68,8 +68,8 @@ const bookingFaq = getFaq(lang, 'booking').map((f) => ({ id: f.id, icon: f.icon 
         </PageHead>
 
         <div class="page-stack">
-          <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
-          <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+          <ListItem class="mail" icon="email" tone="lacivert" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
+          <ListItem icon="chat" tone="deniz" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
         </div>
       </div>
     )

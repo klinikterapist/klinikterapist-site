@@ -59,7 +59,7 @@ const emergency = contact.emergencyNote[lang].trim();
     <div class="page-stack">
       <ContactForm lang={lang} email={contact.email} />
 
-      <ListItem icon="email" title={t(lang, 'sendEmail')} subtitle={contact.email} href={`mailto:${contact.email}`} />
+      <ListItem icon="email" tone="lacivert" title={t(lang, 'sendEmail')} subtitle={contact.email} href={`mailto:${contact.email}`} />
 
       {
         factPair && (
@@ -76,6 +76,7 @@ const emergency = contact.emergencyNote[lang].trim();
           <ListItem
             class="membership"
             icon="shield"
+            tone="adacayi"
             title={t(lang, 'memberOf').replace('{org}', m.org)}
             subtitle={m.number ? t(lang, 'memberNo').replace('{n}', m.number) : undefined}
           />

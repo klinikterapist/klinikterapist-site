@@ -2,13 +2,14 @@
 /**
  * Topics (/blog/konular/, /en/blog/topics/; owner's review 2026-10-18): the topic archive that replaces
  * the phone blog's "Konular" drop-down. One tile per category, with its own icon (categories.json
- * `icon`, set in the panel; a tag when empty), its name and how many posts it holds, linking to the
+ * `icon`, set in the panel; a tag when empty) in its tone tile (src/lib/tones.ts), its name and how many posts it holds, linking to the
  * category page. A topic without posts in this language stays visible but faded and is not a link.
  * Two columns on phones, more on wider screens.
  */
 import PageShell from '../layouts/PageShell.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
-import Icon from '../components/Icon.astro';
+import ToneTile from '../components/ui/ToneTile.astro';
+import { categoryTone } from '../lib/tones';
 import type { Lang } from '../lib/settings';
 import { getCategories } from '../lib/settings';
 import { getPosts } from '../lib/posts';
@@ -23,13 +24,16 @@ interface Props {
 const { lang } = Astro.props;
 
 const posts = await getPosts(lang);
-const topics = getCategories()
+const categories = getCategories();
+const ids = categories.map((c) => c.id);
+const topics = categories
   .map((c) => {
     const n = posts.filter((p) => p.data.category === c.id).length;
     return {
       id: c.id,
       label: c.label[lang].trim(),
       icon: c.icon?.trim() || 'tag',
+      tone: categoryTone(c.id, ids),
       href: categoryPath(c, lang),
       n,
       count: n > 0 ? tCount(lang, 'postsOne', 'postsMany', n) : t(lang, 'postsNone'),
@@ -62,7 +66,7 @@ const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl
           c.n > 0 ? (
             <li>
               <a class="topic" href={c.href} data-topic={c.id}>
-                <Icon name={c.icon} size={26} />
+                <ToneTile icon={c.icon} tone={c.tone} size={44} />
                 <b>{c.label}</b>
                 <small>{c.count}</small>
               </a>
@@ -70,7 +74,7 @@ const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl
           ) : (
             <li>
               <span class="topic topic--empty" data-topic={c.id}>
-                <Icon name={c.icon} size={26} />
+                <ToneTile icon={c.icon} tone={c.tone} size={44} />
                 <b>{c.label}</b>
                 <small>{c.count}</small>
               </span>
@@ -149,9 +153,8 @@ const jsonLd = [breadcrumbLd(crumbs.map((c) => ({ name: c.name, url: absoluteUrl
     background: var(--surface-2);
   }
 
-  .topic > :global(svg) {
+  .topic > :global(.tone-tile) {
     margin-bottom: var(--space-2);
-    color: var(--link);
   }
 
   .topic b {

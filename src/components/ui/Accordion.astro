@@ -1,27 +1,37 @@
 ---
-/** Native <details> box, no JavaScript. `name` makes boxes with the same name open one at a time. */
+/**
+ * Native <details> box, no JavaScript. `name` makes boxes with the same name open one at a time.
+ * With `tone` the icon sits in a tone tile (FAQ, Resources).
+ */
 import Icon from '../Icon.astro';
+import ToneTile from './ToneTile.astro';
+import type { Tone } from '../../lib/palette';
 
 interface Props {
   title: string;
   subtitle?: string;
   icon?: string;
+  tone?: Tone;
   name?: string;
   open?: boolean;
   /** Anchor target (e.g. a resources type box). */
   id?: string;
   class?: string;
 }
-const { title, subtitle, icon, name, open = false, id, class: className } = Astro.props;
+const { title, subtitle, icon, tone, name, open = false, id, class: className } = Astro.props;
 ---
 
 <details class:list={['acc', className]} id={id} name={name} open={open}>
   <summary>
     {
-      icon && (
-        <span class="ic">
-          <Icon name={icon} size={20} />
-        </span>
+      icon && tone ? (
+        <ToneTile icon={icon} tone={tone} />
+      ) : (
+        icon && (
+          <span class="ic">
+            <Icon name={icon} size={20} />
+          </span>
+        )
       )
     }
     <span class="text">

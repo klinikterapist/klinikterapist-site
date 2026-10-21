@@ -127,7 +127,7 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
               <ul class="post-grid" aria-label={t(lang, 'postList')}>
                 {rest.map((p) => (
                   <li data-post data-cat={p.data.category} data-search={searchText(p)}>
-                    <PostCard post={p} lang={lang} level={3} />
+                    <PostCard post={p} lang={lang} variant="wide" level={3} />
                   </li>
                 ))}
               </ul>
@@ -362,14 +362,15 @@ const topicHint = topicLabels.length > 2 ? `${topicLabels.slice(0, 2).join(', ')
     }
 
     .post-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
     }
   }
 
+  /* Horizontal cards (PostCard "wide"): one column on tablets, two on wide screens. */
   @media (min-width: 1024px) {
     .post-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>

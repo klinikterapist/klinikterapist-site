@@ -183,7 +183,7 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design} noAnalytics>
   <div class:list={['inner-page preconsult-page', design ? 'container' : 'container-text']}>
-    <PageHead title={T.title}>
+    <PageHead title={T.title} icon="talk" tone="kiremit">
       <p class="lead">{T.lead}</p>
     </PageHead>
 
@@ -223,8 +223,8 @@ const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
         ) : (
           <div class="page-stack">
             <p class="live-lead">{T.liveLead}</p>
-            <ListItem class="mail" icon="email" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
-            <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+            <ListItem class="mail" icon="email" tone="lacivert" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
+            <ListItem icon="chat" tone="deniz" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
           </div>
         )
       }

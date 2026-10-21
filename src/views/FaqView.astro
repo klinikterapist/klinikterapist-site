@@ -14,6 +14,7 @@ import { pageMeta } from '../lib/seo';
 import { faqPageLd } from '../lib/jsonld';
 import { pathFor } from '../i18n/routes';
 import { t } from '../i18n/ui';
+import { toneAt } from '../lib/tones';
 
 interface Props {
   lang: Lang;
@@ -27,15 +28,15 @@ const ld = faqPageLd(lang);
 
 <PageShell lang={lang} meta={meta} jsonLd={ld ? [ld] : undefined} alternatePaths={alternatePaths}>
   <div class="container-text inner-page faq-page">
-    <PageHead title={title}>
+    <PageHead title={title} icon="help" tone="deniz">
       <p class="lead">{t(lang, 'faqDesc')}</p>
     </PageHead>
 
     {
       faq.length > 0 ? (
         <div class="page-stack">
-          {faq.map((f) => (
-            <Accordion title={f.q} id={f.id} open={f.id === 'ilk-gorusme'}>
+          {faq.map((f, i) => (
+            <Accordion title={f.q} id={f.id} icon={f.icon || 'help'} tone={toneAt(i)} open={f.id === 'ilk-gorusme'}>
               <p class="answer">{f.a}</p>
             </Accordion>
           ))}
@@ -43,7 +44,7 @@ const ld = faqPageLd(lang);
       ) : (
         <div class="page-stack">
           <p class="empty">{t(lang, 'faqEmpty')}</p>
-          <ListItem icon="chat" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
+          <ListItem icon="chat" tone="deniz" title={t(lang, 'goToContact')} href={pathFor('contact', lang)} />
         </div>
       )
     }

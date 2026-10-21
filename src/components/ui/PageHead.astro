@@ -2,16 +2,34 @@
 /**
  * Centred head of an inner page (spec §5.9): an optional round photo or sun (`media` slot), the h1,
  * then the page's own lines (default slot): `.who-line` / `.ti` (soft line), `.tpd` (membership),
- * `.lead` (intro sentence).
+ * `.lead` (intro sentence). Without a photo, `icon` + `tone` put a tone tile above the title.
  */
+import ToneTile from './ToneTile.astro';
+import type { Tone } from '../../lib/palette';
+
 interface Props {
   title: string;
+  icon?: string;
+  tone?: Tone;
 }
-const { title } = Astro.props;
+const { title, icon, tone } = Astro.props;
 ---
 
 <header class="page-head">
-  {Astro.slots.has('media') && <div class="media"><slot name="media" /></div>}
+  {
+    Astro.slots.has('media') ? (
+      <div class="media">
+        <slot name="media" />
+      </div>
+    ) : (
+      icon &&
+      tone && (
+        <div class="media">
+          <ToneTile icon={icon} tone={tone} size={52} />
+        </div>
+      )
+    )
+  }
   <h1>{title}</h1>
   <slot />
 </header>

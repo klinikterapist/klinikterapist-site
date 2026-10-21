@@ -1,0 +1,36 @@
+---
+/**
+ * An icon in a rounded square of one "Gün & Gece" tone (the panel's tone tile, Apple Settings style):
+ * the tone's soft background, the icon in the tone's text colour. Decorative; the label beside it
+ * always says what it is (never colour alone).
+ */
+import Icon from '../Icon.astro';
+import type { Tone } from '../../lib/palette';
+
+interface Props {
+  icon: string;
+  tone: Tone;
+  /** Tile edge in px; the icon is a little over half of it. */
+  size?: number;
+  class?: string;
+}
+const { icon, tone, size = 36, class: className } = Astro.props;
+const style = `--tile: ${size}px; --tile-fg: var(--tone-${tone}); --tile-bg: var(--tone-${tone}-bg)`;
+---
+
+<span class:list={['tone-tile', className]} style={style} data-tone={tone} aria-hidden="true">
+  <Icon name={icon} size={Math.round(size * 0.56)} />
+</span>
+
+<style>
+  .tone-tile {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: var(--tile);
+    height: var(--tile);
+    border-radius: calc(var(--tile) * 0.28);
+    background: var(--tile-bg);
+    color: var(--tile-fg);
+  }
+</style>

@@ -2,7 +2,10 @@
 /**
  * A post in a list. Two looks:
  * - `card` (desktop grids): cover (or a sun-gradient placeholder), topic, title, description, date and reading time;
- * - `row` (phone lists): a ListItem with a small cover, the topic above the title, reading time below.
+ * - `row` (phone lists): a ListItem with a small cover, the topic above the title, reading time below;
+ * - `wide` (blog and popular pages on desktop; owner's Dribbble pick, SITE-GUNCELLEMESI karar 11): a
+ *   horizontal card, the cover on the left inside the card's rounded edge (nested corners), the topic
+ *   as a tone chip on the cover, title and description on the right, date · reading time · reads below.
  * The read count shows only when there is data and at least 50 reads (readsLabel).
  */
 import { Image } from 'astro:assets';
@@ -15,13 +18,14 @@ import { t } from '../i18n/ui';
 import { formatDate, isoDay } from '../lib/date';
 import { readCount, readsLabel } from '../lib/read-counts';
 import { postThumb } from '../lib/post-image';
+import { categoryTone } from '../lib/tones';
 import ListItem from './ui/ListItem.astro';
 import Icon from './Icon.astro';
 
 interface Props {
   post: PostEntry;
   lang: Lang;
-  variant?: 'card' | 'row';
+  variant?: 'card' | 'row' | 'wide';
   /** Heading level of the title inside the surrounding section (card only). */
   level?: 2 | 3;
   eager?: boolean;
@@ -29,7 +33,9 @@ interface Props {
 const { post, lang, variant = 'card', level = 3, eager = false } = Astro.props;
 const { data } = post;
 const href = postPath(data.slug, lang);
-const categoryLabel = getCategories().find((c) => c.id === data.category)?.label[lang].trim() ?? '';
+const categories = getCategories();
+const categoryLabel = categories.find((c) => c.id === data.category)?.label[lang].trim() ?? '';
+const tone = categoryTone(data.category, categories.map((c) => c.id));
 const cover = data.cover as ImageMetadata | undefined;
 const date = data.publishedAt;
 const minutes = `${post.readingMinutes} ${t(lang, 'minRead')}`;
@@ -54,6 +60,48 @@ const Heading = level === 2 ? 'h2' : 'h3';
         </span>
       )}
     </ListItem>
+  ) : variant === 'wide' ? (
+    <article class="post-card wide">
+      <div class="wide-media">
+        {cover ? (
+          <Image
+            src={cover}
+            alt={data.coverAlt ?? ''}
+            widths={[320, 480, 640]}
+            sizes="(min-width: 1024px) 240px, 280px"
+            loading={eager ? 'eager' : 'lazy'}
+            class="wide-cover"
+          />
+        ) : (
+          <div class="wide-cover placeholder" aria-hidden="true" />
+        )}
+        {categoryLabel && (
+          <span class="tag chip" style={`--chip-fg: var(--tone-${tone}); --chip-bg: var(--tone-${tone}-bg)`} data-tone={tone}>
+            {categoryLabel}
+          </span>
+        )}
+      </div>
+      <div class="wide-body">
+        <Heading class="card-title">
+          <a href={href}>{data.title}</a>
+        </Heading>
+        {data.description.trim() && <p class="desc">{data.description}</p>}
+        <p class="meta">
+          <time datetime={isoDay(date)}>{formatDate(date, lang)}</time>
+          <span aria-hidden="true">·</span>
+          <span>{minutes}</span>
+          {reads && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span class="reads">
+                <Icon name="eye" size={14} />
+                {reads}
+              </span>
+            </>
+          )}
+        </p>
+      </div>
+    </article>
   ) : (
     <article class="post-card">
       {cover ? (
@@ -183,5 +231,62 @@ const Heading = level === 2 ? 'h2' : 'h3';
     align-items: center;
     gap: 0.25rem;
     white-space: nowrap;
+  }
+  /* The horizontal card: 10 px inset, so the cover's 12 px corners sit inside the card's 22 px ones. */
+  .post-card.wide {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 18px;
+    padding: 10px;
+    border-radius: 22px;
+  }
+
+  .wide-media {
+    position: relative;
+    flex: none;
+    width: 42%;
+    max-width: 260px;
+  }
+
+  .wide-media :global(.wide-cover) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 170px;
+    border-radius: 12px;
+    object-fit: cover;
+  }
+
+  .wide-body {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px 6px 0;
+  }
+
+  .chip {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+    overflow: hidden;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--chip-bg);
+    color: var(--chip-fg);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .post-card.wide .card-title a::after {
+    border-radius: 22px;
+  }
+
+  .post-card.wide .desc {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 </style>

@@ -33,13 +33,13 @@ const meta = buildMeta({
     </PageHead>
 
     <div class="page-stack">
-      <ListItem icon="home" title={t(lang, 'backHome')} href={pathFor('home', lang)} />
+      <ListItem icon="home" tone="gunes" title={t(lang, 'backHome')} href={pathFor('home', lang)} />
     </div>
 
     <div class="other" lang={other}>
       <p class="other-title">{t(other, 'notFoundTitle')}</p>
       <p class="text">{t(other, 'notFoundText')}</p>
-      <ListItem icon="home" title={t(other, 'backHome')} href={pathFor('home', other)} />
+      <ListItem icon="home" tone="gunes" title={t(other, 'backHome')} href={pathFor('home', other)} />
     </div>
   </div>
 </PageShell>
