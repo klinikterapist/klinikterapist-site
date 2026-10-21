@@ -293,7 +293,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
       <div className="screen-head">
         <h2 id="req-title">
           <Icon as={Inbox} size={22} />
-          Randevu talepleri
+          Randevu Talepleri
         </h2>
         <div className="head-actions">
           {booking && (

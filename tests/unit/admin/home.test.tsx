@@ -59,7 +59,7 @@ describe('Home', () => {
         </DeployProvider>
       </Panel.Provider>,
     );
-    expect(screen.getByRole('heading', { name: 'Ana sayfa' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Genel Bakış' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Yeni yazı' })).toBeNull();
   });
 });

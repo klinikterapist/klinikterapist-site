@@ -6,6 +6,7 @@ import { SssScreen } from './screens/faq';
 import { YasalScreen } from './screens/legal';
 import { AnaSayfaScreen, KaynaklarScreen, LinklerScreen } from './screens/lists';
 import { IletisimScreen, ProfilScreen, SeoScreen } from './screens/simple';
+import { GizlilikScreen } from './screens/privacy';
 
 const SCREENS: Record<string, ComponentType> = {
   profil: ProfilScreen,
@@ -17,6 +18,7 @@ const SCREENS: Record<string, ComponentType> = {
   iletisim: IletisimScreen,
   kategoriler: KategorilerScreen,
   seo: SeoScreen,
+  gizlilik: GizlilikScreen,
   yasal: YasalScreen,
 };
 

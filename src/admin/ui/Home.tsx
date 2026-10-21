@@ -91,7 +91,7 @@ export function Home() {
     <section className="home" aria-labelledby="home-title">
       <header className="home-hero">
         <h2 id="home-title" className="home-eyebrow">
-          Ana sayfa
+          Genel Bakış
         </h2>
         <p className="home-greet">{greeting(istanbulHour(now))}</p>
         <p className="home-summary">

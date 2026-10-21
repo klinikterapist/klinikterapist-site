@@ -85,7 +85,7 @@ describe('settings screens: Plan E fields', () => {
       const f = a.state.files.get('src/data/faq.json')!;
       a.state.files.set('src/data/faq.json', { ...f, content: JSON.stringify(faq) });
     });
-    expect(await screen.findByRole('heading', { name: 'Sık sorulan sorular' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Sık Sorulan Sorular' })).toBeTruthy();
     expect(screen.getByText('Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.')).toBeTruthy();
     // The form appears after the file loads; under load that can lag behind the heading.
     expect(await screen.findAllByLabelText('Soru (Türkçe)')).toHaveLength(5);
@@ -136,7 +136,7 @@ describe('settings screens: Plan E fields', () => {
 describe('settings screens', () => {
   it('Sosyal ve linkler: the header has an icon and a one-line intro', async () => {
     setup('linkler');
-    const head = (await screen.findByRole('heading', { name: 'Sosyal ve linkler' })).closest('.screen-head')!;
+    const head = (await screen.findByRole('heading', { name: 'Sosyal Bağlantılar' })).closest('.screen-head')!;
     expect(head.querySelector('svg')).toBeTruthy();
     expect(screen.getByText('Sitede görünen sosyal hesaplarınız.')).toBeTruthy();
   });

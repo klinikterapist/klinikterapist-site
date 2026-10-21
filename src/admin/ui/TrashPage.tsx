@@ -69,7 +69,7 @@ export function TrashPage() {
   return (
     <section aria-labelledby="trash-title">
       <div className="screen-head">
-        <h2 id="trash-title">Çöp kutusu</h2>
+        <h2 id="trash-title">Silinen Yazılar</h2>
       </div>
       <p className="screen-lead">Silinen taslaklar burada 30 gün durur; sonra kalıcı olarak silinir. Bu süre içinde istediğinizi geri alabilirsiniz.</p>
       {notice && (

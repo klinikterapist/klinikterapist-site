@@ -71,7 +71,7 @@ export function YasalScreen() {
       <div className="screen-head">
         <h2 id="legal-title">
           <Icon as={Scale} size={22} />
-          Yasal metinler
+          Yasal Metinler
         </h2>
       </div>
       <p className="settings-intro">KVKK metinlerinin hukuki içeriği sizin sorumluluğunuzdadır. Metinler sitede ilgili sayfalarda yayınlanır.</p>

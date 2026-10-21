@@ -10,9 +10,9 @@ import { formatDay } from '../../../lib/booking-form';
 import { attentionOf } from '../../lib/attention';
 import { usePanel } from '../context';
 import { BellRing, Icon } from '../icons';
+import { markSeen, readSeen } from '../notifications';
 import { Banner, Button, EmptyState, Spinner } from '../kit';
 
-const SEEN_KEY = 'kt.events.seen';
 const FILTERS: { id: 'all' | PanelEventKind; label: string; kinds?: PanelEventKind[] }[] = [
   { id: 'all', label: 'Tümü' },
   { id: 'request', label: 'Talepler', kinds: ['request', 'decision', 'waitlist', 'info'] },
@@ -23,14 +23,6 @@ const FILTERS: { id: 'all' | PanelEventKind; label: string; kinds?: PanelEventKi
 
 const dayOf = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
 const timeOf = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(11, 16).replace(':', '.');
-
-function readSeen(): number {
-  try {
-    return Number(localStorage.getItem(SEEN_KEY)) || 0;
-  } catch {
-    return 0;
-  }
-}
 
 export function NotificationsPage() {
   const { api } = usePanel();
@@ -47,11 +39,7 @@ export function NotificationsPage() {
       .then(([ev, cl, rq]) => {
         if (!alive) return;
         setData({ events: ev.events, clients: cl.clients, requests: rq.requests });
-        try {
-          localStorage.setItem(SEEN_KEY, String(Date.now()));
-        } catch {
-          /* no storage: everything stays new */
-        }
+        markSeen();
       })
       .catch((e) => alive && setError(e instanceof ApiFailure ? e.message : 'Bildirimler yüklenemedi. Tekrar deneyin.'));
     return () => {

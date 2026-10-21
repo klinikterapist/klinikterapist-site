@@ -1,15 +1,16 @@
-/** The settings screens: menu label, icon and the one-line intro under the title. */
-import { BookOpen, IdCard, LayoutTemplate, Mail, MessageCircleQuestion, Scale, Search, Share2, Tags, UserRound, type LucideIcon } from '../icons';
+/** The settings screens: menu label (each word capitalised, "ve"/"ile" small), icon and the one-line intro under the title. */
+import { BookOpen, IdCard, LayoutTemplate, Mail, MessageCircleQuestion, Scale, Search, Share2, ShieldCheck, Tags, UserRound, type LucideIcon } from '../icons';
 
 export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; intro: string }[] = [
-  { id: 'profil', label: 'Profil', icon: UserRound, intro: 'Adınız, unvanınız ve fotoğrafınız; ana sayfada ve yazıların altındaki yazar kutusunda görünür.' },
-  { id: 'ana-sayfa', label: 'Site ana sayfası', icon: LayoutTemplate, intro: 'Randevu butonunun altındaki kartlar: sıra, görünürlük ve metinler.' },
-  { id: 'linkler', label: 'Sosyal ve linkler', icon: Share2, intro: 'Sitede görünen sosyal hesaplarınız.' },
+  { id: 'profil', label: 'Profil ve Kimlik', icon: UserRound, intro: 'Adınız, unvanınız ve fotoğrafınız; ana sayfada ve yazıların altındaki yazar kutusunda görünür.' },
+  { id: 'ana-sayfa', label: 'Site Ana Sayfası', icon: LayoutTemplate, intro: 'Randevu butonunun altındaki kartlar: sıra, görünürlük ve metinler.' },
+  { id: 'linkler', label: 'Sosyal Bağlantılar', icon: Share2, intro: 'Sitede görünen sosyal hesaplarınız.' },
   { id: 'hakkimda', label: 'Hakkımda', icon: IdCard, intro: 'Hakkımda sayfasındaki yazılar ve bilgiler.' },
-  { id: 'sss', label: 'Sık sorulan sorular', icon: MessageCircleQuestion, intro: 'Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.' },
+  { id: 'sss', label: 'Sık Sorulan Sorular', icon: MessageCircleQuestion, intro: 'Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.' },
   { id: 'kaynaklar', label: 'Kaynaklar', icon: BookOpen, intro: 'Kaynaklar sayfasında önerdiğiniz kitap, yazı ve bağlantılar.' },
   { id: 'iletisim', label: 'İletişim', icon: Mail, intro: 'Ziyaretçilerin size ulaşacağı bilgiler.' },
   { id: 'kategoriler', label: 'Kategoriler', icon: Tags, intro: 'Blog yazılarınızın gruplandığı başlıklar.' },
-  { id: 'seo', label: 'SEO genel', icon: Search, intro: "Google'da ve paylaşımlarda sitenin geneli için kullanılan bilgiler." },
-  { id: 'yasal', label: 'Yasal metinler', icon: Scale, intro: 'Gizlilik ve kullanım metinleri.' },
+  { id: 'seo', label: 'Arama Motoru (SEO)', icon: Search, intro: "Google'da ve paylaşımlarda sitenin geneli için kullanılan bilgiler." },
+  { id: 'gizlilik', label: 'Gizlilik ve Analitik', icon: ShieldCheck, intro: 'Ziyaret sayacının bu tarayıcıdaki ayarı.' },
+  { id: 'yasal', label: 'Yasal Metinler', icon: Scale, intro: 'Gizlilik ve kullanım metinleri.' },
 ];

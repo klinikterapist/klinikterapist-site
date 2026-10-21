@@ -256,7 +256,7 @@ export function SettingsForm<T>(props: {
       <div className="screen-head">
         <h2 id="settings-screen-title">
           {meta && <Icon as={meta.icon} size={22} />}
-          {props.title}
+          {meta?.label ?? props.title}
         </h2>
       </div>
       {intro && <p className="settings-intro">{intro}</p>}

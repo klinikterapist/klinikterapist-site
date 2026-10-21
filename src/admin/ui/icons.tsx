@@ -3,11 +3,13 @@ import type { LucideIcon } from 'lucide-react';
 
 export {
   BookOpen,
+  Bell,
   BellRing,
   BookOpenText,
   CalendarCheck,
   CalendarDays,
   Bold,
+  ChevronDown,
   ChevronRight,
   CircleCheck as CheckCircle2, // Lucide 1.x renamed it
   CircleCheck,
@@ -17,6 +19,7 @@ export {
   FileText,
   Highlighter,
   House,
+  Globe,
   IdCard,
   Image,
   Inbox,
@@ -36,6 +39,7 @@ export {
   Scale,
   Search,
   SearchCheck,
+  ShieldCheck,
   Settings,
   Share2,
   Strikethrough,

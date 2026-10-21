@@ -88,7 +88,7 @@ export function ProfilePage() {
       <div className="screen-head">
         <h2 id="pf-title">
           <Icon as={UserRound} size={22} />
-          Terapist profili
+          Randevu Özeti
         </h2>
         <div className="head-actions">
           <NowClock />

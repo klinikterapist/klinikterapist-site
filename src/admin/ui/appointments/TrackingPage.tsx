@@ -112,7 +112,7 @@ export function TrackingPage() {
       <div className="screen-head">
         <h2 id="tk-title">
           <Icon as={CalendarCheck} size={22} />
-          Seans takip
+          Danışanlar
         </h2>
         <div className="head-actions">
           <NowClock />
