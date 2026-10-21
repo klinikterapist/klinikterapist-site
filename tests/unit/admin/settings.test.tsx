@@ -86,15 +86,19 @@ describe('settings screens: Plan E fields', () => {
       a.state.files.set('src/data/faq.json', { ...f, content: JSON.stringify(faq) });
     });
     expect(await screen.findByRole('heading', { name: 'Sık Sorulan Sorular' })).toBeTruthy();
-    expect(screen.getByText('Ana sayfada ve Sık sorulanlar sayfasında görünen sorular.')).toBeTruthy();
-    // The form appears after the file loads; under load that can lag behind the heading.
-    expect(await screen.findAllByLabelText('Soru (Türkçe)')).toHaveLength(5);
+    // The rows appear after the file loads; under load that can lag behind the heading.
+    await screen.findByRole('button', { name: /İlk görüşme nasıl geçer\?/ });
+    expect(document.querySelectorAll('.row-list-row')).toHaveLength(5);
     fireEvent.click(screen.getByRole('button', { name: 'Soru ekle' }));
-    expect(screen.getAllByLabelText('Soru (Türkçe)')).toHaveLength(6);
-    fireEvent.change(screen.getAllByLabelText('Soru (Türkçe)')[5], { target: { value: 'Yeni soru?' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Yeni soru?: yukarı taşı' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Sil: İlk görüşme nasıl geçer?' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Evet, sil' }));
+    let dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Soru (Türkçe)'), { target: { value: 'Yeni soru?' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yukarı taşı' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tamam' }));
+    expect(document.querySelectorAll('.row-list-row')).toHaveLength(6);
+    fireEvent.click(screen.getByRole('button', { name: /İlk görüşme nasıl geçer\?/ }));
+    dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: /Sil/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Evet, sil' }));
     save();
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
     const saved = json(api, 'src/data/faq.json') as { id: string; q: { tr: string } }[];
@@ -104,12 +108,29 @@ describe('settings screens: Plan E fields', () => {
     expect(new Set(saved.map((f) => f.id)).size).toBe(5);
   });
 
+  it('Sık sorulan sorular: a question added on the Randevu tab shows on the booking page only', async () => {
+    const api = setup('sss');
+    fireEvent.click(await screen.findByRole('button', { name: /^Randevu sayfası/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Soru ekle' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Soru (Türkçe)'), { target: { value: 'Seans kaç dakika?' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tamam' }));
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    const saved = json(api, 'src/data/faq.json') as { q: { tr: string }; pages?: string[] }[];
+    expect(saved.find((f) => f.q.tr === 'Seans kaç dakika?')!.pages).toEqual(['booking']);
+  });
+
   it('Sosyal ve linkler: Not is shown and saved', async () => {
     const api = setup('linkler');
-    const notes = await screen.findAllByLabelText('Not (Türkçe)');
-    expect(notes).toHaveLength(8);
-    expect((notes[2] as HTMLInputElement).value).toBe('İngilizce');
-    fireEvent.change(notes[0], { target: { value: 'Günlük paylaşımlar' } });
+    const rows = await screen.findAllByRole('button', { name: /Medium|Instagram/ });
+    expect(document.querySelectorAll('.row-list-row')).toHaveLength(8);
+    fireEvent.click(screen.getByRole('button', { name: /^Medium/ }));
+    expect((within(screen.getByRole('dialog')).getByLabelText('Not (Türkçe)') as HTMLInputElement).value).toBe('İngilizce');
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tamam' }));
+    fireEvent.click(rows.find((r) => /^Instagram/.test(r.textContent ?? ''))!);
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText('Not (Türkçe)'), { target: { value: 'Günlük paylaşımlar' } });
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tamam' }));
     save();
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
     expect(json(api, 'src/data/links.json')[0].note.tr).toBe('Günlük paylaşımlar');
@@ -121,12 +142,13 @@ describe('settings screens: Plan E fields', () => {
       const f = a.state.files.get('src/data/home.json')!;
       a.state.files.set('src/data/home.json', { ...f, content: JSON.stringify({ ...JSON.parse(f.content), process: [] }) });
     });
-    fireEvent.click(await screen.findByRole('button', { name: 'Adım ekle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Adım ekle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Adım ekle' }));
+    for (const title of ['Tanışma', 'Değerlendirme', 'Süreç']) {
+      fireEvent.click(await screen.findByRole('button', { name: 'Adım ekle' }));
+      const dialog = screen.getByRole('dialog');
+      fireEvent.change(within(dialog).getByLabelText('Adım başlığı (Türkçe)'), { target: { value: title } });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Tamam' }));
+    }
     expect(screen.queryByRole('button', { name: 'Adım ekle' })).toBeNull();
-    expect(screen.getAllByLabelText('Adım başlığı (Türkçe)')).toHaveLength(3);
-    fireEvent.change(screen.getAllByLabelText('Adım başlığı (Türkçe)')[0], { target: { value: 'Tanışma' } });
     save();
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
     expect(json(api, 'src/data/home.json').process).toHaveLength(3);
@@ -143,7 +165,8 @@ describe('settings screens', () => {
 
   it('Sosyal ve linkler: the chosen icon is shown next to the Simge select and follows it', async () => {
     setup('linkler');
-    const select = (await screen.findAllByLabelText('Simge'))[0] as HTMLSelectElement;
+    fireEvent.click((await screen.findAllByRole('button', { name: /^Instagram/ }))[0]);
+    const select = within(screen.getByRole('dialog')).getByLabelText('Simge') as HTMLSelectElement;
     const preview = () => select.closest('.icon-pick')!.querySelector('svg.icon-preview')!;
     expect(preview()).toBeTruthy();
     expect(preview().getAttribute('aria-hidden')).toBe('true');
@@ -187,8 +210,9 @@ describe('settings screens', () => {
   it('Kaynaklar: keeps the { myNote, items } shape and only one featured resource', async () => {
     const api = setup('kaynaklar');
     const items = json(api, 'src/data/resources.json').items;
-    const second = await screen.findByRole('radio', { name: `Öne çıkan: ${items[1].title}` });
-    fireEvent.click(second);
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${items[1].title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByLabelText(/Öne çıkan kaynak/));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tamam' }));
     save();
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
     const saved = json(api, 'src/data/resources.json');
@@ -198,8 +222,10 @@ describe('settings screens', () => {
 
   it('Hakkımda: a timeline period switched to "TR/EN ayrı" is saved as { tr, en }', async () => {
     const api = setup('hakkimda');
-    const modes = await screen.findAllByLabelText('Dönem biçimi');
-    fireEvent.change(modes[0], { target: { value: 'localized' } });
+    const first = json(api, 'src/data/about.json').timeline[0].title.tr as string;
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }));
+    fireEvent.change(within(screen.getByRole('dialog')).getByLabelText('Dönem biçimi'), { target: { value: 'localized' } });
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tamam' }));
     save();
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
     const period = json(api, 'src/data/about.json').timeline[0].period;

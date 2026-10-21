@@ -9,7 +9,7 @@ import { slotInstant } from '../../../lib/booking-form';
 import { sessionsOf } from '../../../lib/sessions';
 import { hasFee } from '../../lib/attention';
 import { CalendarPlus, CalendarX, ClipboardList, Icon, Inbox, Wallet, type LucideIcon } from '../icons';
-import { WEEKDAYS, templateTimes } from './AppointmentCalendar';
+import { SHORT_DAYS, templateTimes } from './AppointmentCalendar';
 
 const istanbulDay = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
@@ -104,7 +104,7 @@ export function OccupancyCard({ clients, now }: { clients: Client[]; now: number
             <span className="pf-bar">
               <i className={d.share === null ? 'is-off' : d.share >= 1 ? 'is-full' : ''} style={{ height: `${d.share === null ? 100 : Math.max(6, d.share * 100)}%` }} />
             </span>
-            <span className="pf-bar-day">{i === 0 ? 'Bugün' : WEEKDAYS[new Date(`${d.day}T12:00:00Z`).getUTCDay()].slice(0, 3)}</span>
+            <span className="pf-bar-day">{i === 0 ? 'Bugün' : SHORT_DAYS[new Date(`${d.day}T12:00:00Z`).getUTCDay()]}</span>
             <span className="pf-bar-n">{d.share === null ? '–' : `${d.taken}/${d.slots}`}</span>
           </li>
         ))}

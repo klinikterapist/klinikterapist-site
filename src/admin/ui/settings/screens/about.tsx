@@ -1,9 +1,14 @@
-/** Hakkımda: texts, working areas, the two Markdown sections, the timeline and the certificates. */
+/**
+ * Hakkımda: texts, working areas, the Markdown sections, the timeline and the certificates. Owner's
+ * review 2026-10-21: the long texts open in their own window; the lists are rows that open a window.
+ */
 import { parseAbout, type About, type Period } from '../../../../lib/schemas';
 import { ICONS } from '../../../../lib/icons';
 import { Field, Select } from '../../kit';
-import { ListEditor, LocalizedField, MarkdownField, SettingsForm } from '../fields';
+import { LocalizedField, SettingsForm } from '../fields';
+import { MarkdownBlock, RowList, SiteIcon } from '../rows';
 import { useSettingsFile } from '../useSettingsFile';
+import { IconSelect } from './lists';
 
 type Area = About['areas'][number];
 type Step = About['timeline'][number];
@@ -45,34 +50,41 @@ export function HakkimdaScreen() {
           <LocalizedField label="Sayfa başlığı" value={a.heading} onChange={set('heading')} issues={file.issues} path="heading" />
           <LocalizedField label="Giriş cümlesi" value={a.lead} onChange={set('lead')} multiline issues={file.issues} path="lead" />
           <h3>Çalışma alanları</h3>
-          <ListEditor<Area>
+          <RowList<Area>
             items={a.areas}
             onChange={set('areas')}
-            itemLabel={(x) => x.label.tr || 'Yeni alan'}
+            noun="alan"
+            title={(x) => x.label.tr || 'Yeni alan'}
+            subtitle={(x) => x.label.en}
+            icon={(x) => (
+              <span className="tone-tile tone-adacayi" aria-hidden="true">
+                <SiteIcon name={x.icon} size={18} />
+              </span>
+            )}
             newItem={() => ({ icon: 'leaf', label: { tr: '', en: '' } })}
             addLabel="Alan ekle"
             render={(x, update) => (
               <>
-                <Select label="Simge" value={x.icon} options={ICON_OPTIONS} onChange={(icon) => update({ icon })} />
+                <IconSelect value={x.icon} options={ICON_OPTIONS} onChange={(icon) => update({ icon })} />
                 <LocalizedField label="Alan" value={x.label} onChange={(label) => update({ label })} />
               </>
             )}
           />
           <h3>Ben kimim?</h3>
-          <MarkdownField label="Ben kimim (Türkçe)" lang="tr" value={a.whoAmI.tr} onChange={(tr) => set('whoAmI')({ ...a.whoAmI, tr })} />
-          <MarkdownField label="Ben kimim (İngilizce)" lang="en" value={a.whoAmI.en} onChange={(en) => set('whoAmI')({ ...a.whoAmI, en })} />
+          <MarkdownBlock label="Ben kimim" value={a.whoAmI} onChange={set('whoAmI')} />
           <h3>Neden bu işi yapıyorum?</h3>
-          <MarkdownField label="Neden bu iş (Türkçe)" lang="tr" value={a.whyThisWork.tr} onChange={(tr) => set('whyThisWork')({ ...a.whyThisWork, tr })} />
-          <MarkdownField label="Neden bu iş (İngilizce)" lang="en" value={a.whyThisWork.en} onChange={(en) => set('whyThisWork')({ ...a.whyThisWork, en })} />
+          <MarkdownBlock label="Neden bu iş" value={a.whyThisWork} onChange={set('whyThisWork')} />
           <LocalizedField label="Alıntı" value={a.quote} onChange={set('quote')} multiline issues={file.issues} path="quote" />
           <h3>klinikterapist nedir?</h3>
-          <MarkdownField label="Marka hikâyesi (Türkçe)" lang="tr" value={a.brand.tr} onChange={(tr) => set('brand')({ ...a.brand, tr })} />
-          <MarkdownField label="Marka hikâyesi (İngilizce)" lang="en" value={a.brand.en} onChange={(en) => set('brand')({ ...a.brand, en })} />
+          <MarkdownBlock label="Marka hikâyesi" value={a.brand} onChange={set('brand')} />
           <h3>Eğitim ve mesleki gelişim</h3>
-          <ListEditor<Step>
+          <RowList<Step>
             items={a.timeline}
             onChange={set('timeline')}
-            itemLabel={(x) => x.title.tr || 'Yeni adım'}
+            noun="adım"
+            title={(x) => x.title.tr || 'Yeni adım'}
+            subtitle={(x) => x.detail.tr}
+            marks={(x) => <span className="tone-chip tone-lavanta">{typeof x.period === 'string' ? x.period || 'Dönem yok' : x.period.tr}</span>}
             newItem={() => ({ title: { tr: '', en: '' }, detail: { tr: '', en: '' }, period: '' })}
             addLabel="Adım ekle"
             render={(x, update) => (
@@ -84,10 +96,17 @@ export function HakkimdaScreen() {
             )}
           />
           <h3>Sertifikalarım</h3>
-          <ListEditor<Cert>
+          <RowList<Cert>
             items={a.certificates}
             onChange={set('certificates')}
-            itemLabel={(x) => x.title.tr || 'Yeni sertifika'}
+            noun="sertifika"
+            title={(x) => x.title.tr || 'Yeni sertifika'}
+            subtitle={(x) => [x.issuer, x.year].filter(Boolean).join(' · ')}
+            icon={() => (
+              <span className="tone-tile tone-gunes" aria-hidden="true">
+                <SiteIcon name="award" size={18} />
+              </span>
+            )}
             newItem={() => ({ title: { tr: '', en: '' }, issuer: '', year: '', url: '' })}
             addLabel="Sertifika ekle"
             render={(x, update) => (

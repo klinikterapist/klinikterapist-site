@@ -25,6 +25,8 @@ export const KINDS = [...SESSION_TYPES.map((t) => ({ value: t.id as string, labe
 export const kindOf = (v: string): { kind: BookingKind; type?: string } => (v === 'intro' ? { kind: 'intro' } : { kind: 'session', type: v });
 export const labelOf = (e: { kind: BookingKind; type?: string }) => KINDS.find((k) => k.value === (e.kind === 'intro' ? 'intro' : e.type))?.label ?? 'Görüşme';
 export const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+/** The usual Turkish short names (Cuma and Cumartesi, Pazar and Pazartesi would clash when cut to three letters). */
+export const SHORT_DAYS = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
 const partsOf = (ms: number) => istanbulParts(new Date(ms).toISOString());
 export const clock = (ms: number) => partsOf(ms).time.replace(':', '.');

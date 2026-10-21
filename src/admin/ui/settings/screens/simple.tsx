@@ -108,12 +108,7 @@ export function SeoScreen() {
             staging={file.staging}
             hint="Kapak görseli olmayan sayfalar paylaşıldığında görünür (1200 × 630)."
           />
-          <Field
-            label="Google Search Console doğrulama kodu"
-            value={s.gscVerification ?? ''}
-            onChange={(v) => set('gscVerification')(v.trim() || undefined)}
-            hint='Search Console › "HTML etiketi" yöntemindeki content="…" değeri.'
-          />
+          <p className="k-hint">Google Analytics, Search Console doğrulaması ve aramada gizlenecek sayfalar: Ayarlar › Gizlilik ve Analitik.</p>
         </>
       )}
     </SettingsForm>

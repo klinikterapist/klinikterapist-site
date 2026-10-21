@@ -2,6 +2,8 @@
 import type { LucideIcon } from 'lucide-react';
 
 export {
+  ArrowDown,
+  ArrowUp,
   ClipboardList,
   CalendarPlus,
   Rocket,

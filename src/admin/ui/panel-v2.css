@@ -108,9 +108,9 @@
 
 /* Owner's review 2026-10-21: the earlier, larger type (15–16 px) reads better. */
 .panel-nav a {
-  min-height: 36px;
-  margin-block: 1px;
-  font-size: 1rem;
+  min-height: 35px;
+  margin-block: 0;
+  font-size: 0.96875rem;
 }
 
 .panel-nav .tone-tile-sm {

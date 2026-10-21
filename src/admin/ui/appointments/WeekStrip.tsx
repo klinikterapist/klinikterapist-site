@@ -3,7 +3,7 @@
  * each session as a small chip with its time and who, sage for paid sessions and terracotta for the
  * free ones (intro and closing calls); a day without anything says so quietly.
  */
-import { WEEKDAYS } from './AppointmentCalendar';
+import { SHORT_DAYS } from './AppointmentCalendar';
 
 export type WeekItem = { key: string; day: string; time: string; who: string; what: string; link: string; free: boolean };
 
@@ -18,7 +18,7 @@ export function WeekStrip({ items, now }: { items: WeekItem[]; now: number }) {
         const list = items.filter((x) => x.day === d);
         return (
           <div key={d} className={`week-day${i === 0 ? ' is-today' : ''}`}>
-            <span className="week-name">{i === 0 ? 'Bugün' : WEEKDAYS[date.getUTCDay()].slice(0, 3)}</span>
+            <span className="week-name">{i === 0 ? 'Bugün' : SHORT_DAYS[date.getUTCDay()]}</span>
             <span className="week-date">{date.getUTCDate()}</span>
             {list.length ? (
               <ul>

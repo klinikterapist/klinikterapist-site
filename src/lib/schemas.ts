@@ -186,8 +186,23 @@ const categoriesSchema = z
   });
 
 /** Frequently asked questions. An item with an empty answer in a language is not shown in it. */
+/** The pages that show questions (owner's review 2026-10-21): home, Sık sorulan sorular, Randevu. */
+export const FAQ_PAGES = ['home', 'faq', 'booking'] as const;
+export type FaqPage = (typeof FAQ_PAGES)[number];
+/** Questions saved before `pages` existed show where they always did. */
+export const DEFAULT_FAQ_PAGES: FaqPage[] = ['home', 'faq'];
 const faqSchema = z
-  .array(z.object({ id: slugSchema, q: localized, a: localized }))
+  .array(
+    z.object({
+      id: slugSchema,
+      q: localized,
+      a: localized,
+      /** Where the question shows; missing = home and the FAQ page. */
+      pages: z.array(z.enum(FAQ_PAGES)).optional(),
+      /** The site icon beside the question on the booking page. */
+      icon: z.string().optional(),
+    }),
+  )
   .superRefine((items, ctx) => rejectDuplicates(items, (f) => f.id, ['id'], ctx, 'Soru kimliği (id)'));
 
 /** Booking and intro-call free times (booking.json): a weekly template per kind, Istanbul times. */
@@ -215,7 +230,42 @@ const seoSchema = z.object({
    * describe it: Analytics loads only after the visitor accepts the cookie notice (Analytics.astro).
    */
   gaId: z.string().regex(/^G-[A-Z0-9]{4,20}$/, 'Google Analytics kimliği "G-" ile başlamalı (ör. G-ABC123XYZ)').optional(),
+  /** Owner's review 2026-10-21 (Gizlilik ve Analitik): keep the whole site out of search results. */
+  noindex: z.boolean().optional(),
+  /** Pages kept out of search results while the rest is shown. */
+  noindexPages: z.array(z.enum(PAGE_KEYS)).optional(),
+  /** The site's own anonymous counter; false switches it off for everyone. */
+  counter: z.boolean().optional(),
+  /** The cookie notice's text (shown only with a gaId); empty = the built-in text. */
+  cookieText: localized.optional(),
+  /** Code the owner adds to pages (a verification tag, a chat widget …), where and on which pages. */
+  inject: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        label: z.string(),
+        where: z.enum(['head', 'body']),
+        pages: z.enum(['all', 'home', 'blog', 'posts', 'other']),
+        code: z.string(),
+        enabled: z.boolean(),
+      }),
+    )
+    .optional(),
 });
+
+export type CodeInjection = NonNullable<z.infer<typeof seoSchema>['inject']>[number];
+
+/** Whether an injection belongs on the page at `path` (owner's choice per snippet). */
+export function injectionFits(pages: CodeInjection['pages'], path: string): boolean {
+  const home = path === '/' || path === '/en/';
+  const blog = /^\/(en\/)?blog\//.test(path);
+  const post = blog && !/^\/(en\/)?blog\/((kategori|category|konular|topics|populer|popular)\/.*)?$/.test(path);
+  if (pages === 'all') return true;
+  if (pages === 'home') return home;
+  if (pages === 'blog') return blog;
+  if (pages === 'posts') return post;
+  return !home && !blog;
+}
 
 const redirectsSchema = z
   .array(
@@ -327,8 +377,8 @@ export function checkRedirectCollisions(redirects: Redirect[], pagePaths: Iterab
 }
 
 /** The FAQ items that have both a question and an answer in `lang`, as plain strings. */
-export function answeredFaq(faq: Faq, lang: Lang): { id: string; q: string; a: string }[] {
+export function answeredFaq(faq: Faq, lang: Lang, page: FaqPage = 'faq'): { id: string; q: string; a: string; icon?: string }[] {
   return faq
-    .filter((f) => f.q[lang].trim() && f.a[lang].trim())
-    .map((f) => ({ id: f.id, q: f.q[lang].trim(), a: f.a[lang].trim() }));
+    .filter((f) => (f.pages ?? DEFAULT_FAQ_PAGES).includes(page) && f.q[lang].trim() && f.a[lang].trim())
+    .map((f) => ({ id: f.id, q: f.q[lang].trim(), a: f.a[lang].trim(), ...(f.icon ? { icon: f.icon } : {}) }));
 }

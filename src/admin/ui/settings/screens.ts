@@ -11,7 +11,7 @@ export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; in
   { id: 'iletisim', label: 'İletişim', icon: Mail, intro: 'Ziyaretçilerin size ulaşacağı bilgiler.' },
   { id: 'kategoriler', label: 'Kategoriler', icon: Tags, intro: 'Blog yazılarınızın gruplandığı başlıklar.' },
   { id: 'seo', label: 'Arama Motoru (SEO)', icon: Search, intro: "Google'da ve paylaşımlarda sitenin geneli için kullanılan bilgiler." },
-  { id: 'gizlilik', label: 'Gizlilik ve Analitik', icon: ShieldCheck, intro: 'Ziyaret sayacının bu tarayıcıdaki ayarı.' },
+  { id: 'gizlilik', label: 'Gizlilik ve Analitik', icon: ShieldCheck, intro: 'Google Analytics, Search Console, arama motorları, çerez bildirimi, sitenin sayacı ve sayfalara eklenen kodlar.' },
   { id: 'gorunum', label: 'Görünüm', icon: Palette, intro: 'Panelin teması, menü genişliği ve renk paleti. Bu ayarlar yalnızca bu tarayıcıda geçerlidir.' },
   { id: 'yasal', label: 'Yasal Metinler', icon: Scale, intro: 'Gizlilik ve kullanım metinleri.' },
 ];

@@ -116,7 +116,9 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
   const { api, store } = usePanel();
   const [open, setOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
-  const [closed, setClosed] = usePref<string[]>('kt.nav.closed', []);
+  // Site Sayfaları and Ayarlar start folded, so the larger menu fits the window without scrolling;
+  // the group of the open screen always shows, and the owner's own folding is remembered.
+  const [closed, setClosed] = usePref<string[]>('kt.nav.closed', ['site', 'ayarlar']);
   const [rail, setRail] = usePref<boolean>(RAIL_KEY, false);
   const notes = useNotifications(api);
   // Writes the default ("do not count me") on the first visit, as before; the switch is in Gizlilik ve Analitik.

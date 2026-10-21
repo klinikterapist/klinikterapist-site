@@ -14,7 +14,7 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const { gaId } = getSeo();
+const { gaId, cookieText } = getSeo();
 const T = {
   tr: {
     text: 'Sitenin nasıl kullanıldığını anlayıp geliştirebilmem için, izin verirseniz Google Analytics çerezleri kullanılır. Reddederseniz hiçbir çerez yerleştirilmez.',
@@ -31,6 +31,7 @@ const T = {
     label: 'Cookie choice',
   },
 }[lang];
+const text = cookieText?.[lang]?.trim() || T.text;
 ---
 
 {
@@ -38,7 +39,7 @@ const T = {
     <>
       <div class="consent-bar" data-consent-bar role="dialog" aria-label={T.label} hidden>
         <p>
-          {T.text} <a href={pathFor('privacyPolicy', lang)}>{T.more}</a>
+          {text} <a href={pathFor('privacyPolicy', lang)}>{T.more}</a>
         </p>
         <div class="consent-actions">
           <button type="button" class="c-reject" data-consent="denied">{T.reject}</button>

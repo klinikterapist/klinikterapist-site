@@ -10,7 +10,8 @@ import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import BookingDesign from '../components/appointment/BookingDesign.astro';
 import Accordion from '../components/ui/Accordion.astro';
-import { bookingInfo } from '../components/appointment/booking-info';
+import { bookingInfo, textBlocks } from '../components/appointment/booking-info';
+import { getFaq } from '../lib/settings';
 import type { Lang } from '../lib/settings';
 import { getContact } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
@@ -27,6 +28,8 @@ const { email } = getContact();
 const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
 
 const info = bookingInfo(lang);
+// The questions under the booking form are kept in the panel (Sık Sorulan Sorular › Randevu).
+const bookingFaq = getFaq(lang, 'booking').map((f) => ({ id: f.id, icon: f.icon ?? 'help', q: f.q, body: textBlocks(f.a) }));
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={alternatePaths} cta={!design} noAnalytics>
@@ -39,7 +42,7 @@ const info = bookingInfo(lang);
           {
             [
               { title: info.typesTitle, items: info.types },
-              { title: info.faqTitle, items: info.faq },
+              { title: info.faqTitle, items: bookingFaq },
             ].map((group) => (
               <section>
                 <h2>{group.title}</h2>

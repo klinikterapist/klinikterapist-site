@@ -8,17 +8,22 @@ import { Banner, Button, Dialog, Field, MoveButtons, Spinner, move } from '../ki
 import { Icon } from '../icons';
 import { SETTINGS_SCREENS } from './screens';
 import type { Issues, SettingsFile, Staging } from './useSettingsFile';
+import { TextBlock } from './rows';
 
 export function LocalizedField(props: {
   label: string;
   value: Localized;
   onChange: (v: Localized) => void;
   multiline?: boolean;
+  /** A multiline text stays in the form (inside a row's window, say) instead of opening its own. */
+  inline?: boolean;
   rows?: number;
   hint?: string;
   issues?: Issues;
   path?: string;
 }) {
+  // Owner's review 2026-10-21: a longer text shows as a preview and is written in its own window.
+  if (props.multiline && !props.inline) return <TextBlock label={props.label} value={props.value} onChange={props.onChange} hint={props.hint} issues={props.issues} path={props.path} rows={props.rows ? Math.max(props.rows, 8) : undefined} />;
   const err = (lang: 'tr' | 'en') => (props.path ? (props.issues?.[`${props.path}.${lang}`] ?? props.issues?.[props.path]) : undefined);
   return (
     <div className="loc-field">

@@ -1,14 +1,15 @@
 /**
- * Texts under the booking form (owner's requests 2026-10-19): one explanation per session type, then
- * the common questions about appointments. Each answer is a list of blocks: a paragraph, a small
- * heading or a bullet list. The ids are anchors ("Ayrıntılar" links in the session type list).
+ * Texts under the booking form (owner's requests 2026-10-19): one explanation per session type. Each
+ * is a list of blocks: a paragraph, a small heading or a bullet list. The ids are anchors ("Ayrıntılar"
+ * links in the session type list). The common questions about appointments moved to faq.json
+ * (pages: booking) on 2026-10-21, so the owner edits them in the panel; textBlocks reads their answers.
  */
 import type { Lang } from '../../lib/settings';
 
 export type Block = string | { h: string } | { ul: string[] };
 export type InfoItem = { id: string; icon: string; q: string; body: Block[] };
 
-type Texts = { typesTitle: string; types: InfoItem[]; faqTitle: string; faq: InfoItem[] };
+type Texts = { typesTitle: string; types: InfoItem[]; faqTitle: string };
 
 const TR: Texts = {
   typesTitle: 'Görüşme türleri',
@@ -89,65 +90,6 @@ const TR: Texts = {
     },
   ],
   faqTitle: 'Randevuyla ilgili sık sorulan sorular',
-  faq: [
-    {
-      id: 'ilk-kez',
-      icon: 'help',
-      q: 'İlk kez geliyorum, nereden başlamalıyım?',
-      body: [
-        'İlk kez başvuruyorsanız önce ücretsiz ön görüşme talep etmenizi öneririm. 25–30 dakikalık bu görüşmede tanışır, size en uygun görüşme türüne ve bir sonraki adıma birlikte karar veririz.',
-      ],
-    },
-    {
-      id: 'siklik',
-      icon: 'calendar',
-      q: 'Seanslar ne sıklıkla yapılır, terapi ne kadar sürer?',
-      body: [
-        'Seanslar çoğunlukla haftada bir yapılır. Terapinin toplam süresi kişiden kişiye değişir: bazı konular birkaç ayda ele alınabilirken, bazıları daha uzun bir çalışma gerektirebilir. Süreci düzenli olarak birlikte değerlendirir, ilerleyişe göre sıklığı ve süreyi birlikte belirleriz.',
-      ],
-    },
-    {
-      id: 'ucret',
-      icon: 'tag',
-      q: 'Ücretler nedir?',
-      body: [
-        'Seans ücretlerini ve ödeme ayrıntılarını randevu talebinizin ardından e-postayla iletirim. Ekonomik durumunuz düzenli ücreti karşılamaya elverişli değilse ya da üniversite öğrencisiyseniz, Erişilebilir Terapi Seansı seçeneğine göz atabilirsiniz.',
-      ],
-    },
-    {
-      id: 'iptal',
-      icon: 'clock',
-      q: 'Randevumu nasıl iptal eder ya da değiştiririm?',
-      body: [
-        'Seansınızdan 3 gün önce size bir hatırlatma e-postası gelir. Düzenli seanslarınız için size özel bir randevu sayfası bağlantısı gönderilir; seansınızı oradan iptal edebilir ya da takvimdeki boş bir saate erteleyebilirsiniz. Dilerseniz e-postayla da haber verebilirsiniz.',
-        'Seansa 24 saatten az kala yapılan iptal ve ertelemelerde seans ücretinin tamamı ödenir.',
-      ],
-    },
-    {
-      id: 'online',
-      icon: 'laptop',
-      q: 'Online görüşme için neye ihtiyacım var?',
-      body: [
-        {
-          ul: [
-            'Rahatça konuşabileceğiniz, sessiz ve kimsenin sizi duymayacağı bir ortam.',
-            'İnternete bağlı, kameralı bir telefon, tablet ya da bilgisayar.',
-            'Kulaklık (zorunlu değil ama önerilir).',
-          ],
-        },
-        'Görüşme bağlantısını randevudan önce e-postayla gönderirim.',
-      ],
-    },
-    {
-      id: 'gizlilik',
-      icon: 'shield',
-      q: 'Konuştuklarımız gizli kalır mı?',
-      body: [
-        'Evet. Görüşmelerde paylaştıklarınız mesleki etik ilkeler çerçevesinde gizli tutulur ve izniniz olmadan kimseyle paylaşılmaz.',
-        'Bu gizliliğin yasa ve etik kurallarla belirlenen sınırlı istisnaları vardır; örneğin sizin ya da bir başkasının hayatının ciddi tehlikede olduğu durumlar. Bu sınırları ilk görüşmede açıkça konuşuruz.',
-      ],
-    },
-  ],
 };
 
 const EN: Texts = {
@@ -229,65 +171,20 @@ const EN: Texts = {
     },
   ],
   faqTitle: 'Common questions about appointments',
-  faq: [
-    {
-      id: 'ilk-kez',
-      icon: 'help',
-      q: 'It is my first time. Where should I start?',
-      body: [
-        'If this is your first time, I recommend asking for a free intro call first. In these 25–30 minutes we get to know each other and decide together on the session type and next step that suit you.',
-      ],
-    },
-    {
-      id: 'siklik',
-      icon: 'calendar',
-      q: 'How often are sessions, and how long does therapy last?',
-      body: [
-        'Sessions are usually weekly. How long therapy lasts differs from person to person: some concerns can be addressed in a few months, others need longer work. We review the process together regularly and decide on frequency and length as we go.',
-      ],
-    },
-    {
-      id: 'ucret',
-      icon: 'tag',
-      q: 'What are the fees?',
-      body: [
-        'I send session fees and payment details by e-mail after your booking request. If your finances do not allow the regular fee, or you are a university student, have a look at the Accessible Therapy Session.',
-      ],
-    },
-    {
-      id: 'iptal',
-      icon: 'clock',
-      q: 'How do I cancel or change my appointment?',
-      body: [
-        'You get a reminder e-mail three days before your session. For regular sessions you receive a link to your own appointment page, where you can cancel a session or move it to a free time in the calendar. You can also let me know by e-mail.',
-        'For a session cancelled or moved less than 24 hours before it starts, the full session fee is due.',
-      ],
-    },
-    {
-      id: 'online',
-      icon: 'laptop',
-      q: 'What do I need for an online session?',
-      body: [
-        {
-          ul: [
-            'A quiet, private place where you can talk freely.',
-            'A phone, tablet or computer with a camera and internet.',
-            'Headphones (not required, but recommended).',
-          ],
-        },
-        'I send the session link by e-mail before the appointment.',
-      ],
-    },
-    {
-      id: 'gizlilik',
-      icon: 'shield',
-      q: 'Will what we talk about stay confidential?',
-      body: [
-        'Yes. What you share in sessions is kept confidential under professional ethics and is not shared with anyone without your consent.',
-        'This confidentiality has narrow exceptions set by law and ethics rules, for example when your life or someone else’s is in serious danger. We talk about these limits openly in the first session.',
-      ],
-    },
-  ],
 };
 
 export const bookingInfo = (lang: Lang): Texts => (lang === 'en' ? EN : TR);
+
+/** An answer written in the panel as blocks: blank lines part paragraphs, "- " lines make a list, "### " a heading. */
+export function textBlocks(text: string): Block[] {
+  return text
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part): Block => {
+      const lines = part.split('\n').map((l) => l.trim());
+      if (lines.every((l) => l.startsWith('- '))) return { ul: lines.map((l) => l.slice(2).trim()) };
+      if (lines.length === 1 && lines[0].startsWith('### ')) return { h: lines[0].slice(4).trim() };
+      return lines.join(' ');
+    });
+}

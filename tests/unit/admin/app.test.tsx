@@ -108,8 +108,16 @@ describe('grouped menu and the bell (owner 2026-10-21)', () => {
     store.set('s', Date.now() + 3600e3);
     render(<App api={createMockApi()} store={store} config={config} />);
     const nav = await screen.findByRole('navigation', { name: 'Panel menüsü' });
-    const folds = within(nav).getAllByRole('button', { expanded: true }).map((b) => b.textContent);
-    expect(folds).toEqual(['Danışanlar ve Randevular', 'İçerik', 'Site Sayfaları', 'Ayarlar']);
+    const folds = Array.from(nav.querySelectorAll('.nav-fold')).map((b) => [b.textContent, b.getAttribute('aria-expanded')]);
+    // Site Sayfaları and Ayarlar start folded so the menu fits the window.
+    expect(folds).toEqual([
+      ['Danışanlar ve Randevular', 'true'],
+      ['İçerik', 'true'],
+      ['Site Sayfaları', 'false'],
+      ['Ayarlar', 'false'],
+    ]);
+    fireEvent.click(within(nav).getByRole('button', { name: 'Site Sayfaları' }));
+    fireEvent.click(within(nav).getByRole('button', { name: 'Ayarlar' }));
     for (const name of ['Randevu Özeti', 'Danışanlar', 'Silinen Yazılar', 'Kategoriler', 'Site Ana Sayfası', 'Profil ve Kimlik', 'Gizlilik ve Analitik']) {
       expect(within(nav).getByRole('link', { name })).toBeTruthy();
     }
@@ -121,12 +129,12 @@ describe('grouped menu and the bell (owner 2026-10-21)', () => {
     store.set('s', Date.now() + 3600e3);
     const first = render(<App api={createMockApi()} store={store} config={config} />);
     const nav = await screen.findByRole('navigation', { name: 'Panel menüsü' });
-    fireEvent.click(within(nav).getByRole('button', { name: 'Site Sayfaları' }));
-    expect(within(nav).queryByRole('link', { name: 'Hakkımda' })).toBeNull();
+    fireEvent.click(within(nav).getByRole('button', { name: 'İçerik' }));
+    expect(within(nav).queryByRole('link', { name: 'Kategoriler' })).toBeNull();
     first.unmount();
     render(<App api={createMockApi()} store={store} config={config} />);
     const again = await screen.findByRole('navigation', { name: 'Panel menüsü' });
-    expect(within(again).getByRole('button', { name: 'Site Sayfaları' }).getAttribute('aria-expanded')).toBe('false');
+    expect(within(again).getByRole('button', { name: 'İçerik' }).getAttribute('aria-expanded')).toBe('false');
   });
 
   it('the bell opens a preview of the latest notifications with a way to all of them', async () => {
