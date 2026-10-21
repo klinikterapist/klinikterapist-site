@@ -4,6 +4,7 @@
  * runs under Vitest with an in-memory fake.
  */
 import { logEvent } from './events';
+import { mailHtml } from './mail-html';
 export type FetchOpts = {
   method?: 'get' | 'post' | 'patch' | 'put' | 'delete';
   headers?: Record<string, string>;
@@ -219,9 +220,11 @@ export function realGas(): Gas {
       // rejected every MailApp message from the account ("Message rejected") while the same text sent
       // from Gmail arrived. MailApp stays only as the last resort.
       send: (m) => {
+        // E-mails with the e-mail check link also get an HTML part with a button (mail-html.ts).
+        const htmlBody = mailHtml(m.body);
         if (m.from) {
           try {
-            GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name });
+            GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name, ...(htmlBody ? { htmlBody } : {}) });
             return;
           } catch (e) {
             // The alias was removed in Gmail: the e-mail still goes, from the account's own address.
@@ -229,13 +232,13 @@ export function realGas(): Gas {
           }
         }
         try {
-          GmailApp.sendEmail(m.to, m.subject, m.body, { replyTo: m.replyTo, name: m.name });
+          GmailApp.sendEmail(m.to, m.subject, m.body, { replyTo: m.replyTo, name: m.name, ...(htmlBody ? { htmlBody } : {}) });
           return;
         } catch (e) {
           // The Gmail permission is missing (not granted yet after an update).
           noteMailError(gas, 'Gmail gönderemedi, yedek yol kullanıldı', e);
         }
-        MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name });
+        MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name, ...(htmlBody ? { htmlBody } : {}) });
       },
       quota: () => MailApp.getRemainingDailyQuota(),
       aliases: () => GmailApp.getAliases(),

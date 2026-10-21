@@ -31,6 +31,6 @@ export function refOf(gas: Gas, code: unknown): string | null {
 /** The lines for an acknowledgement e-mail. */
 export function verifyLines(link: string, lang: 'tr' | 'en'): string[] {
   return lang === 'en'
-    ? ['Please confirm that this e-mail address is right by opening this link (one click is enough):', link]
-    : ['E-posta adresinizin doğru olduğunu onaylamak için lütfen bu bağlantıyı açın (bir tıklama yeterli):', link];
+    ? ['Please confirm that this e-mail address is right by clicking the button below (one click is enough):', link]
+    : ['E-posta adresinizin doğru olduğunu onaylamak için lütfen aşağıdaki düğmeye tıklayın (bir tıklama yeterli):', link];
 }
