@@ -20,7 +20,7 @@ import { listEvents } from './events';
 import { sendInfo } from './info';
 import { payClient, readPayment, runReminders, savePayment } from './payment';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
-import { recordHit, statsReads, statsSummary } from './stats';
+import { flushStats, recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
 import { readMailboxes, saveMailboxes, testMailboxes } from './mailboxes';
 
@@ -188,6 +188,11 @@ export async function runHourly(gas: Gas): Promise<void> {
     await runScheduled(gas, new Date(gas.now()));
   } catch (e) {
     gas.log(`hourly/schedule: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  try {
+    flushStats(gas);
+  } catch (e) {
+    gas.log(`hourly/stats: ${e instanceof Error ? e.message : String(e)}`);
   }
   try {
     warnExpiringHolds(gas);

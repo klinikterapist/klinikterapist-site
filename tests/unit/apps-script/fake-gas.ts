@@ -76,7 +76,7 @@ export function fakeGas(init: { props?: Record<string, string>; routes?: Route[]
     fetchAll(requests) {
       return requests.map((r) => gas.fetch(r.url, r.opts));
     },
-    props: { get: (k) => props.get(k) ?? null, set: (k, v) => void props.set(k, v), del: (k) => void props.delete(k) },
+    props: { get: (k) => props.get(k) ?? null, set: (k, v) => void props.set(k, v), del: (k) => void props.delete(k), all: () => Object.fromEntries(props) },
     cache: {
       get: (k) => {
         const e = cache.get(k);

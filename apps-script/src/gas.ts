@@ -41,7 +41,7 @@ export interface Gas {
   fetch(url: string, opts?: FetchOpts): FetchResult;
   /** Several requests at once (UrlFetchApp.fetchAll); results in the same order. */
   fetchAll(requests: { url: string; opts?: FetchOpts }[]): FetchResult[];
-  props: { get(key: string): string | null; set(key: string, value: string): void; del(key: string): void };
+  props: { get(key: string): string | null; set(key: string, value: string): void; del(key: string): void; all(): Record<string, string> };
   cache: { get(key: string): string | null; put(key: string, value: string, ttlSec: number): void };
   withLock<T>(fn: () => T): T;
   drive: DriveLike;
@@ -159,7 +159,7 @@ export function realGas(): Gas {
       if (requests.length === 0) return [];
       return UrlFetchApp.fetchAll(requests.map((r) => ({ url: r.url, ...toParams(r.opts ?? {}) }))).map(toResult);
     },
-    props: { get: (k) => props.getProperty(k), set: (k, v) => void props.setProperty(k, v), del: (k) => void props.deleteProperty(k) },
+    props: { get: (k) => props.getProperty(k), set: (k, v) => void props.setProperty(k, v), del: (k) => void props.deleteProperty(k), all: () => props.getProperties() },
     cache: { get: (k) => cache.get(k), put: (k, v, ttl) => cache.put(k, v, ttl) },
     // Re-entrant: an inner withLock (a calendar change inside a request's lock) must not release
     // the outer lock early, which LockService would do.
