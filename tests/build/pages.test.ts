@@ -294,8 +294,8 @@ describe('page shell (every page but home)', () => {
     expect(sticky).toHaveLength(1);
     expect(sticky[0].getAttribute('data-mode')).toBe('always');
     expect(sticky[0].getAttribute('aria-hidden')).toBeUndefined();
-    expect(sticky[0].querySelector('a')?.getAttribute('href')).toBe(lang === 'en' ? '/en/appointment/' : '/randevu/');
-    expect(sticky[0].text).toContain(lang === 'en' ? 'Book a Session' : 'Randevu Al');
+    expect(sticky[0].querySelector('a')?.getAttribute('href')).toBe('/randevu/');
+    expect(sticky[0].text).toContain('Randevu Al');
   });
 
   it.each(pages.filter(isPost))('post %s shows "← Blog" instead of the logo', (p) => {
