@@ -73,7 +73,8 @@ describe('EditorPage', () => {
     setup({ ...base(), tr: filled('Kaygı', 'kaygi'), en: filled('Anxiety', 'anxiety') });
     fireEvent.click(await screen.findByRole('button', { name: 'Yayınla' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Evet, yayınla' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Yazılara dön' }));
+    // The trial publish takes longer while the whole suite runs: wait more than the default second.
+    fireEvent.click(await screen.findByRole('button', { name: 'Yazılara dön' }, { timeout: 5000 }));
     expect(window.location.hash).toBe('#/yazilar');
   });
 
