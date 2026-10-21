@@ -203,16 +203,25 @@ export function realGas(): Gas {
     },
     log: (message) => console.error(message),
     mail: {
+      // Through Gmail (GmailApp), as if written in Gmail: on 2026-10-21 personal Gmail addresses
+      // rejected every MailApp message from the account ("Message rejected") while the same text sent
+      // from Gmail arrived. MailApp stays only as the last resort.
       send: (m) => {
         if (m.from) {
           try {
             GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name });
             return;
           } catch (e) {
-            // The alias was removed in Gmail, or the Gmail permission is missing: the e-mail still
-            // goes, from the account's own address.
+            // The alias was removed in Gmail: the e-mail still goes, from the account's own address.
             console.error(`mail from ${m.from}: ${e instanceof Error ? e.message : String(e)}`);
           }
+        }
+        try {
+          GmailApp.sendEmail(m.to, m.subject, m.body, { replyTo: m.replyTo, name: m.name });
+          return;
+        } catch (e) {
+          // The Gmail permission is missing (not granted yet after an update).
+          console.error(`mail via Gmail: ${e instanceof Error ? e.message : String(e)}`);
         }
         MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name });
       },
