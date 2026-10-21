@@ -13,6 +13,7 @@
  * Shared by the panel and the backend; the texts are drafts for the owner to approve.
  */
 import { SESSION_TYPES, formatDay } from './booking-form';
+import { mailTexts, withTexts } from './mail-texts';
 
 export type PaymentSettings = {
   /** The year the fees are for. */
@@ -106,7 +107,8 @@ export const MOTIVATION = {
 export function motivationFor(seed: string, lang: 'tr' | 'en'): string {
   let h = 0;
   for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  const list = MOTIVATION[lang];
+  const own = mailTexts().motivation?.[lang]?.filter((x) => x.trim());
+  const list = own?.length ? own : MOTIVATION[lang];
   return list[h % list.length];
 }
 
@@ -122,7 +124,7 @@ const typeName = (type: string, lang: 'tr' | 'en') => {
 };
 
 /** After the owner marks a session paid: thanks, and one sentence for the work ahead. */
-export function thanksMail(c: Person, s: Session): Mail {
+function builtThanksMail(c: Person, s: Session): Mail {
   const lang = c.lang;
   const line = motivationFor(`${s.day}T${s.time}`, lang);
   if (lang === 'en') {
@@ -138,7 +140,7 @@ export function thanksMail(c: Person, s: Session): Mail {
 }
 
 /** A payment reminder: the 48-hour one (automatic) and the owner's own from the client's page. */
-export function paymentReminderMail(c: Person, s: Session, type: string, p: PaymentSettings): Mail {
+function builtPaymentReminderMail(c: Person, s: Session, type: string, p: PaymentSettings): Mail {
   const lang = c.lang;
   if (lang === 'en') {
     return {
@@ -194,4 +196,14 @@ export function sessionReminderMail(c: Person, s: Session, what: { type: string;
       ...SIGN.tr,
     ].join('\n'),
   };
+}
+
+/** After the owner marks a session paid; the owner's template ("odeme.tesekkur") when there is one. */
+export function thanksMail(c: Person, s: Session): Mail {
+  return withTexts('odeme.tesekkur', c.lang, { ad: c.name.trim(), zaman: at(s, c.lang), motivasyon: motivationFor(`${s.day}T${s.time}`, c.lang) }, builtThanksMail(c, s));
+}
+
+/** The payment reminder; the owner's template ("odeme.hatirlatma") when there is one. */
+export function paymentReminderMail(c: Person, s: Session, type: string, p: PaymentSettings): Mail {
+  return withTexts('odeme.hatirlatma', c.lang, { ad: c.name.trim(), zaman: at(s, c.lang), odeme: paymentLines(p, type, c.lang).join('\n'), kural: ruleLine(c.lang) }, builtPaymentReminderMail(c, s, type, p));
 }

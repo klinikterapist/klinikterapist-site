@@ -382,3 +382,12 @@ export function answeredFaq(faq: Faq, lang: Lang, page: FaqPage = 'faq'): { id: 
     .filter((f) => (f.pages ?? DEFAULT_FAQ_PAGES).includes(page) && f.q[lang].trim() && f.a[lang].trim())
     .map((f) => ({ id: f.id, q: f.q[lang].trim(), a: f.a[lang].trim(), ...(f.icon ? { icon: f.icon } : {}) }));
 }
+
+/** src/data/mail.json: the owner's wording for the ready e-mails (src/lib/mail-texts.ts). */
+const mailSchema = z.object({ subject: z.string(), body: z.string() });
+export const mailTextsSchema = z.object({
+  signature: z.object({ tr: z.string(), en: z.string() }).optional(),
+  motivation: z.object({ tr: z.array(z.string()), en: z.array(z.string()) }).optional(),
+  templates: z.record(z.string(), z.object({ tr: mailSchema.optional(), en: mailSchema.optional() })).optional(),
+});
+export const parseMailTexts = (raw: unknown) => parse(mailTextsSchema, raw, 'mail.json');

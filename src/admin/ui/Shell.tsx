@@ -44,6 +44,8 @@ import { SETTINGS_SCREENS } from './settings/screens';
 import { NotesContext, unseenOf, useNotifications } from './notifications';
 import { useNoTrack } from './no-track';
 import { RAIL_KEY, usePref } from './prefs';
+import { setMailTexts } from '../../lib/mail-texts';
+import { parseMailTexts } from '../../lib/schemas';
 
 export { SETTINGS_SCREENS };
 
@@ -57,7 +59,7 @@ const screen = (id: string): NavItem => {
 };
 
 export const SITE_PAGES = ['ana-sayfa', 'hakkimda', 'sss', 'kaynaklar', 'iletisim', 'yasal'];
-export const SETTINGS = ['profil', 'linkler', 'seo', 'gizlilik', 'gorunum'];
+export const SETTINGS = ['profil', 'linkler', 'eposta', 'seo', 'gizlilik', 'gorunum'];
 
 export function navGroups(badges: { requests: number; notifications: number }): NavGroup[] {
   return [
@@ -126,6 +128,13 @@ export function Shell({ route, children }: { route: Route; children: ReactNode }
   // Writes the default ("do not count me") on the first visit, as before; the switch is in Gizlilik ve Analitik.
   useNoTrack();
   useEffect(() => setOpen(false), [route]);
+  // The owner's own e-mail wording (Ayarlar › E-posta Ayarları), for every e-mail the panel makes.
+  useEffect(() => {
+    api
+      .read(['src/data/mail.json'])
+      .then(({ files }) => files[0] && setMailTexts(parseMailTexts(JSON.parse(files[0].content))))
+      .catch(() => undefined);
+  }, [api]);
   const current = currentHref(route);
   const groups = navGroups({ requests: notes.pending, notifications: unseenOf(notes.events, notes.seen) });
   const folded = Array.isArray(closed) ? closed : [];

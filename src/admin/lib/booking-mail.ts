@@ -8,22 +8,37 @@ import type { BookingRequest, RequestDecision } from '../api/types';
 import { INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
 import { paymentLines, ruleLine, type PaymentSettings } from '../../lib/payment';
+import { withTexts } from '../../lib/mail-texts';
 
-const SITE = 'https://klinikterapist.com';
+export const SITE = 'https://klinikterapist.com';
 const SIGN_TR = ['Saygılarımla,', 'Osman Güneş Özkurt', 'Klinik Psikolog', 'klinikterapist.com'];
 const SIGN_EN = ['Kind regards,', 'Osman Güneş Özkurt', 'Clinical Psychologist', 'klinikterapist.com'];
 
 export type Mail = { subject: string; body: string };
 
+/** Template ids of the e-mails made here (Ayarlar › E-posta Ayarları). */
+export type PanelMailId =
+  | 'talep.onay.seans'
+  | 'talep.onay.ongorusme'
+  | 'talep.uygun-degil'
+  | 'talep.iptal'
+  | 'danisan.tamamlandi'
+  | 'danisan.sonlandirma'
+  | 'danisan.geri-al'
+  | 'danisan.sayfa'
+  | 'bekleme.yer-acildi'
+  | 'bekleme.alim-acik'
+  | 'bekleme.cikarma';
+
 /** "Bireysel terapi" / "ücretsiz ön görüşme", as it reads inside a sentence. */
-function what(r: BookingRequest, lang: 'tr' | 'en'): string {
+export function what(r: BookingRequest, lang: 'tr' | 'en'): string {
   if (r.kind === 'intro') return lang === 'en' ? 'free intro call' : 'ücretsiz ön görüşme';
   const t = SESSION_TYPES.find((s) => s.id === r.type) ?? SESSION_TYPES[0];
   return lang === 'en' ? t.en.toLowerCase() : t.tr.toLocaleLowerCase('tr-TR');
 }
 
 /** `pay`: the owner's fee and payment settings; a session's approval tells the fee, how to pay and the rules (Faz 1). */
-export function decisionMail(r: BookingRequest, decision: RequestDecision, pay?: PaymentSettings): Mail {
+function builtDecisionMail(r: BookingRequest, decision: RequestDecision, pay?: PaymentSettings): Mail {
   const lang = r.lang;
   const when = `${formatDay(r.day, lang)}, ${lang === 'en' ? 'at ' : 'saat '}${r.time.replace(':', '.')}`;
   const again = `${SITE}${pathFor(r.kind === 'intro' ? 'preConsult' : 'appointment', lang)}`;
@@ -105,7 +120,7 @@ type Contact = { name: string; lang: 'tr' | 'en' };
  * ended. `closing`: an invitation to a free 25–30 minute closing session, why it matters and what
  * it covers.
  */
-export function endMail(c: Contact, mode: 'complete' | 'closing'): Mail {
+function builtEndMail(c: Contact, mode: 'complete' | 'closing'): Mail {
   const name = c.name.trim();
   const again = `${SITE}${pathFor('appointment', c.lang)}`;
   if (c.lang === 'en') {
@@ -182,7 +197,7 @@ export function endMail(c: Contact, mode: 'complete' | 'closing'): Mail {
  * Geri al (owner's request 2026-10-20): an approval or a move sent by mistake. The apology says a
  * technical problem caused it and that a corrected answer follows in the next e-mail.
  */
-export function revertMail(c: Contact): Mail {
+function builtRevertMail(c: Contact): Mail {
   const name = c.name.trim();
   if (c.lang === 'en') {
     return {
@@ -216,7 +231,7 @@ export function revertMail(c: Contact): Mail {
  * time on the site; `remove`: no time is likely soon, so they come off the list and their details
  * are deleted, with a nudge not to put off getting support.
  */
-export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when?: { day: string; time: string }): Mail {
+function builtWaitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when?: { day: string; time: string }): Mail {
   const name = c.name.trim();
   const book = `${SITE}${pathFor('appointment', c.lang)}`;
   const at = when ? `${formatDay(when.day, c.lang)}, ${c.lang === 'en' ? 'at ' : 'saat '}${when.time.replace(':', '.')}` : '';
@@ -298,7 +313,7 @@ export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when
  * The client's own page (owner's decisions 2026-10-20, review a5): the secret link, what the page
  * does, the full fee less than 24 hours before, and that the link is theirs alone.
  */
-export function linkMail(c: Contact, link: string): Mail {
+function builtLinkMail(c: Contact, link: string): Mail {
   const name = c.name.trim();
   if (c.lang === 'en') {
     return {
@@ -334,4 +349,57 @@ export function linkMail(c: Contact, link: string): Mail {
       ...SIGN_TR,
     ].join('\n'),
   };
+}
+
+/*
+ * The e-mails as they go: the built-in text above, or the owner's own template (src/lib/mail-texts.ts)
+ * filled with the same facts.
+ */
+
+/** The intro call's "you wrote that …" sentence, or ''. */
+export function introNote(r: BookingRequest, lang: 'tr' | 'en'): string {
+  const topics = (r.topics ?? []).map((i) => INTRO_TOPICS[lang][i]).filter(Boolean);
+  const forWhom = INTRO_FOR.find((f) => f.id === r.forWhom);
+  if (r.kind !== 'intro' || (!forWhom && !topics.length)) return '';
+  if (lang === 'en') {
+    return `In your request you wrote${forWhom ? ` that the call is ${forWhom.en.replace(/ \(.*\)$/, '').toLowerCase()}` : ''}${topics.length ? `${forWhom ? ' and' : ''} that you would like to talk about: ${topics.join(', ')}` : ''}. We will start from there.`;
+  }
+  return `Talebinizde${forWhom ? ` görüşmenin ${forWhom.tr.replace(/ \(.*\)$/, '').toLocaleLowerCase('tr-TR')} olduğunu` : ''}${topics.length ? `${forWhom ? ' ve' : ''} şu konuları konuşmak istediğinizi belirttiniz: ${topics.join(', ')}` : ''}. Görüşmeye buradan başlayacağız.`;
+}
+
+export function decisionMail(r: BookingRequest, decision: RequestDecision, pay?: PaymentSettings): Mail {
+  const lang = r.lang;
+  const id: PanelMailId = decision === 'approve' ? (r.kind === 'intro' ? 'talep.onay.ongorusme' : 'talep.onay.seans') : decision === 'unavailable' ? 'talep.uygun-degil' : 'talep.iptal';
+  return withTexts(
+    id,
+    lang,
+    {
+      ad: r.name.trim(),
+      zaman: `${formatDay(r.day, lang)}, ${lang === 'en' ? 'at ' : 'saat '}${r.time.replace(':', '.')}`,
+      tur: what(r, lang),
+      odeme: pay && r.kind !== 'intro' ? paymentLines(pay, r.type ?? 'individual', lang).join('\n') : '',
+      kural: ruleLine(lang),
+      baglanti: `${SITE}${pathFor(r.kind === 'intro' ? 'preConsult' : 'appointment', lang)}`,
+      talep_notu: introNote(r, lang),
+    },
+    builtDecisionMail(r, decision, pay),
+  );
+}
+
+export function endMail(c: Contact, mode: 'complete' | 'closing'): Mail {
+  return withTexts(mode === 'complete' ? 'danisan.tamamlandi' : 'danisan.sonlandirma', c.lang, { ad: c.name.trim(), baglanti: `${SITE}${pathFor('appointment', c.lang)}` }, builtEndMail(c, mode));
+}
+
+export function revertMail(c: Contact): Mail {
+  return withTexts('danisan.geri-al', c.lang, { ad: c.name.trim() }, builtRevertMail(c));
+}
+
+export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when?: { day: string; time: string }): Mail {
+  const id: PanelMailId = mode === 'offer' ? 'bekleme.yer-acildi' : mode === 'open' ? 'bekleme.alim-acik' : 'bekleme.cikarma';
+  const zaman = when ? `${formatDay(when.day, c.lang)}, ${c.lang === 'en' ? 'at ' : 'saat '}${when.time.replace(':', '.')}` : '';
+  return withTexts(id, c.lang, { ad: c.name.trim(), zaman, baglanti: `${SITE}${pathFor('appointment', c.lang)}` }, builtWaitlistMail(c, mode, when));
+}
+
+export function linkMail(c: Contact, link: string): Mail {
+  return withTexts('danisan.sayfa', c.lang, { ad: c.name.trim(), baglanti: link }, builtLinkMail(c, link));
 }

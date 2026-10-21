@@ -6,6 +6,7 @@ import { TrackingPage } from '../../../src/admin/ui/appointments/TrackingPage';
 import { ClientPage } from '../../../src/admin/ui/appointments/ClientPage';
 import { ProfilePage } from '../../../src/admin/ui/appointments/ProfilePage';
 import { NotificationsPage } from '../../../src/admin/ui/appointments/NotificationsPage';
+import { MailboxesCard } from '../../../src/admin/ui/appointments/MailboxesCard';
 import { templateTimes } from '../../../src/admin/ui/appointments/AppointmentCalendar';
 import { Panel, parseRoute } from '../../../src/admin/ui/context';
 import { createMockApi } from '../../../src/admin/api/mock';
@@ -32,7 +33,7 @@ const client = (c: Partial<Client> = {}): Client => ({
   contact: { name: 'Osman Güneş Özkurt', email: 'osman@example.com', lang: 'tr' }, ...c,
 });
 
-function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
+function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'mailboxes' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
   const api = createMockApi({ seed: {} });
   api.state.requests.push(...requests.map((r) => ({ ...r })));
   api.state.calendar.push(
@@ -41,7 +42,7 @@ function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | `cl
   api.state.clients.push(...clients);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
-      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : <ClientPage id={page.slice(7)} />}
+      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );
   return { api };
@@ -459,9 +460,9 @@ describe('Faz 2: Terapist profili, Bildirimler, Saat kapat', () => {
   });
 });
 
-describe('Faz 4: E-posta adresleri on Terapist profili', () => {
+describe('Faz 4: E-posta adresleri (Ayarlar › E-posta Ayarları since 2026-10-21)', () => {
   it('shows the owner’s address until set, refuses a sender Gmail does not have, saves, and sends a test', async () => {
-    const { api } = setup('profile', [], []);
+    const { api } = setup('mailboxes', [], []);
     const box = (await screen.findByRole('heading', { name: 'E-posta adresleri' })).parentElement!;
     expect((await within(box).findAllByText('Ana adresiniz (merhaba@klinikterapist.com)')).length).toBe(3);
     expect(within(box).getByText('Bugün gönderilebilecek e-posta: 1500')).toBeTruthy();

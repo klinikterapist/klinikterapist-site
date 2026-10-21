@@ -1,25 +1,24 @@
 /**
- * Randevu Özeti, once Terapist profili (owner's decision 2026-10-20, Faz 2; review 2026-10-21): the
- * start screen above Randevu Talepleri and Danışanlar. Under the lists and the calendar, a row of cards:
- * this month, the week's occupancy, tools, the session chart and the e-mail addresses. At a glance: the time now, a few numbers (active clients, sessions this week,
- * waiting requests, unpaid sessions), the next seven days' sessions, the waiting requests, what
- * needs attention and the latest events (Bildirimler, in short), the appointment calendar with
- * "Saat kapat", the chart of all clients' sessions so far, and the system's e-mail addresses (Faz 4).
+ * Randevu Özeti, once Terapist profili (owner's decision 2026-10-20, Faz 2; redesigned 2026-10-21): the
+ * start screen above Randevu Talepleri and Danışanlar. The time now and the bell; four numbers; the next
+ * seven days as a strip; the coming sessions and the waiting requests beside the calendar; the session
+ * statistics (twelve weeks back and four ahead, the outcomes as a ring); the week's occupancy, each
+ * client's sessions and attendance, and the tools. Notifications are on Bildirimler and the e-mail
+ * addresses in Ayarlar › E-posta Ayarları.
  */
 import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type PanelEvent } from '../../api/types';
 import { formatDay, slotInstant } from '../../../lib/booking-form';
-import { sessionKey, sessionStats, sessionsOf, type SessionStats } from '../../../lib/sessions';
+import { sessionKey, sessionsOf } from '../../../lib/sessions';
 import { attentionOf, hasFee } from '../../lib/attention';
 import { usePanel } from '../context';
-import { CalendarCheck, CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, MessagesSquare, TriangleAlert, UsersRound } from '../icons';
-import { EventRow, NotificationBell } from '../NotificationBell';
+import { CalendarCheck, CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, MessagesSquare, UsersRound } from '../icons';
+import { NotificationBell } from '../NotificationBell';
 import { WeekStrip } from './WeekStrip';
 import { Banner, Button, Spinner } from '../kit';
 import { AppointmentCalendar, SESSION_KIND_LABEL, labelOf } from './AppointmentCalendar';
-import { MailboxesCard } from './MailboxesCard';
-import { SessionChart } from './SessionChart';
-import { MonthCard, OccupancyCard, ToolsCard } from './ProfileTools';
+import { OccupancyCard, ToolsCard } from './ProfileTools';
+import { ClientsCard, SessionInsights } from './SessionInsights';
 import { NowClock, whenText } from './TrackingPage';
 
 const DAY = 24 * 3600e3;
@@ -45,16 +44,6 @@ function upcoming(clients: Client[], requests: BookingRequest[], now: number): U
     out.push({ key: r.id, at, day: r.day, time: r.time, who: r.name, what: labelOf(r), link: '#/randevular', free: r.kind === 'intro' });
   }
   return out.sort((a, b) => a.at - b.at);
-}
-
-/** All clients' sessions so far, added up for one chart. */
-function total(clients: Client[], now: number): SessionStats {
-  const t: SessionStats = { held: 0, attended: 0, noshow: 0, cancelled: 0, postponed: 0, unmarked: 0, total: 0, free: 0 };
-  for (const c of clients) {
-    const s = sessionStats(c, now);
-    for (const k of Object.keys(t) as (keyof SessionStats)[]) t[k] += s[k];
-  }
-  return t;
 }
 
 export function ProfilePage() {
@@ -170,43 +159,11 @@ export function ProfilePage() {
               <AppointmentCalendar version={attempt} />
             </article>
           </div>
+          <SessionInsights clients={data.clients} now={now} />
           <div className="pf-row3">
-            <MonthCard clients={data.clients} now={now} />
             <OccupancyCard clients={data.clients} now={now} />
+            <ClientsCard clients={data.clients} now={now} />
             <ToolsCard />
-          </div>
-          <div className="pf-row3">
-            <article className="pf-card" aria-labelledby="pf-notes">
-                <h3 id="pf-notes">Bildirimler</h3>
-                {attention.length > 0 && (
-                  <ul className="nt-att-list">
-                    {attention.slice(0, 3).map((a) => (
-                      <li key={a.key} className={`nt-att nt-att-${a.tone}`}>
-                        <Icon as={a.tone === 'err' ? CircleAlert : TriangleAlert} size={18} />
-                        <a href={a.link}>{a.text}</a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <ul className="ev-list">
-                  {[...data.events]
-                    .sort((a, b) => b.at - a.at)
-                    .slice(0, 5)
-                    .map((e) => (
-                      <EventRow key={e.id} e={e} isNew={false} now={now} />
-                    ))}
-                </ul>
-                <a className="back-link" href="#/bildirimler">
-                  Tüm bildirimler →
-                </a>
-              </article>
-            <article className="pf-card" aria-labelledby="pf-chart">
-              <h3 id="pf-chart">Toplam seans grafiği</h3>
-              <SessionChart stats={total(data.clients, now)} />
-            </article>
-            <div className="pf-card pf-card-plain">
-              <MailboxesCard />
-            </div>
           </div>
         </>
       )}
