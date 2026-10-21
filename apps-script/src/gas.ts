@@ -3,6 +3,7 @@
  * The only file that touches Apps Script globals. Everything else takes a `Gas`, so the backend
  * runs under Vitest with an in-memory fake.
  */
+import { logEvent } from './events';
 export type FetchOpts = {
   method?: 'get' | 'post' | 'patch' | 'put' | 'delete';
   headers?: Record<string, string>;
@@ -148,10 +149,21 @@ function toResult(res: GoogleAppsScript.URL_Fetch.HTTPResponse): FetchResult {
 
 let lockDepth = 0;
 
+/** A Gmail failure, also in the panel's Bildirimler (events.ts) so the owner can read it there. */
+function noteMailError(gas: Gas, what: string, e: unknown): void {
+  const text = `${what}: ${e instanceof Error ? e.message : String(e)}`.slice(0, 180);
+  console.error(text);
+  try {
+    logEvent(gas, 'info', `E-posta sorunu — ${text}`);
+  } catch {
+    /* best effort */
+  }
+}
+
 export function realGas(): Gas {
   const props = PropertiesService.getScriptProperties();
   const cache = CacheService.getScriptCache();
-  return {
+  const gas: Gas = {
     fetch(url, opts = {}) {
       return toResult(UrlFetchApp.fetch(url, toParams(opts)));
     },
@@ -213,7 +225,7 @@ export function realGas(): Gas {
             return;
           } catch (e) {
             // The alias was removed in Gmail: the e-mail still goes, from the account's own address.
-            console.error(`mail from ${m.from}: ${e instanceof Error ? e.message : String(e)}`);
+            noteMailError(gas, `Gmail, ${m.from} adresinden gönderemedi`, e);
           }
         }
         try {
@@ -221,7 +233,7 @@ export function realGas(): Gas {
           return;
         } catch (e) {
           // The Gmail permission is missing (not granted yet after an update).
-          console.error(`mail via Gmail: ${e instanceof Error ? e.message : String(e)}`);
+          noteMailError(gas, 'Gmail gönderemedi, yedek yol kullanıldı', e);
         }
         MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name });
       },
@@ -236,4 +248,5 @@ export function realGas(): Gas {
       },
     },
   };
+  return gas;
 }
