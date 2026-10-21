@@ -12,6 +12,7 @@ import Accordion from '../components/ui/Accordion.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import Icon from '../components/Icon.astro';
 import PreConsultDesign from '../components/appointment/PreConsultDesign.astro';
+import VerifyCard from '../components/appointment/VerifyCard.astro';
 import type { Lang } from '../lib/settings';
 import { getContact } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
@@ -190,6 +191,7 @@ const faqJsonLd = faqLd(T.faq.map((f) => ({ q: f.q, a: f.a.join(' ') })));
     <PageHead title={T.title} icon="talk" tone="kiremit">
       <p class="lead">{T.lead}</p>
     </PageHead>
+    {design && <VerifyCard lang={lang} />}
 
     <ul class="facts">
       {

@@ -15,7 +15,6 @@
  *   email2 + email-guard.ts's hooks: the address typed twice, with a "did you mean" hint
  *   [data-closed] the "Haber et" section (WaitlistForm.astro): when the panel has closed booking
  *   (`closed` in `booking.busy`) it is all the page shows
- *   [data-verify-note] where the result of an e-mail check link (`?dogrula=…`) is shown
  */
 import { closedOn, intakeOpen, previewClosedKey, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
 import { sameEmail } from '../../lib/email-check';
@@ -23,7 +22,7 @@ import { mountEmailGuard } from './email-guard';
 import { mountWaitlist } from './waitlist-submit';
 import { mountWizard } from './wizard';
 
-export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string; mismatch: string; emailDomain?: string; verified: string; verifyFailed: string };
+export type BookingMessages = { sending: string; invalid: string; taken: string; failed: string; mismatch: string; emailDomain?: string };
 
 type Deps = { fetch: typeof fetch; now: () => number; timeoutMs?: number };
 
@@ -68,30 +67,6 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     mountWaitlist(section, endpoint, lang, messages, deps);
   };
 
-  /** `?dogrula=…`: the link in an acknowledgement e-mail. */
-  const verify = async () => {
-    const code = new URLSearchParams(location.search).get('dogrula');
-    const note = root.querySelector<HTMLElement>('[data-verify-note]');
-    if (!code || !endpoint || !note) return;
-    // Off the address bar at once: not kept in the history, not in a shared or bookmarked address.
-    history.replaceState(null, '', location.pathname);
-    let ok = false;
-    try {
-      const res = await deps.fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'booking.verify', code }),
-        credentials: 'omit',
-      });
-      ok = ((await res.json()) as { ok?: boolean })?.ok === true;
-    } catch {
-      ok = false;
-    }
-    note.textContent = ok ? messages.verified : messages.verifyFailed;
-    note.classList.toggle('is-error', !ok);
-    note.hidden = false;
-  };
-  void verify();
 
   // Closed when the site was built (booking.json `intake`); on the dev server the panel's trial mode
   // may say otherwise (previewClosedKey: '1' closed, '0' open).

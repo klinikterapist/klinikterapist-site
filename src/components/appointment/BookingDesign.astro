@@ -170,11 +170,10 @@ const T = {
 }[lang];
 const notice = pathFor('privacyNotice', lang);
 const F = FORM_TEXT[lang];
-const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain, verified: F.verified, verifyFailed: F.verifyFailed });
+const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain });
 ---
 
 <div class="wz booking" data-booking data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="session" data-config={config} data-endpoint={endpoint} data-messages={messages}>
-  <p class="verify-note" data-verify-note role="status" hidden></p>
   <WaitlistForm lang={lang} kind="session" email={email} />
   {
     /* Dev server only: the live site shows the form without the note. */

@@ -1,0 +1,142 @@
+---
+/**
+ * The answer to the e-mail check link (`?dogrula=…`), at the top of the booking and intro-call pages
+ * (verify-link.ts). Hidden until such a link opens the page; then "checking…", and "confirmed" or
+ * "could not be opened". The icon and colour follow the state; the words always say it too.
+ */
+import type { Lang } from '../../lib/settings';
+import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
+import { pathFor } from '../../i18n/routes';
+import { t } from '../../i18n/ui';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
+const T = {
+  tr: {
+    checking: { title: 'E-posta adresiniz onaylanıyor…', text: 'Bir saniye, bağlantınızı kontrol ediyorum.' },
+    ok: {
+      title: 'E-posta adresiniz onaylandı',
+      text: 'Teşekkürler, talebiniz bana ulaştı. Saati onaylamak ya da başka bir saat önermek için size bu adresten yazacağım.',
+    },
+    failed: {
+      title: 'Bağlantı açılamadı',
+      text: 'Bu onay bağlantısı geçersiz ya da daha önce kullanılmış olabilir. E-postadaki bağlantıyı yeniden açmayı deneyin ya da bana doğrudan e-posta gönderin.',
+    },
+  },
+  en: {
+    checking: { title: 'Confirming your e-mail address…', text: 'One moment, I am checking your link.' },
+    ok: {
+      title: 'Your e-mail address is confirmed',
+      text: 'Thank you, your request has reached me. I will write to you at this address to confirm the time or suggest another one.',
+    },
+    failed: {
+      title: 'The link could not be opened',
+      text: 'This confirmation link may be invalid or already used. Try the link in the e-mail again, or write to me directly.',
+    },
+  },
+}[lang];
+---
+
+<section class="verify-card" data-verify-card data-endpoint={endpoint} data-messages={JSON.stringify(T)} data-state="checking" role="status" aria-live="polite" tabindex="-1" hidden>
+  <span class="verify-icon" aria-hidden="true">
+    <span class="for-checking"><Icon name="clock" size={22} /></span>
+    <span class="for-ok"><Icon name="email" size={22} /></span>
+    <span class="for-failed"><Icon name="alert" size={22} /></span>
+  </span>
+  <div class="verify-body">
+    <h2 data-verify-title>{T.checking.title}</h2>
+    <p data-verify-text>{T.checking.text}</p>
+    <a class="verify-home for-ok" href={pathFor('home', lang)}>{t(lang, 'backHome')}</a>
+  </div>
+</section>
+
+<script>
+  import { mountVerifyLink } from './verify-link';
+
+  const card = document.querySelector<HTMLElement>('[data-verify-card]');
+  if (card) void mountVerifyLink(card);
+</script>
+
+<style>
+  .verify-card {
+    --tone: var(--tone-lavanta);
+    --tone-bg: var(--tone-lavanta-bg);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 0 0 var(--space-5);
+    padding: 18px;
+    border: 1.5px solid color-mix(in srgb, var(--tone) 45%, transparent);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    outline: none;
+  }
+
+  .verify-card[hidden] {
+    display: none;
+  }
+
+  .verify-card[data-state='ok'] {
+    --tone: var(--tone-adacayi);
+    --tone-bg: var(--tone-adacayi-bg);
+  }
+
+  .verify-card[data-state='failed'] {
+    --tone: var(--tone-kiremit);
+    --tone-bg: var(--tone-kiremit-bg);
+  }
+
+  .verify-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--tone-bg);
+    color: var(--tone);
+  }
+
+  .verify-icon > span,
+  .verify-home {
+    display: none;
+  }
+
+  .verify-card[data-state='checking'] .for-checking,
+  .verify-card[data-state='ok'] .for-ok,
+  .verify-card[data-state='failed'] .for-failed {
+    display: flex;
+  }
+
+  .verify-card[data-state='ok'] .verify-home {
+    display: inline-flex;
+  }
+
+  .verify-body {
+    min-width: 0;
+  }
+
+  .verify-body h2 {
+    margin: 0 0 4px;
+    font-size: var(--text-lg);
+    line-height: 1.3;
+  }
+
+  .verify-body p {
+    margin: 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+  }
+
+  .verify-home {
+    align-items: center;
+    min-height: 44px;
+    margin-top: 6px;
+    font-weight: 600;
+  }
+</style>

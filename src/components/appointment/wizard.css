@@ -867,7 +867,7 @@
 }
 
 /* Booking closed in the panel: only "Şu an tüm seanslar dolu" and "Haber et" show. */
-.wz.is-closed > :not([data-closed], [data-verify-note]) {
+.wz.is-closed > :not([data-closed]) {
   display: none !important;
 }
 
@@ -892,14 +892,4 @@
   cursor: pointer;
 }
 
-.wz .verify-note {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, #3f7a4f 14%, transparent);
-  font-weight: 600;
-}
 
-.wz .verify-note.is-error {
-  background: color-mix(in srgb, #b0412e 14%, transparent);
-}

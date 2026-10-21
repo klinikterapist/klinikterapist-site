@@ -9,6 +9,7 @@ import PageHead from '../components/ui/PageHead.astro';
 import RoundPortrait from '../components/ui/RoundPortrait.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import BookingDesign from '../components/appointment/BookingDesign.astro';
+import VerifyCard from '../components/appointment/VerifyCard.astro';
 import Accordion from '../components/ui/Accordion.astro';
 import { bookingInfo, textBlocks } from '../components/appointment/booking-info';
 import { getFaq } from '../lib/settings';
@@ -41,6 +42,7 @@ const bookingFaq = getFaq(lang, 'booking').map((f) => ({ id: f.id, icon: f.icon 
     design ? (
       <div class="container inner-page appointment-design">
         <PageHead title={title} icon="booking" tone="adacayi" />
+        <VerifyCard lang={lang} />
         <BookingDesign lang={lang} email={email} />
         <div class="booking-info">
           {

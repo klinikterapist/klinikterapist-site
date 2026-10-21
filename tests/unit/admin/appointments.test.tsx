@@ -155,10 +155,11 @@ describe('Randevu talepleri', () => {
     const go = within(dialog).getByRole('button', { name: 'Takibe geçir' }) as HTMLButtonElement;
     expect(go.disabled).toBe(true);
     fireEvent.change(within(dialog).getByLabelText('Gün'), { target: { value: '3' } });
-    fireEvent.change(within(dialog).getByLabelText('Saat'), { target: { value: '19:50' } });
+    // 11:00, open even on a bayram eve (closed from 13:00), whichever Wednesday comes next.
+    fireEvent.change(within(dialog).getByLabelText('Saat'), { target: { value: '11:00' } });
     fireEvent.click(go);
     await waitFor(() => expect(api.state.clients).toHaveLength(1));
-    expect(api.state.clients[0]).toMatchObject({ number: 'KT001AK', weekday: 3, time: '19:50', type: 'individual' });
+    expect(api.state.clients[0]).toMatchObject({ number: 'KT001AK', weekday: 3, time: '11:00', type: 'individual' });
   });
 
   it('Geri al on an approved request sends the apology and makes it pending again', async () => {
