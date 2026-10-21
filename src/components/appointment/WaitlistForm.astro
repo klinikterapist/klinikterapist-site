@@ -1,7 +1,8 @@
 ---
 /**
- * "Şu an tüm seanslar dolu" + "Haber et" (owner's request 2026-10-20). Hidden until the panel says
- * booking is closed (booking-submit.ts reads `closed` from `booking.busy`); then it is the only part
+ * "Randevu alımı şu an kapalı" + "Haber et" (owner's requests 2026-10-20 and 2026-10-21). Hidden until
+ * booking is closed in the page's language (booking.json `intake`, or `closed` from `booking.busy`;
+ * booking-submit.ts); then it is the only part
  * of the booking or intro-call page that shows. The person leaves their details and what they look
  * for; the owner writes to them when a time frees up (waitlist-submit.ts, `booking.waitlist`).
  */
@@ -20,7 +21,7 @@ const { lang, kind, email } = Astro.props;
 const L = WAITLIST_LABELS[lang];
 const T = {
   tr: {
-    title: 'Şu an tüm seanslar dolu',
+    title: 'Randevu alımı şu an kapalı',
     text: 'Yeni danışan alımına şu an kısa bir ara verdim. Benimle çalışmak istiyorsanız bilgilerinizi bırakın: boşalan bir saat ya da gün olduğunda ilk size haber vereyim, sürece oradan başlayalım.',
     how: ['Formu doldurun, size bir alındı e-postası gelsin.', 'Bir saat boşaldığında size e-postayla yazarım.', 'Uygunsa randevunuzu birlikte planlarız.'],
     kinds: 'Aradığınız görüşme',
@@ -41,7 +42,7 @@ const T = {
     doneText: 'Size bir alındı e-postası gönderdim; içindeki bağlantıyla e-posta adresinizi onaylayın. Boşalan ilk uygun saatte size yazacağım.',
   },
   en: {
-    title: 'All sessions are taken at the moment',
+    title: 'Booking is closed at the moment',
     text: 'I have paused taking new clients for a short while. If you would like to work with me, leave your details: when a time or day frees up, you will be the first to hear, and we can start from there.',
     how: ['Fill in the form; an acknowledgement arrives by e-mail.', 'When a time frees up, I write to you.', 'If it suits you, we plan your appointment together.'],
     kinds: 'What you are looking for',

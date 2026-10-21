@@ -122,13 +122,14 @@ describe('home (phone)', () => {
     const sw = d.querySelector('.home-phone a.lang-switch')!;
     expect(sw.text.trim()).toBe('TR');
     expect(sw.querySelector('svg.flag')).toBeTruthy();
-    // No sessions in English yet (owner, 2026-10-21): "Book a Session" is a "Coming soon" label, not a link.
+    // English booking closed (booking.json intake, owner 2026-10-21): "Book a Session" is muted with a
+    // "Bookings closed" badge and leads to the booking page, which says so.
     const cta = d.querySelector('#top-cta')!;
-    expect(cta.tagName).toBe('P');
-    expect(cta.getAttribute('href')).toBeUndefined();
-    expect(cta.text).toContain('Coming soon');
-    expect(d.querySelector('.home-desk .is-soon')?.text).toContain('Coming soon');
-    expect(d.querySelector('.home-desk a.book')).toBeNull();
+    expect(cta.classList.contains('is-closed')).toBe(true);
+    expect(cta.getAttribute('href')).toBe('/en/appointment/');
+    expect(cta.text).toContain('Bookings closed');
+    expect(d.querySelector('.home-desk a.book.is-closed')?.text).toContain('Bookings closed');
+    expect(d.textContent).not.toContain('Coming soon');
     expect(d.querySelector('.sticky-cta')).toBeNull();
     expect(d.querySelector('.home-phone .role')?.text).toBe('Psychologist · Online sessions');
     expect(d.textContent).not.toMatch(/undefined|Sosyal medyada/);
@@ -136,6 +137,7 @@ describe('home (phone)', () => {
 
   it('sticky CTA', () => {
     expect(tr().querySelectorAll('[data-mode="afterTopCta"]')).toHaveLength(1);
+    expect(tr().querySelector('#top-cta.is-closed')).toBeNull();
     expect(tr().querySelector('[data-mode="always"]')).toBeNull();
     // No booking in English yet: no bottom bar on the English home.
     expect(en().querySelector('.sticky-cta')).toBeNull();

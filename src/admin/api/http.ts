@@ -95,7 +95,7 @@ export function createHttpApi(
     clientPay: (input) => call(ACTIONS.clientPay, input),
     clientMail: (input) => call(ACTIONS.clientMail, input).then(() => undefined),
     bookingState: () => call(ACTIONS.bookingState),
-    bookingSetOpen: (open) => call(ACTIONS.bookingSetOpen, { open }).then(() => undefined),
+    bookingSetOpen: (open, lang) => call(ACTIONS.bookingSetOpen, { open, lang }).then(() => undefined),
     requestAdd: (input) => call(ACTIONS.requestAdd, input),
     waitlistList: () => call(ACTIONS.waitlistList),
     waitlistMail: (input) => call(ACTIONS.waitlistMail, input).then(() => undefined),

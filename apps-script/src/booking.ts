@@ -12,17 +12,17 @@
  */
 import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
-import { read } from './github';
+import { commit, read } from './github';
 import { HONEYPOT, allowSend } from './contact';
 import { addHold } from './calendar';
 import { allBusy, markVerified, saveRequest } from './requests';
-import { isClosed, markWaitlistVerified } from './waitlist';
+import { markWaitlistVerified } from './waitlist';
 import { refOf, verifyLines, verifyLink } from './verify';
 import { initials, logEvent, shortWhen } from './events';
 import { assertMailDomain } from './mx';
 import { parseBooking } from '../../src/lib/schemas';
 import {
-  AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
+  AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, intakeOpen, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
 } from '../../src/lib/booking-form';
 import { PANEL_URL, oneLine, str } from './text';
 import { asSender, notifyTo } from './mailboxes';
@@ -33,7 +33,7 @@ const TAKEN = 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat se
 const taken = () => new ApiError('bad_request', TAKEN, { reason: 'taken' });
 const TOO_MANY = 'Şu anda çok fazla talep gönderildi. Lütfen daha sonra tekrar deneyin ya da doğrudan e-posta gönderin.';
 const NOT_READY = 'Randevu formu henüz kurulmadı. Lütfen doğrudan e-posta gönderin.';
-const CLOSED = 'Şu an tüm seanslar dolu. Sayfayı yenileyip "Haber et" formunu kullanabilirsiniz.';
+const CLOSED = 'Randevu alımı şu an kapalı. Sayfayı yenileyip "Haber et" formunu kullanabilirsiniz.';
 
 const CONFIG_CACHE = 'booking.config';
 const CONFIG_TTL = 10 * 60;
@@ -51,6 +51,38 @@ export function config(gas: Gas): BookingConfig {
   const cfg = parseBooking(JSON.parse(file.content));
   gas.cache.put(CONFIG_CACHE, JSON.stringify(cfg), CONFIG_TTL);
   return cfg;
+}
+
+const BOOKING_FILE = 'src/data/booking.json';
+const LANG_NAME: Record<BookingLang, string> = { tr: 'Türkçe', en: 'İngilizce' };
+
+/** Closed in this language (booking.json `intake`): the forms refuse requests and offer "Haber et". */
+export const isClosed = (gas: Gas, lang: BookingLang): boolean => !intakeOpen(config(gas), lang);
+
+/**
+ * `booking.setOpen` (Ayarlar › Önemli ayarlar): opens or closes booking in one language by writing
+ * `intake` in booking.json, the file the site's buttons are built from. The forms follow at once
+ * (the cached config is replaced); the buttons after the site is published again.
+ */
+export function setOpen(gas: Gas, p: Record<string, unknown>): Record<string, never> {
+  const lang = p.lang ?? 'tr';
+  if (typeof p.open !== 'boolean' || (lang !== 'tr' && lang !== 'en')) throw badRequest();
+  const open = p.open;
+  const [file] = read(gas, { paths: [BOOKING_FILE] }).files;
+  const raw = JSON.parse(file.content) as Record<string, unknown>;
+  const now = parseBooking(raw);
+  if (intakeOpen(now, lang) === open) return {};
+  const intake = { tr: intakeOpen(now, 'tr'), en: intakeOpen(now, 'en'), [lang]: open };
+  const next = { ...raw, intake };
+  commit(gas, {
+    message: `${LANG_NAME[lang]} randevu alımı ${open ? 'açıldı' : 'kapatıldı'}`,
+    writes: [{ path: BOOKING_FILE, content: `${JSON.stringify(next, null, 2)}
+`, encoding: 'utf8', expectSha: file.sha }],
+    deletes: [],
+  });
+  gas.cache.put(CONFIG_CACHE, JSON.stringify(parseBooking(next)), CONFIG_TTL);
+  gas.cache.put(BUSY_CACHE, '', 1);
+  return {};
 }
 
 /** The request as the shared rules see it: only known fields, of the right types. */
@@ -161,18 +193,19 @@ const BUSY_CACHE = 'booking.busy';
  * `booking.busy` (public GET): the taken stretches from now on, rest included, as epoch ms — no
  * kinds, no names. The site's calendar marks the times that would overlap them "Dolu".
  */
-export function bookingBusy(gas: Gas): { busy: { start: number; end: number }[]; closed: boolean } {
+export function bookingBusy(gas: Gas, lang: BookingLang = 'tr'): { busy: { start: number; end: number }[]; closed: boolean } {
+  const closed = isClosed(gas, lang);
   const cached = gas.cache.get(BUSY_CACHE);
   if (cached) {
     try {
-      return JSON.parse(cached) as { busy: { start: number; end: number }[]; closed: boolean };
+      return { busy: (JSON.parse(cached) as { busy: { start: number; end: number }[] }).busy, closed };
     } catch {
       /* compute again */
     }
   }
-  const out = { busy: allBusy(gas, config(gas), gas.now()), closed: isClosed(gas) };
-  gas.cache.put(BUSY_CACHE, JSON.stringify(out), 60);
-  return out;
+  const busy = allBusy(gas, config(gas), gas.now());
+  gas.cache.put(BUSY_CACHE, JSON.stringify({ busy }), 60);
+  return { busy, closed };
 }
 
 export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true } {
@@ -180,8 +213,9 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
 
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw new ApiError('internal', NOT_READY);
+  const lang: BookingLang = p.lang === 'en' ? 'en' : 'tr';
   // `reason: 'closed'`: the page open since before booking closed shows "Haber et" instead.
-  if (isClosed(gas)) throw new ApiError('bad_request', CLOSED, { reason: 'closed' });
+  if (isClosed(gas, lang)) throw new ApiError('bad_request', CLOSED, { reason: 'closed' });
 
   const input = inputOf(p);
   const now = gas.now();
@@ -192,7 +226,6 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
 
   const email = input.email.trim().toLowerCase();
   assertMailDomain(gas, email);
-  const lang: BookingLang = p.lang === 'en' ? 'en' : 'tr';
   // Two e-mails per request: count both against the shared limits.
   if (!allowSend(gas, email, 2)) throw badRequest(TOO_MANY);
   // Checked again under the lock, so two visitors cannot take the same time at once.

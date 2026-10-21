@@ -16,6 +16,7 @@ import type { Lang } from '../lib/settings';
 import { getContact } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { pathFor } from '../i18n/routes';
+import { bookingClosed } from '../lib/booking-intake';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -23,9 +24,11 @@ interface Props {
 }
 const { lang } = Astro.props;
 const title = t(lang, 'bookSession');
-const { meta, alternatePaths } = pageMeta('appointment', lang, title, t(lang, 'appointmentSoon'));
 const { email } = getContact();
 const design = import.meta.env.DEV || process.env.BOOKING_DESIGN === '1';
+// Closed in this language (Ayarlar › Önemli ayarlar): the e-mail page says so instead of "soon".
+const lead = t(lang, bookingClosed(lang) ? 'appointmentClosed' : 'appointmentSoon');
+const { meta, alternatePaths } = pageMeta('appointment', lang, title, lead);
 
 const info = bookingInfo(lang);
 // The questions under the booking form are kept in the panel (Sık Sorulan Sorular › Randevu).
@@ -64,7 +67,7 @@ const bookingFaq = getFaq(lang, 'booking').map((f) => ({ id: f.id, icon: f.icon 
       <div class="container-text inner-page appointment">
         <PageHead title={title}>
           <RoundPortrait slot="media" photo={null} alt="" size={96} />
-          <p class="lead">{t(lang, 'appointmentSoon')}</p>
+          <p class="lead">{lead}</p>
         </PageHead>
 
         <div class="page-stack">

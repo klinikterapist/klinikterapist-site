@@ -12,10 +12,10 @@ import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
 import { sendContact } from './contact';
-import { bookingBusy, config as bookingConfig, sendBooking, verifyEmail } from './booking';
+import { bookingBusy, config as bookingConfig, sendBooking, setOpen, verifyEmail } from './booking';
 import { addClosed, addConfirmed, listEntries, removeEntry } from './calendar';
 import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor, listClients, listRequests, requestToClient, revertClient, revertRequest, warnExpiringHolds } from './requests';
-import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist, setOpen } from './waitlist';
+import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist } from './waitlist';
 import { listEvents } from './events';
 import { sendInfo } from './info';
 import { payClient, readPayment, runReminders, savePayment } from './payment';
@@ -209,7 +209,7 @@ export function doGet(e?: { parameter?: Record<string, string> }) {
   if (e?.parameter?.action === 'booking.busy') {
     let out: ApiResponse;
     try {
-      out = ok(bookingBusy(realGas()));
+      out = ok(bookingBusy(realGas(), e.parameter.lang === 'en' ? 'en' : 'tr'));
     } catch {
       out = fail(new ApiError('internal', INTERNAL_MESSAGE));
     }

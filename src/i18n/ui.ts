@@ -16,7 +16,7 @@ export const STRINGS = {
   socialLinks: { tr: 'Sosyal bağlantılar', en: 'Social links' },
   skipToContent: { tr: 'İçeriğe geç', en: 'Skip to content' },
   bookSession: { tr: 'Randevu Al', en: 'Book a Session' },
-  comingSoon: { tr: 'Yakında', en: 'Coming soon' },
+  bookingClosed: { tr: 'Randevu alımına kapalı', en: 'Bookings closed' },
   switchLangLabel: { tr: 'ENG, English version', en: 'TR, Türkçe sürüm' },
   minRead: { tr: 'dk okuma', en: 'min read' },
   allPosts: { tr: 'Tüm Yazılar', en: 'All Posts' },
@@ -208,6 +208,10 @@ export const STRINGS = {
   errConsent: { tr: 'Göndermek için onay kutusunu işaretleyin.', en: 'Please tick the box to send.' },
 
   // Appointment
+  appointmentClosed: {
+    tr: 'Randevu alımı şu an kapalı. Bana e-posta ile ulaşabilirsiniz.',
+    en: 'Booking is closed at the moment. You can reach me by e-mail.',
+  },
   appointmentSoon: {
     tr: 'Online randevu sistemi çok yakında burada. Şimdilik e-posta ile ulaşabilirsiniz.',
     en: 'The online booking system is coming here soon. For now, you can reach me by e-mail.',

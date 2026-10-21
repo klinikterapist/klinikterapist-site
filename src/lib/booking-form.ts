@@ -20,7 +20,16 @@ export type BookingConfig = {
   /** Rest after every appointment, in minutes: a booking holds its length plus this. */
   restMinutes: number;
   closed: ClosedDay[];
+  /**
+   * Randevu alımı per language (owner's decision 2026-10-21, Ayarlar › Önemli ayarlar): false closes
+   * the booking and intro-call forms of that language and the site's buttons say so. Without the
+   * field Turkish is open and English closed.
+   */
+  intake?: { tr: boolean; en: boolean };
 };
+
+/** Whether booking is open in this language (booking.json `intake`). */
+export const intakeOpen = (cfg: Pick<BookingConfig, 'intake'>, lang: BookingLang): boolean => cfg.intake?.[lang] ?? lang === 'tr';
 
 export const SESSION_TYPES = [
   { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50 },
@@ -36,6 +45,9 @@ export const INTRO_MINUTES = 30;
  * backend is live. The live site never reads it.
  */
 export const PREVIEW_CLOSED_KEY = 'kt.preview.bookingClosed';
+
+/** The trial mode's switch for one language: '1' closed, '0' open (English starts closed). */
+export const previewClosedKey = (lang: BookingLang): string => (lang === 'tr' ? PREVIEW_CLOSED_KEY : `${PREVIEW_CLOSED_KEY}.${lang}`);
 
 /** How long an appointment lasts (without the rest). */
 export function minutesOf(kind: BookingKind, type?: string): number {

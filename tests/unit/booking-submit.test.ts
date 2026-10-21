@@ -100,7 +100,7 @@ describe('mountBookingForm', () => {
     const start = Date.parse('2026-10-22T15:00:00+03:00');
     const fetch = vi.fn(async () => new Response(JSON.stringify({ ok: true, data: { busy: [{ start, end: start + 90 * 60e3 }] } })));
     mountBookingForm(markup('https://api.example/exec'), { fetch, now: () => NOW });
-    await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith('https://api.example/exec?action=booking.busy', { credentials: 'omit' }));
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledWith('https://api.example/exec?action=booking.busy&lang=tr', { credentials: 'omit' }));
     $('[data-next]').click();
     [...document.querySelectorAll<HTMLButtonElement>('.day')].find((b) => b.textContent === '22')!.click();
     await vi.waitFor(() => expect(document.querySelectorAll('.slot.is-taken').length).toBeGreaterThan(0));
@@ -160,6 +160,22 @@ describe('mountBookingForm', () => {
     await vi.waitFor(() => expect(root.classList.contains('is-closed')).toBe(true));
     expect($('[data-closed]').hidden).toBe(false);
     expect($('[data-done]').hidden).toBe(true);
+  });
+});
+
+describe('closed in the language of the page (booking.json intake)', () => {
+  it('the English page opens on "Haber et" while English booking is closed; the Turkish one does not', () => {
+    const fetch = vi.fn(async () => new Response(JSON.stringify({ ok: true, data: { busy: [] } })));
+    const en = markup('https://api.example/exec');
+    en.dataset.lang = 'en';
+    en.dataset.config = JSON.stringify({ ...JSON.parse(en.dataset.config!), intake: { tr: true, en: false } });
+    mountBookingForm(en, { fetch, now: () => NOW });
+    expect(en.classList.contains('is-closed')).toBe(true);
+    expect($('[data-closed]').hidden).toBe(false);
+    const tr = markup('https://api.example/exec');
+    tr.dataset.config = JSON.stringify({ ...JSON.parse(tr.dataset.config!), intake: { tr: true, en: false } });
+    mountBookingForm(tr, { fetch, now: () => NOW });
+    expect(tr.classList.contains('is-closed')).toBe(false);
   });
 });
 

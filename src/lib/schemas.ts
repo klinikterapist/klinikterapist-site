@@ -218,6 +218,7 @@ export const bookingSchema = z.object({
   intro: availabilitySchema,
   restMinutes: z.number().int().min(0).max(120),
   closed: z.array(z.object({ date: daySchema, name: z.string().min(1), from: hhmm.optional() })),
+  intake: z.object({ tr: z.boolean(), en: z.boolean() }).optional(),
 });
 
 const seoSchema = z.object({

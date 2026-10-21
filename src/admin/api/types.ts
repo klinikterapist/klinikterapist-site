@@ -309,9 +309,10 @@ export interface Api {
   /** Sends the owner's (edited) e-mail with the link to the client's address. */
   clientLinkMail(input: { id: string; subject: string; body: string }): Promise<void>;
   /** Whether the site takes bookings, and how many people wait to hear of a free time. */
-  bookingState(): Promise<{ open: boolean; waiting: number }>;
+  /** Randevu alımı per language, and how many people wait on the "Haber et" list. */
+  bookingState(): Promise<{ open: { tr: boolean; en: boolean }; waiting: number }>;
   /** Randevu alımını kapat / aç: closed, the site says every session is taken and offers "Haber et". */
-  bookingSetOpen(open: boolean): Promise<void>;
+  bookingSetOpen(open: boolean, lang: 'tr' | 'en'): Promise<void>;
   /** Randevu ekle: an approved request with the person's details and the time confirmed. */
   requestAdd(input: ManualAppointment): Promise<{ request: BookingRequest }>;
   waitlistList(): Promise<{ entries: WaitlistEntry[] }>;

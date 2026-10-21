@@ -8,6 +8,7 @@ import type { Lang } from '../lib/settings';
 import { getProfile } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
 import { bookPath } from '../lib/booking-entry';
+import { bookingClosed } from '../lib/booking-intake';
 import { t, type UiKey } from '../i18n/ui';
 import SunMark from './brand/SunMark.astro';
 import ThemeToggle from './ThemeToggle.astro';
@@ -56,7 +57,15 @@ const items = NAV.map(([href, label]) => {
     <div class="tools">
       <ThemeToggle lang={lang} variant="segmented" />
       <LangSwitch lang={lang} alternatePaths={alternatePaths} />
-      <a class="btn book" href={bookPath(lang)}>{t(lang, 'bookSession')}</a>
+      {
+        bookingClosed(lang) ? (
+          <a class="book is-closed" href={bookPath(lang)} aria-label={`${t(lang, 'bookSession')}: ${t(lang, 'bookingClosed')}`} title={t(lang, 'bookingClosed')}>
+            {t(lang, 'bookSession')}
+          </a>
+        ) : (
+          <a class="btn book" href={bookPath(lang)}>{t(lang, 'bookSession')}</a>
+        )
+      }
     </div>
   </div>
 </header>
@@ -166,6 +175,19 @@ const items = NAV.map(([href, label]) => {
 
   .book {
     padding-inline: 18px;
+  }
+
+  /* Booking closed in this language (Ayarlar › Önemli Ayarlar): muted, still a link to the page that says so. */
+  .book.is-closed {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    border: 1.5px dashed color-mix(in srgb, var(--muted) 60%, transparent);
+    border-radius: var(--radius-pill);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
   }
 
   /* Tablets: the menu takes its own row under the brand and tools. */

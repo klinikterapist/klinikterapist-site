@@ -1906,3 +1906,61 @@
 .si-client-rate.is-low {
   color: var(--p-tone-kiremit);
 }
+
+/* Önemli Ayarlar (owner's request 2026-10-21): switches that affect every visitor, in a red frame. */
+.danger-zone {
+  display: grid;
+  gap: 12px;
+  max-width: 44rem;
+  padding: 16px 18px;
+  border: 1.5px solid color-mix(in srgb, var(--p-tone-kiremit) 55%, transparent);
+  border-radius: 14px;
+  background: var(--p-surface);
+}
+
+.danger-zone h3 {
+  margin: 0;
+  color: var(--p-heading);
+}
+
+.danger-zone .k-hint {
+  margin: 0;
+}
+
+.danger-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--p-border);
+}
+
+.danger-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.danger-text small {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+}
+
+/* The state on Randevu Talepleri is a link to the switches. */
+a.intake {
+  min-height: 34px;
+  padding: 2px 12px;
+  color: var(--p-text);
+  text-decoration: none;
+}
+
+a.intake:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .danger-row {
+    flex-wrap: wrap;
+  }
+}

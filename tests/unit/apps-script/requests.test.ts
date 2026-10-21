@@ -22,7 +22,7 @@ function setup(aliases: string[] = []) {
   const send = (p: Record<string, unknown>) =>
     handle(gas, JSON.stringify({ action: 'booking.request', name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: 'Not', consent: true, lang: 'tr', ...p }));
   const requests = () => call<{ requests: { id: string; status: string; name?: string }[] }>('requests.list').data.requests;
-  return { gas, call, send, requests };
+  return { gas, gh, call, send, requests };
 }
 
 const session = { kind: 'session', type: 'couple', day: '2026-10-22', time: '19:20' };
@@ -307,7 +307,7 @@ describe('Randevu ekle, e-mail check, sessions, closing booking and "Haber et" (
     expect(s.gas.mails[1].body).toContain('bekleme listeme aldım');
     expect(s.gas.root.findFolder('randevular')!.findFile('bekleme.json')!.read()).not.toContain('Elif');
     const list = () => s.call<{ entries: { id: string; offeredAt?: number; verified?: boolean }[] }>('waitlist.list').data.entries;
-    expect(s.call<{ open: boolean; waiting: number }>('booking.state').data).toEqual({ open: false, waiting: 1 });
+    expect(s.call<{ open: { tr: boolean; en: boolean }; waiting: number }>('booking.state').data).toEqual({ open: { tr: false, en: false }, waiting: 1 });
     handle(s.gas, JSON.stringify({ action: 'booking.verify', code: codeIn(s.gas.mails[1].body) }));
     expect(list()[0].verified).toBe(true);
     const wid = list()[0].id;
@@ -542,6 +542,48 @@ describe('closing booking: the codes the pages read (owner’s decisions 2026-10
     s.call('booking.setOpen', { open: false });
     expect(s.send(session)).toMatchObject({ ok: false, data: { reason: 'closed' } });
     expect(handle(s.gas, JSON.stringify(join)).ok).toBe(true);
+  });
+});
+
+describe('Randevu alımı per language (Ayarlar › Önemli ayarlar)', () => {
+  const intake = (s: ReturnType<typeof setup>) => JSON.parse(s.gh.text('src/data/booking.json')!).intake;
+
+  it('starts with Turkish open and English closed, as booking.json says', () => {
+    const s = setup();
+    expect(intake(s)).toEqual({ tr: true, en: false });
+    expect(s.call('booking.state').data).toEqual({ open: { tr: true, en: false }, waiting: 0 });
+    expect(bookingBusy(s.gas, 'tr').closed).toBe(false);
+    expect(bookingBusy(s.gas, 'en').closed).toBe(true);
+    expect(s.send({ ...session, lang: 'en' })).toMatchObject({ ok: false, data: { reason: 'closed' } });
+    expect(s.send(session).ok).toBe(true);
+  });
+
+  it('the switch writes booking.json and takes effect at once, for its own language only', () => {
+    const s = setup();
+    expect(s.call('booking.setOpen', { open: true, lang: 'en' }).ok).toBe(true);
+    expect(intake(s)).toEqual({ tr: true, en: true });
+    expect(s.gh.commits.at(-1)!.message.split('\n')[0]).toBe('İngilizce randevu alımı açıldı');
+    expect(s.send({ ...session, lang: 'en' }).ok).toBe(true);
+    expect(s.call('booking.setOpen', { open: false, lang: 'tr' }).ok).toBe(true);
+    expect(intake(s)).toEqual({ tr: false, en: true });
+    expect(bookingBusy(s.gas, 'tr').closed).toBe(true);
+    expect(bookingBusy(s.gas, 'en').closed).toBe(false);
+    expect(s.send({ ...session, time: '13:30' })).toMatchObject({ ok: false, data: { reason: 'closed' } });
+    // The rest of the file is kept as it was.
+    const { intake: _, ...rest } = JSON.parse(s.gh.text('src/data/booking.json')!);
+    const { intake: __, ...before } = JSON.parse(readFileSync('src/data/booking.json', 'utf8'));
+    expect(rest).toEqual(before);
+  });
+
+  it('"Haber et" follows the language of its page; a switch to the same state writes nothing', () => {
+    const s = setup();
+    const join = { action: 'booking.waitlist', name: 'Elif Bekler', email: 'elif@example.com', phone: '0534 000 00 00', kinds: ['individual'], times: [], reason: '', consent: true };
+    expect(handle(s.gas, JSON.stringify({ ...join, lang: 'en' })).ok).toBe(true);
+    expect(handle(s.gas, JSON.stringify({ ...join, lang: 'tr' }))).toMatchObject({ ok: false, data: { reason: 'open' } });
+    const commits = s.gh.commits.length;
+    expect(s.call('booking.setOpen', { open: true, lang: 'tr' }).ok).toBe(true);
+    expect(s.gh.commits.length).toBe(commits);
+    expect(s.call('booking.setOpen', { open: true, lang: 'de' })).toMatchObject({ ok: false, error: { code: 'bad_request' } });
   });
 });
 

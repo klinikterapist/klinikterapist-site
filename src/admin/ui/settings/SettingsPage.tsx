@@ -9,6 +9,7 @@ import { IletisimScreen, ProfilScreen, SeoScreen } from './screens/simple';
 import { GizlilikScreen } from './screens/privacy';
 import { GorunumScreen } from './screens/appearance';
 import { EpostaScreen } from './screens/mail';
+import { OnemliScreen } from './screens/important';
 
 const SCREENS: Record<string, ComponentType> = {
   profil: ProfilScreen,
@@ -24,6 +25,7 @@ const SCREENS: Record<string, ComponentType> = {
   eposta: EpostaScreen,
   gorunum: GorunumScreen,
   yasal: YasalScreen,
+  onemli: OnemliScreen,
 };
 
 export function SettingsPage({ screen }: { screen: string }) {

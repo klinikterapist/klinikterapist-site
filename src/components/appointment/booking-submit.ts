@@ -17,7 +17,7 @@
  *   (`closed` in `booking.busy`) it is all the page shows
  *   [data-verify-note] where the result of an e-mail check link (`?dogrula=…`) is shown
  */
-import { PREVIEW_CLOSED_KEY, closedOn, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
+import { closedOn, intakeOpen, previewClosedKey, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
 import { sameEmail } from '../../lib/email-check';
 import { mountEmailGuard } from './email-guard';
 import { mountWaitlist } from './waitlist-submit';
@@ -56,7 +56,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   const details = root.querySelector<HTMLElement>('[data-step="3"]');
   if (details) mountEmailGuard(details, lang);
 
-  /** Booking closed in the panel: the page says every session is taken and offers "Haber et". */
+  /** Booking closed in the panel (in this language): the page says so and offers "Haber et". */
   let closed = false;
   const close = () => {
     if (closed) return;
@@ -93,20 +93,23 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   };
   void verify();
 
-  // Dev server only: the panel's trial mode closed booking (PREVIEW_CLOSED_KEY).
+  // Closed when the site was built (booking.json `intake`); on the dev server the panel's trial mode
+  // may say otherwise (previewClosedKey: '1' closed, '0' open).
+  let preview: string | null = null;
   if (root.dataset.preview === '1') {
     try {
-      if (localStorage.getItem(PREVIEW_CLOSED_KEY) === '1') close();
+      preview = localStorage.getItem(previewClosedKey(lang));
     } catch {
       /* no storage */
     }
   }
+  if (preview === '1' || (preview !== '0' && !intakeOpen(cfg, lang))) close();
 
   /** Reads the taken times; a failure leaves the calendar as booking.json alone (the backend checks again). */
   const loadBusy = async () => {
     if (!endpoint) return;
     try {
-      const res = await deps.fetch(`${endpoint}?action=booking.busy`, { credentials: 'omit' });
+      const res = await deps.fetch(`${endpoint}?action=booking.busy&lang=${lang}`, { credentials: 'omit' });
       const out = (await res.json()) as { ok?: boolean; data?: { busy?: BusyInterval[]; closed?: boolean } };
       if (out?.ok && out.data?.closed === true) close();
       if (out?.ok && Array.isArray(out.data?.busy)) {

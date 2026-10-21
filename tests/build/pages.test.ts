@@ -69,7 +69,10 @@ describe('static pages', () => {
   it('home has one top booking CTA', () => {
     expect(loadPage('/').querySelectorAll('#top-cta').length).toBe(1);
     expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
-    expect(loadPage('/en/').querySelector('#top-cta')?.getAttribute('href')).toBeUndefined();
+    // English booking closed (booking.json intake): the button still leads to the page that says so.
+    expect(loadPage('/en/').querySelector('#top-cta')?.getAttribute('href')).toBe('/en/appointment/');
+    expect(loadPage('/en/appointment/').querySelector('.lead')?.text).toBe('Booking is closed at the moment. You can reach me by e-mail.');
+    expect(loadPage('/randevu/').querySelector('.lead')?.text).toContain('çok yakında');
   });
 
   it('home has the hreflang trio and Person + ProfessionalService JSON-LD', () => {
@@ -255,7 +258,7 @@ describe('page shell (every page but home)', () => {
     expect(pages.filter(isPost).length).toBeGreaterThan(0);
   });
 
-  it.each(pages)('%s has one phone top bar, the desktop header, one page end and an always-on sticky CTA (none on the client page)', (p) => {
+  it.each(pages)('%s has one phone top bar, the desktop header, one page end and an always-on sticky CTA (none on the client page or while booking is closed)', (p) => {
     const d = loadPage(p);
     const lang = langOf(p);
     const bars = d.querySelectorAll('.page-top .top-bar');
@@ -280,6 +283,13 @@ describe('page shell (every page but home)', () => {
 
     // The client's own page is for people already in therapy: no "Randevu Al" bar (checked below).
     if (NO_CTA.includes(p)) return;
+    // English booking closed (booking.json intake): no bar, and the header's button is muted.
+    if (lang === 'en') {
+      expect(d.querySelector('.sticky-cta')).toBeNull();
+      expect(d.querySelector('header.site-header a.book.is-closed')?.getAttribute('aria-label')).toBe('Book a Session: Bookings closed');
+      return;
+    }
+    expect(d.querySelector('header.site-header a.btn.book')).toBeTruthy();
     const sticky = d.querySelectorAll('.sticky-cta');
     expect(sticky).toHaveLength(1);
     expect(sticky[0].getAttribute('data-mode')).toBe('always');

@@ -26,7 +26,8 @@ import { portraitStyle } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { personLd, professionalServiceLd } from '../lib/jsonld';
 import { pathFor, postPath } from '../i18n/routes';
-import { bookPath, bookingLive, bookingSoon } from '../lib/booking-entry';
+import { bookPath, bookingLive } from '../lib/booking-entry';
+import { bookingClosed } from '../lib/booking-intake';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -94,12 +95,12 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
       </div>
       {intro && <p class="intro">{intro}</p>}
       {
-        bookingSoon(lang) ? (
-          <p id="top-cta" class="top-cta is-soon">
+        bookingClosed(lang) ? (
+          <a id="top-cta" class="top-cta is-closed" href={bookPath(lang)}>
             <Icon name="booking" size={20} />
             {t(lang, 'bookSession')}
-            <span class="soon">{t(lang, 'comingSoon')}</span>
-          </p>
+            <span class="closed-badge">{t(lang, 'bookingClosed')}</span>
+          </a>
         ) : (
           <a id="top-cta" class="top-cta" href={bookPath(lang)}>
             <Icon name="booking" size={20} />
@@ -216,7 +217,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     }
   </div>
 
-  {!bookingSoon(lang) && <StickyCta mode="afterTopCta" href={bookPath(lang)} label={t(lang, 'bookSession')} />}
+  {!bookingClosed(lang) && <StickyCta mode="afterTopCta" href={bookPath(lang)} label={t(lang, 'bookSession')} />}
 </BaseLayout>
 
 <style>
@@ -303,21 +304,20 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     color: var(--btn-text);
   }
 
-  /* Not offered yet in this language: muted, not a link, with a "Coming soon" badge. */
-  .top-cta.is-soon,
-  .top-cta.is-soon:hover {
-    margin: 0;
+  /* Booking closed in this language (bookingClosed): muted, with a "Randevu alımına kapalı" badge;
+     still a link, to the booking page that says so and offers "Haber et". */
+  .top-cta.is-closed,
+  .top-cta.is-closed:hover {
     border: 1.5px dashed color-mix(in srgb, var(--muted) 60%, transparent);
     background: transparent;
     color: var(--muted);
-    cursor: default;
   }
 
-  .soon {
+  .closed-badge {
     padding: 2px 10px;
     border-radius: var(--radius-pill);
-    background: var(--sun-disc);
-    color: #1f2e4a;
+    background: var(--tone-kiremit-bg);
+    color: var(--tone-kiremit);
     font-size: 0.75rem;
     font-weight: 700;
   }

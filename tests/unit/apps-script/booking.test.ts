@@ -9,7 +9,9 @@ import { ghProps } from './publish-fixtures';
 const NOW = Date.parse('2026-10-20T10:00:00+03:00');
 
 function setup(props: Record<string, string> = { OWNER_EMAIL: 'merhaba@klinikterapist.com' }) {
-  const gh = new FakeGitHub({ 'src/data/booking.json': readFileSync('src/data/booking.json', 'utf8') });
+  // English booking open too, so the English acknowledgement can be checked (it starts closed).
+  const booking = { ...JSON.parse(readFileSync('src/data/booking.json', 'utf8')), intake: { tr: true, en: true } };
+  const gh = new FakeGitHub({ 'src/data/booking.json': JSON.stringify(booking) });
   const gas = fakeGas({ props: { ...ghProps, ...props }, routes: [gh.route], now: NOW });
   const send = (p: Record<string, unknown>) => handle(gas, JSON.stringify({ action: 'booking.request', ...p }));
   return { gas, gh, send };

@@ -1,8 +1,9 @@
 /**
  * "Randevu alımını kapat" and "Haber et" (owner's request 2026-10-20).
  *
- * Closed (`booking.closed` in the script's properties): the site's booking and intro-call pages say
- * every session is taken and show the "Haber et" form instead; `booking.request` is refused. The
+ * Closed (booking.json `intake`, per language; booking.ts `setOpen`): the site's booking and
+ * intro-call pages of that language say booking is closed and show the "Haber et" form instead;
+ * `booking.request` is refused. The
  * form (`booking.waitlist`, public) puts the person on a list in the owner's Drive
  * (`randevular/bekleme.json`, sealed), kept apart from requests, at most 90 days. The owner gets an
  * e-mail; the person gets a fixed acknowledgement with the e-mail check link. From the panel the
@@ -19,23 +20,13 @@ import { assertMailDomain } from './mx';
 import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS, validateWaitlist, type WaitlistInput } from '../../src/lib/waitlist-form';
 import { PANEL_URL, oneLine, str } from './text';
 import { asSender, notifyTo } from './mailboxes';
+import { isClosed } from './booking';
 
 const FILE = 'bekleme.json';
-const CLOSED = 'booking.closed';
 const KEEP_MS = WAITLIST_KEEP_DAYS * 24 * 3600 * 1000;
 const NOT_FOUND = 'Bu kişi listede bulunamadı. Başka bir yerde listeden çıkarılmış olabilir.';
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TOO_MANY = 'Şu anda çok fazla talep gönderildi. Lütfen daha sonra tekrar deneyin ya da doğrudan e-posta gönderin.';
-
-export const isClosed = (gas: Gas) => gas.props.get(CLOSED) === '1';
-
-export function setOpen(gas: Gas, p: Record<string, unknown>): Record<string, never> {
-  if (typeof p.open !== 'boolean') throw badRequest();
-  if (p.open) gas.props.del(CLOSED);
-  else gas.props.set(CLOSED, '1');
-  gas.cache.put('booking.busy', '', 1);
-  return {};
-}
 
 function live(gas: Gas): WaitlistEntry[] {
   const now = gas.now();
@@ -46,7 +37,8 @@ function live(gas: Gas): WaitlistEntry[] {
 }
 
 // Under the lock: dropping the old entries writes the file, and someone may be joining the list.
-export const bookingState = (gas: Gas) => gas.withLock(() => ({ open: !isClosed(gas), waiting: live(gas).length }));
+export const bookingState = (gas: Gas) =>
+  gas.withLock(() => ({ open: { tr: !isClosed(gas, 'tr'), en: !isClosed(gas, 'en') }, waiting: live(gas).length }));
 
 export const listWaitlist = (gas: Gas) => gas.withLock(() => ({ entries: live(gas).sort((a, b) => a.createdAt - b.createdAt) }));
 
@@ -65,7 +57,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
   if (str(p[HONEYPOT]).trim()) return { sent: true };
   // The list is for when booking is closed (owner's decision 2026-10-20): while it is open, the
   // calendar is the way in.
-  if (!isClosed(gas)) throw new ApiError('bad_request', OPEN, { reason: 'open' });
+  if (!isClosed(gas, p.lang === 'en' ? 'en' : 'tr')) throw new ApiError('bad_request', OPEN, { reason: 'open' });
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw new ApiError('internal', 'Form henüz kurulmadı. Lütfen doğrudan e-posta gönderin.');
   const input: WaitlistInput = {

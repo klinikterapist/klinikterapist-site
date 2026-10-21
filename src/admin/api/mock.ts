@@ -5,7 +5,7 @@
  */
 import { ApiFailure, type Api, type BookingRequest, type CalendarEntry, type Client, type PanelEvent, type PanelEventKind, type MailSettings, type MailboxKey, type WaitlistEntry, type CommitDelete, type CommitWrite, type Draft, type Encoding, type SiteStatus } from './types';
 import type { StatsSummary } from '../../lib/stats-wire';
-import { INTRO_MINUTES, PREVIEW_CLOSED_KEY, clientNumber, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
+import { INTRO_MINUTES, clientNumber, intakeOpen, previewClosedKey, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
 import { EMPTY_PAYMENT, parsePayment, type PaymentSettings } from '../../lib/payment';
@@ -55,7 +55,7 @@ export type MockState = {
   /** E-mails the owner sent from Randevu talepleri and Seans takip. */
   sent: { to: string; subject: string; body: string }[];
   /** Randevu alımı açık mı. */
-  open: boolean;
+  open: { tr: boolean; en: boolean };
   /** "Haber et" list. */
   waitlist: WaitlistEntry[];
   /** Each client's link version ("Bağlantıyı yenile"). */
@@ -80,13 +80,25 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: true, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [], mailboxes: { notify: '', booking: '', info: '' } };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: { tr: true, en: false }, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [], mailboxes: { notify: '', booking: '', info: '' } };
   let clientSeq = 0;
-  if (opts.demoRequests) {
+  const bookingFile = files.get('src/data/booking.json');
+  if (bookingFile) {
     try {
-      state.open = localStorage.getItem(PREVIEW_CLOSED_KEY) !== '1';
+      const cfg = JSON.parse(bookingFile.content) as { intake?: { tr: boolean; en: boolean } };
+      state.open = { tr: intakeOpen(cfg, 'tr'), en: intakeOpen(cfg, 'en') };
     } catch {
-      /* no storage: open */
+      /* keep the defaults */
+    }
+  }
+  if (opts.demoRequests) {
+    for (const lang of ['tr', 'en'] as const) {
+      try {
+        const v = localStorage.getItem(previewClosedKey(lang));
+        if (v === '1' || v === '0') state.open[lang] = v === '0';
+      } catch {
+        /* no storage */
+      }
     }
     const now = (opts.now ?? Date.now)();
     const requests = demoRequests(now);
@@ -477,14 +489,14 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         mail(c.contact.email, subject, body);
       }),
     bookingState: () => wait(() => ({ open: state.open, waiting: state.waitlist.length })),
-    bookingSetOpen: (open) =>
+    bookingSetOpen: (open, lang) =>
       wait(() => {
-        state.open = open;
-        // The trial mode tells the booking pages on the dev server (PREVIEW_CLOSED_KEY).
+        state.open = { ...state.open, [lang]: open };
+        // The trial mode tells the booking pages on the dev server (previewClosedKey); the site's
+        // buttons keep following booking.json on disk.
         if (opts.demoRequests) {
           try {
-            if (open) localStorage.removeItem(PREVIEW_CLOSED_KEY);
-            else localStorage.setItem(PREVIEW_CLOSED_KEY, '1');
+            localStorage.setItem(previewClosedKey(lang), open ? '0' : '1');
           } catch {
             /* no storage */
           }

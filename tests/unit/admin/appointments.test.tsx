@@ -7,6 +7,7 @@ import { ClientPage } from '../../../src/admin/ui/appointments/ClientPage';
 import { ProfilePage } from '../../../src/admin/ui/appointments/ProfilePage';
 import { NotificationsPage } from '../../../src/admin/ui/appointments/NotificationsPage';
 import { MailboxesCard } from '../../../src/admin/ui/appointments/MailboxesCard';
+import { OnemliScreen } from '../../../src/admin/ui/settings/screens/important';
 import { templateTimes } from '../../../src/admin/ui/appointments/AppointmentCalendar';
 import { Panel, parseRoute } from '../../../src/admin/ui/context';
 import { createMockApi } from '../../../src/admin/api/mock';
@@ -33,7 +34,7 @@ const client = (c: Partial<Client> = {}): Client => ({
   contact: { name: 'Osman Güneş Özkurt', email: 'osman@example.com', lang: 'tr' }, ...c,
 });
 
-function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'mailboxes' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
+function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'mailboxes' | 'important' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
   const api = createMockApi({ seed: {} });
   api.state.requests.push(...requests.map((r) => ({ ...r })));
   api.state.calendar.push(
@@ -42,7 +43,7 @@ function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'ma
   api.state.clients.push(...clients);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
-      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : <ClientPage id={page.slice(7)} />}
+      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : page === 'important' ? <OnemliScreen /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );
   return { api };
@@ -289,14 +290,27 @@ describe('Randevu ekle, randevu alımı, bekleme listesi (owner’s review 2026-
     expect(api.state.calendar.some((e) => e.status === 'confirmed')).toBe(true);
   });
 
-  it('Randevu alımını kapat asks first, then the site shows "Haber et"; it opens again in one click', async () => {
-    const { api } = setup('requests', []);
-    fireEvent.click(await screen.findByRole('button', { name: 'Randevu alımını kapat' }));
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Randevu alımı kapatılsın mı?' })).getByRole('button', { name: 'Randevu alımını kapat' }));
-    await waitFor(() => expect(api.state.open).toBe(false));
-    expect(await screen.findByText('Randevu alımı kapalı')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Randevu alımını aç' }));
-    await waitFor(() => expect(api.state.open).toBe(true));
+  it('Önemli Ayarlar: each language closes and opens on its own, after asking; Randevu Talepleri shows the state', async () => {
+    const { api } = setup('important', []);
+    const tr = (await screen.findByText('Türkçe randevu alımı')).closest('.danger-row') as HTMLElement;
+    const en = screen.getByText('İngilizce randevu alımı').closest('.danger-row') as HTMLElement;
+    expect(en.textContent).toContain('Kapalı');
+    fireEvent.click(within(tr).getByRole('button', { name: 'Kapat' }));
+    const dialog = screen.getByRole('dialog', { name: 'Türkçe randevu alımı kapatılsın mı?' });
+    expect(dialog.textContent).toContain('Gelmiş talepler, onaylı randevular');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Randevu alımını kapat' }));
+    await waitFor(() => expect(api.state.open).toEqual({ tr: false, en: false }));
+    expect(await screen.findByText(/Türkçe randevu alımı kapatıldı/)).toBeTruthy();
+    fireEvent.click(within(en).getByRole('button', { name: 'Aç' }));
+    fireEvent.click(within(screen.getByRole('dialog', { name: 'İngilizce randevu alımı açılsın mı?' })).getByRole('button', { name: 'Randevu alımını aç' }));
+    await waitFor(() => expect(api.state.open).toEqual({ tr: false, en: true }));
+  });
+
+  it('Randevu Talepleri: the state of both languages, as a link to Önemli Ayarlar', async () => {
+    setup('requests', []);
+    const link = await screen.findByRole('link', { name: 'Randevu alımı: Türkçe açık · İngilizce kapalı' });
+    expect(link.getAttribute('href')).toBe('#/ayarlar/onemli');
+    expect(screen.queryByRole('button', { name: 'Randevu alımını kapat' })).toBeNull();
   });
 
   it('Bekleme listesi: offer a time with a ready e-mail, then take someone off the list', async () => {

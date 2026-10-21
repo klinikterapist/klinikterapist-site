@@ -2,8 +2,8 @@
  * Randevu talepleri (owner's design 2026-10-20): requests from the site's booking and intro-call
  * forms, beside the appointment calendar.
  *   - Top right: "Randevu ekle" (an appointment given by phone or e-mail, with the person's name and
- *     e-mail) and "Randevu alımını kapat / aç" (closed, the site says every session is taken and
- *     offers "Haber et").
+ *     e-mail) and the state of Randevu alımı per language, a link to Ayarlar › Önemli Ayarlar where it
+ *     is opened and closed (owner's request 2026-10-21; closed, the site offers "Haber et").
  *   - Aktif talepler (owner's review a5): Onayla / Uygun değilim / İptal et open the ready, personal e-mail for editing.
  *   - Onaylanan: "Seans takibe geçir" (a booking keeps its weekday and time, an intro call asks),
  *     or "Geri al" when the approval went by mistake.
@@ -175,8 +175,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
   const [sending, setSending] = useState<Sending | null>(null);
   const [moving, setMoving] = useState<{ r: BookingRequest; weekday: number; time: string; since: string } | null>(null);
   const [adding, setAdding] = useState<{ initial: AddInitial; from?: WaitlistEntry } | null>(add ? { initial: { day: add.day, time: add.time, kind: add.type } } : null);
-  const [booking, setBooking] = useState<{ open: boolean; waiting: number } | null>(null);
-  const [closing, setClosing] = useState(false);
+  const [booking, setBooking] = useState<{ open: { tr: boolean; en: boolean }; waiting: number } | null>(null);
   // The fee and payment details go into a session's approval e-mail (Faz 1).
   const [payment, setPayment] = useState<PaymentSettings | undefined>(undefined);
   useEffect(() => {
@@ -275,25 +274,6 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
     }
   };
 
-  const setOpen = async (open: boolean) => {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.bookingSetOpen(open);
-      setClosing(false);
-      setNotice({
-        text: open
-          ? `Randevu alımı açıldı; sitede takvim yeniden görünüyor.${booking?.waiting ? ` Bekleme listesinde ${booking.waiting} kişi var: "Bekleme listesi"nden onlara haber verebilirsiniz.` : ''}`
-          : 'Randevu alımı kapatıldı. Sitede "Şu an tüm seanslar dolu" yazıyor ve "Haber et" formu görünüyor.',
-      });
-      reload();
-    } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Değiştirilemedi. Tekrar deneyin.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const pending = (requests ?? []).filter((r) => r.status === 'pending');
   const approved = (requests ?? []).filter((r) => r.status === 'approved');
   const shown = view === 'pending' ? pending : approved;
@@ -308,19 +288,11 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
         </h2>
         <div className="head-actions">
           {booking && (
-            <span className={`intake ${booking.open ? 'is-open' : 'is-closed'}`}>
+            // Opened and closed in Ayarlar › Önemli Ayarlar, per language (owner's request 2026-10-21).
+            <a className={`intake ${booking.open.tr ? 'is-open' : 'is-closed'}`} href="#/ayarlar/onemli">
               <span className="intake-dot" aria-hidden="true" />
-              {booking.open ? 'Randevu alımı açık' : 'Randevu alımı kapalı'}
-              {booking.open ? (
-                <Button variant="ghost" onClick={() => setClosing(true)}>
-                  Randevu alımını kapat
-                </Button>
-              ) : (
-                <Button variant="ghost" busy={busy} onClick={() => setOpen(true)}>
-                  Randevu alımını aç
-                </Button>
-              )}
-            </span>
+              {`Randevu alımı: Türkçe ${booking.open.tr ? 'açık' : 'kapalı'} · İngilizce ${booking.open.en ? 'açık' : 'kapalı'}`}
+            </a>
           )}
           <Button variant="primary" onClick={() => setAdding({ initial: {} })}>
             <Icon as={Plus} />
@@ -332,8 +304,10 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
         Siteden gelen randevu ve ön görüşme talepleri. Kararınızı verdiğinizde kişiye hazır bir e-posta gider. Reddedilen ve iptal edilen taleplerin bilgileri hemen silinir. Hiçbir
         talep {KEEP_DAYS} günden uzun tutulmaz.
       </p>
-      {booking && !booking.open && (
-        <Banner tone="warning">Randevu alımı kapalı: sitede randevu ve ön görüşme sayfalarında "Şu an tüm seanslar dolu" yazıyor ve "Haber et" formu görünüyor.</Banner>
+      {booking && !booking.open.tr && (
+        <Banner tone="warning" action={<a href="#/ayarlar/onemli">Önemli Ayarlar →</a>}>
+          Türkçe randevu alımı kapalı: sitede randevu ve ön görüşme sayfalarında "Randevu alımı şu an kapalı" yazıyor ve "Haber et" formu görünüyor.
+        </Banner>
       )}
 
       <div className="appt-layout">
@@ -482,27 +456,6 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
             reload();
           }}
         />
-      )}
-
-      {closing && (
-        <Dialog
-          title="Randevu alımı kapatılsın mı?"
-          history
-          onClose={() => !busy && setClosing(false)}
-          actions={
-            <>
-              <Button onClick={() => setClosing(false)} disabled={busy}>
-                Vazgeç
-              </Button>
-              <Button variant="danger" busy={busy} onClick={() => setOpen(false)}>
-                Randevu alımını kapat
-              </Button>
-            </>
-          }
-        >
-          <p>Sitede randevu ve ön görüşme sayfalarında takvim kalkar; yerine "Şu an tüm seanslar dolu" yazısı ve "Haber et" formu gelir.</p>
-          <p>Formu dolduranlar "Bekleme listesi"nde görünür; boşalan bir saat olduğunda onlara buradan yazarsınız. Gelmiş talepler ve randevular olduğu gibi kalır.</p>
-        </Dialog>
       )}
 
       {moving && (

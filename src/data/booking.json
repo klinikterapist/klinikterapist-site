@@ -183,5 +183,9 @@
       "date": "2027-10-29",
       "name": "Cumhuriyet Bayramı"
     }
-  ]
+  ],
+  "intake": {
+    "tr": true,
+    "en": false
+  }
 }
