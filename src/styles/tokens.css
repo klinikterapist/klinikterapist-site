@@ -27,6 +27,20 @@ html[data-theme="light"] {
   --mark-bg: #FCD873;      /* <mark> in post text */
   --mark-text: #2A2420;
 
+  /* Tones (the panel's six, src/admin/ui/tones.css): a text colour and a soft background each. */
+  --tone-lacivert: #1F2E4A;
+  --tone-gunes: #8A5D00;
+  --tone-adacayi: #3F6448;
+  --tone-kiremit: #9A4A33;
+  --tone-lavanta: #55548F;
+  --tone-deniz: #24605F;
+  --tone-lacivert-bg: #E3E7EF;
+  --tone-gunes-bg: #FBEBC2;
+  --tone-adacayi-bg: #DDEBDF;
+  --tone-kiremit-bg: #F5DDD3;
+  --tone-lavanta-bg: #E6E5F3;
+  --tone-deniz-bg: #D6ECEA;
+
   /* Type */
   --font-serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
   --font-sans: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -97,6 +111,18 @@ html[data-theme="light"] {
     --focus: #FCD873;
     --mark-bg: #FCD873;
     --mark-text: #1F2E4A;
+    --tone-lacivert: #C9D6EE;
+    --tone-gunes: #FCD873;
+    --tone-adacayi: #9CCAA8;
+    --tone-kiremit: #F0A88E;
+    --tone-lavanta: #BFC0F0;
+    --tone-deniz: #8ED3CF;
+    --tone-lacivert-bg: #2C3E62;
+    --tone-gunes-bg: #4A3F1C;
+    --tone-adacayi-bg: #24433A;
+    --tone-kiremit-bg: #4B2E2A;
+    --tone-lavanta-bg: #33355E;
+    --tone-deniz-bg: #1E4447;
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 4px 16px rgb(0 0 0 / 0.3);
   }
 }
@@ -122,5 +148,17 @@ html[data-theme="dark"] {
   --focus: #FCD873;
   --mark-bg: #FCD873;
   --mark-text: #1F2E4A;
+  --tone-lacivert: #C9D6EE;
+  --tone-gunes: #FCD873;
+  --tone-adacayi: #9CCAA8;
+  --tone-kiremit: #F0A88E;
+  --tone-lavanta: #BFC0F0;
+  --tone-deniz: #8ED3CF;
+  --tone-lacivert-bg: #2C3E62;
+  --tone-gunes-bg: #4A3F1C;
+  --tone-adacayi-bg: #24433A;
+  --tone-kiremit-bg: #4B2E2A;
+  --tone-lavanta-bg: #33355E;
+  --tone-deniz-bg: #1E4447;
   --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.25), 0 4px 16px rgb(0 0 0 / 0.3);
 }

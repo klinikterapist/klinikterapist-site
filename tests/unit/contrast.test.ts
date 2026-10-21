@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { contrastRatio } from '../../src/lib/contrast';
-import { PALETTE, type ThemeName } from '../../src/lib/palette';
+import { PALETTE, TONES, type ThemeName } from '../../src/lib/palette';
 
 const css = readFileSync('src/styles/tokens.css', 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -56,6 +56,30 @@ describe.each(themes)('%s theme contrast (WCAG AA)', (theme) => {
   it('focus ring and drop cap are visible on the background', () => {
     expect(contrastRatio(p.focus, p.bg)).toBeGreaterThanOrEqual(3);
     expect(contrastRatio(p.dropcap, p.bg)).toBeGreaterThanOrEqual(3);
+  });
+  it('every tone reads as text on its soft background, on the page and on a card', () => {
+    for (const tone of TONES) {
+      const fg = p[`tone-${tone}`];
+      expect(contrastRatio(fg, p[`tone-${tone}-bg`]), `${tone}/${tone}-bg`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(fg, p.bg), `${tone}/bg`).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(fg, p.surface), `${tone}/surface`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
+
+describe('tones match the panel (src/admin/ui/tones.css)', () => {
+  const panel = readFileSync('src/admin/ui/tones.css', 'utf8');
+  const value = (scope: RegExp, name: string) => {
+    const body = scope.exec(panel)![1];
+    return new RegExp(`--p-${name}:\\s*([^;]+);`).exec(body)?.[1].trim().toLowerCase();
+  };
+  it.each(themes)('%s', (theme) => {
+    const scope = theme === 'day' ? /:root\s*\{([^}]*)\}/ : /html\[data-theme='dark'\]\s*\{([^}]*)\}/;
+    for (const tone of TONES) {
+      for (const key of [`tone-${tone}`, `tone-${tone}-bg`]) {
+        expect(PALETTE[theme][key].toLowerCase(), key).toBe(value(scope, key));
+      }
+    }
   });
 });
 
