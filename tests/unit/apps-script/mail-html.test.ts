@@ -25,8 +25,31 @@ describe('e-mails with the e-mail check link get an HTML part with a button (own
     expect(html).toContain('<a href="https://klinikterapist.com/randevum/#k=x"');
   });
 
-  it('e-mails without the check link stay plain text', () => {
+  it("e-mails without the check link or the signature stay plain text (the owner's notifications)", () => {
     expect(mailHtml('Merhaba,\n\nhttps://klinikterapist.com/admin/#/randevular')).toBeUndefined();
+  });
+
+  it('the signature at the end becomes the logo signature: sun, name, title, online therapy, site, Instagram, wordmark', () => {
+    const html = mailHtml(['Sayın Ayşe,', '', 'Seansınız onaylandı.', '', 'Görüşmek üzere,', 'Osman Güneş Özkurt', 'Klinik Psikolog', 'klinikterapist.com'].join('\n'))!;
+    expect(html).toContain('Görüşmek üzere,');
+    expect(html).toContain('src="https://klinikterapist.com/icons/icon-192.png"');
+    expect(html).toContain('src="https://klinikterapist.com/admin/logo-black.png"');
+    expect(html).toContain('>Osman Güneş Özkurt</');
+    expect(html).toContain('Online terapi');
+    expect(html).toContain('href="https://klinikterapist.com"');
+    expect(html).toContain('href="https://instagram.com/klinikterapist"');
+    // The plain lines are replaced, not repeated.
+    expect(html.split('Klinik Psikolog').length - 1).toBe(1);
+    const en = mailHtml(['Kind regards,', 'Osman Güneş Özkurt', 'Clinical Psychologist', 'klinikterapist.com'].join('\n'))!;
+    expect(en).toContain('Clinical Psychologist');
+    expect(en).toContain('Online therapy');
+  });
+
+  it("the short fixed signature (name and site) gets the same block; English is told by the e-mail's words", () => {
+    const tr = mailHtml(['Merhaba,', '', 'Talebiniz alındı.', '', 'Osman Güneş Özkurt', 'klinikterapist.com'].join('\n'))!;
+    expect(tr).toContain('Klinik Psikolog');
+    const en = mailHtml(['Hello,', '', 'Your request has been received.', '', 'Osman Güneş Özkurt', 'klinikterapist.com'].join('\n'))!;
+    expect(en).toContain('Clinical Psychologist');
   });
 
   it("the visitor's acknowledgement from the site carries the button", () => {
