@@ -69,7 +69,7 @@ describe('static pages', () => {
   it('home has one top booking CTA', () => {
     expect(loadPage('/').querySelectorAll('#top-cta').length).toBe(1);
     expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu/');
-    expect(loadPage('/en/').querySelector('#top-cta')?.getAttribute('href')).toBe('/en/appointment/');
+    expect(loadPage('/en/').querySelector('#top-cta')?.getAttribute('href')).toBeUndefined();
   });
 
   it('home has the hreflang trio and Person + ProfessionalService JSON-LD', () => {

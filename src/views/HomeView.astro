@@ -26,7 +26,7 @@ import { portraitStyle } from '../lib/portrait-image';
 import { pageMeta } from '../lib/seo';
 import { personLd, professionalServiceLd } from '../lib/jsonld';
 import { pathFor, postPath } from '../i18n/routes';
-import { bookPath, bookingLive } from '../lib/booking-entry';
+import { bookPath, bookingLive, bookingSoon } from '../lib/booking-entry';
 import { t } from '../i18n/ui';
 
 interface Props {
@@ -93,10 +93,20 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
         </span>
       </div>
       {intro && <p class="intro">{intro}</p>}
-      <a id="top-cta" class="top-cta" href={bookPath(lang)}>
-        <Icon name="booking" size={20} />
-        {t(lang, 'bookSession')}
-      </a>
+      {
+        bookingSoon(lang) ? (
+          <p id="top-cta" class="top-cta is-soon">
+            <Icon name="booking" size={20} />
+            {t(lang, 'bookSession')}
+            <span class="soon">{t(lang, 'comingSoon')}</span>
+          </p>
+        ) : (
+          <a id="top-cta" class="top-cta" href={bookPath(lang)}>
+            <Icon name="booking" size={20} />
+            {t(lang, 'bookSession')}
+          </a>
+        )
+      }
       {
         /* With the booking start page live, the intro call is offered there (Faz 3). */
         !bookingLive() && (
@@ -206,7 +216,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     }
   </div>
 
-  <StickyCta mode="afterTopCta" href={bookPath(lang)} label={t(lang, 'bookSession')} />
+  {!bookingSoon(lang) && <StickyCta mode="afterTopCta" href={bookPath(lang)} label={t(lang, 'bookSession')} />}
 </BaseLayout>
 
 <style>
@@ -291,6 +301,25 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
   .top-cta:hover {
     background: var(--btn-bg-hover);
     color: var(--btn-text);
+  }
+
+  /* Not offered yet in this language: muted, not a link, with a "Coming soon" badge. */
+  .top-cta.is-soon,
+  .top-cta.is-soon:hover {
+    margin: 0;
+    border: 1.5px dashed color-mix(in srgb, var(--muted) 60%, transparent);
+    background: transparent;
+    color: var(--muted);
+    cursor: default;
+  }
+
+  .soon {
+    padding: 2px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--sun-disc);
+    color: #1f2e4a;
+    font-size: 0.75rem;
+    font-weight: 700;
   }
 
   /* "Ön Görüşme" under "Randevu Al" as a small card (owner's choice J, 2026-10-19). */

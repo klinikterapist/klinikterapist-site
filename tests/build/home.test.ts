@@ -122,16 +122,23 @@ describe('home (phone)', () => {
     const sw = d.querySelector('.home-phone a.lang-switch')!;
     expect(sw.text.trim()).toBe('TR');
     expect(sw.querySelector('svg.flag')).toBeTruthy();
-    expect(d.querySelector('#top-cta')?.getAttribute('href')).toBe('/en/appointment/');
+    // No sessions in English yet (owner, 2026-10-21): "Book a Session" is a "Coming soon" label, not a link.
+    const cta = d.querySelector('#top-cta')!;
+    expect(cta.tagName).toBe('P');
+    expect(cta.getAttribute('href')).toBeUndefined();
+    expect(cta.text).toContain('Coming soon');
+    expect(d.querySelector('.home-desk .is-soon')?.text).toContain('Coming soon');
+    expect(d.querySelector('.home-desk a.book')).toBeNull();
+    expect(d.querySelector('.sticky-cta')).toBeNull();
     expect(d.querySelector('.home-phone .role')?.text).toBe('Psychologist · Online sessions');
     expect(d.textContent).not.toMatch(/undefined|Sosyal medyada/);
   });
 
   it('sticky CTA', () => {
-    for (const d of [tr(), en()]) {
-      expect(d.querySelectorAll('[data-mode="afterTopCta"]')).toHaveLength(1);
-      expect(d.querySelector('[data-mode="always"]')).toBeNull();
-    }
+    expect(tr().querySelectorAll('[data-mode="afterTopCta"]')).toHaveLength(1);
+    expect(tr().querySelector('[data-mode="always"]')).toBeNull();
+    // No booking in English yet: no bottom bar on the English home.
+    expect(en().querySelector('.sticky-cta')).toBeNull();
   });
 });
 

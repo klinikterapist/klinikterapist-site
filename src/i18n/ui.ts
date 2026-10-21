@@ -16,6 +16,7 @@ export const STRINGS = {
   socialLinks: { tr: 'Sosyal bağlantılar', en: 'Social links' },
   skipToContent: { tr: 'İçeriğe geç', en: 'Skip to content' },
   bookSession: { tr: 'Randevu Al', en: 'Book a Session' },
+  comingSoon: { tr: 'Yakında', en: 'Coming soon' },
   switchLangLabel: { tr: 'ENG, English version', en: 'TR, Türkçe sürüm' },
   minRead: { tr: 'dk okuma', en: 'min read' },
   allPosts: { tr: 'Tüm Yazılar', en: 'All Posts' },
