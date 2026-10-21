@@ -18,7 +18,7 @@ import { verifyLines, verifyLink } from './verify';
 import { BOOKING_LIMITS, INTRO_MINUTES, REQUEST_KEEP_DAYS, requestKeepUntil, SESSION_TYPES, clientNumber, formatDay, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
 import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
-import { PANEL_URL, oneLine } from './text';
+import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
 import { asSender, notifyTo } from './mailboxes';
 
@@ -206,7 +206,7 @@ export function sendMail(gas: Gas, to: string, p: Record<string, unknown>): void
   const body = str(p.body, 5000);
   if (!subject || !body) throw badRequest(EMPTY_MAIL);
   const owner = gas.props.get('OWNER_EMAIL')?.trim() ?? '';
-  gas.mail.send({ to, ...asSender(gas, 'booking', owner), subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
+  gas.mail.send({ to, ...asSender(gas, 'booking', owner), subject: subject.replace(/[\r\n]+/g, ' '), body, name: SENDER_NAME });
 }
 
 /** A 24-hour hold for a request put back, when its time is still ahead and free. */
@@ -241,7 +241,7 @@ export function decideRequest(gas: Gas, cfg: BookingConfig, p: Record<string, un
     // nothing has changed and the owner can try again. Before, the calendar changed first: a failed
     // e-mail left the time confirmed and the request waiting, and a second Onayla clashed with it.
     if (decision === 'approve') assertFree(gas, cfg, holdFor(cfg, r.day, r.time, r.kind, r.type));
-    gas.mail.send({ to: r.email, ...asSender(gas, 'booking', owner), subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
+    gas.mail.send({ to: r.email, ...asSender(gas, 'booking', owner), subject: subject.replace(/[\r\n]+/g, ' '), body, name: SENDER_NAME });
     let calendarId: string | undefined;
     if (decision === 'approve') {
       calendarId = addConfirmed(gas, cfg, { day: r.day, time: r.time, kind: r.kind, type: r.type }).entry.id;

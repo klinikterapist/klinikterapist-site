@@ -18,7 +18,7 @@ import { verifyLines, verifyLink } from './verify';
 import { initials, logEvent } from './events';
 import { assertMailDomain } from './mx';
 import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS, validateWaitlist, type WaitlistInput } from '../../src/lib/waitlist-form';
-import { PANEL_URL, oneLine, str } from './text';
+import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { asSender, notifyTo } from './mailboxes';
 import { isClosed } from './booking';
 
@@ -145,7 +145,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
           'klinikterapist.com',
         ]
     ).join('\n'),
-    name: 'Osman Güneş Özkurt',
+    name: SENDER_NAME,
   });
   logEvent(gas, 'waitlist', `Bekleme listesine yeni kayıt: ${initials(input.name)}`, '#/randevular?liste');
   return { sent: true };
@@ -160,7 +160,7 @@ export function mailWaitlist(gas: Gas, p: Record<string, unknown>): Record<strin
     const all = live(gas);
     const e = all.find((x) => x.id === p.id);
     if (!e) throw new ApiError('not_found', NOT_FOUND);
-    gas.mail.send({ to: e.email, ...asSender(gas, 'booking', gas.props.get('OWNER_EMAIL')?.trim() ?? ''), subject: subject.replace(/[\r\n]+/g, ' '), body, name: 'Osman Güneş Özkurt' });
+    gas.mail.send({ to: e.email, ...asSender(gas, 'booking', gas.props.get('OWNER_EMAIL')?.trim() ?? ''), subject: subject.replace(/[\r\n]+/g, ' '), body, name: SENDER_NAME });
     writeItems(gas, FILE, p.remove === true ? all.filter((x) => x.id !== e.id) : all.map((x) => (x.id === e.id ? { ...x, offeredAt: gas.now() } : x)));
     return {};
   });

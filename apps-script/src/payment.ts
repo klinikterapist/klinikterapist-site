@@ -18,7 +18,7 @@ import { ApiError, badRequest } from './respond';
 import { readItems, writeItems } from './store';
 import { CLIENTS, REQUESTS, publicClient, sendMail, type StoredClient } from './requests';
 import { trackLink } from './tracking';
-import { PANEL_URL } from './text';
+import { PANEL_URL, SENDER_NAME } from './text';
 import { logEvent, shortWhen } from './events';
 import { INTRO_MINUTES, formatDay, slotInstant } from '../../src/lib/booking-form';
 import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type SessionRecord } from '../../src/lib/sessions';
@@ -83,7 +83,7 @@ export function runReminders(gas: Gas): number {
   if (!owner) return 0;
   const pay = getPayment(gas);
   const out: MailMessage[] = [];
-  const toClient = (c: { email: string }, m: { subject: string; body: string }) => out.push({ to: c.email, ...asSender(gas, 'booking', owner), subject: m.subject, body: m.body, name: 'Osman Güneş Özkurt' });
+  const toClient = (c: { email: string }, m: { subject: string; body: string }) => out.push({ to: c.email, ...asSender(gas, 'booking', owner), subject: m.subject, body: m.body, name: SENDER_NAME });
   gas.withLock(() => {
     const now = gas.now();
     const day = (ms: number) => new Date(ms + 3 * HOUR).toISOString().slice(0, 10);

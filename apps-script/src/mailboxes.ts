@@ -15,6 +15,7 @@
 import type { Gas, MailMessage } from './gas';
 import { ApiError, badRequest } from './respond';
 import { EMAIL_RE } from '../../src/lib/field-rules';
+import { SENDER_NAME } from './text';
 
 export const MAILBOX_PROPS = { notify: 'NOTIFY_EMAIL', booking: 'BOOKING_FROM', info: 'INFO_FROM' } as const;
 export type Mailbox = keyof typeof MAILBOX_PROPS;
@@ -89,7 +90,7 @@ export function testMailboxes(gas: Gas): { sent: number } {
   for (const box of SENDERS) {
     const from = mailboxOf(gas, box);
     if (!from) continue;
-    gas.mail.send({ to: owner, from, replyTo: from, subject: `[klinikterapist] Deneme: ${from} adresinden`, body: lines(box === 'booking' ? 'danışanlara randevu e-postaları bu adresten gider' : 'bilgi formu cevapları bu adresten gider'), name: 'Osman Güneş Özkurt' });
+    gas.mail.send({ to: owner, from, replyTo: from, subject: `[klinikterapist] Deneme: ${from} adresinden`, body: lines(box === 'booking' ? 'danışanlara randevu e-postaları bu adresten gider' : 'bilgi formu cevapları bu adresten gider'), name: SENDER_NAME });
     sent++;
   }
   return { sent };

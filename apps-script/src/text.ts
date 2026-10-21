@@ -2,6 +2,8 @@
 
 export const SITE = 'https://klinikterapist.com';
 export const PANEL_URL = `${SITE}/admin/`;
+/** The sender name on e-mails to people (owner's choice 2026-10-22: the same as the Gmail account). */
+export const SENDER_NAME = 'Psk. Osman Güneş Özkurt';
 
 /** A string field of the request, '' for anything else. */
 export const str = (v: unknown) => (typeof v === 'string' ? v : '');
