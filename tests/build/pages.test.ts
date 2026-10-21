@@ -75,6 +75,15 @@ describe('static pages', () => {
     expect(loadPage('/randevu/').querySelector('.lead')?.text).toContain('çok yakında');
   });
 
+  it.each(['/on-gorusme/', '/en/intro-call/'])('%s marks its questions as FAQPage, the same ones the page shows', (p) => {
+    const d = loadPage(p);
+    const ld = d.querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text)).find((x) => x['@type'] === 'FAQPage');
+    const shown = d.querySelectorAll('.pc-faq summary').map((s) => s.text.trim());
+    expect(shown.length).toBeGreaterThan(0);
+    expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(shown);
+    expect(ld.mainEntity[0].acceptedAnswer.text.length).toBeGreaterThan(40);
+  });
+
   it('home has the hreflang trio and Person + ProfessionalService JSON-LD', () => {
     const home = loadPage('/');
     expect(home.querySelector('link[hreflang=en]')?.getAttribute('href')).toBe('https://example.com/en/');

@@ -115,7 +115,11 @@ export function breadcrumbLd(items: { name: string; url: string }[]) {
 /** FAQPage for the answered questions in `lang`; null when none is answered (no empty markup). */
 export function faqPageLd(lang: Lang) {
   const faq = getFaq(lang);
-  if (faq.length === 0) return null;
+  return faq.length === 0 ? null : faqLd(faq);
+}
+
+/** FAQPage for questions shown on a page (the FAQ page, the intro-call page's questions). */
+export function faqLd(faq: { q: string; a: string }[]) {
   return {
     '@context': CONTEXT,
     '@type': 'FAQPage',

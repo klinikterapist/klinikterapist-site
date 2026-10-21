@@ -45,7 +45,7 @@ const lead = category ? `${category.label[lang]} ${t(lang, 'categoryLead')}` : t
 const meta = buildMeta({
   lang,
   title: category ? `${category.label[lang]} · ${t(lang, 'navBlog')}` : t(lang, 'blogTitle'),
-  description: category ? lead : t(lang, 'blogMetaDescription'),
+  description: category ? t(lang, 'categoryMeta').replace('{cat}', category.label[lang].trim()) : t(lang, 'blogMetaDescription'),
   path: alternatePaths[lang],
   alternates: alternatePaths,
 });

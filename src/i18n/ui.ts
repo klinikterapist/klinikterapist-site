@@ -71,6 +71,11 @@ export const STRINGS = {
     tr: 'kategorisindeki yazılar: psikoloji ve daha iyi bir yaşam üzerine notlar.',
     en: 'posts: notes on psychology and a better life.',
   },
+  /** A category page's description for search results ({cat}: the category's name); longer than the lead on the page. */
+  categoryMeta: {
+    tr: '{cat} kategorisindeki yazılar: psikoloji, zihinsel sağlık ve daha iyi bir yaşam üzerine bilimsel temelli notlar ve düşünceler.',
+    en: 'Posts on {cat}: science-based notes and reflections on psychology, mental health and a better life, written by a clinical psychologist.',
+  },
   categories: { tr: 'Kategoriler', en: 'Categories' },
   breadcrumb: { tr: 'Sayfa yolu', en: 'Breadcrumb' },
   postList: { tr: 'Yazılar', en: 'Posts' },
@@ -231,12 +236,12 @@ export const STRINGS = {
 
   // Legal
   privacyNoticeDesc: {
-    tr: 'Kişisel verilerin işlenmesine ilişkin KVKK aydınlatma metni.',
+    tr: 'KVKK aydınlatma metni: bu sitede hangi kişisel verilerin, hangi amaçla ve ne kadar süreyle işlendiği ve bu verilerle ilgili haklarınız.',
     en: 'Notice on the processing of personal data under the Turkish data protection law (KVKK).',
   },
   privacyPolicyDesc: {
-    tr: 'Bu sitenin gizlilik politikası: hangi verilerin nasıl işlendiği.',
-    en: 'The privacy policy of this site: which data is processed and how.',
+    tr: 'Bu sitenin gizlilik politikası: hangi verilerin işlendiği, çerez ve ziyaret sayacı kullanımı, verilerin nasıl korunduğu ve haklarınız.',
+    en: 'The privacy policy of this site: which data is processed, how cookies and the visit counter are used, how data is protected and your rights.',
   },
 
   // Theme
