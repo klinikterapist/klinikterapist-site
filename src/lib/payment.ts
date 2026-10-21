@@ -86,11 +86,11 @@ export const ruleLine = (lang: 'tr' | 'en') =>
 /** Short sentences for the thank-you after a payment (drafts; the owner approves them). */
 export const MOTIVATION = {
   tr: [
-    'Kendinize ayırdığınız bu zaman, attığınız en değerli adımlardan biri.',
+    'Kendinize bu zamanı ayırmanız, attığınız en değerli adımlardan biri.',
     'Her seans, kendinizi biraz daha iyi tanımak için yeni bir fırsat.',
     'Bu süreçte gösterdiğiniz emeğe ve kararlılığa saygı duyuyorum.',
-    'Değişim çoğu zaman küçük adımlarla gelir; düzenli gelmeniz de bu adımlardan biri.',
-    'Kendinize iyi bakmak için zaman ayırdığınız için teşekkür ederim.',
+    'Değişim çoğu zaman küçük adımlarla gelir; seanslara düzenli gelmeniz de bu adımlardan biri.',
+    'Kendinize iyi bakmaya zaman ayırdığınız için teşekkür ederim.',
     'Birlikte çalıştığımız her hafta, bir öncekinin üzerine bir şey ekliyor.',
   ],
   en: [
@@ -135,7 +135,7 @@ function builtThanksMail(c: Person, s: Session): Mail {
   }
   return {
     subject: 'Ödemeniz alındı – klinikterapist.com',
-    body: [`Sayın ${c.name.trim()},`, '', `${at(s, 'tr')} seansınızın ödemesi alınmıştır. Teşekkür ederim.`, '', line, '', 'Seansımızda görüşmek üzere.', '', ...SIGN.tr].join('\n'),
+    body: [`Sayın ${c.name.trim()},`, '', `${at(s, 'tr')} seansınızın ödemesi alındı. Teşekkür ederim.`, '', line, '', 'Seansımızda görüşmek üzere.', '', ...SIGN.tr].join('\n'),
   };
 }
 
@@ -165,7 +165,7 @@ export function sessionReminderMail(c: Person, s: Session, what: { type: string;
       ? ['', ...paymentLines(p, what.type, lang), lang === 'en' ? 'If you have already paid, please disregard this part.' : 'Ödemeyi yaptıysanız bu kısmı dikkate almayın.']
       : [];
   if (lang === 'en') {
-    const kind = what.free ? 'free session' : `${typeName(what.type, 'en')} session`;
+    const kind = what.free ? 'free session' : `${typeName(what.type, 'en').replace(/ session$/, '')} session`;
     return {
       subject: `Reminder: your session on ${formatDay(s.day, 'en')} – klinikterapist.com`,
       body: [
@@ -181,7 +181,7 @@ export function sessionReminderMail(c: Person, s: Session, what: { type: string;
       ].join('\n'),
     };
   }
-  const kind = what.free ? 'ücretsiz görüşmenizi' : `${typeName(what.type, 'tr')} seansınızı`;
+  const kind = what.free ? 'ücretsiz görüşmenizi' : `${typeName(what.type, 'tr').replace(/ seans$/, '')} seansınızı`;
   return {
     subject: `Seans hatırlatması: ${formatDay(s.day, 'tr')} – klinikterapist.com`,
     body: [

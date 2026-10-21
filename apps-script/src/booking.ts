@@ -175,7 +175,7 @@ function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subjec
       'Merhaba,',
       '',
       `Talebiniz alındı: ${what}, ${when} (Türkiye saati).`,
-      'Henüz kesinleşmedi. Saati onaylamak ya da başka bir saat önermek için size e-postayla yazacağım.',
+      'Saat henüz kesinleşmedi. Onaylamak ya da başka bir saat önermek için size e-postayla yazacağım.',
       '',
       ...verifyLines(link, 'tr'),
       '',

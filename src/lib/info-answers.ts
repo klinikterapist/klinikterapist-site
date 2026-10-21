@@ -72,7 +72,7 @@ export const INFO_TOPICS: InfoTopic[] = [
     id: 'ucret',
     q: { tr: 'Seans ücreti ne kadar?', en: 'What is the fee?' },
     a: {
-      tr: ['Ücret bilgisi, randevunuz oluştuğunda size e-postayla iletilir. Önce tanışmak isterseniz ücretsiz ön görüşme planlayabilirsiniz.'],
+      tr: ['Ücret bilgisi randevunuz oluştuğunda size e-postayla iletilir. Önce tanışmak isterseniz ücretsiz ön görüşme planlayabilirsiniz.'],
       en: ['The fee is sent to you by e-mail once you have an appointment. If you would like to meet first, you can plan a free intro call.'],
     },
   },
@@ -111,6 +111,6 @@ export function infoMail(topics: string[], lang: 'tr' | 'en', links: { intro: st
   }
   return {
     subject: 'İstediğiniz bilgiler – klinikterapist.com',
-    body: ['Merhaba,', '', 'İlginiz için teşekkür ederim. Sorduğunuz konuların cevapları aşağıda:', '', ...blocks, `Önce tanışmak isterseniz ücretsiz ön görüşme planlayabilirsiniz: ${links.intro}`, `Seans randevusu almak için: ${links.book}`, '', 'Osman Güneş Özkurt', 'Klinik Psikolog', 'klinikterapist.com'].join('\n'),
+    body: ['Merhaba,', '', 'İlginiz için teşekkür ederim. Sorduğunuz konuların yanıtlarını aşağıda bulabilirsiniz:', '', ...blocks, `Önce tanışmak isterseniz ücretsiz ön görüşme planlayabilirsiniz: ${links.intro}`, `Seans randevusu almak için: ${links.book}`, '', 'Osman Güneş Özkurt', 'Klinik Psikolog', 'klinikterapist.com'].join('\n'),
   };
 }

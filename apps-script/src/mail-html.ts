@@ -12,7 +12,7 @@ import { SITE } from './text';
 import { VERIFY_PARAM } from './verify';
 
 const LABEL = { tr: 'E-posta adresimi doğrula', en: 'Confirm my e-mail address' };
-const FALLBACK = { tr: 'Düğme açılmazsa bu adresi tarayıcınıza yapıştırın:', en: 'If the button does not open, paste this address into your browser:' };
+const FALLBACK = { tr: 'Düğme çalışmazsa bu bağlantıyı kopyalayıp tarayıcınıza yapıştırın:', en: 'If the button does not open, paste this address into your browser:' };
 const URL_RE = /https:\/\/[^\s<>"]+/g;
 
 const NAME = 'Osman Güneş Özkurt';

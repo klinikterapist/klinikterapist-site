@@ -30,6 +30,13 @@ export type PanelMailId =
   | 'bekleme.alim-acik'
   | 'bekleme.cikarma';
 
+/** Who the intro call is for, as the owner says it back to the person (the form's own options are in the first person). */
+const FOR_YOU: Record<(typeof INTRO_FOR)[number]['id'], { tr: string; en: string }> = {
+  individual: { tr: 'kendiniz için', en: 'for yourself' },
+  couple: { tr: 'partnerinizle birlikte', en: 'with your partner' },
+  accessible: { tr: 'kendiniz için, uygun ücretle', en: 'for yourself, at a reduced fee' },
+};
+
 /** "Bireysel terapi" / "ücretsiz ön görüşme", as it reads inside a sentence. */
 export function what(r: BookingRequest, lang: 'tr' | 'en'): string {
   if (r.kind === 'intro') return lang === 'en' ? 'free intro call' : 'ücretsiz ön görüşme';
@@ -54,7 +61,7 @@ function builtDecisionMail(r: BookingRequest, decision: RequestDecision, pay?: P
           ? [
               `Your request for a free intro call on ${when} (Turkey time) is confirmed.`,
               ...(forWhom || topics.length
-                ? [`In your request you wrote${forWhom ? ` that the call is ${forWhom.en.replace(/ \(.*\)$/, '').toLowerCase()}` : ''}${topics.length ? `${forWhom ? ' and' : ''} that you would like to talk about: ${topics.join(', ')}` : ''}. We will start from there.`]
+                ? [`In your request you wrote${forWhom ? ` that the call is ${FOR_YOU[forWhom.id].en}` : ''}${topics.length ? `${forWhom ? ' and' : ''} that you would like to talk about: ${topics.join(', ')}` : ''}. We will start from there.`]
                 : []),
               'The call takes 25–30 minutes and is held online. I will send you the link by e-mail before the call.',
             ]
@@ -85,14 +92,14 @@ function builtDecisionMail(r: BookingRequest, decision: RequestDecision, pay?: P
     const lines =
       r.kind === 'intro'
         ? [
-            `${when} için ücretsiz ön görüşme talebiniz onaylanmıştır.`,
+            `${when} için ücretsiz ön görüşme talebiniz onaylandı.`,
             ...(forWhom || topics.length
-              ? [`Talebinizde${forWhom ? ` görüşmenin ${forWhom.tr.replace(/ \(.*\)$/, '').toLocaleLowerCase('tr-TR')} olduğunu` : ''}${topics.length ? `${forWhom ? ' ve' : ''} şu konuları konuşmak istediğinizi belirttiniz: ${topics.join(', ')}` : ''}. Görüşmeye buradan başlayacağız.`]
+              ? [`Talebinizde${forWhom ? ` görüşmenin ${FOR_YOU[forWhom.id].tr} olduğunu` : ''}${topics.length ? `${forWhom ? ' ve' : ''} şu konuları konuşmak istediğinizi belirttiniz: ${topics.join(', ')}` : ''}. Görüşmeye buradan başlayacağız.`]
               : []),
-            'Görüşme 25–30 dakika sürecek ve online yapılacak. Görüşme bağlantısını görüşmeden önce e-postayla göndereceğim.',
+            'Görüşme 25–30 dakika sürecek ve online yapılacak. Bağlantıyı görüşmeden önce e-postayla göndereceğim.',
           ]
         : [
-            `${when} için ${what(r, 'tr')} randevu talebiniz onaylanmıştır.`,
+            `${when} için ${what(r, 'tr')} randevu talebiniz onaylandı.`,
             'Seans online yapılacak. Görüşme bağlantısını seanstan önce e-postayla göndereceğim.',
             ...(pay ? ['', ...paymentLines(pay, r.type ?? 'individual', 'tr')] : []),
             '',
@@ -109,7 +116,7 @@ function builtDecisionMail(r: BookingRequest, decision: RequestDecision, pay?: P
   }
   return {
     subject: 'Talebiniz iptal edildi – klinikterapist.com',
-    body: [hello, '', `${when} için gönderdiğiniz ${what(r, 'tr')} talebiniz iptal edilmiştir.`, `Yeniden randevu almak isterseniz buradan ulaşabilirsiniz: ${again}`, '', ...SIGN_TR].join('\n'),
+    body: [hello, '', `${when} için gönderdiğiniz ${what(r, 'tr')} talebiniz iptal edildi.`, `Yeniden randevu almak isterseniz buradan yeni bir talep gönderebilirsiniz: ${again}`, '', ...SIGN_TR].join('\n'),
   };
 }
 
@@ -165,7 +172,7 @@ function builtEndMail(c: Contact, mode: 'complete' | 'closing'): Mail {
       body: [
         hello,
         '',
-        'Birlikte yürüttüğümüz terapi sürecinin sona erdiğini bu e-postayla bildirmek isterim. Haftalık seans saatiniz takvimimden kaldırılmış, randevu bilgileriniz randevu sistemimden silinmiştir.',
+        'Birlikte yürüttüğümüz terapi sürecinin sona erdiğini bu e-postayla bildirmek isterim. Haftalık seans saatiniz takvimimden kaldırıldı, randevu bilgileriniz de randevu sistemimden silindi.',
         'Bu süreçte gösterdiğiniz emek ve benimle paylaştıklarınız için teşekkür ederim.',
         `İleride yeniden desteğe ihtiyaç duyarsanız sitemden her zaman randevu talebinde bulunabilirsiniz: ${again}`,
         '',
@@ -186,7 +193,7 @@ function builtEndMail(c: Contact, mode: 'complete' | 'closing'): Mail {
       '– sizin için nelerin işe yaradığını ve bunları gündelik hayatta nasıl sürdürebileceğinizi konuşacağız,',
       '– ileride zorlanabileceğiniz durumları ve böyle anlarda neler yapabileceğinizi ele alacağız,',
       '– süreçle ilgili duygularınızı, düşüncelerinizi ve varsa sorularınızı paylaşmanız için alan açacağız.',
-      'Görüşme online yapılacak ve ücret alınmayacak. Size uygun gün ve saatleri bu e-postayı yanıtlayarak iletirseniz görüşmeyi birlikte planlayalım.',
+      'Görüşme online yapılacak ve ücret alınmayacak. Size uygun gün ve saatleri bu e-postayı yanıtlayarak iletirseniz görüşmeyi birlikte planlarız.',
       '',
       ...SIGN_TR,
     ].join('\n'),
@@ -217,8 +224,8 @@ function builtRevertMail(c: Contact): Mail {
     body: [
       `Sayın ${name},`,
       '',
-      'Talebinizle ilgili size gönderdiğim önceki e-posta, teknik bir sorun nedeniyle yanlışlıkla gönderilmiştir. Lütfen o e-postayı dikkate almayın; yol açtığı karışıklık için özür dilerim.',
-      'Talebiniz bende duruyor. Yeniden değerlendirip doğru yanıtı bir sonraki e-postamda en kısa sürede size ileteceğim.',
+      'Talebinizle ilgili bir önceki e-postam teknik bir sorun nedeniyle yanlışlıkla gönderildi. Lütfen o e-postayı dikkate almayın; yol açtığı karışıklık için özür dilerim.',
+      'Talebiniz bende duruyor. Yeniden değerlendirip doğru yanıtı en kısa sürede bir sonraki e-postamda size ileteceğim.',
       '',
       ...SIGN_TR,
     ].join('\n'),
@@ -280,8 +287,8 @@ function builtWaitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when?:
         hello,
         '',
         'Boşalan bir saat olduğunda size haber vermemi istemiştiniz; bir yer açıldı.',
-        at ? `Size ${at} saatini önerebilirim. Bu saati şimdilik sizin için ayırıyorum.` : 'Size uygun bir saat bulmaktan memnuniyet duyarım.',
-        'Uygunsa bu e-postayı yanıtlamanız yeterli; randevunuzu onaylayıp size bildireceğim. Size uymuyorsa da haber verin, sizi listede tutmaya devam edeyim.',
+        at ? `Size önerebileceğim zaman: ${at}. Bu saati şimdilik sizin için ayırıyorum.` : 'Size uygun bir saat bulmaktan memnuniyet duyarım.',
+        'Uygunsa bu e-postayı yanıtlamanız yeterli; randevunuzu onaylayıp size bildireceğim. Size uymuyorsa da haber verin; sizi listede tutmaya devam ederim.',
         '',
         ...SIGN_TR,
       ].join('\n'),
@@ -362,9 +369,9 @@ export function introNote(r: BookingRequest, lang: 'tr' | 'en'): string {
   const forWhom = INTRO_FOR.find((f) => f.id === r.forWhom);
   if (r.kind !== 'intro' || (!forWhom && !topics.length)) return '';
   if (lang === 'en') {
-    return `In your request you wrote${forWhom ? ` that the call is ${forWhom.en.replace(/ \(.*\)$/, '').toLowerCase()}` : ''}${topics.length ? `${forWhom ? ' and' : ''} that you would like to talk about: ${topics.join(', ')}` : ''}. We will start from there.`;
+    return `In your request you wrote${forWhom ? ` that the call is ${FOR_YOU[forWhom.id].en}` : ''}${topics.length ? `${forWhom ? ' and' : ''} that you would like to talk about: ${topics.join(', ')}` : ''}. We will start from there.`;
   }
-  return `Talebinizde${forWhom ? ` görüşmenin ${forWhom.tr.replace(/ \(.*\)$/, '').toLocaleLowerCase('tr-TR')} olduğunu` : ''}${topics.length ? `${forWhom ? ' ve' : ''} şu konuları konuşmak istediğinizi belirttiniz: ${topics.join(', ')}` : ''}. Görüşmeye buradan başlayacağız.`;
+  return `Talebinizde${forWhom ? ` görüşmenin ${FOR_YOU[forWhom.id].tr} olduğunu` : ''}${topics.length ? `${forWhom ? ' ve' : ''} şu konuları konuşmak istediğinizi belirttiniz: ${topics.join(', ')}` : ''}. Görüşmeye buradan başlayacağız.`;
 }
 
 export function decisionMail(r: BookingRequest, decision: RequestDecision, pay?: PaymentSettings): Mail {

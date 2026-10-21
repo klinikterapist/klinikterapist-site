@@ -76,12 +76,12 @@ type Change = { s: { day: string; time: string }; to?: { day: string; time: stri
 
 function ownerMail(c: StoredClient, ask: TrackAsk, ch: Change | null, note: string): { subject: string; body: string } {
   const page = `${PANEL_URL}#/seans-takip/${c.id}`;
-  const fee = ch?.late ? ['', 'Seansa 24 saatten az kala yapıldı. Danışan, seans ücretinin tamamının ödeneceğini ve bunun kendi sorumluluğunda olduğunu belirten uyarıyı onayladı.'] : [];
+  const fee = ch?.late ? ['', 'Bu işlem seansa 24 saatten az kala yapıldı. Danışan, seans ücretinin tamamının ödeneceğini ve bunun kendi sorumluluğunda olduğunu belirten uyarıyı onayladı.'] : [];
   const lines =
     ask === 'cancel'
-      ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını iptal etti.`, 'Seans Seans takip\'te "İptal edildi · danışan istedi" olarak işaretlendi; saat takvimde ve sitede açıldı.', ...fee]
+      ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını iptal etti.`, 'Seans, Seans takip\'te "İptal edildi · danışan istedi" olarak işaretlendi; saat takvimde ve sitede açıldı.', ...fee]
       : ask === 'postpone'
-        ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını ${when(ch!.to!)} tarihine erteledi.`, 'Seans takip\'te "Ertelendi · danışan istedi" olarak işaretlendi; yeni saat takvime işlendi, eski saat açıldı.', ...fee]
+        ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını ${when(ch!.to!)} tarihine erteledi.`, 'Seans, Seans takip\'te "Ertelendi · danışan istedi" olarak işaretlendi; yeni saat takvime işlendi, eski saat açıldı.', ...fee]
         : [`${c.number}, kendi randevu sayfasından terapiyi sonlandırmak istediğini bildirdi.`, 'Danışanla konuştuktan sonra danışanın sayfasında "Terapiyi sonlandır"ı kullanabilirsiniz.'];
   const late = ch?.late ? ' (24 saatten az kala)' : '';
   const subject = { cancel: `seansını iptal etti${late} — ${ch ? when(ch.s) : ''}`, postpone: `seansını erteledi${late} — ${ch ? `${when(ch.s)} → ${ch.to ? when(ch.to) : ''}` : ''}`, end: 'terapiyi sonlandırmak istiyor' }[ask];
@@ -143,7 +143,7 @@ function clientMail(gas: Gas, c: StoredClient, ask: TrackAsk, ch: Change | null)
       'Merhaba,',
       '',
       ...lines,
-      ...(ch?.late ? ['Seansa 24 saatten az kala yapıldığı için, sayfada onayladığınız gibi seans ücretinin tamamı ödenir.'] : []),
+      ...(ch?.late ? ['Bu işlem seansa 24 saatten az kala yapıldığı için, sayfada onayladığınız gibi seans ücretinin tamamı ödenir.'] : []),
       '',
       `Randevu sayfanız: ${link}`,
       'Bu işlemi siz yapmadıysanız lütfen bu e-postayı yanıtlayarak hemen bana yazın.',

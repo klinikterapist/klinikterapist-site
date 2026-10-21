@@ -134,7 +134,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
           'Merhaba,',
           '',
           'İlginiz için teşekkür ederim. Şu an tüm seans saatlerim dolu olduğu için sizi bekleme listeme aldım.',
-          'Boşalan bir saat olduğunda size bu adresten yazacağım.',
+          'Bir saat boşaldığında bu e-posta adresinize yazacağım.',
           '',
           ...verifyLines(link, 'tr'),
           '',
