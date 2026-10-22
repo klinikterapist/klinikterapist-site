@@ -7,6 +7,8 @@
  *   own address (OWNER_EMAIL), so the system's mail and people's messages stay apart.
  * - `BOOKING_FROM` (randevu@): the sender of every e-mail to a person about an appointment.
  * - `INFO_FROM` (bilgi@): the sender of the "Süreç bilgisi" answers.
+ * - `CONTACT_TO` (iletisim@) and `CONTACT_EN_TO` (hello@): where the Turkish and the English contact
+ *   form arrive (owner's decision 2026-10-22). The English one falls back to the Turkish one.
  *
  * A sender address works only after it is added in Gmail as "Send mail as" (docs/kurulum/
  * eposta-takma-adlari.md); the panel accepts only such addresses. Unset, everything goes from and to
@@ -17,7 +19,7 @@ import { ApiError, badRequest } from './respond';
 import { EMAIL_RE } from '../../src/lib/field-rules';
 import { SENDER_NAME } from './text';
 
-export const MAILBOX_PROPS = { notify: 'NOTIFY_EMAIL', booking: 'BOOKING_FROM', info: 'INFO_FROM' } as const;
+export const MAILBOX_PROPS = { notify: 'NOTIFY_EMAIL', booking: 'BOOKING_FROM', info: 'INFO_FROM', contact: 'CONTACT_TO', contactEn: 'CONTACT_EN_TO' } as const;
 export type Mailbox = keyof typeof MAILBOX_PROPS;
 export type Mailboxes = Record<Mailbox, string>;
 
@@ -28,6 +30,10 @@ export const mailboxOf = (gas: Gas, box: Mailbox): string => gas.props.get(MAILB
 /** Where the system's notices to the owner go: bildirim@ when set, else the owner's address. */
 export const notifyTo = (gas: Gas, owner: string): string => mailboxOf(gas, 'notify') || owner;
 
+/** Where a contact form message arrives: iletisim@ (hello@ for the English form) when set, else the owner's address. */
+export const contactTo = (gas: Gas, lang: 'tr' | 'en', owner: string): string =>
+  (lang === 'en' && mailboxOf(gas, 'contactEn')) || mailboxOf(gas, 'contact') || owner;
+
 /** Sender and Reply-To of an e-mail to a person: randevu@ / bilgi@ when set, else the owner's address. */
 export function asSender(gas: Gas, box: 'booking' | 'info', owner: string): Pick<MailMessage, 'from' | 'replyTo'> {
   const from = mailboxOf(gas, box);
@@ -36,7 +42,7 @@ export function asSender(gas: Gas, box: 'booking' | 'info', owner: string): Pick
 
 /** `mail.settings` (panel): the three addresses, the owner's own, Gmail's sender addresses and today's quota left. */
 export function readMailboxes(gas: Gas): { mailboxes: Mailboxes; owner: string; aliases: string[]; quota: number | null } {
-  const mailboxes = { notify: mailboxOf(gas, 'notify'), booking: mailboxOf(gas, 'booking'), info: mailboxOf(gas, 'info') };
+  const mailboxes = Object.fromEntries((Object.keys(MAILBOX_PROPS) as Mailbox[]).map((b) => [b, mailboxOf(gas, b)])) as Mailboxes;
   return { mailboxes, owner: gas.props.get('OWNER_EMAIL')?.trim().toLowerCase() ?? '', aliases: aliasesOf(gas), quota: quotaOf(gas) };
 }
 
@@ -91,6 +97,12 @@ export function testMailboxes(gas: Gas): { sent: number } {
     const from = mailboxOf(gas, box);
     if (!from) continue;
     gas.mail.send({ to: owner, from, replyTo: from, subject: `[klinikterapist] Deneme: ${from} adresinden`, body: lines(box === 'booking' ? 'danışanlara randevu e-postaları bu adresten gider' : 'bilgi formu cevapları bu adresten gider'), name: SENDER_NAME });
+    sent++;
+  }
+  for (const [box, what] of [['contact', 'Türkçe iletişim formu'], ['contactEn', 'İngilizce iletişim formu']] as const) {
+    const to = mailboxOf(gas, box);
+    if (!to) continue;
+    gas.mail.send({ to, replyTo: owner, subject: `[klinikterapist] Deneme: ${to}`, body: lines(`${what} mesajları bu adrese gelir`), name: 'klinikterapist.com iletişim formu' });
     sent++;
   }
   return { sent };

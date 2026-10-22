@@ -134,6 +134,8 @@ const contactSchema = z.object({
   responseTime: localized,
   emergencyNote: localized,
   email: z.string().regex(EMAIL_RE, 'geçerli bir e-posta adresi yazın (ör. ad@alanadi.com)'),
+  /** The address on English pages; the Turkish one when missing. */
+  emailEn: z.string().regex(EMAIL_RE, 'geçerli bir e-posta adresi yazın (ör. ad@alanadi.com)').optional(),
 });
 
 const resourcesSchema = z.object({

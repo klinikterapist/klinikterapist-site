@@ -158,7 +158,7 @@ export type BookingRequest = {
 
 /** Bildirimler (Faz 2): what happened. `link`: a panel route (`#/…`) to the place it concerns. */
 /** Faz 4: bildirim@ (the system's notices), randevu@ and bilgi@ (senders); '' is the owner's address. */
-export type MailboxKey = 'notify' | 'booking' | 'info';
+export type MailboxKey = 'notify' | 'booking' | 'info' | 'contact' | 'contactEn';
 export type MailSettings = { mailboxes: Record<MailboxKey, string>; owner: string; aliases: string[]; quota: number | null };
 
 export type PanelEventKind = 'request' | 'decision' | 'client' | 'payment' | 'reminder' | 'waitlist' | 'info';

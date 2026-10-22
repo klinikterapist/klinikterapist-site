@@ -9,8 +9,10 @@ Bu rehber teknik bilgi gerektirmez. Adımları sırayla izleyin; takıldığın�
 | `bildirim@klinikterapist.com` | Sistemden size gelen bildirimler: yeni randevu talebi, danışanın iptali, ödenmeyen seans, süresi dolan talep. |
 | `randevu@klinikterapist.com` | Danışanlara giden onay, hatırlatma ve ödeme e-postaları bu adresten gider. Danışan "Yanıtla" derse cevap da buraya gelir. |
 | `bilgi@klinikterapist.com` | "Önce bilgi almak istiyorum" formunun otomatik cevapları bu adresten gider. |
+| `iletisim@klinikterapist.com` | Türkçe iletişim formundan gelen mesajlar buraya gelir. Sitenin Türkçe sayfalarında görünen adres budur. |
+| `hello@klinikterapist.com` | İngilizce iletişim formundan gelen mesajlar buraya gelir. İngilizce sayfalarda görünen adres budur. |
 
-İletişim formundan gelen mesajlar eskisi gibi **merhaba@klinikterapist.com** adresine gelir.
+**merhaba@klinikterapist.com** sitede görünmez (22 Ekim 2026 kararı); kişilere doğrudan yazdığınız ve panele girdiğiniz ana adrestir.
 
 Üç adres de ayrı bir hesap değildir. Hepsi sizin hesabınızın **takma adıdır**: gelen her şey aynı gelen kutusuna düşer, ek ücret yoktur.
 
@@ -21,7 +23,7 @@ Bu rehber teknik bilgi gerektirmez. Adımları sırayla izleyin; takıldığın�
 1. https://admin.google.com adresine **merhaba@klinikterapist.com** ile girin.
 2. Sol menüden **Dizin › Kullanıcılar**'ı açın ve kendi adınıza tıklayın.
 3. **Kullanıcı bilgileri** bölümünde **Alternatif e-posta adresleri (e-posta takma adları)** satırına tıklayın.
-4. **Alternatif e-posta** kutusuna sırayla `bildirim`, `randevu` ve `bilgi` yazıp her birini ekleyin. Sonra **Kaydet**'e basın.
+4. **Alternatif e-posta** kutusuna sırayla `bildirim`, `randevu`, `bilgi`, `iletisim` ve `hello` yazıp her birini ekleyin. Sonra **Kaydet**'e basın.
 5. Takma adların çalışması birkaç dakika, bazen birkaç saat sürebilir.
 
 ## 2. Gmail'de "farklı adresten gönder" ekleyin (randevu@ ve bilgi@ için)
@@ -35,7 +37,8 @@ Sistem danışanlara bu adreslerden yazabilsin diye Gmail'e bunları tanıtırı
    - E-posta adresi: `randevu@klinikterapist.com`
    - **Takma ad olarak işle** kutusu işaretli kalsın.
 4. **Sonraki adım**'a basın. Google bir doğrulama e-postası gönderirse aynı gelen kutusuna gelir; içindeki bağlantıya tıklayın.
-5. Aynı adımları `bilgi@klinikterapist.com` için tekrarlayın.
+5. Aynı adımları `bilgi@`, `iletisim@` ve `hello@` için tekrarlayın.
+6. Aynı ekranda **Bir iletiyi yanıtlarken** seçeneğini **İletinin gönderildiği adresten yanıtla** yapın ve kaydedin.
 
 ## 3. Yeni Gmail iznini verin (tek seferlik)
 
@@ -51,8 +54,8 @@ Bu izni vermeden önce sistem çalışmaya devam eder ama yeni adresleri kullana
 
 ## 4. Panelde adresleri kaydedin
 
-1. Panelde **Terapist profili**'ni açın. Sağ sütundaki **E-posta adresleri** kutusunda **Düzenle**'ye basın.
-2. Üç adresi yazın ve **Kaydet**'e basın.
+1. Panelde **Ayarlar › E-posta Ayarları**'nı açın. **E-posta adresleri** kutusunda **Düzenle**'ye basın.
+2. Beş adresi yazın ve **Kaydet**'e basın.
    - "Gmail'de eklenmemiş" uyarısı çıkarsa 2. adımı tamamlayın ve birkaç dakika bekleyip tekrar kaydedin.
 3. **Deneme gönder**'e basın. Gelen kutunuza birkaç deneme e-postası gelir; her biri hangi adresin ne işe yaradığını yazar.
 

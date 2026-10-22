@@ -5,7 +5,7 @@
  * "Sosyal medyada takip et" box.
  */
 import type { Lang } from '../lib/settings';
-import { getLinks, getSeo } from '../lib/settings';
+import { contactEmail, getLinks, getSeo } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
 import { t } from '../i18n/ui';
 import Icon from './Icon.astro';
@@ -15,7 +15,10 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const links = getLinks().filter((l) => l.inFooter);
+// The e-mail icon opens the address of the page's language (iletisim@ / hello@).
+const links = getLinks()
+  .filter((l) => l.inFooter)
+  .map((l) => (l.icon === 'email' ? { ...l, url: `mailto:${contactEmail(lang)}` } : l));
 const external = (url: string) => /^https?:\/\//.test(url);
 // With Google Analytics on, the cookie choice can be changed from every page (Analytics.astro).
 const hasAnalytics = Boolean(getSeo().gaId);

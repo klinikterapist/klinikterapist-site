@@ -87,7 +87,7 @@ export function createMockApi(
     for (const [p, c] of Object.entries(posts)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), c, 'utf8');
     for (const [p, url] of Object.entries(images)) put(p.replace('/tests/fixtures/content/', 'src/content/posts/'), url.split(',')[1] ?? '', 'base64');
   }
-  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: { tr: true, en: false }, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [], mailboxes: { notify: '', booking: '', info: '' } };
+  const state: MockState = { files, drafts: new Map(), images: new Map(), versions: new Map(), commits: [], trash: new Map(), scheduleErrors: new Map(), triggerCalls: 0, calendar: [], requests: [], clients: [], sent: [], open: { tr: true, en: false }, waitlist: [], linkGen: new Map(), payment: EMPTY_PAYMENT, events: [], mailboxes: { notify: '', booking: '', info: '', contact: '', contactEn: '' } };
   let clientSeq = 0;
   const bookingFile = files.get('src/data/booking.json');
   if (bookingFile) {
@@ -464,7 +464,8 @@ export function createMockApi(
     mailSettings: () => wait(() => mailSettingsOf(state)),
     mailSettingsSet: (boxes) =>
       wait(() => {
-        const next = { notify: boxes.notify.trim().toLowerCase(), booking: boxes.booking.trim().toLowerCase(), info: boxes.info.trim().toLowerCase() };
+        const norm = (k: MailboxKey) => (boxes[k] ?? '').trim().toLowerCase();
+        const next = { notify: norm('notify'), booking: norm('booking'), info: norm('info'), contact: norm('contact'), contactEn: norm('contactEn') };
         for (const v of Object.values(next)) if (v && !EMAIL_RE.test(v)) throw new ApiFailure('bad_request', `Bu adres geçerli görünmüyor: ${v}`);
         for (const v of [next.booking, next.info]) {
           if (v && !MOCK_ALIASES.includes(v)) throw new ApiFailure('bad_request', `${v} Gmail'de "Farklı adresten gönder" olarak eklenmemiş. Önce rehberdeki adımları yapın, sonra tekrar kaydedin.`);
@@ -474,7 +475,7 @@ export function createMockApi(
       }),
     mailTest: () =>
       wait(() => {
-        const sent = 1 + [state.mailboxes.booking, state.mailboxes.info].filter(Boolean).length;
+        const sent = 1 + [state.mailboxes.booking, state.mailboxes.info, state.mailboxes.contact, state.mailboxes.contactEn].filter(Boolean).length;
         for (let i = 0; i < sent; i++) state.sent.push({ to: OWNER, subject: '[klinikterapist] Deneme', body: '' });
         return { sent };
       }),

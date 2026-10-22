@@ -30,7 +30,7 @@
   {
     "id": "email",
     "label": "E-posta",
-    "url": "mailto:merhaba@klinikterapist.com",
+    "url": "mailto:iletisim@klinikterapist.com",
     "icon": "email",
     "inHero": true,
     "inFooter": true

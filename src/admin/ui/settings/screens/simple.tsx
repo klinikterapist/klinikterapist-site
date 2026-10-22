@@ -76,7 +76,15 @@ export function IletisimScreen() {
           <LocalizedField label="Çalışma biçimi" value={c.workStyle} onChange={set('workStyle')} multiline issues={file.issues} path="workStyle" />
           <LocalizedField label="Dönüş süresi" value={c.responseTime} onChange={set('responseTime')} issues={file.issues} path="responseTime" />
           <LocalizedField label="Acil durum uyarısı" value={c.emergencyNote} onChange={set('emergencyNote')} multiline issues={file.issues} path="emergencyNote" />
-          <Field label="E-posta adresi" type="email" value={c.email} onChange={set('email')} error={file.issues.email} />
+          <Field label="E-posta adresi" type="email" value={c.email} onChange={set('email')} error={file.issues.email} hint="Türkçe sayfalarda görünür." />
+          <Field
+            label="E-posta adresi (İngilizce sayfalar)"
+            type="email"
+            value={c.emailEn ?? ''}
+            onChange={(v) => file.setValue((x) => { const { emailEn: _, ...rest } = x; return v.trim() ? { ...rest, emailEn: v } : rest; })}
+            error={file.issues.emailEn}
+            hint="Boş bırakırsanız İngilizce sayfalarda da yukarıdaki adres görünür."
+          />
         </>
       )}
     </SettingsForm>

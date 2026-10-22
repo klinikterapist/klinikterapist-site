@@ -8,7 +8,7 @@
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
 import type { Lang } from '../lib/settings';
-import { getBooking, getContact } from '../lib/settings';
+import { getBooking, contactEmail } from '../lib/settings';
 import { buildMeta } from '../lib/seo';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../admin/config';
 import { SESSION_TYPES } from '../lib/booking-form';
@@ -19,7 +19,7 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const { email } = getContact();
+const email = contactEmail(lang);
 const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
 const demo = import.meta.env.DEV ? '1' : undefined;
 

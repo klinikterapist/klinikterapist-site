@@ -489,7 +489,7 @@ describe('Faz 4: E-posta adresleri (Ayarlar › E-posta Ayarları since 2026-10-
   it('shows the owner’s address until set, refuses a sender Gmail does not have, saves, and sends a test', async () => {
     const { api } = setup('mailboxes', [], []);
     const box = (await screen.findByRole('heading', { name: 'E-posta adresleri' })).parentElement!;
-    expect((await within(box).findAllByText('Ana adresiniz (merhaba@klinikterapist.com)')).length).toBe(3);
+    expect((await within(box).findAllByText('Ana adresiniz (merhaba@klinikterapist.com)')).length).toBe(5);
     expect(within(box).getByText('Bugün gönderilebilecek e-posta: 1500')).toBeTruthy();
     fireEvent.click(within(box).getByRole('button', { name: 'Düzenle' }));
     const dialog = await screen.findByRole('dialog');
@@ -500,7 +500,7 @@ describe('Faz 4: E-posta adresleri (Ayarlar › E-posta Ayarları since 2026-10-
     fireEvent.change(within(dialog).getByLabelText('Randevu e-postaları'), { target: { value: 'randevu@klinikterapist.com' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(api.state.mailboxes).toEqual({ notify: 'bildirim@klinikterapist.com', booking: 'randevu@klinikterapist.com', info: '' });
+    expect(api.state.mailboxes).toEqual({ notify: 'bildirim@klinikterapist.com', booking: 'randevu@klinikterapist.com', info: '', contact: '', contactEn: '' });
     expect(within(box).getByText('randevu@klinikterapist.com')).toBeTruthy();
     fireEvent.click(within(box).getByRole('button', { name: 'Deneme gönder' }));
     expect(await within(box).findByText(/^2 deneme e-postası gönderildi/)).toBeTruthy();

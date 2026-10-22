@@ -822,9 +822,9 @@ describe('Faz 4: the system’s e-mail addresses (bildirim@, randevu@, bilgi@)',
     expect(s.call('mail.settings').data).toMatchObject({ mailboxes: { notify: '', booking: '', info: '' } });
     expect(s.call('mail.settings.set', { mailboxes: { notify: 'not-an-address' } })).toMatchObject({ ok: false, data: { reason: 'invalid', box: 'notify' } });
     const ok = s.call<{ mailboxes: Record<string, string> }>('mail.settings.set', { mailboxes: { notify: ' Bildirim@Klinikterapist.com ', booking: 'randevu@klinikterapist.com', info: '' } });
-    expect(ok.data.mailboxes).toEqual({ notify: 'bildirim@klinikterapist.com', booking: 'randevu@klinikterapist.com', info: '' });
+    expect(ok.data.mailboxes).toEqual({ notify: 'bildirim@klinikterapist.com', booking: 'randevu@klinikterapist.com', info: '', contact: '', contactEn: '' });
     // An empty field goes back to the owner's address.
-    expect(s.call<{ mailboxes: Record<string, string> }>('mail.settings.set', { mailboxes: { notify: '', booking: '', info: '' } }).data.mailboxes).toEqual({ notify: '', booking: '', info: '' });
+    expect(s.call<{ mailboxes: Record<string, string> }>('mail.settings.set', { mailboxes: { notify: '', booking: '', info: '' } }).data.mailboxes).toEqual({ notify: '', booking: '', info: '', contact: '', contactEn: '' });
   });
 
   it('notices go to bildirim@; e-mails to people come from randevu@ (and reply there); information from bilgi@; the contact form stays at the owner’s address', () => {

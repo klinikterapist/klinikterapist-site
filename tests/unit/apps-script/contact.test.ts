@@ -17,6 +17,17 @@ const valid = {
 const send = (gas: ReturnType<typeof fakeGas>, extra: Record<string, unknown> = {}) => handle(gas, JSON.stringify({ ...valid, ...extra }));
 
 describe('contact.send', () => {
+  it('arrives at iletisim@, and the English form at hello@, when they are set (owner 2026-10-22)', () => {
+    const gas = fakeGas({ props: { ...props, CONTACT_TO: 'iletisim@klinikterapist.com', CONTACT_EN_TO: 'hello@klinikterapist.com' } });
+    send(gas);
+    send(gas, { email: 'b@example.com', lang: 'en' });
+    expect(gas.mails.map((m) => m.to)).toEqual(['iletisim@klinikterapist.com', 'hello@klinikterapist.com']);
+  });
+  it('the English form falls back to iletisim@ without hello@', () => {
+    const gas = fakeGas({ props: { ...props, CONTACT_TO: 'iletisim@klinikterapist.com' } });
+    send(gas, { lang: 'en' });
+    expect(gas.mails[0].to).toBe('iletisim@klinikterapist.com');
+  });
   it('needs no session and mails the owner once, replying to the visitor', () => {
     const gas = fakeGas({ props });
     expect(send(gas)).toEqual({ ok: true, data: { sent: true } });

@@ -4,6 +4,7 @@
  * owner (OWNER_EMAIL) with Reply-To set to the visitor. The message itself is not stored; the limits
  * keep only a keyed hash of the address (cache, at most two hours) and counters.
  */
+import { contactTo } from './mailboxes';
 import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 import { isContactTopic, topicLabel, validateContact, type ContactInput } from '../../src/lib/contact-form';
@@ -111,6 +112,6 @@ export function sendContact(gas: Gas, p: Record<string, unknown>): { sent: true 
   if (!allowSend(gas, email)) throw badRequest(TOO_MANY);
 
   const m = mailTr('bildirim.iletisim', { ad: name, e_posta: email, konu: topic, dil: lang === 'en' ? 'İngilizce' : 'Türkçe', gonderim: stamp(gas.now()), mesaj: input.message.trim() });
-  gas.mail.send({ to: owner, replyTo: email, ...m, name: 'klinikterapist.com iletişim formu' });
+  gas.mail.send({ to: contactTo(gas, lang, owner), replyTo: email, ...m, name: 'klinikterapist.com iletişim formu' });
   return { sent: true };
 }

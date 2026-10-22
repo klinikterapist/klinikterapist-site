@@ -14,7 +14,7 @@ import Icon from '../components/Icon.astro';
 import PreConsultDesign from '../components/appointment/PreConsultDesign.astro';
 import VerifyCard from '../components/appointment/VerifyCard.astro';
 import type { Lang } from '../lib/settings';
-import { getContact } from '../lib/settings';
+import { contactEmail } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { bookingLive } from '../lib/booking-entry';
 import { faqLd } from '../lib/jsonld';
@@ -180,7 +180,7 @@ const T = {
 }[lang];
 
 const { meta, alternatePaths } = pageMeta('preConsult', lang, T.title, T.lead);
-const { email } = getContact();
+const email = contactEmail(lang);
 const design = bookingLive();
 // The questions at the end of the page, for search engines (night review B2-5).
 const faqJsonLd = faqLd(T.faq.map((f) => ({ q: f.q, a: f.a.join(' ') })));
