@@ -29,7 +29,7 @@ export type CatalogEntry = {
 const DAY = '2026-11-12';
 const TIME = '18:00';
 const person = (lang: Lang) => ({ name: lang === 'en' ? 'Anna Example' : 'Ayşe Örnek', lang });
-const PAY: PaymentSettings = { year: 2026, fees: { individual: 1500, couple: 2200, accessible: 750 }, bank: 'Osman Güneş Özkurt · TR00 0000 0000 0000 0000 0000 00', link: '', dueHours: 24 };
+const PAY: PaymentSettings = { year: 2026, fees: { individual: 1500, couple: 2200, accessible: 750 }, bank: '', holder: 'Osman Güneş Özkurt', bankName: 'Örnek Bank', iban: 'TR00 0000 0000 0000 0000 0000 00', link: '', dueHours: 24 };
 const request = (lang: Lang, kind: 'session' | 'intro'): BookingRequest => ({
   id: 'ornek',
   createdAt: 0,

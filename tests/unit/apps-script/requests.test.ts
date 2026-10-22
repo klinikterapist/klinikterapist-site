@@ -624,7 +624,16 @@ describe('Faz 1: fees, payments and reminders', () => {
     const s = setup();
     expect(s.call('payment.set', { payment: { ...settings, year: 0 } }).ok).toBe(false);
     expect(s.call('payment.set', { payment: { ...settings, fees: { individual: '1500', bogus: 9 }, link: 'javascript:alert(1)' } }).ok).toBe(true);
-    expect(s.call<{ payment: unknown }>('payment.get').data.payment).toEqual({ ...settings, fees: { individual: 1500, couple: 0, accessible: 0 }, link: '' });
+    expect(s.call<{ payment: unknown }>('payment.get').data.payment).toEqual({ ...settings, fees: { individual: 1500, couple: 0, accessible: 0 }, link: '', holder: '', bankName: '', iban: '', qr: '' });
+    // The QR code: a PNG or JPG data URL is kept in Drive, '' removes it, anything else is refused.
+    const png = 'data:image/png;base64,iVBORw0KGgo=';
+    expect(s.call('payment.set', { payment: { ...settings, holder: ' Ad  Soyad ', iban: 'tr00 1', qr: png } }).ok).toBe(true);
+    expect(s.call<{ payment: Record<string, unknown> }>('payment.get').data.payment).toMatchObject({ holder: 'Ad Soyad', iban: 'TR00 1', qr: png });
+    expect(s.call('payment.set', { payment: { ...settings, qr: 'data:text/html;base64,PGI+' } }).ok).toBe(false);
+    expect(s.call('payment.set', { payment: settings }).ok).toBe(true);
+    expect(s.call<{ payment: { qr: string } }>('payment.get').data.payment.qr).toBe(png);
+    expect(s.call('payment.set', { payment: { ...settings, qr: '' } }).ok).toBe(true);
+    expect(s.call<{ payment: { qr: string } }>('payment.get').data.payment.qr).toBe('');
     // Not for the public.
     expect(handle(s.gas, JSON.stringify({ action: 'payment.get' }))).toMatchObject({ ok: false });
   });

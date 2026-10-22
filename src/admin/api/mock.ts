@@ -440,8 +440,8 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
       wait(() => {
         const p = parsePayment(payment);
         if (!p.year) throw new ApiFailure('bad_request', 'Ücretlerin geçerli olduğu yılı girin.');
-        state.payment = p;
-        return { payment: structuredClone(p) };
+        state.payment = { ...p, qr: typeof payment.qr === 'string' ? payment.qr : (state.payment.qr ?? '') };
+        return { payment: structuredClone(state.payment) };
       }),
     mailSettings: () => wait(() => mailSettingsOf(state)),
     mailSettingsSet: (boxes) =>

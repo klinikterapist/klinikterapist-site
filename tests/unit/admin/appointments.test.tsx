@@ -406,7 +406,7 @@ describe('Faz 1: payments on the client’s page', () => {
     const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
     const weekday = new Date(`${day(3)}T12:00:00Z`).getUTCDay();
     const { api } = setup('client:c1', [], [client({ weekday, since: day(3) })]);
-    api.state.payment = { year: 2026, fees: { individual: 1500, couple: 0, accessible: 0 }, bank: 'TR00 ÖRNEK', link: '', dueHours: 24 };
+    api.state.payment = { year: 2026, fees: { individual: 1500, couple: 0, accessible: 0 }, bank: 'TR00 ÖRNEK', holder: '', bankName: '', iban: '', link: '', dueHours: 24 };
     const next = (await screen.findByRole('heading', { name: /Sıradaki seanslar/ })).parentElement!;
     const first = () => within(next).getAllByRole('listitem')[0];
     expect(first().textContent).toContain('Ödenmedi');

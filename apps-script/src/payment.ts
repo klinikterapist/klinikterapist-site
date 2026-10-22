@@ -25,6 +25,7 @@ import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type Sessi
 import { EMPTY_PAYMENT, parsePayment, paymentReminderMail, sessionReminderMail, type PaymentSettings } from '../../src/lib/payment';
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 import { asSender, notifyTo } from './mailboxes';
+import { readQr, saveQr } from './qr';
 
 const PROP = 'PAYMENT_SETTINGS';
 const HOUR = 3600 * 1000;
@@ -38,15 +39,17 @@ export function getPayment(gas: Gas): PaymentSettings {
   }
 }
 
-/** `payment.get` (panel). */
-export const readPayment = (gas: Gas) => ({ payment: getPayment(gas) });
+/** `payment.get` (panel), with the QR code image. */
+export const readPayment = (gas: Gas) => ({ payment: { ...getPayment(gas), qr: readQr(gas) } });
 
 /** `payment.set` (panel): only known fields are kept (src/lib/payment.ts `parsePayment`). */
 export function savePayment(gas: Gas, p: Record<string, unknown>): { payment: PaymentSettings } {
   const payment = parsePayment(p.payment);
   if (!payment.year) throw badRequest('Ücretlerin geçerli olduğu yılı girin.');
+  const qr = (p.payment as { qr?: unknown } | null)?.qr;
+  if (typeof qr === 'string') saveQr(gas, qr);
   gas.props.set(PROP, JSON.stringify(payment));
-  return { payment };
+  return { payment: { ...payment, qr: readQr(gas) } };
 }
 
 /** `clients.pay` (panel): paid or not; with `mail`, the owner's thank-you goes to the client. */

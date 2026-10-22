@@ -20,17 +20,25 @@ export type PaymentSettings = {
   year: number;
   /** Fee per session type (`individual`, `couple`, `accessible`), Turkish lira; 0 = not set. */
   fees: Record<string, number>;
-  /** Bank details as the owner writes them (account holder, bank, IBAN). */
+  /** Bank details as the owner wrote them before the separate fields (kept when those are empty). */
   bank: string;
+  /** Account holder, bank name and IBAN (owner's request 2026-10-22: one line each in the e-mails). */
+  holder: string;
+  bankName: string;
+  iban: string;
   /** An optional payment page link. */
   link: string;
   /** Payment due this many hours before the session. */
   dueHours: 24 | 48;
+  /** The payment QR code image (base64), kept in Drive, not with the rest; only in `payment.get` / `payment.set`. */
+  qr?: string;
 };
 
-export const EMPTY_PAYMENT: PaymentSettings = { year: 0, fees: {}, bank: '', link: '', dueHours: 24 };
+export const EMPTY_PAYMENT: PaymentSettings = { year: 0, fees: {}, bank: '', holder: '', bankName: '', iban: '', link: '', dueHours: 24 };
 
 const LINK_RE = /^https:\/\/[^\s<>"]{4,300}$/;
+
+const field = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
 
 /** The settings as stored, or as sent by the panel: only known fields, of the right types. */
 export function parsePayment(v: unknown): PaymentSettings {
@@ -46,6 +54,9 @@ export function parsePayment(v: unknown): PaymentSettings {
     year: Number.isInteger(year) && year >= 2020 && year <= 2100 ? year : 0,
     fees,
     bank: typeof o.bank === 'string' ? o.bank.trim().slice(0, 600) : '',
+    holder: field(o.holder, 120),
+    bankName: field(o.bankName, 120),
+    iban: field(o.iban, 60).toUpperCase(),
     link: typeof o.link === 'string' && LINK_RE.test(o.link.trim()) ? o.link.trim() : '',
     dueHours: o.dueHours === 48 ? 48 : 24,
   };
@@ -59,10 +70,38 @@ export const feesOutdated = (p: PaymentSettings, now: number) => p.year < istanb
 
 export const formatFee = (n: number, lang: 'tr' | 'en') => (lang === 'en' ? `TRY ${n.toLocaleString('en-US')}` : `${n.toLocaleString('tr-TR')} TL`);
 
+/** "[karekod]" on a line of its own: the payment QR code in the HTML part, left out of the plain text. */
+export const QR_LINE = '[karekod]';
+
+/**
+ * Where to pay, as "– Label: value" lines (owner's request 2026-10-22), then the QR code line when
+ * there is one. Settings from before the separate fields give their free text instead. Empty: [].
+ */
+export function paymentInfo(p: PaymentSettings, lang: 'tr' | 'en', hasQr = false): string[] {
+  const L =
+    lang === 'en'
+      ? { cur: ['Currency', 'Turkish lira (TRY)'], bank: 'Bank', iban: 'IBAN', holder: 'Account holder', link: 'Payment link' }
+      : { cur: ['Para birimi', 'Türk lirası (TL)'], bank: 'Banka', iban: 'IBAN', holder: 'Hesap sahibi', link: 'Ödeme bağlantısı' };
+  const fields = p.iban || p.holder || p.bankName;
+  const lines = fields
+    ? [
+        `– ${L.cur[0]}: ${L.cur[1]}`,
+        ...(p.bankName ? [`– ${L.bank}: ${p.bankName}`] : []),
+        ...(p.iban ? [`– ${L.iban}: ${p.iban}`] : []),
+        ...(p.holder ? [`– ${L.holder}: ${p.holder}`] : []),
+      ]
+    : p.bank
+      ? [p.bank]
+      : [];
+  if (p.link) lines.push(`– ${L.link}: ${p.link}`);
+  if (lines.length && hasQr) lines.push(QR_LINE);
+  return lines;
+}
+
 /** The lines that say how to pay: fee, when, where. Empty settings say the details follow. */
-export function paymentLines(p: PaymentSettings, type: string, lang: 'tr' | 'en'): string[] {
+export function paymentLines(p: PaymentSettings, type: string, lang: 'tr' | 'en', hasQr = false): string[] {
   const fee = p.fees[type] ?? 0;
-  const where = [p.bank, p.link].filter(Boolean);
+  const where = paymentInfo(p, lang, hasQr);
   if (lang === 'en') {
     return [
       ...(fee ? [`Session fee: ${formatFee(fee, 'en')}.`] : []),
