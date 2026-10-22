@@ -21,6 +21,8 @@ import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
 import { asSender, notifyTo } from './mailboxes';
+import { mailTr } from '../../src/lib/mail-texts';
+import { closingDeadline } from '../../src/lib/closing';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
 export const REQUESTS = 'talepler.json';
@@ -181,15 +183,19 @@ export function warnExpiringHolds(gas: Gas): number {
     return m <= 0 ? 'süre doldu, saat sitede yeniden açık' : `tutma ${Math.floor(m / 60)} sa ${m % 60} dk sonra bitiyor`;
   };
   const what = (r: BookingRequest) => (r.kind === 'intro' ? 'Ücretsiz ön görüşme' : `Seans randevusu (${SESSION_TYPES.find((t) => t.id === r.type)?.tr ?? 'Seans'})`);
-  const body = [
-    due.length === 1 ? 'Bu talebe henüz karar vermediniz:' : `Bu ${due.length} talebe henüz karar vermediniz:`,
-    '',
-    ...due.map((r) => `- ${oneLine(r.name)} · ${what(r)} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')} · ${left(r)}`),
-    '',
-    'Karar vermezseniz saat sitede yeniden açılır ve başka biri alabilir; talep ise 30 gün boyunca panelde kalır.',
-    `Randevu talepleri: ${PANEL_URL}#/randevular`,
-  ].join('\n');
-  gas.mail.send({ to: notifyTo(gas, owner), replyTo: owner, subject: `[klinikterapist] ${due.length === 1 ? 'Bir talebin' : `${due.length} talebin`} tutma süresi doluyor`, body, name: 'klinikterapist.com randevu sistemi' });
+  const m = mailTr('bildirim.tutma', {
+    tutma_listesi: due.map((r) => `– ${oneLine(r.name)} · ${what(r)} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')} · ${left(r)}`).join('\n'),
+    panel_baglantisi: `${PANEL_URL}#/randevular`,
+  });
+  // The text speaks of one request; several make it plural.
+  const many = due.length > 1;
+  gas.mail.send({
+    to: notifyTo(gas, owner),
+    replyTo: owner,
+    subject: many ? `${due.length} talebin tutma süresi doluyor` : m.subject,
+    body: many ? m.body.replace('Aşağıdaki talep için', `Aşağıdaki ${due.length} talep için`) : m.body,
+    name: 'klinikterapist.com randevu sistemi',
+  });
   return due.length;
 }
 
@@ -364,7 +370,10 @@ export function endClient(gas: Gas, p: Record<string, unknown>): Record<string, 
     const c = clients.find((x) => x.id === p.id);
     if (!c) throw new ApiError('not_found', NO_CLIENT);
     if (mode !== 'delete') sendMail(gas, c.contact.email, p);
-    write(gas, CLIENTS, mode === 'closing' ? clients.map((x) => (x.id === c.id ? { ...x, status: 'closing' as const } : x)) : clients.filter((x) => x.id !== c.id));
+    // The closing session: the client has until the end of the third day to pick its time (closing.ts).
+    const now = gas.now();
+    const closing = (x: StoredClient): StoredClient => ({ ...x, status: 'closing', closingAsk: { at: now, until: closingDeadline(now).until } });
+    write(gas, CLIENTS, mode === 'closing' ? clients.map((x) => (x.id === c.id ? closing(x) : x)) : clients.filter((x) => x.id !== c.id));
     logEvent(gas, 'client', `${c.number}: ${{ complete: 'terapi tamamlandı', closing: 'sonlandırma görüşmesi daveti gitti', delete: 'Seans takipten silindi' }[mode]}`, mode === 'closing' ? `#/seans-takip/${c.id}` : '#/seans-takip');
     return {};
   });

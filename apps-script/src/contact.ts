@@ -8,6 +8,8 @@ import type { Gas } from './gas';
 import { ApiError, badRequest } from './respond';
 import { isContactTopic, topicLabel, validateContact, type ContactInput } from '../../src/lib/contact-form';
 import { oneLine, str } from './text';
+import { mailTr } from '../../src/lib/mail-texts';
+import { stamp } from '../../src/lib/mail-vars';
 
 /**
  * Fixed windows: per visitor address and for the whole site per clock hour, and for the whole site per
@@ -108,20 +110,7 @@ export function sendContact(gas: Gas, p: Record<string, unknown>): { sent: true 
 
   if (!allowSend(gas, email)) throw badRequest(TOO_MANY);
 
-  const body = [
-    `Ad Soyad: ${name}`,
-    `E-posta: ${email}`,
-    `Konu: ${topic}`,
-    `Sayfa dili: ${lang === 'en' ? 'İngilizce' : 'Türkçe'}`,
-    `Gönderim: ${new Date(gas.now()).toISOString()}`,
-    '',
-    'Mesaj:',
-    input.message.trim(),
-    '',
-    '—',
-    'Bu ileti klinikterapist.com iletişim formundan gönderildi. Yanıtla dediğinizde ziyaretçinin adresine gider.',
-  ].join('\n');
-
-  gas.mail.send({ to: owner, replyTo: email, subject: `[klinikterapist] ${topic} — ${name}`, body, name: 'klinikterapist.com iletişim formu' });
+  const m = mailTr('bildirim.iletisim', { ad: name, e_posta: email, konu: topic, dil: lang === 'en' ? 'İngilizce' : 'Türkçe', gonderim: stamp(gas.now()), mesaj: input.message.trim() });
+  gas.mail.send({ to: owner, replyTo: email, ...m, name: 'klinikterapist.com iletişim formu' });
   return { sent: true };
 }

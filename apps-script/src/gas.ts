@@ -4,7 +4,9 @@
  * runs under Vitest with an in-memory fake.
  */
 import { logEvent } from './events';
-import { mailHtml } from './mail-html';
+import { mailHtml, plainBody } from './mail-html';
+import { readQr } from './qr';
+import { QR_LINE } from '../../src/lib/payment';
 export type FetchOpts = {
   method?: 'get' | 'post' | 'patch' | 'put' | 'delete';
   headers?: Record<string, string>;
@@ -104,7 +106,7 @@ class GasFolder implements FolderLike {
     const blob =
       kind === 'json'
         ? Utilities.newBlob(content, JSON_MIME, name)
-        : Utilities.newBlob(Utilities.base64Decode(content), name.endsWith('.jpg') ? 'image/jpeg' : 'image/webp', name);
+        : Utilities.newBlob(Utilities.base64Decode(content), name.endsWith('.jpg') ? 'image/jpeg' : name.endsWith('.png') ? 'image/png' : 'image/webp', name);
     return new GasFile(this.folder.createFile(blob));
   }
   listFiles() {
@@ -220,11 +222,16 @@ export function realGas(): Gas {
       // rejected every MailApp message from the account ("Message rejected") while the same text sent
       // from Gmail arrived. MailApp stays only as the last resort.
       send: (m) => {
-        // E-mails with the e-mail check link also get an HTML part with a button (mail-html.ts).
-        const htmlBody = mailHtml(m.body);
+        // E-mails to people get an HTML part (buttons, lists, the logo signature; mail-html.ts); the
+        // payment details carry the QR code inline when one is set.
+        const qr = m.body.split('\n').some((l) => l.trim() === QR_LINE) ? readQr(gas) : '';
+        const qrBlob = qr ? Utilities.newBlob(Utilities.base64Decode(qr.split(',')[1]), qr.slice(5, qr.indexOf(';')), 'karekod') : null;
+        const htmlBody = mailHtml(m.body, { qr: !!qrBlob });
+        const extra = { ...(htmlBody ? { htmlBody } : {}), ...(qrBlob ? { inlineImages: { karekod: qrBlob } } : {}) };
+        m = { ...m, body: plainBody(m.body) };
         if (m.from) {
           try {
-            GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name, ...(htmlBody ? { htmlBody } : {}) });
+            GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name, ...extra });
             return;
           } catch (e) {
             // The alias was removed in Gmail: the e-mail still goes, from the account's own address.
@@ -232,13 +239,13 @@ export function realGas(): Gas {
           }
         }
         try {
-          GmailApp.sendEmail(m.to, m.subject, m.body, { replyTo: m.replyTo, name: m.name, ...(htmlBody ? { htmlBody } : {}) });
+          GmailApp.sendEmail(m.to, m.subject, m.body, { replyTo: m.replyTo, name: m.name, ...extra });
           return;
         } catch (e) {
           // The Gmail permission is missing (not granted yet after an update).
           noteMailError(gas, 'Gmail gönderemedi, yedek yol kullanıldı', e);
         }
-        MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name, ...(htmlBody ? { htmlBody } : {}) });
+        MailApp.sendEmail({ to: m.to, replyTo: m.replyTo, subject: m.subject, body: m.body, name: m.name, ...extra });
       },
       quota: () => MailApp.getRemainingDailyQuota(),
       aliases: () => GmailApp.getAliases(),

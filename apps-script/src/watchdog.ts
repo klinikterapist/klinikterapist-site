@@ -48,7 +48,7 @@ export function checkHourly(gas: Gas): void {
       'Görev çalışmadıkça:',
       '- planladığınız yazılar yayınlanmaz,',
       '- danışanlara seans ve ödeme hatırlatmaları gitmez,',
-      '- kararsız kalan talepler için uyarı gelmez.',
+      '- karar vermediğiniz talepler için uyarı gelmez.',
       '',
       'Ne yapmalı:',
       '1. script.google.com › "Klinikterapist Panel" projesini açın.',

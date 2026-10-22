@@ -7,9 +7,11 @@
 import type { BookingRequest } from '../api/types';
 import { formatDay } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
-import { paymentLines, ruleLine, sessionReminderMail, thanksMail, paymentReminderMail, motivationFor, type PaymentSettings } from '../../lib/payment';
+import { payVars, paymentLines, ruleLine, sessionReminderMail, thanksMail, paymentReminderMail, motivationFor, type PaymentSettings } from '../../lib/payment';
 import { mailTexts, setMailTexts, toTemplate, type Mail } from '../../lib/mail-texts';
-import { SITE, decisionMail, endMail, introNote, linkMail, revertMail, waitlistMail, what, type PanelMailId } from './booking-mail';
+import { MAIL_TR } from '../../lib/mail-templates-tr';
+import { LINKS_TR, RULE_TR, typeVars, whenVars } from '../../lib/mail-vars';
+import { SITE, decisionMail, decisionVarsTr, endMail, introNote, linkMail, revertMail, waitlistMail, what, type PanelMailId } from './booking-mail';
 
 type Lang = 'tr' | 'en';
 export type MailGroup = 'Randevu talepleri' | 'Danışanlar' | 'Ödemeler' | 'Bekleme listesi' | 'Otomatik';
@@ -29,7 +31,7 @@ export type CatalogEntry = {
 const DAY = '2026-11-12';
 const TIME = '18:00';
 const person = (lang: Lang) => ({ name: lang === 'en' ? 'Anna Example' : 'Ayşe Örnek', lang });
-const PAY: PaymentSettings = { year: 2026, fees: { individual: 1500, couple: 2200, accessible: 750 }, bank: 'Osman Güneş Özkurt · TR00 0000 0000 0000 0000 0000 00', link: '', dueHours: 24 };
+const PAY: PaymentSettings = { year: 2026, fees: { individual: 1500, couple: 2200, accessible: 750 }, bank: '', holder: 'Osman Güneş Özkurt', bankName: 'Örnek Bank', iban: 'TR00 0000 0000 0000 0000 0000 00', link: '', dueHours: 24 };
 const request = (lang: Lang, kind: 'session' | 'intro'): BookingRequest => ({
   id: 'ornek',
   createdAt: 0,
@@ -62,7 +64,10 @@ function builtIn(make: () => Mail): Mail {
 
 const decision = (kind: 'session' | 'intro', d: 'approve' | 'unavailable' | 'cancel') => ({
   sample: (lang: Lang) => builtIn(() => decisionMail(request(lang, kind), d, PAY)),
-  vars: (lang: Lang) => ({
+  vars: (lang: Lang): Record<string, string> =>
+    lang === 'tr'
+      ? decisionVarsTr(request('tr', kind), PAY)
+      : {
     ad: person(lang).name,
     zaman: when(lang),
     tur: what(request(lang, kind), lang),
@@ -70,7 +75,7 @@ const decision = (kind: 'session' | 'intro', d: 'approve' | 'unavailable' | 'can
     kural: ruleLine(lang),
     baglanti: link(lang, kind === 'intro' ? 'preConsult' : 'appointment'),
     talep_notu: introNote(request(lang, kind), lang),
-  }),
+  },
 });
 
 export const MAIL_CATALOG: CatalogEntry[] = [
@@ -84,15 +89,16 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Randevu sayfası bağlantısı',
     when: 'Danışanın sayfasından bağlantıyı gönderdiğinizde',
     sample: (lang) => builtIn(() => linkMail(person(lang), PAGE)),
-    vars: (lang) => ({ ad: person(lang).name, baglanti: PAGE }),
+    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, sayfa_baglantisi: PAGE, kural: RULE_TR } : { ad: person(lang).name, baglanti: PAGE }),
   },
   {
     id: 'danisan.sonlandirma',
     group: 'Danışanlar',
     label: 'Sonlandırma görüşmesi daveti',
     when: 'Terapiyi sonlandır › Sonlandırma görüşmesi talep et',
-    sample: (lang) => builtIn(() => endMail(person(lang), 'closing')),
-    vars: (lang) => ({ ad: person(lang).name, baglanti: link(lang) }),
+    sample: (lang) => builtIn(() => endMail(person(lang), 'closing', { link: PAGE, lastDay: DAY })),
+    vars: (lang): Record<string, string> =>
+      lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR, sayfa_baglantisi: PAGE, son_tarih: formatDay(DAY, 'tr') } : { ad: person(lang).name, baglanti: PAGE, sayfa_baglantisi: PAGE, son_tarih: formatDay(DAY, 'en') },
   },
   {
     id: 'danisan.tamamlandi',
@@ -100,7 +106,7 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Terapi tamamlandı',
     when: 'Terapiyi sonlandır › Terapi tamamlandı',
     sample: (lang) => builtIn(() => endMail(person(lang), 'complete')),
-    vars: (lang) => ({ ad: person(lang).name, baglanti: link(lang) }),
+    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR } : { ad: person(lang).name, baglanti: link(lang) }),
   },
   {
     id: 'danisan.geri-al',
@@ -116,7 +122,7 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Ödeme alındı (teşekkür)',
     when: 'Bir seansı "Ödendi" diye işaretlediğinizde',
     sample: (lang) => builtIn(() => thanksMail(person(lang), { day: DAY, time: TIME })),
-    vars: (lang) => ({ ad: person(lang).name, zaman: when(lang), motivasyon: motivationFor(`${DAY}T${TIME}`, lang) }),
+    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...whenVars(DAY, TIME), tur: typeVars('individual').tur, motivasyon: motivationFor(`${DAY}T${TIME}`, lang) } : { ad: person(lang).name, zaman: when(lang), motivasyon: motivationFor(`${DAY}T${TIME}`, lang) }),
   },
   {
     id: 'odeme.hatirlatma',
@@ -124,7 +130,10 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Ödeme hatırlatması',
     when: 'Danışanın sayfasından "Ödeme hatırlat" ile gönderdiğinizde',
     sample: (lang) => builtIn(() => paymentReminderMail(person(lang), { day: DAY, time: TIME }, 'individual', PAY)),
-    vars: (lang) => ({ ad: person(lang).name, zaman: when(lang), odeme: paymentLines(PAY, 'individual', lang).join('\n'), kural: ruleLine(lang) }),
+    vars: (lang): Record<string, string> =>
+      lang === 'tr'
+        ? { ad: person(lang).name, ...whenVars(DAY, TIME), ...typeVars('individual'), ...payVars(PAY, 'individual', false), sayfa_baglantisi: PAGE, '#sayfa': '1' }
+        : { ad: person(lang).name, zaman: when(lang), odeme: paymentLines(PAY, 'individual', lang).join('\n'), kural: ruleLine(lang) },
   },
   {
     id: 'bekleme.yer-acildi',
@@ -132,7 +141,7 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Bir saat boşaldı',
     when: 'Bekleme listesindeki birine saat önerdiğinizde',
     sample: (lang) => builtIn(() => waitlistMail(person(lang), 'offer', { day: DAY, time: TIME })),
-    vars: (lang) => ({ ad: person(lang).name, zaman: when(lang), baglanti: link(lang) }),
+    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...whenVars(DAY, TIME) } : { ad: person(lang).name, zaman: when(lang), baglanti: link(lang) }),
   },
   {
     id: 'bekleme.alim-acik',
@@ -140,7 +149,7 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Randevu alımı açıldı',
     when: 'Randevu alımını yeniden açıp listeye haber verdiğinizde',
     sample: (lang) => builtIn(() => waitlistMail(person(lang), 'open')),
-    vars: (lang) => ({ ad: person(lang).name, baglanti: link(lang) }),
+    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR } : { ad: person(lang).name, baglanti: link(lang) }),
   },
   {
     id: 'bekleme.cikarma',
@@ -148,7 +157,7 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     label: 'Listeden çıkarma',
     when: 'Bir kişiyi bekleme listesinden çıkardığınızda',
     sample: (lang) => builtIn(() => waitlistMail(person(lang), 'remove')),
-    vars: (lang) => ({ ad: person(lang).name, baglanti: link(lang) }),
+    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR } : { ad: person(lang).name, baglanti: link(lang) }),
   },
   {
     id: 'oto.seans-hatirlatma',
@@ -157,9 +166,12 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     when: 'Her seanstan 72 saat önce, kendiliğinden',
     auto: true,
     sample: (lang) => builtIn(() => sessionReminderMail(person(lang), { day: DAY, time: TIME }, { type: 'individual', free: false, paid: false }, PAY, PAGE)),
-    vars: (lang) => ({ ad: person(lang).name, zaman: when(lang) }),
+    vars: (lang): Record<string, string> =>
+      lang === 'tr'
+        ? { ad: person(lang).name, ...whenVars(DAY, TIME), ...typeVars('individual'), ...payVars(PAY, 'individual', false), sayfa_baglantisi: PAGE, '#odeme': '1', '#sayfa': '1' }
+        : { ad: person(lang).name, zaman: when(lang) },
   },
 ];
 
-/** The built-in e-mail as a template with placeholders: where the editor starts. */
-export const defaultTemplate = (e: CatalogEntry, lang: Lang): Mail => toTemplate(e.sample(lang), e.vars(lang), lang);
+/** The built-in e-mail as a template with placeholders: where the editor starts (Turkish: the text itself). */
+export const defaultTemplate = (e: CatalogEntry, lang: Lang): Mail => (lang === 'tr' ? { ...MAIL_TR[e.id] } : toTemplate(e.sample(lang), e.vars(lang), lang));

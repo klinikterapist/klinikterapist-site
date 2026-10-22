@@ -32,12 +32,13 @@ describe('booking.request', () => {
     expect(gas.mails).toHaveLength(2);
     const [owner, visitor] = gas.mails;
     expect(owner).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' });
-    expect(owner.subject).toBe('[klinikterapist] Randevu talebi — Ayşe Yılmaz — 22 Ekim 2026, Perşembe 15:00');
+    expect(owner.subject).toBe('Randevu talebi – Ayşe Yılmaz – 22 Ekim 2026, Perşembe, 15.00');
     expect(owner.body).toContain('Görüşme türü: Çift terapisi');
     expect(owner.body).toContain('Telefon: 0532 123 45 67');
-    expect(owner.body).toContain('Not:\nAkşamları daha uygun.');
-    expect(visitor).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Talebiniz alındı – klinikterapist.com' });
-    expect(visitor.body).toContain('Çift terapisi, 22 Ekim 2026, Perşembe, 15:00');
+    expect(owner.body).toContain('■ Danışanın notu\n\nAkşamları daha uygun.');
+    expect(visitor).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Randevu talebiniz alındı – klinikterapist.com' });
+    expect(visitor.body).toContain('– Görüşme türü: Çift terapisi\n– Tarih ve saat: 22 Ekim 2026, Perşembe, 15.00 (Türkiye saati)\n– Süre ve biçim: 60 dakika, online');
+    expect(visitor.body).toMatch(/Saygılarımla,\nOsman Güneş Özkurt\nKlinik Psikolog\nklinikterapist\.com$/);
     // Nothing the visitor typed reaches the acknowledgement.
     expect(visitor.body).not.toContain('Ayşe');
     expect(visitor.body).not.toContain('Akşamları');
@@ -47,16 +48,17 @@ describe('booking.request', () => {
       { id: expect.any(String), start: Date.parse('2026-10-22T15:00:00+03:00'), minutes: 60, kind: 'session', type: 'couple', status: 'hold', holdUntil: NOW + 24 * 3600e3 },
     ]);
     expect(calendar).not.toMatch(/Ayşe|ayse|0532|Akşam/);
-    expect(owner.body).toContain('Talepler: https://klinikterapist.com/admin/#/randevular');
+    expect(owner.body).toContain('→ Randevu Talepleri ekranını aç: https://klinikterapist.com/admin/#/randevular');
+    expect(owner.body).toContain('– Başvuru tarihi: 20 Ekim 2026, Salı, 10.00 (Türkiye saati)');
   });
 
   it('an intro request lists the topics and age range for the owner; the acknowledgement follows the page language', () => {
     const { gas, send } = setup();
     expect(send(intro).ok).toBe(true);
     const [owner, visitor] = gas.mails;
-    expect(owner.body).toContain('Konular: İlişki sorunları, Görüşmede konuşmayı tercih ederim');
-    expect(owner.body).toContain('Yaş aralığı: 35–44');
-    expect(owner.body).toContain('Kimin için: Partnerimle birlikte (çift terapisi)');
+    expect(owner.body).toContain('Belirttiği konular:\n\n– İlişki sorunları\n– Görüşmede konuşmayı tercih ederim');
+    expect(owner.body).toContain('– Yaş aralığı: 35–44');
+    expect(owner.body).toContain('– Başvuru: Partneriyle birlikte');
     expect(owner.body).toContain('Konuşma dili: İngilizce');
     expect(visitor.subject).toBe('Your request has been received – klinikterapist.com');
     expect(visitor.body).toContain('Free intro call, Saturday 24 October 2026, 12:00');

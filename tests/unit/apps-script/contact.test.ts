@@ -24,10 +24,10 @@ describe('contact.send', () => {
     const m = gas.mails[0];
     expect(m.to).toBe('merhaba@klinikterapist.com');
     expect(m.replyTo).toBe('ayse@example.com');
-    expect(m.subject).toBe('[klinikterapist] İş birliği — Ayşe Yılmaz');
-    expect(m.body).toContain('Ad Soyad: Ayşe Yılmaz');
-    expect(m.body).toContain('E-posta: ayse@example.com');
-    expect(m.body).toContain('Konu: İş birliği');
+    expect(m.subject).toBe('İş birliği – Ayşe Yılmaz');
+    expect(m.body).toContain('– Ad soyad: Ayşe Yılmaz');
+    expect(m.body).toContain('– E-posta: ayse@example.com');
+    expect(m.body).toContain('– Konu: İş birliği');
     expect(m.body).toContain('Merhaba, bir iş birliği önerim var.');
   });
 
@@ -44,7 +44,7 @@ describe('contact.send', () => {
     for (const t of CONTACT_TOPICS) {
       const gas = fakeGas({ props });
       send(gas, { topic: t.id });
-      expect(gas.mails[0].subject).toBe(`[klinikterapist] ${t.tr} — Ayşe Yılmaz`);
+      expect(gas.mails[0].subject).toBe(`${t.tr} – Ayşe Yılmaz`);
     }
     for (const topic of ['appointment', 'Genel mesaj', '', 'toString', '__proto__']) {
       const gas = fakeGas({ props });
@@ -91,7 +91,7 @@ describe('contact.send', () => {
   it('newlines in the name never reach the subject line', () => {
     const gas = fakeGas({ props });
     send(gas, { name: 'Ayşe\r\nBcc: x@y.com' });
-    expect(gas.mails[0].subject).toBe('[klinikterapist] İş birliği — Ayşe Bcc: x@y.com');
+    expect(gas.mails[0].subject).toBe('İş birliği – Ayşe Bcc: x@y.com');
     expect(gas.mails[0].subject).not.toMatch(/[\r\n]/);
   });
 

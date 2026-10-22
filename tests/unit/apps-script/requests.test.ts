@@ -338,14 +338,16 @@ describe("The client's own page (tracking.ts)", () => {
     return { ...s, cid, link, code, pub, client };
   }
 
-  it('the link opens the next sessions without the name, the e-mail or the notes', () => {
+  it('the link opens the next sessions with the client code, without the name, the e-mail or the notes', () => {
     const t = withClient();
     expect(t.link).toMatch(/^https:\/\/klinikterapist\.com\/randevum\/#k=[\w-]+\.[\w-]{32}$/);
     t.call('clients.session', { id: t.cid, op: 'mark', day: '2026-10-29', time: '19:20', status: 'cancelled', by: 'owner', note: 'Özel not' });
     const out = t.pub('track.view', { code: t.code });
     expect(out.ok).toBe(true);
     const text = JSON.stringify(out);
-    for (const secret of ['Ayşe', 'ayse@example.com', 'Özel not', 'KT001']) expect(text).not.toContain(secret);
+    for (const secret of ['Ayşe', 'ayse@example.com', 'Özel not']) expect(text).not.toContain(secret);
+    // Owner's request 2026-10-22: the code is shown, so the client can give it when they write.
+    expect(out.data!.number).toBe('KT001AY');
     expect((out.data!.next as unknown[]).slice(0, 2)).toEqual([
       expect.objectContaining({ day: '2026-10-22', status: 'planned', late: false }),
       expect.objectContaining({ day: '2026-10-29', status: 'cancelled', by: 'owner' }),
@@ -379,7 +381,8 @@ describe("The client's own page (tracking.ts)", () => {
     expect(t.gas.mails[0].subject).toContain('KT001AY seansını iptal etti');
     expect(t.gas.mails[0].body).toContain('Hastayım');
     // E1: the client's own copy is fixed text: the date, the page link; not their note, no fee line.
-    expect(t.gas.mails[1].body).toContain('29 Ekim 2026, Perşembe, 19.20 seansınız');
+    expect(t.gas.mails[1].body).toContain('– Tarih: 29 Ekim 2026, Perşembe\n– Saat: 19.20 (Türkiye saati)');
+    expect(t.gas.mails[1].body).toContain('→ Randevu sayfama git: https://klinikterapist.com/randevum/#k=');
     expect(t.gas.mails[1].body).toContain('https://klinikterapist.com/randevum/#k=');
     expect(t.gas.mails[1].body).not.toContain('Hastayım');
     expect(t.gas.mails[1].body).not.toContain('ücretinin tamamı');
@@ -438,7 +441,8 @@ describe("The client's own page (tracking.ts)", () => {
     expect(t.pub('track.ask', { code: t.code, ask: 'end', note: 'Kendimi iyi hissediyorum' }).ok).toBe(true);
     expect(t.client().endAsked).toMatchObject({ note: 'Kendimi iyi hissediyorum' });
     expect(t.gas.mails.at(-2)!.subject).toContain('terapiyi sonlandırmak istiyor');
-    expect(t.gas.mails.at(-1)!).toMatchObject({ to: 'ayse@example.com', subject: 'İsteğiniz bana ulaştı – klinikterapist.com' });
+    expect(t.gas.mails.at(-1)!).toMatchObject({ to: 'ayse@example.com', subject: 'Sonlandırma isteğiniz bana ulaştı – klinikterapist.com' });
+    expect(t.gas.mails.at(-2)!.body).toContain('■ Danışanın notu\n\nKendimi iyi hissediyorum');
   });
 
   it('the owner sends the link from the panel; ending therapy kills it', () => {
@@ -523,8 +527,8 @@ describe('E3: the owner hears of a hold running out', () => {
     expect(s.gas.mails).toEqual([]);
     s.gas.clock.now = NOW + 21 * 3600 * 1000;
     await runHourly(s.gas);
-    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merhaba@klinikterapist.com', subject: '[klinikterapist] Bir talebin tutma süresi doluyor' })]);
-    expect(s.gas.mails[0].body).toContain('Ayşe Yılmaz · Seans randevusu (Çift terapisi) · 22 Ekim 2026, Perşembe, 19.20 · tutma 3 sa 0 dk sonra bitiyor');
+    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merhaba@klinikterapist.com', subject: 'Bir talebin tutma süresi doluyor' })]);
+    expect(s.gas.mails[0].body).toContain('– Ayşe Yılmaz · Seans randevusu (Çift terapisi) · 22 Ekim 2026, Perşembe, 19.20 · tutma 3 sa 0 dk sonra bitiyor');
     expect(s.gas.mails[0].body).not.toContain('ön görüşme');
     await runHourly(s.gas);
     expect(s.gas.mails).toHaveLength(1);
@@ -624,7 +628,16 @@ describe('Faz 1: fees, payments and reminders', () => {
     const s = setup();
     expect(s.call('payment.set', { payment: { ...settings, year: 0 } }).ok).toBe(false);
     expect(s.call('payment.set', { payment: { ...settings, fees: { individual: '1500', bogus: 9 }, link: 'javascript:alert(1)' } }).ok).toBe(true);
-    expect(s.call<{ payment: unknown }>('payment.get').data.payment).toEqual({ ...settings, fees: { individual: 1500, couple: 0, accessible: 0 }, link: '' });
+    expect(s.call<{ payment: unknown }>('payment.get').data.payment).toEqual({ ...settings, fees: { individual: 1500, couple: 0, accessible: 0 }, link: '', holder: '', bankName: '', iban: '', qr: '' });
+    // The QR code: a PNG or JPG data URL is kept in Drive, '' removes it, anything else is refused.
+    const png = 'data:image/png;base64,iVBORw0KGgo=';
+    expect(s.call('payment.set', { payment: { ...settings, holder: ' Ad  Soyad ', iban: 'tr00 1', qr: png } }).ok).toBe(true);
+    expect(s.call<{ payment: Record<string, unknown> }>('payment.get').data.payment).toMatchObject({ holder: 'Ad Soyad', iban: 'TR00 1', qr: png });
+    expect(s.call('payment.set', { payment: { ...settings, qr: 'data:text/html;base64,PGI+' } }).ok).toBe(false);
+    expect(s.call('payment.set', { payment: settings }).ok).toBe(true);
+    expect(s.call<{ payment: { qr: string } }>('payment.get').data.payment.qr).toBe(png);
+    expect(s.call('payment.set', { payment: { ...settings, qr: '' } }).ok).toBe(true);
+    expect(s.call<{ payment: { qr: string } }>('payment.get').data.payment.qr).toBe('');
     // Not for the public.
     expect(handle(s.gas, JSON.stringify({ action: 'payment.get' }))).toMatchObject({ ok: false });
   });
@@ -636,7 +649,7 @@ describe('Faz 1: fees, payments and reminders', () => {
     expect(t.gas.mails).toHaveLength(1);
     const r72 = t.gas.mails[0];
     expect(r72).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Seans hatırlatması: 29 Ekim 2026, Perşembe – klinikterapist.com' });
-    for (const part of ['29 Ekim 2026, Perşembe, saat 19.20 çift terapisi seansınızı', 'Seans ücreti: 2.000 TL.', 'en geç 24 saat önce', 'TR00 0000', 'tamamı ödenir', 'https://klinikterapist.com/randevum/#k=']) expect(r72.body).toContain(part);
+    for (const part of ['– Seans türü: Çift terapisi\n– Tarih: 29 Ekim 2026, Perşembe\n– Saat: 19.20 (Türkiye saati)\n– Seans ücreti: 2.000 TL', 'en geç 24 saat önce', 'TR00 0000', 'tamamı ödenir', '→ Randevu sayfama git: https://klinikterapist.com/randevum/#k=']) expect(r72.body).toContain(part);
     await runHourly(t.gas);
     expect(t.gas.mails).toHaveLength(1);
     t.gas.clock.now = at('2026-10-27T19:30:00'); // 47 h 50 min
@@ -644,8 +657,9 @@ describe('Faz 1: fees, payments and reminders', () => {
     expect(t.gas.mails.at(-1)).toMatchObject({ to: 'ayse@example.com', subject: 'Seans ödemesi hatırlatması – klinikterapist.com' });
     t.gas.clock.now = at('2026-10-28T19:30:00'); // 23 h 50 min: due
     await runHourly(t.gas);
-    expect(t.gas.mails.at(-1)).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com', subject: '[klinikterapist] KT001AY: ödeme alınmadı — 29 Ekim 2026, Perşembe, 19.20' });
-    expect(t.gas.mails.at(-1)!.body).toContain('sistem kendiliğinden bir şey yapmaz');
+    expect(t.gas.mails.at(-1)).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com', subject: 'KT001AY: ödeme alınmadı – 29 Ekim 2026, Perşembe, 19.20' });
+    expect(t.gas.mails.at(-1)!.body).toContain('Sistem kendiliğinden bir işlem yapmaz.');
+    expect(t.gas.mails.at(-2)!.body).toContain('→ Randevu sayfama git: https://klinikterapist.com/randevum/#k=');
     await runHourly(t.gas);
     expect(t.gas.mails).toHaveLength(3);
     expect(t.client().sessions.find((x) => x.day === '2026-10-29')!.sent).toEqual(['r72', 'r48', 'due']);
@@ -682,7 +696,9 @@ describe('Faz 1: fees, payments and reminders', () => {
     await runHourly(s.gas);
     await runHourly(s.gas);
     expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'ayse@example.com' })]);
-    expect(s.gas.mails[0].body).toContain('ücretsiz görüşmenizi');
+    expect(s.gas.mails[0].body).toContain('– Seans türü: Ücretsiz görüşme');
+    // No client page yet: no page button.
+    expect(s.gas.mails[0].body).not.toContain('Randevu sayfama git');
     expect(s.gas.mails[0].body).not.toContain('Seans ücreti');
   });
 });
@@ -766,15 +782,16 @@ describe('Faz 3: mistyped addresses and Süreç bilgisi', () => {
     const s = withDns();
     s.gas.mails.length = 0;
     expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'Merak@Example.com', topics: ['sure', 'ucret'], consent: true, lang: 'tr' })).ok).toBe(true);
-    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merak@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'İstediğiniz bilgiler – klinikterapist.com' })]);
+    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merak@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Bilgilendirme – klinikterapist.com' })]);
     const body = s.gas.mails[0].body;
     expect(body).toContain('Seanslar ne kadar sürer, ne sıklıkla olur?');
-    expect(body).toContain('randevunuz oluştuğunda size e-postayla iletilir');
+    expect(body).toContain('randevu ya da ön görüşme talebinizden sonra size e-postayla iletirim');
+    expect(body).toContain('→ Ücretsiz ön görüşme planlayın: https://klinikterapist.com/on-gorusme/');
     expect(body).not.toContain('Gizlilik nasıl korunur?');
     expect(body).toContain('https://klinikterapist.com/on-gorusme/');
     expect(body).not.toMatch(/\d+\s?TL/);
     const events = s.call<{ events: { kind: string; text: string }[] }>('events.list').data.events;
-    expect(events[0]).toMatchObject({ kind: 'info', text: 'Bilgi talebi: Seanslar ne kadar sürer, ne sıklıkla olur; Seans ücreti ne kadar' });
+    expect(events[0]).toMatchObject({ kind: 'info', text: 'Bilgi talebi: Seanslar ne kadar sürer, ne sıklıkla olur; Seans ücretleri nasıl belirlenir' });
     expect(JSON.stringify(events)).not.toContain('merak@');
     // No topic, an unknown topic or no consent: refused.
     for (const bad of [{ topics: [] }, { topics: ['bogus'] }, { topics: ['sure'], consent: false }]) {

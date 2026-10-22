@@ -10,7 +10,8 @@ describe('the owner’s e-mail wording (E-posta Ayarları)', () => {
   it('a built-in e-mail becomes a template with placeholders', () => {
     const t = defaultTemplate(MAIL_CATALOG.find((e) => e.id === 'talep.onay.seans')!, 'tr');
     expect(t.body).toContain('Sayın {ad},');
-    expect(t.body).toContain('{zaman}');
+    expect(t.body).toContain('{tarih}');
+    expect(t.body).toContain('{odeme_bilgileri}');
     expect(t.body).toContain('{kural}');
     expect(t.body).toContain('{imza}');
     expect(t.body).not.toContain('Ayşe Örnek');

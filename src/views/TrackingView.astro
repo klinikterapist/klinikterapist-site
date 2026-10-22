@@ -26,13 +26,13 @@ const demo = import.meta.env.DEV ? '1' : undefined;
 const T = {
   tr: {
     title: 'Randevularım',
-    lead: 'Sıradaki seanslarınız, seans bilginiz ve seans grafiğiniz burada. Bir seansı iptal edebilir ya da takvimdeki boş bir saate erteleyebilirsiniz.',
+    lead: 'Sıradaki ve geçmiş seanslarınız, ödeme durumları, seans bilginiz ve seans grafiğiniz burada. Bir seansı iptal edebilir ya da takvimdeki boş bir saate erteleyebilirsiniz.',
     privacy: 'Bu sayfa size gönderilen bağlantıyla açılır; adınız burada görünmez. Bağlantıyı kimseyle paylaşmayın.',
     mail: 'Sorunuz olursa e-posta gönderin:',
   },
   en: {
     title: 'My appointments',
-    lead: 'Your next sessions, your session details and your sessions so far are here. You can cancel a session or move it to a free time in the calendar.',
+    lead: 'Your next and past sessions, their payments, your session details and your sessions so far are here. You can cancel a session or move it to a free time in the calendar.',
     privacy: 'This page opens with the link sent to you; your name does not appear here. Please do not share the link.',
     mail: 'If you have a question, write to me:',
   },
@@ -94,6 +94,22 @@ const messages: TrackMessages =
         endSend: 'Send',
         endDone: 'Your wish to end therapy has reached me. I will write to you.',
         closing: 'We are planning a closing session.',
+        closingPick: {
+          title: 'Pick a time for our closing session',
+          text: 'You can pick one of the free times in the calendar for our free closing session of 25–30 minutes until the end of {date}.',
+          target: 'If no time is picked by then, your session on {when} will be planned as the free closing session.',
+          day: 'Day',
+          send: 'Pick this time',
+          done: 'Your closing session is planned for {when}. A confirmation is on its way to your e-mail.',
+        },
+        code: 'Client code',
+        codeNote: 'Please give this code when you write to me.',
+        firstTitle: 'Your next session',
+        pastTitle: 'Past sessions',
+        pastNone: 'No past sessions yet.',
+        past: { attended: 'Attended', noshow: 'Missed', unmarked: 'Not marked yet' },
+        pay: { paid: 'Paid', due: 'Payment due', free: 'Free' },
+        minutes: 'min',
         weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
       }
     : {
@@ -150,6 +166,22 @@ const messages: TrackMessages =
         endSend: 'Gönder',
         endDone: 'Terapiyi sonlandırma isteğiniz bana ulaştı. Size yazacağım.',
         closing: 'Bir sonlandırma görüşmesi planlıyoruz.',
+        closingPick: {
+          title: 'Sonlandırma görüşmenizin saatini seçin',
+          text: 'Ücretsiz, 25–30 dakikalık sonlandırma görüşmemiz için takvimdeki boş saatlerden birini {date} gününün sonuna kadar seçebilirsiniz.',
+          target: 'Bu tarihe kadar bir saat seçmezseniz {when} seansınız ücretsiz sonlandırma görüşmesi olarak planlanır.',
+          day: 'Gün',
+          send: 'Bu saati seç',
+          done: 'Sonlandırma görüşmeniz {when} için planlandı. E-posta adresinize bir onay gönderildi.',
+        },
+        code: 'Danışan kodu',
+        codeNote: 'Bana yazarken bu kodu belirtmeniz yeterli.',
+        firstTitle: 'Sıradaki seansınız',
+        pastTitle: 'Geçmiş seanslar',
+        pastNone: 'Henüz geçmiş seans yok.',
+        past: { attended: 'Katıldınız', noshow: 'Katılmadınız', unmarked: 'Henüz işaretlenmedi' },
+        pay: { paid: 'Ödendi', due: 'Ödeme bekleniyor', free: 'Ücretsiz' },
+        minutes: 'dk',
         weekdays: ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'],
       };
 
@@ -157,7 +189,7 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
 ---
 
 <PageShell lang={lang} meta={meta} alternatePaths={TRACK_PATH} noindex noAnalytics cta={false}>
-  <div class="container-text inner-page tracking">
+  <div class="container inner-page tracking">
     <PageHead title={T.title} icon="calendar" tone="adacayi">
       <p class="lead">{T.lead}</p>
     </PageHead>
@@ -216,10 +248,12 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
 
   .tp :global(.tp-session) {
     display: grid;
-    gap: var(--space-2);
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
     padding: var(--space-4);
     border: 1px solid var(--line);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background: var(--surface);
   }
 
@@ -330,12 +364,7 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
   }
 
   .tp :global(.tp-end) {
-    display: grid;
-    gap: var(--space-3);
     justify-items: start;
-    margin-top: var(--space-7);
-    padding-top: var(--space-5);
-    border-top: 1px solid var(--line);
   }
 
   .tp :global(.tp-end h2) {
@@ -357,6 +386,7 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
   }
 
   .tp-foot {
+    max-width: var(--max-text);
     margin-top: var(--space-5);
     color: var(--muted);
     font-size: var(--text-sm);
@@ -376,10 +406,9 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
   .tp :global(.tp-card) {
     display: grid;
     gap: var(--space-2);
-    margin-top: var(--space-6);
-    padding: var(--space-4);
+    padding: var(--space-5);
     border: 1px solid var(--line);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     background: var(--surface);
   }
 
@@ -568,5 +597,217 @@ const meta = buildMeta({ lang, title: T.title, description: T.lead, path: TRACK_
   .tp :global(.tp-time input:focus-visible + span) {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
+  }
+  /*
+   * Owner's request 2026-10-22: the page in blocks. A phone reads one column (the code and the
+   * details, the sessions, the chart, ending therapy); from 960px the sessions take the left and the
+   * code, the chart and ending therapy stand on the right. Colours are the site's tones, always with
+   * words: sage for the therapy and paid, sun for a payment due, terracotta for a missed session.
+   */
+  .tp :global([data-body]:not([hidden])) {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .tp :global(.tp-sessions) {
+    display: grid;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  .tp :global(.tp-sessions h2) {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-lg);
+  }
+
+  .tp :global(.tp-sessions .tp-card h2) {
+    margin: 0;
+  }
+
+  @media (min-width: 960px) {
+    .tp :global([data-body]:not([hidden])) {
+      grid-template-columns: minmax(0, 1fr) 22rem;
+      grid-template-rows: auto auto 1fr;
+      column-gap: var(--space-6);
+      align-items: start;
+    }
+
+    .tp :global(.tp-sessions) {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+    }
+
+    .tp :global(.tp-id) {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .tp :global(.tp-chart) {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .tp :global(.tp-end) {
+      grid-column: 2;
+      grid-row: 3;
+    }
+  }
+
+  /* The client's code: large, easy to read out or copy. */
+  .tp :global(.tp-code) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--tone-adacayi-bg);
+    color: var(--tone-adacayi);
+  }
+
+  .tp :global(.tp-code span) {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .tp :global(.tp-code b) {
+    font-size: 1.375rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.06em;
+    user-select: all;
+  }
+
+  .tp :global(.tp-code-note) {
+    margin: 0;
+    font-size: var(--text-sm);
+  }
+
+  /* A session: the calendar leaf, then when, what and its labels. */
+  .tp :global(.tp-leaf) {
+    display: grid;
+    justify-items: center;
+    width: 3.5rem;
+    padding: 6px 0;
+    border-radius: var(--radius-md);
+    background: var(--tone-adacayi-bg);
+    color: var(--tone-adacayi);
+    line-height: 1.15;
+  }
+
+  .tp :global(.tp-leaf b) {
+    font: 600 1.5rem/1.1 var(--font-serif);
+  }
+
+  .tp :global(.tp-leaf small) {
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .tp :global(.tp-main-col) {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .tp :global(.tp-when b) {
+    font-size: var(--text-base);
+  }
+
+  .tp :global(.tp-session.is-first) {
+    border-color: color-mix(in srgb, var(--tone-adacayi) 45%, transparent);
+    background: var(--bg);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .tp :global(.tp-session.is-first .tp-leaf) {
+    width: 4.25rem;
+    padding: var(--space-2) 0;
+  }
+
+  .tp :global(.tp-session.is-first .tp-leaf b) {
+    font-size: 2rem;
+  }
+
+  .tp :global(.tp-session.is-first .tp-when b) {
+    font-size: var(--text-lg);
+  }
+
+  .tp :global(.tp-eyebrow) {
+    color: var(--tone-adacayi);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .tp :global(.tp-past .tp-session) {
+    background: none;
+  }
+
+  .tp :global(.tp-past .tp-leaf) {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .tp :global(.tp-tags) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tp :global(.tp-tag) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 26px;
+    padding: 0 10px;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .tp :global(.tone-adacayi) {
+    background: var(--tone-adacayi-bg);
+    color: var(--tone-adacayi);
+  }
+
+  .tp :global(.tone-gunes) {
+    background: var(--tone-gunes-bg);
+    color: var(--tone-gunes);
+  }
+
+  .tp :global(.tone-kiremit) {
+    background: var(--tone-kiremit-bg);
+    color: var(--tone-kiremit);
+  }
+
+  .tp :global(.tone-deniz) {
+    background: var(--tone-deniz-bg);
+    color: var(--tone-deniz);
+  }
+
+  .tp :global(.tone-lacivert) {
+    background: var(--tone-lacivert-bg);
+    color: var(--tone-lacivert);
+  }
+
+  /* The closing session's card: it waits for the client, so it is marked in sun. */
+  .tp :global(.tp-closing) {
+    border-color: color-mix(in srgb, var(--tone-gunes) 45%, transparent);
+    background: var(--bg);
+  }
+
+  .tp :global(.tp-closing p) {
+    margin: 0;
+  }
+
+  @media (max-width: 480px) {
+    .tp :global(.tp-session) {
+      gap: var(--space-3);
+      padding: var(--space-3);
+    }
+
+    .tp :global(.tp-card) {
+      padding: var(--space-4);
+    }
   }
 </style>

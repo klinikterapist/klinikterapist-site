@@ -8,6 +8,7 @@ import type { StatsSummary } from '../../lib/stats-wire';
 import { INTRO_MINUTES, clientNumber, intakeOpen, previewClosedKey, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
+import { closingDeadline } from '../../lib/closing';
 import { EMPTY_PAYMENT, parsePayment, type PaymentSettings } from '../../lib/payment';
 import { EMAIL_RE } from '../../lib/field-rules';
 
@@ -457,8 +458,8 @@ export function createMockApi(
       wait(() => {
         const p = parsePayment(payment);
         if (!p.year) throw new ApiFailure('bad_request', 'Ücretlerin geçerli olduğu yılı girin.');
-        state.payment = p;
-        return { payment: structuredClone(p) };
+        state.payment = { ...p, qr: typeof payment.qr === 'string' ? payment.qr : (state.payment.qr ?? '') };
+        return { payment: structuredClone(state.payment) };
       }),
     mailSettings: () => wait(() => mailSettingsOf(state)),
     mailSettingsSet: (boxes) =>
@@ -553,7 +554,7 @@ export function createMockApi(
         const c = state.clients.find((x) => x.id === id);
         if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
         if (mode !== 'delete') mail(c.contact.email, subject, body);
-        state.clients = mode === 'closing' ? state.clients.map((x) => (x.id === id ? { ...x, status: 'closing' } : x)) : state.clients.filter((x) => x.id !== id);
+        state.clients = mode === 'closing' ? state.clients.map((x) => (x.id === id ? { ...x, status: 'closing', closingAsk: { at: clock(), until: closingDeadline(clock()).until } } : x)) : state.clients.filter((x) => x.id !== id);
       }),
     clientRevert: ({ id, subject, body }) =>
       wait(() => {

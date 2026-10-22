@@ -3,6 +3,8 @@
  * written; in the HTML part
  * - the e-mail check link's own line becomes a button in the site's navy, with the plain address
  *   under it for mail apps that block buttons;
+ * - a "→ Label: https://klinikterapist.com/…" line becomes a link button with that label, and a
+ *   "■ " line a heading (the information e-mail's questions);
  * - the signature at the end (the name, then "Klinik Psikolog" / "klinikterapist.com" lines) becomes
  *   the logo signature: the sun, name, title, online therapy, site and Instagram, then the wordmark.
  * E-mails with neither (the owner's own notifications) stay plain text only. The images are the
@@ -10,9 +12,10 @@
  */
 import { SITE } from './text';
 import { VERIFY_PARAM } from './verify';
+import { QR_LINE } from '../../src/lib/payment';
 
 const LABEL = { tr: 'E-posta adresimi doğrula', en: 'Confirm my e-mail address' };
-const FALLBACK = { tr: 'Düğme açılmazsa bu adresi tarayıcınıza yapıştırın:', en: 'If the button does not open, paste this address into your browser:' };
+const FALLBACK = { tr: 'Düğme çalışmazsa bu bağlantıyı kopyalayıp tarayıcınıza yapıştırın:', en: 'If the button does not open, paste this address into your browser:' };
 const URL_RE = /https:\/\/[^\s<>"]+/g;
 
 const NAME = 'Osman Güneş Özkurt';
@@ -67,27 +70,72 @@ function button(link: string): string {
   ].join('');
 }
 
+/** "→ Ön görüşme planlayın: https://klinikterapist.com/…": a link button with that label (the information e-mail). */
+const ACTION_RE = /^→ (.{2,60}?): (https:\/\/klinikterapist\.com\/[^\s<>"]*)$/;
+
+function action(label: string, link: string): string {
+  const href = escape(link);
+  return `<a href="${href}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 20px;border-radius:999px;background:#1F2E4A;color:#FBF3E4;font-weight:bold;text-decoration:none">${escape(label)}</a>`;
+}
+
 const line = (s: string) => escape(s).replace(URL_RE, (u) => `<a href="${u}" style="color:#1F2E4A">${u}</a>`);
 
-export function mailHtml(body: string): string | undefined {
-  const lines = body.replace(/\r\n/g, '\n').split('\n');
+/** "– Label: value" list items: the label in bold. */
+const ITEM_RE = /^– (?:([^:]{1,40}?): )?(.+)$/;
+const isMarked = (l: string) => l.startsWith('■ ') || ACTION_RE.test(l);
+
+function item(l: string): string {
+  const m = ITEM_RE.exec(l)!;
+  const label = m[1] && !m[1].includes('http') ? `<strong>${escape(m[1])}:</strong> ` : m[1] ? `${line(m[1])}: ` : '';
+  return `<li style="margin:0 0 4px">${label}${line(m[2])}</li>`;
+}
+
+const splitLines = (body: string) => body.replace(/\r\n/g, '\n').split('\n');
+
+/** The plain-text part: the QR code line is for the HTML part only. */
+export const plainBody = (body: string) => splitLines(body).filter((l) => l.trim() !== QR_LINE).join('\n');
+
+/**
+ * `qr`: the payment QR code goes inline as `cid:karekod`. The owner's notifications get an HTML part
+ * too once they use headings or buttons.
+ */
+export function mailHtml(body: string, opts: { qr?: boolean } = {}): string | undefined {
+  const lines = splitLines(body);
   const at = signatureAt(lines);
-  if (at < 0 && !lines.some((l) => isCheckLink(l.trim()))) return undefined;
+  if (at < 0 && !lines.some((l) => isCheckLink(l.trim()) || isMarked(l.trim()))) return undefined;
   const content = at < 0 ? lines : lines.slice(0, at);
   const blocks = content.join('\n').replace(/\n+$/, '').split(/\n{2,}/);
   const html = blocks.map((block) => {
     const out: string[] = [];
-    let text: string[] = [];
+    let kind: 'text' | 'actions' | 'list' | null = null;
+    let parts: string[] = [];
     const flush = () => {
-      if (text.length) out.push(`<p style="margin:0 0 14px">${text.join('<br>')}</p>`);
-      text = [];
+      if (kind === 'text') out.push(`<p style="margin:0 0 14px">${parts.join('<br>')}</p>`);
+      if (kind === 'actions') out.push(`<p style="margin:4px 0 14px">${parts.join('')}</p>`);
+      if (kind === 'list') out.push(`<ul style="margin:0 0 14px;padding-left:20px">${parts.join('')}</ul>`);
+      kind = null;
+      parts = [];
+    };
+    const add = (k: 'text' | 'actions' | 'list', part: string) => {
+      if (kind !== k) flush();
+      kind = k;
+      parts.push(part);
     };
     for (const raw of block.split('\n')) {
       const l = raw.trim();
+      const a = ACTION_RE.exec(l);
       if (isCheckLink(l)) {
         flush();
         out.push(button(l));
-      } else text.push(line(raw));
+      } else if (l === QR_LINE) {
+        flush();
+        if (opts.qr) out.push('<p style="margin:4px 0 14px"><img src="cid:karekod" width="180" alt="Ödeme karekodu" style="display:block;border:0;max-width:180px;height:auto"></p>');
+      } else if (l.startsWith('■ ')) {
+        flush();
+        out.push(`<p style="margin:26px 0 8px;font-size:16px;font-weight:bold;color:#1F2E4A">${escape(l.slice(2))}</p>`);
+      } else if (a) add('actions', action(a[1], a[2]));
+      else if (l.startsWith('– ')) add('list', item(l));
+      else add('text', line(raw));
     }
     flush();
     return out.join('');
