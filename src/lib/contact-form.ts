@@ -10,7 +10,7 @@ export type ContactLang = 'tr' | 'en';
 export const CONTACT_TOPICS = [
   { id: 'general', tr: 'Genel mesaj', en: 'General message' },
   { id: 'request', tr: 'İstek ve öneri', en: 'Request or suggestion' },
-  { id: 'complaint', tr: 'Şikâyet', en: 'Complaint' },
+  { id: 'complaint', tr: 'Şikayet', en: 'Complaint' },
   { id: 'collaboration', tr: 'İş birliği', en: 'Collaboration' },
   { id: 'advertising', tr: 'Reklam ve sponsorluk', en: 'Advertising and sponsorship' },
   { id: 'press', tr: 'Basın ve röportaj', en: 'Press and interviews' },

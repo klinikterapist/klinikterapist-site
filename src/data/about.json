@@ -3,55 +3,98 @@
     "tr": "Hakkımda",
     "en": "About Me"
   },
+  "hello": {
+    "tr": "Merhaba, ben *Güneş.*",
+    "en": "Hello, I'm *Güneş.*"
+  },
   "lead": {
     "tr": "İnsanı ve yaşamı anlamaya duyduğum merak, mesleki yolculuğumun her zaman merkezinde oldu.",
     "en": "My curiosity about understanding people and life has always been at the heart of my professional journey."
   },
+  "facts": [
+    {
+      "value": {
+        "tr": "2023'ten beri",
+        "en": "Since 2023"
+      },
+      "label": {
+        "tr": "online terapi",
+        "en": "online therapy"
+      }
+    },
+    {
+      "value": {
+        "tr": "{hours}",
+        "en": "{hours}"
+      },
+      "label": {
+        "tr": "saat eğitim",
+        "en": "hours of training"
+      }
+    },
+    {
+      "value": {
+        "tr": "BDT · ACT",
+        "en": "CBT · ACT"
+      },
+      "label": {
+        "tr": "yaklaşımları",
+        "en": "approaches"
+      }
+    }
+  ],
   "areas": [
     {
-      "icon": "leaf",
+      "icon": "user",
       "label": {
         "tr": "Bireysel Terapi",
         "en": "Individual Therapy"
       }
     },
     {
-      "icon": "user",
+      "icon": "users",
+      "label": {
+        "tr": "Grup Terapisi",
+        "en": "Group Therapy"
+      }
+    },
+    {
+      "icon": "heart",
+      "label": {
+        "tr": "Çift ve Aile Terapisi",
+        "en": "Couple and Family Therapy"
+      }
+    },
+    {
+      "icon": "brain",
       "label": {
         "tr": "Yetişkin Psikolojisi",
         "en": "Adult Psychology"
       }
     },
     {
-      "icon": "brain",
+      "icon": "leaf",
       "label": {
-        "tr": "Bilişsel Davranışçı Terapi (BDT)",
-        "en": "Cognitive Behavioral Therapy (CBT)"
-      }
-    },
-    {
-      "icon": "book",
-      "label": {
-        "tr": "Psikolojik Eğitim ve Kaynaklar",
-        "en": "Psychoeducation and Resources"
+        "tr": "Gelişim Psikolojisi",
+        "en": "Developmental Psychology"
       }
     }
   ],
   "whoAmI": {
-    "tr": "Merhaba, ben Osman Güneş Özkurt. Psikoloji alanında edindiğim bilgi ve deneyimle, bireylerin yaşam kalitesini artırmalarına, kendilerini daha iyi tanımalarına ve zorlayıcı yaşam deneyimleriyle daha sağlıklı başa çıkmalarına destek oluyorum. Çalışmalarımda bilimsel temelli yaklaşımları, empatik ve kabul edici bir tutumla birleştirerek her danışanın kendine özgü ihtiyaçlarını merkeze alıyorum.",
-    "en": "Hello, I am Osman Güneş Özkurt. With the knowledge and experience I have gained in psychology, I support people in improving their quality of life, getting to know themselves better and coping more healthily with challenging life experiences. In my work I combine evidence-based approaches with an empathetic and accepting attitude, placing each client's unique needs at the center."
+    "tr": "Hakkımda size klasik, soğuk bir yazı yazmak istemedim. Bence bir insanı tanımanın en iyi yolu, onun kendisi hakkında ne hissettiğinden geçer. Bu yüzden hikayemi en başından anlatmak daha doğru olacak.\n\nYıl 1998. Burdur ilinin Bucak ilçesinde dünyaya geldim. Çocukluğum, etrafı izleyen ve daha çok kendi dünyasında yaşayan bir çocuk olarak geçti. Açıkçası o zamanlar doğayı, hayvanları ve insanları gözlemlemekle, etrafa merakla bakmakla meşguldüm. Çünkü dünyadaki birçok şey benim için bir merak ve gizem konusuydu. Küçüklüğüm “neden?” ve “niçin?” sorularıyla, bu sorulara cevap aramakla geçti.\n\nBüyüdüğüm yer küçük bir kasabaydı. Kütüphanesi bir oda kadardı, ulaşabileceğim eğitim ise bir çatının altına sığacak kadar insandan ibaretti. Bu küçük dünyada merakımın peşinden gitmek zorlayıcıydı; ama bugün baktığımda beni en çok geliştiren de bu süreç oldu. Bugünkü yolumun temellerinin, çocukluğumdan gelen bu kişiliğimde atıldığını şimdi fark ediyorum.\n\nBu bitmez tükenmez merak, lise yıllarımda psikolojiye ilgi duymamı sağladı ve liseden mezun olurken Psikoloji bölümünü seçmemle sonuçlandı. O yıl Kuzey Kıbrıs’ın Lefkoşa şehrinde, Cyprus International University’de İngilizce Psikoloji bölümüne başladım.\n\nHayatımın dönüm noktalarından biri, hayallerimdeki bölümü kazanmamla majör depresif bozukluğun başlamasının aynı zamana denk gelmesiydi. Üniversite yıllarımın ilk döneminde depresyona bağlı olarak kötü zamanlar geçirdim. Bu süreç, hayatımda yeni bir şeyler öğrenmem gerektiğinin de habercisiydi. 3 yıl sürünce de distimiye, yani kronik depresyona dönüşmüştü.\n\nAma bu zorlukların içinde fark ettiğim bir şey vardı: Ne durumda, ne halde olursak olalım hayat devam ediyordu. Yaşım ilerliyordu, hayalini kurduğum bölümde dönemler ilerliyordu; hayat bir yolunu bulup devam ediyordu. Bunun farkına varmak, toparlanmamı ve devam eden hayata eşlik etmemi sağladı. Belki bu süreçte kayıplarım ve sayısız başarısızlığım oldu; ama yola devam etmek başarıyı kaçınılmaz kılmıştı.\n\nLisans yıllarımı düşüp kalktığım ve bu alanı yalnızca bir psikolog olarak değil, bir danışan olarak da deneyimlediğim bir dönem olarak görüyorum. Bugün, her kaybın ve başarısızlığın bir kazanca, bir başarıya dönüşeceğinin en büyük kanıtıyım. Bu zorlu dönemin ardından yoluma kulüpler ve dergiler kurarak, bilimsel araştırmalar yaparak devam ettim. Sonra lisansımı okuduğum üniversitede Klinik Psikoloji yüksek lisansımı, “Yapay Zeka ve İnsan” üzerine yazdığım tezle ve 3,83 ortalamayla tamamladım.\n\nBelki de hayat, insanın kendisini anladığı kadar karşısındaki insanların hikayelerini de anlamasıdır. Her insan, kendi hikayesinin uzmanıdır. Biz, o hikayeyi birlikte daha iyi anlamak için buradayız.\n\nBen hikayemi size anlattım. Sıra sizde?",
+    "en": "I didn't want to write you a classic, cold text about myself. I believe the best way to get to know someone is through how they feel about themselves. So it feels right to tell my story from the very beginning.\n\nThe year is 1998. I was born in Bucak, a district of Burdur in Türkiye. As a child I spent my time watching the world around me and living mostly in my own inner world. To be honest, back then I was busy observing nature, animals and people, looking at everything with curiosity, because so much in the world was a question and a mystery to me. My childhood was spent with “why?” and “how come?”, and with searching for answers to those questions.\n\nThe place I grew up in was a small town. Its library was the size of a single room, and the education I could reach came from just a handful of people, few enough to fit under one roof. Following my curiosity in that small world was hard; yet looking back today, it is what helped me grow the most. Only now do I realise that the foundations of my path today were laid in this character I have carried since childhood.\n\nThis endless curiosity drew me to psychology in high school, and when I graduated I chose to study it. That same year I started the English-language Psychology programme at Cyprus International University in Nicosia, Northern Cyprus.\n\nOne of the turning points of my life was that getting into the programme I had dreamed of coincided with the onset of major depressive disorder. In my first years at university I went through hard times because of depression. That period was also a sign that I had something new to learn in life. After three years it had turned into dysthymia, that is, chronic depression.\n\nBut within those difficulties I noticed something: whatever state we are in, life goes on. I was getting older, the semesters of the programme I had dreamed of were going by; life was finding its way and moving on. Realising this helped me recover and walk alongside a life that kept going. I may have had losses and countless failures along the way; but carrying on had made success inevitable.\n\nI see my undergraduate years as a time when I fell and got back up, and when I came to know this field not only as a psychologist but also as a client. Today I am the strongest proof that every loss and every failure can turn into a gain, into a success. After that difficult period I carried on by founding clubs and magazines and doing scientific research. Then, at the same university, I completed my master’s degree in Clinical Psychology with a thesis on “Artificial Intelligence and the Human” and a GPA of 3.83.\n\nPerhaps life is about understanding other people’s stories as much as understanding our own. Every person is the expert of their own story. We are here to understand that story better, together.\n\nI've told you my story. Now it's your turn?"
   },
   "whyThisWork": {
-    "tr": "İnsanların kendilerini daha iyi anlamalarına, potansiyellerini keşfetmelerine ve daha tatmin edici bir yaşam sürmelerine eşlik etmek benim için anlamlı ve değerli bir yolculuk. Psikolojinin, bireysel iyilik halini güçlendirirken toplumsal değişime de katkı sağladığına inanıyorum.",
-    "en": "Accompanying people as they understand themselves better, discover their potential and live a more fulfilling life is a meaningful and valuable journey for me. I believe psychology strengthens individual well-being while also contributing to social change."
+    "tr": "Dürüst olmak gerekirse bu mesleği öncelikle kendim için yapıyorum. Bunun en büyük sebebi, insana ve canlılara duyduğum bitmez tükenmez merak, ilgi ve bilimsel kimliğim. Bununla birlikte insanların kendilerini daha iyi anlamalarına, potansiyellerini keşfetmelerine ve daha tatmin edici bir yaşam sürmelerine eşlik etmek benim için anlamlı ve değerli bir yolculuk. Hem sağlık alanında hem de bilimsel alanda çalışabilmek, bu mesleğe duyduğum tutkuyu besliyor.",
+    "en": "To be honest, I do this work first of all for myself. The main reason is my endless curiosity about people and living beings, my interest in them and my identity as a scientist. At the same time, accompanying people as they understand themselves better, discover their potential and live a more fulfilling life is a meaningful and valuable journey for me. Being able to work both in health care and in science feeds my passion for this profession."
   },
   "quote": {
-    "tr": "Her insan, kendi hikâyesinin uzmanıdır. Biz, o hikâyeyi birlikte daha iyi anlamak için buradayız.",
-    "en": "Every person is the expert of their own story. We are here to understand that story better together."
+    "tr": "",
+    "en": ""
   },
   "brand": {
-    "tr": "**klinikterapist**, çalışmalarımı bir araya getirdiğim çatının adı. *Klinik* kelimesi, araştırmalarla desteklenen, bilimsel temelli klinik psikoloji bilgisini; *terapist* ise bu bilgiyi, karşısındaki insanı merkeze alan sıcak ve güvenli bir ilişki içinde kullanan kişiyi anlatıyor. Bu isimle nasıl çalıştığımı tek kelimede söylemek istedim: bilime dayanan ama insana dokunan bir terapi.\n\nLogodaki güneş adımdan, Güneş'ten geliyor. Gözleri kapalı, huzurla gülümseyen bu güneş; zor dönemlerin ardından yeniden doğan ışığı ve terapide birlikte kurduğumuz sakin, güvenli alanı simgeliyor.",
-    "en": "**klinikterapist** is the name under which I bring my work together. *Klinik* (clinical) stands for evidence-based clinical psychology, grounded in research; *terapist* (therapist) for the person who uses that knowledge within a warm, safe relationship centred on the person in front of them. With this name I wanted to say in one word how I work: therapy that rests on science and reaches the person.\n\nThe sun in the logo comes from my name, Güneş, which means \"sun\" in Turkish. With its eyes closed and a calm smile, it stands for the light that returns after hard times and for the calm, safe space we build together in therapy."
+    "tr": "Klinik Terapist, kişisel araştırmalarımı, çalışmalarımı ve psikoterapi sürecini bir araya getirdiğim marka adım; bir unvan değil. “Klinik”, araştırmalarla desteklenen, bilimsel temelli klinik psikoloji bilgisini anlatıyor. “Terapist” ise işin kendisini: terapiyi, seansları ve bu süreçte size eşlik etmeyi. Bu isimle nasıl çalıştığımı kısaca söylemek istedim: bilime dayanan ama insana dokunan bir terapi.\n\nLogodaki güneş adımdan, Güneş’ten geliyor. Gözleri kapalı, huzurla gülümseyen bu güneş; zor dönemlerin ardından yeniden doğan ışığı ve terapide birlikte kurduğumuz sakin, güvenli alanı simgeliyor.",
+    "en": "Klinik Terapist is the brand name under which I bring together my own research, my work and the process of psychotherapy; it is not a title. “Klinik” (clinical) stands for evidence-based clinical psychology, grounded in research. “Terapist” (therapist) stands for the work itself: therapy, the sessions and accompanying you through them. With this name I wanted to say briefly how I work: therapy that rests on science and reaches the person.\n\nThe sun in the logo comes from my name, Güneş, which means “sun” in Turkish. With its eyes closed and a calm smile, it stands for the light that returns after hard times and for the calm, safe space we build together in therapy."
   },
   "timeline": [
     {
@@ -83,5 +126,709 @@
       }
     }
   ],
-  "certificates": []
+  "certificates": [],
+  "career": [
+    {
+      "period": {
+        "tr": "2026 – bugün",
+        "en": "2026 – present"
+      },
+      "title": {
+        "tr": "Kurucu · klinikterapist",
+        "en": "Founder · klinikterapist"
+      },
+      "detail": {
+        "tr": "Klinik psikolog olarak online terapiye klinikterapist adıyla devam ediyorum.",
+        "en": "I continue my online therapy work as a clinical psychologist under the name klinikterapist."
+      },
+      "kind": "work"
+    },
+    {
+      "period": "2023 – 2026",
+      "title": {
+        "tr": "Psikolog · Online bireysel terapi",
+        "en": "Psychologist · Online individual therapy"
+      },
+      "detail": {
+        "tr": "Bağımsız, online. 70 saati aşkın terapi deneyimi.",
+        "en": "Independent, online. More than 70 hours of therapy experience."
+      },
+      "kind": "work"
+    },
+    {
+      "period": "2024 – 2026",
+      "title": {
+        "tr": "Yüksek Lisans · Klinik Psikoloji",
+        "en": "Master's Degree · Clinical Psychology"
+      },
+      "detail": {
+        "tr": "Cyprus International University · 3,83 ortalama · Tez: \"Yapay Zeka ve İnsan\"",
+        "en": "Cyprus International University · GPA 3.83 · Thesis: \"Artificial Intelligence and the Human\""
+      },
+      "kind": "school"
+    },
+    {
+      "period": "2020 – 2022",
+      "title": {
+        "tr": "Arketip Beyin ve Persona Dergisi",
+        "en": "Arketip Beyin ve Persona Magazine"
+      },
+      "detail": {
+        "tr": "Çevrimiçi dergi · Kurucu, yönetici, yazar ve editör · İlk yılında 1 milyon okuyucuya ulaştı.",
+        "en": "Online magazine · Founder, manager, writer and editor · Reached 1 million readers in its first year."
+      },
+      "kind": "volunteer"
+    },
+    {
+      "period": "2019 – 2022",
+      "title": {
+        "tr": "Kıbrıs Felsefe Kulübü",
+        "en": "Cyprus Philosophy Club"
+      },
+      "detail": {
+        "tr": "Liderlik rolü",
+        "en": "Leadership role"
+      },
+      "kind": "volunteer"
+    },
+    {
+      "period": "2016 – 2022",
+      "title": {
+        "tr": "Lisans · Psikoloji",
+        "en": "Bachelor's Degree · Psychology"
+      },
+      "detail": {
+        "tr": "Cyprus International University · İngilizce",
+        "en": "Cyprus International University · in English"
+      },
+      "kind": "school"
+    }
+  ],
+  "education": {
+    "intro": {
+      "tr": "Bir psikoloğun mesleki birikimi yalnızca aldığı sertifikalardan oluşmaz; lisans ve yüksek lisans boyunca aldığı dersler bu birikimin temelidir. Bu yüzden burada sertifikalarımın yanında, üniversitede aldığım derslerin saatlerini de gösteriyorum.",
+      "en": "A psychologist's professional grounding is not made of certificates alone; the courses taken during the bachelor's and master's degrees are its foundation. That is why, next to my certificates, I also show the hours of the university courses I took."
+    },
+    "groups": [
+      {
+        "kind": "degree",
+        "title": {
+          "tr": "Lisans",
+          "en": "Bachelor's degree"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Psikoloji (İngilizce)",
+              "en": "Psychology (in English)"
+            },
+            "meta": {
+              "tr": "Cyprus International University · 2016 – 2022 · 30+ ders",
+              "en": "Cyprus International University · 2016 – 2022 · 30+ courses"
+            },
+            "text": {
+              "tr": "Gelişim, psikopatoloji, psikoterapi teknikleri, cinsellik, etik, araştırma ve istatistik dersleriyle psikolojinin temel eğitimi.",
+              "en": "The core training in psychology, with courses in development, psychopathology, psychotherapy techniques, sexuality, ethics, research and statistics."
+            },
+            "badge": {
+              "tr": "1.440+ sa.",
+              "en": "1,440+ hrs"
+            },
+            "theory": 1440,
+            "note": {
+              "tr": "Burada yalnızca psikolojiyle doğrudan ilgili dersler listelendi; felsefe, biyoloji gibi diğer dersler toplama katılmadı.",
+              "en": "Only courses directly related to psychology are listed here; other courses such as philosophy and biology are not counted."
+            },
+            "lines": [
+              {
+                "heading": {
+                  "tr": "Klinik ve terapi",
+                  "en": "Clinical and therapy"
+                }
+              },
+              {
+                "title": {
+                  "tr": "Psikopatoloji",
+                  "en": "Psychopathology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Anormal Psikoloji",
+                  "en": "Abnormal Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Klinik Psikoloji",
+                  "en": "Clinical Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Psikoterapi Tekniklerine Giriş",
+                  "en": "Introduction to Psychotherapeutic Techniques"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Stres Yönetimi ve Başa Çıkma",
+                  "en": "Stress Management and Coping"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "İnsan Cinselliğine Giriş",
+                  "en": "Introduction to Human Sexuality"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Psikolojide Etik",
+                  "en": "Ethics in Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "heading": {
+                  "tr": "Gelişim",
+                  "en": "Development"
+                }
+              },
+              {
+                "title": {
+                  "tr": "Gelişim Psikolojisi I",
+                  "en": "Developmental Psychology I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Gelişim Psikolojisi II",
+                  "en": "Developmental Psychology II"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Gelişim Psikolojisinde Seçme Konular",
+                  "en": "Selected Topics in Developmental Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Çocuk Psikopatolojisi",
+                  "en": "Child Psychopathology"
+                },
+                "theory": 48
+              },
+              {
+                "heading": {
+                  "tr": "Araştırma ve istatistik",
+                  "en": "Research and statistics"
+                }
+              },
+              {
+                "title": {
+                  "tr": "Temel İstatistik I",
+                  "en": "Basic Statistics I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Temel İstatistik II",
+                  "en": "Basic Statistics II"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Psikolojide Araştırma Yöntemleri I",
+                  "en": "Research Methods in Psychology I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Psikolojide Araştırma Yöntemleri II",
+                  "en": "Research Methods in Psychology II"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Veri Analizi I",
+                  "en": "Data Analysis I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Veri Analizi II",
+                  "en": "Data Analysis II"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Deneysel Psikoloji",
+                  "en": "Experimental Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "heading": {
+                  "tr": "Psikolojinin temel alanları",
+                  "en": "Core areas of psychology"
+                }
+              },
+              {
+                "title": {
+                  "tr": "Genel Psikoloji I",
+                  "en": "General Psychology I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Genel Psikoloji II",
+                  "en": "General Psychology II"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Sosyal Psikoloji",
+                  "en": "Social Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Kişilik Psikolojisi",
+                  "en": "Personality"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Bilişsel Psikoloji",
+                  "en": "Cognitive Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Fizyolojik Psikoloji",
+                  "en": "Physiological Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Nöropsikoloji",
+                  "en": "Neuropsychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Sağlık Psikolojisi",
+                  "en": "Health Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Adli Psikoloji",
+                  "en": "Forensic Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Endüstri Psikolojisi",
+                  "en": "Industrial Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Sosyoloji",
+                  "en": "Sociology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Sosyal Antropoloji",
+                  "en": "Social Anthropology"
+                },
+                "theory": 48
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "degree",
+        "title": {
+          "tr": "Yüksek lisans",
+          "en": "Master's degree"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Klinik Psikoloji",
+              "en": "Clinical Psychology"
+            },
+            "meta": {
+              "tr": "Cyprus International University · 2024 – 2026 · 3,83 · 8+ ders",
+              "en": "Cyprus International University · 2024 – 2026 · GPA 3.83 · 8+ courses"
+            },
+            "text": {
+              "tr": "İleri psikopatoloji, psikoterapi kuram ve teknikleri, grup ile aile ve çift psikoterapisi, bilinçli farkındalık. Tez: \"Yapay Zeka ve İnsan\".",
+              "en": "Advanced psychopathology, psychotherapy theories and techniques, group, family and couple psychotherapy, mindfulness. Thesis: \"Artificial Intelligence and the Human\"."
+            },
+            "badge": {
+              "tr": "384+ sa.",
+              "en": "384+ hrs"
+            },
+            "theory": 384,
+            "note": {
+              "tr": "Burada yalnızca psikolojiyle doğrudan ilgili dersler listelendi; felsefe, biyoloji gibi diğer dersler toplama katılmadı.",
+              "en": "Only courses directly related to psychology are listed here; other courses such as philosophy and biology are not counted."
+            },
+            "lines": [
+              {
+                "title": {
+                  "tr": "İleri Psikopatoloji",
+                  "en": "Advanced Psychopathology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "İleri Psikoterapi Kuram ve Teknikleri",
+                  "en": "Advanced Psychotherapy Theories and Techniques"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Ön Görüşme I",
+                  "en": "Intake Interview I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Uygulama ve Süpervizyon I",
+                  "en": "Practice and Supervision I"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Grup Psikoterapileri",
+                  "en": "Group Psychotherapies"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Aile ve Çift Psikoterapisi",
+                  "en": "Family and Couple Psychotherapy"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Psikolojide Bilinçli Farkındalık",
+                  "en": "Mindfulness in Psychology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Araştırma ve Analiz",
+                  "en": "Research and Analysis"
+                },
+                "theory": 48
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "certificate",
+        "title": {
+          "tr": "Sertifika",
+          "en": "Certificates"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Çocuk Değerlendirme Paketi",
+              "en": "Child Assessment Package"
+            },
+            "meta": {
+              "tr": "Türk Psikologlar Derneği · Temmuz 2025",
+              "en": "Turkish Psychological Association · July 2025"
+            },
+            "text": {
+              "tr": "Gelişim, dikkat, okul olgunluğu ve duygudurum testlerinin uygulanması ve raporlanması.",
+              "en": "Administering and reporting developmental, attention, school readiness and mood tests."
+            },
+            "badge": {
+              "tr": "45 sa.",
+              "en": "45 hrs"
+            },
+            "theory": 30,
+            "practice": 15,
+            "lines": [
+              {
+                "title": {
+                  "tr": "Teorik ve uygulamalı eğitim",
+                  "en": "Theory and practice sessions"
+                },
+                "theory": 30
+              },
+              {
+                "title": {
+                  "tr": "Ödev süpervizyonu",
+                  "en": "Assignment supervision"
+                },
+                "practice": 15
+              },
+              {
+                "heading": {
+                  "tr": "Programdaki testler",
+                  "en": "Tests in the programme"
+                }
+              },
+              {
+                "title": {
+                  "tr": "Ankara Gelişim Tarama Envanteri · Peabody Resim Kelime Tanıma Testi · Resim Çizme Testleri · Bender Gestalt Görsel Motor Algı Testi · Cümle Tamamlama Testi (Beier) · Duygudurum Değerlendirme Ölçekleri · Metropolitan Okul Olgunluğu Ölçeği · D2 Dikkat Testi",
+                  "en": "Ankara Developmental Screening Inventory · Peabody Picture Vocabulary Test · Drawing tests · Bender Gestalt Visual Motor Test · Sentence Completion Test (Beier) · Mood assessment scales · Metropolitan Readiness Test · d2 Test of Attention"
+                }
+              }
+            ]
+          },
+          {
+            "title": {
+              "tr": "BDT Kuramsal Programı",
+              "en": "CBT Theoretical Programme"
+            },
+            "meta": {
+              "tr": "Bilişsel Davranışçı Psikoterapiler Derneği · Temmuz – Eylül 2023",
+              "en": "Association for Cognitive Behavioural Psychotherapies · July – September 2023"
+            },
+            "text": {
+              "tr": "Bilişsel Davranışçı Terapinin kuramsal temelleri.",
+              "en": "The theoretical foundations of Cognitive Behavioural Therapy."
+            },
+            "badge": {
+              "tr": "50 sa.",
+              "en": "50 hrs"
+            },
+            "theory": 50,
+            "lines": [
+              {
+                "title": {
+                  "tr": "Kuramsal eğitim",
+                  "en": "Theoretical training"
+                },
+                "theory": 50
+              }
+            ]
+          },
+          {
+            "title": {
+              "tr": "BDT'de Tanı ve Değerlendirme",
+              "en": "Diagnosis and Assessment in CBT"
+            },
+            "meta": {
+              "tr": "Bilişsel Davranışçı Psikoterapiler Derneği · Temmuz 2023",
+              "en": "Association for Cognitive Behavioural Psychotherapies · July 2023"
+            },
+            "text": {
+              "tr": "BDT çerçevesinde tanı koyma ve vaka değerlendirme.",
+              "en": "Diagnosis and case assessment within CBT."
+            },
+            "badge": {
+              "tr": "16 sa.",
+              "en": "16 hrs"
+            },
+            "theory": 16,
+            "lines": [
+              {
+                "title": {
+                  "tr": "Eğitim",
+                  "en": "Training"
+                },
+                "theory": 16
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "supervision",
+        "title": {
+          "tr": "Süpervizyon",
+          "en": "Supervision"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Uygulama ve Süpervizyon I",
+              "en": "Practice and Supervision I"
+            },
+            "meta": {
+              "tr": "Klinik Psikoloji Yüksek Lisansı · 2024 – 2026",
+              "en": "Clinical Psychology Master's · 2024 – 2026"
+            },
+            "text": {
+              "tr": "Süpervizör eşliğinde danışan görüşmeleri.",
+              "en": "Client sessions with a supervisor."
+            },
+            "badge": {
+              "tr": "10 seans",
+              "en": "10 sessions"
+            },
+            "practice": 10,
+            "lines": [
+              {
+                "title": {
+                  "tr": "Süpervizyonlu danışan görüşmesi",
+                  "en": "Supervised client session"
+                },
+                "practice": 10
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "practice",
+        "title": {
+          "tr": "Uygulama",
+          "en": "Practice"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Online bireysel terapi",
+              "en": "Online individual therapy"
+            },
+            "meta": {
+              "tr": "Bağımsız · 2023 – bugün",
+              "en": "Independent · 2023 – present"
+            },
+            "badge": {
+              "tr": "70+ sa.",
+              "en": "70+ hrs"
+            },
+            "practice": 70
+          }
+        ]
+      },
+      {
+        "kind": "workshop",
+        "title": {
+          "tr": "Workshop ve webinar",
+          "en": "Workshops and webinars"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Havacılık Psikolojisi Workshopu",
+              "en": "Aviation Psychology Workshop"
+            },
+            "meta": {
+              "tr": "Workshop · 2 Ağustos 2025 · 09.30 – 18.00 · katılımcı",
+              "en": "Workshop · 2 August 2025 · 09:30 – 18:00 · participant"
+            },
+            "badge": {
+              "tr": "8,5 sa.",
+              "en": "8.5 hrs"
+            },
+            "theory": 8.5
+          },
+          {
+            "title": {
+              "tr": "İyileşme Odaklı Kognitif Terapi (CT-R)",
+              "en": "Recovery-Oriented Cognitive Therapy (CT-R)"
+            },
+            "meta": {
+              "tr": "Webinar · CBTİstanbul – Beck Yönelimli Kognitif Terapi · 9 Temmuz 2023",
+              "en": "Webinar · CBTİstanbul – Beck-oriented Cognitive Therapy · 9 July 2023"
+            },
+            "badge": {
+              "tr": "2 sa.",
+              "en": "2 hrs"
+            },
+            "theory": 2
+          }
+        ]
+      }
+    ]
+  },
+  "topics": [
+    {
+      "tr": "Kaygı",
+      "en": "Anxiety"
+    },
+    {
+      "tr": "Depresyon",
+      "en": "Depression"
+    },
+    {
+      "tr": "Travma",
+      "en": "Trauma"
+    },
+    {
+      "tr": "Duygudurum Bozuklukları",
+      "en": "Mood Disorders"
+    },
+    {
+      "tr": "Kişilik Psikolojisi",
+      "en": "Personality"
+    },
+    {
+      "tr": "Kayıp ve Yas",
+      "en": "Loss and Grief"
+    },
+    {
+      "tr": "İlişkiler",
+      "en": "Relationships"
+    },
+    {
+      "tr": "Cinsellik",
+      "en": "Sexuality"
+    }
+  ],
+  "approaches": [
+    {
+      "tr": "Bilişsel Davranışçı Terapi (BDT)",
+      "en": "Cognitive Behavioural Therapy (CBT)"
+    },
+    {
+      "tr": "Bilinçli Farkındalık (Mindfulness)",
+      "en": "Mindfulness"
+    },
+    {
+      "tr": "Kabul ve Kararlılık Terapisi (ACT)",
+      "en": "Acceptance and Commitment Therapy (ACT)"
+    }
+  ]
 }

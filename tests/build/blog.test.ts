@@ -308,7 +308,7 @@ describe('blog list redesign (spec §5.8)', () => {
     const pages = { tr: '/blog/populer/', en: '/en/blog/popular/' } as const;
     for (const lang of ['tr', 'en'] as const) {
       const d = loadPage(pages[lang]);
-      expect(d.querySelector('h1')?.text).toBe(lang === 'tr' ? 'Popüler yazılar' : 'Popular posts');
+      expect(d.querySelector('h1')?.text).toBe(lang === 'tr' ? 'Popüler Yazılar' : 'Popular Posts');
       expect(d.querySelector('title')?.text).toMatch(lang === 'tr' ? /^Popüler yazılar \| / : /^Popular posts \| /);
       expect(d.querySelector('meta[name=description]')?.getAttribute('content')).toBe(
         lang === 'tr'
@@ -352,8 +352,8 @@ describe('blog list redesign (spec §5.8)', () => {
       expect(sec, path).toBeTruthy();
       expect(sec.querySelectorAll('a.list-item').length, path).toBeGreaterThan(0);
     }
-    expect(loadPage('/ui-kit/tr/').querySelector('#popular h2')?.text).toBe('Popüler yazılar');
-    expect(loadPage('/ui-kit/en/').querySelector('#popular h2')?.text).toBe('Popular posts');
+    expect(loadPage('/ui-kit/tr/').querySelector('#popular h2')?.text).toBe('Popüler Yazılar');
+    expect(loadPage('/ui-kit/en/').querySelector('#popular h2')?.text).toBe('Popular Posts');
   });
 
   it('no posts: a friendly empty state, no search, no tiles, no broken cards', () => {
@@ -441,7 +441,7 @@ describe('post page redesign (spec §5.8)', () => {
       const items = box.querySelectorAll('.share-row > li');
       expect(items.map((li) => squash(li.querySelector('.label')?.text))).toEqual(
         lang === 'tr'
-          ? ['Instagram hikâyesinde paylaş', 'Bağlantıyı kopyala', "WhatsApp'ta paylaş"]
+          ? ['Instagram hikayesinde paylaş', 'Bağlantıyı kopyala', "WhatsApp'ta paylaş"]
           : ['Share to Instagram story', 'Copy link', 'Share on WhatsApp'],
       );
       // The two script buttons wait (hidden) for the script; WhatsApp is a plain link.
@@ -456,7 +456,7 @@ describe('post page redesign (spec §5.8)', () => {
       expect(wa.getAttribute('rel')).toContain('noopener');
       expect(JSON.parse(box.getAttribute('data-texts')!)).toEqual(
         lang === 'tr'
-          ? { copied: 'Kopyalandı', downloaded: "Görsel indirildi; Instagram'da hikâyene ekleyebilirsin." }
+          ? { copied: 'Kopyalandı', downloaded: "Görsel indirildi; Instagram'da hikayene ekleyebilirsin." }
           : { copied: 'Copied', downloaded: 'Image downloaded; you can add it to your Instagram story.' },
       );
       expect(box.querySelector('[data-share-status][role=status][aria-live="polite"]')).toBeTruthy();
@@ -477,12 +477,12 @@ describe('post page redesign (spec §5.8)', () => {
 
   it('similar posts: a reader invitation and up to two rows', () => {
     const rel = loadPage(POST).querySelector('.related')!;
-    expect(rel.querySelector('h2')?.text).toBe('Bunları da okumanızı öneririm');
+    expect(rel.querySelector('h2')?.text).toBe('Bunları da Okumanızı Öneririm');
     expect(rel.querySelector('h2 + p.related-lead')?.text).toBe('Aynı konuda yazdığım birkaç yazı daha.');
     const rows = rel.querySelectorAll('a.list-item');
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.length).toBeLessThanOrEqual(2);
-    expect(loadPage(EN_POST).querySelector('.related h2')?.text).toBe('You might also enjoy reading');
+    expect(loadPage(EN_POST).querySelector('.related h2')?.text).toBe('You Might Also Enjoy Reading');
     expect(loadPage(EN_POST).querySelector('.related .related-lead')?.text).toBe('A few more posts on the same topic.');
   });
 

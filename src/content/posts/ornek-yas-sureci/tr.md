@@ -22,7 +22,7 @@ Yas konusunda en çok bilinen yaklaşımlardan biri, Elisabeth Kübler-Ross'un �
 
 ## Gelgit gibi bir süreç
 
-<cite data-refs="stroebe1999" data-narrative>Stroebe ve Schut (1999)</cite> yası, iki hâl arasında gidip gelen bir süreç olarak ele alır: bir yanda kaybın acısıyla yüzleşmek, diğer yanda gündelik hayata ve yeni düzene uyum sağlamak. Bu gidip gelmek bir tutarsızlık değil, yasın doğal bir parçası olarak düşünülebilir. Bir gün acı yoğun, ertesi gün hayat daha hafif hissettirebilir.
+<cite data-refs="stroebe1999" data-narrative>Stroebe ve Schut (1999)</cite> yası, iki hal arasında gidip gelen bir süreç olarak ele alır: bir yanda kaybın acısıyla yüzleşmek, diğer yanda gündelik hayata ve yeni düzene uyum sağlamak. Bu gidip gelmek bir tutarsızlık değil, yasın doğal bir parçası olarak düşünülebilir. Bir gün acı yoğun, ertesi gün hayat daha hafif hissettirebilir.
 
 ## Bu dönemde kendinize iyi gelebilecekler
 

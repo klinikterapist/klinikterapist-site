@@ -78,7 +78,7 @@ export function VersionsDialog({ api, draftKey, lang, now, onRestore, onClose }:
       {list && list.length > 0 && (
         <>
           <p className="k-hint">
-            Bir sürüme tıklayın, yazının o günkü hâlini görün. Yalnızca şu an düzenlediğiniz dil ({langName}) geri yüklenir; diğer dil ve ayarlar olduğu gibi kalır.
+            Bir sürüme tıklayın, yazının o günkü halini görün. Yalnızca şu an düzenlediğiniz dil ({langName}) geri yüklenir; diğer dil ve ayarlar olduğu gibi kalır.
           </p>
           <ul className="versions-list" aria-label="Önceki sürümler">
             {list.map((v) => (

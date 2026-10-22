@@ -246,7 +246,7 @@ describe('home (desktop)', () => {
     const d = tr();
     expect(d.querySelectorAll('.home-desk .faq-list details.faq-item')).toHaveLength(3);
     const hello = d.querySelector('.home-desk .hello')!;
-    expect(hello.text).toContain('Merhaba, ben Osman.');
+    expect(hello.text).toContain('Merhaba, Ben Osman.');
     expect(hello.querySelector('a[href="/hakkimda/"]')).toBeTruthy();
     expect(en().querySelector('.home-desk .hello')?.text).toContain("Hi, I'm Osman.");
   });
@@ -285,7 +285,7 @@ describe('hello card without answered questions', () => {
     const block = loadPage('/ui-kit/tr/').querySelector('section.faq-block')!;
     expect(block.classList.contains('no-faq')).toBe(true);
     expect(block.querySelector('.faq-list')).toBeNull();
-    expect(block.querySelector('.hello')?.text).toContain('Merhaba, ben Osman.');
+    expect(block.querySelector('.hello')?.text).toContain('Merhaba, Ben Osman.');
     expect(block.querySelector('.hello a[href="/hakkimda/"]')).toBeTruthy();
   });
 

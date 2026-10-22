@@ -46,7 +46,7 @@
     "en": "Accompanying people as they understand themselves better, discover their potential and live a more fulfilling life is a meaningful and valuable journey for me. I believe psychology strengthens individual well-being while also contributing to social change."
   },
   "quote": {
-    "tr": "Her insan, kendi hikâyesinin uzmanıdır. Biz, o hikâyeyi birlikte daha iyi anlamak için buradayız.",
+    "tr": "Her insan, kendi hikayesinin uzmanıdır. Biz, o hikayeyi birlikte daha iyi anlamak için buradayız.",
     "en": "Every person is the expert of their own story. We are here to understand that story better together."
   },
   "timeline": [
@@ -97,5 +97,121 @@
         "en": "Ongoing"
       }
     }
-  ]
+  ],
+  "facts": [
+    {
+      "value": {
+        "tr": "2023'ten beri",
+        "en": "Since 2023"
+      },
+      "label": {
+        "tr": "online terapi",
+        "en": "online therapy"
+      }
+    },
+    {
+      "value": {
+        "tr": "{hours}",
+        "en": "{hours}"
+      },
+      "label": {
+        "tr": "saat eğitim",
+        "en": "hours of training"
+      }
+    }
+  ],
+  "topics": [
+    {
+      "tr": "Kaygı",
+      "en": "Anxiety"
+    },
+    {
+      "tr": "Yas",
+      "en": "Grief"
+    }
+  ],
+  "approaches": [
+    {
+      "tr": "BDT",
+      "en": "CBT"
+    }
+  ],
+  "education": {
+    "intro": {
+      "tr": "Dersler de eğitimdir.",
+      "en": "Courses count too."
+    },
+    "groups": [
+      {
+        "kind": "degree",
+        "title": {
+          "tr": "Lisans",
+          "en": "Bachelor's degree"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Psikoloji",
+              "en": "Psychology"
+            },
+            "meta": {
+              "tr": "Örnek Üniversite",
+              "en": "Sample University"
+            },
+            "badge": {
+              "tr": "96+ sa.",
+              "en": "96+ hrs"
+            },
+            "theory": 96,
+            "lines": [
+              {
+                "heading": {
+                  "tr": "Klinik",
+                  "en": "Clinical"
+                }
+              },
+              {
+                "title": {
+                  "tr": "Psikopatoloji",
+                  "en": "Psychopathology"
+                },
+                "theory": 48
+              },
+              {
+                "title": {
+                  "tr": "Klinik Psikoloji",
+                  "en": "Clinical Psychology"
+                },
+                "theory": 48
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "kind": "practice",
+        "title": {
+          "tr": "Uygulama",
+          "en": "Practice"
+        },
+        "items": [
+          {
+            "title": {
+              "tr": "Online terapi",
+              "en": "Online therapy"
+            },
+            "meta": {
+              "tr": "2023 – bugün",
+              "en": "2023 – present"
+            },
+            "badge": {
+              "tr": "70+ sa.",
+              "en": "70+ hrs"
+            },
+            "practice": 70.5
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -36,7 +36,7 @@ describe('static pages', () => {
 
   it('FAQ pages list answered questions only, with FAQPage JSON-LD', () => {
     const tr = loadPage('/sik-sorulan-sorular/');
-    expect(tr.querySelector('h1')?.text).toBe('Sık sorulan sorular');
+    expect(tr.querySelector('h1')?.text).toBe('Sık Sorulan Sorular');
     expect(tr.querySelectorAll('main details').length).toBe(3);
     expect(tr.querySelector('main details#ilk-gorusme')).not.toBeNull();
     expect(tr.textContent).not.toContain('Randevuyu iptal edebilir miyim?');
@@ -212,7 +212,7 @@ describe('final-review fixes', () => {
   const fixture = (file: string) => JSON.parse(readFileSync(join('tests/fixtures/data', file), 'utf8'));
 
   it('about texts are rendered as Markdown, with raw HTML escaped (I3)', () => {
-    const who = loadPage('/hakkimda/').querySelector('details.who .md')!;
+    const who = loadPage('/hakkimda/').querySelector('#panel-story .md')!;
     expect(who.querySelectorAll('p')).toHaveLength(2);
     expect(who.querySelector('strong')?.text).toBe('Osman Güneş Özkurt');
     expect(who.querySelector('em')?.text).toBe('bilimsel temelli');
@@ -327,84 +327,79 @@ describe('page shell (every page but home)', () => {
 
 describe('inner pages redesign (spec §5.9)', () => {
   const fixture = (file: string) => JSON.parse(readFileSync(join('tests/fixtures/data', file), 'utf8'));
-  const summaries = (path: string) =>
-    loadPage(path).querySelectorAll('main details.acc > summary .title').map((t) => t.text.trim());
   const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
 
-  it('about: heading on top, then photo, name and title under it, membership line and lead', () => {
+  it('about: intro card with the greeting, photo, name, title, membership, lead and facts', () => {
     const d = loadPage('/hakkimda/');
-    // Owner's review 2026-10-19: the page title is first, centred at the top.
-    expect(d.querySelector('main .about > header.about-top h1')?.text).toBe('Hakkımda');
-    const head = d.querySelector('main .side-head')!;
-    expect(head.querySelector('.portrait img')).toBeTruthy();
-    // Owner's review 2026-10-19: the title on its own line under the name.
-    expect(squash(head.querySelector('.who-line .who-name')?.text)).toBe('Osman Güneş Özkurt');
-    expect(squash(head.querySelector('.who-line .who-role')?.text)).toBe('Psikolog');
-    expect(squash(head.querySelector('.tpd')?.text)).toBe('Türk Psikologlar Derneği üyesi');
-    expect(squash(head.querySelector('.lead')?.text)).toBe(fixture('about.json').lead.tr);
-    expect(squash(loadPage('/en/about/').querySelector('.side-head .tpd')?.text)).toBe(
+    const intro = d.querySelector('main .about > section.about-intro')!;
+    // No greeting in the fixture: the heading is the page title.
+    expect(intro.querySelector('h1.hello')?.text).toBe('Hakkımda');
+    expect(intro.querySelector('.kicker')?.text).toBe('Hakkımda');
+    expect(intro.querySelector('.portrait img')).toBeTruthy();
+    expect(squash(intro.querySelector('.who-line .who-name')?.text)).toBe('Osman Güneş Özkurt');
+    expect(squash(intro.querySelector('.who-line .who-role')?.text)).toBe('Psikolog');
+    expect(squash(intro.querySelector('.tpd')?.text)).toBe('Türk Psikologlar Derneği üyesi');
+    expect(squash(intro.querySelector('.lead')?.text)).toBe(fixture('about.json').lead.tr);
+    // "{hours}" shows the theory total of the education cards (96), rounded down with a "+".
+    expect(intro.querySelectorAll('.facts li').map((li) => squash(li.text))).toEqual(['2023\'ten beri online terapi', '96+ saat eğitim']);
+    expect(intro.querySelector('a.intro-cta')?.getAttribute('href')).toBe('/randevu-al/');
+    expect(squash(loadPage('/en/about/').querySelector('.about-intro .tpd')?.text)).toBe(
       'Member of the Turkish Psychological Association',
     );
-  });
-
-  it('about: desktop has a sticky side column (portrait, name, memberships, Randevu Al) beside the open CV sections', () => {
-    for (const [path, appt] of [['/hakkimda/', '/randevu-al/'], ['/en/about/', '/en/appointment/']] as const) {
-      const d = loadPage(path);
-      const about = d.querySelector('main .about')!;
-      const [top, side, main, cv] = about.childNodes.filter((n) => n.nodeType === 1) as unknown as HTMLElement[];
-      expect(top.classList.contains('about-top'), path).toBe(true);
-      expect(side.classList.contains('about-side'), path).toBe(true);
-      expect(main.classList.contains('about-main'), path).toBe(true);
-      expect(cv.classList.contains('about-cv'), path).toBe(true);
-      // The CV: every section open (no accordions), a label beside its content.
-      expect(cv.querySelectorAll('details')).toHaveLength(0);
-      expect(cv.querySelectorAll('.cv-row > h2.cv-label').length, path).toBe(4);
-      expect(cv.querySelector('.cv-areas li')).toBeTruthy();
-      expect(cv.querySelectorAll('.timeline li')).toHaveLength(4);
-      expect(cv.querySelector('blockquote')).toBeTruthy();
-      expect(top.querySelector('h1')).toBeTruthy();
-      expect(side.querySelector('.side-head .who-line')).toBeTruthy();
-      expect(side.querySelector('.side-head .tpd')).toBeTruthy();
-      expect(side.querySelector('a.side-cta')?.getAttribute('href')).toBe(appt);
-      // Desktop: a large framed portrait (phones fetch nothing for it) in place of the small round one.
-      const big = side.querySelector('picture.cv-photo')!;
-      expect(big.querySelector('source')?.getAttribute('media')).toBe('(min-width: 768px)');
-      expect(big.querySelector('img')?.getAttribute('src')).toMatch(/^data:image\//);
-      expect(side.querySelector('.portrait.phone-only img')).toBeTruthy();
-      expect(main.querySelectorAll('details.acc').length).toBeGreaterThan(0);
-      expect(main.querySelector('a.list-item[href$="/iletisim/"], a.list-item[href$="/contact/"]')).toBeTruthy();
-    }
+    // Phones book from the sticky bar: the card's own button shows from 768 px only.
     const src = readFileSync('src/views/AboutView.astro', 'utf8');
-    const desk = src.slice(src.indexOf('@media (min-width: 768px)'));
-    expect(desk).toMatch(/\.about\s*\{[^}]*display:\s*grid/);
-    // Sticky only on windows tall enough for the whole side column.
-    expect(desk).toMatch(/@media \(min-height: 700px\)\s*\{\s*\.about-side\s*\{[^}]*position:\s*sticky/);
-    expect(desk.replace(/@media \(min-height: 700px\)\s*\{\s*\.about-side\s*\{[^}]*\}/, '')).not.toMatch(/sticky/);
-    expect(desk).toMatch(/\.side-cta\s*\{[^}]*display:\s*flex/);
-    // Phones: the side button is hidden (the sticky booking bar does that job).
-    expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.side-cta,\s*\.about-cv,\s*\.cv-photo\s*\{\s*display:\s*none/);
+    expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.intro-cta\s*\{\s*display:\s*none/);
   });
 
-  it('about: accordions in order, the first one open', () => {
-    expect(summaries('/hakkimda/')).toEqual(['Ben kimim?', 'Bu işi neden yapıyorum?', 'Eğitim ve deneyim']);
-    expect(summaries('/en/about/')).toEqual(['Who am I?', 'Why do I do this work?', 'Education and experience']);
-    const accs = loadPage('/hakkimda/').querySelectorAll('main details.acc');
-    expect(accs[0].hasAttribute('open')).toBe(true);
-    expect(accs[1].hasAttribute('open')).toBe(false);
-    expect(accs[2].querySelectorAll('.timeline li')).toHaveLength(4);
-    // The quote stays (no content is lost).
-    expect(loadPage('/hakkimda/').querySelector('main blockquote')?.text).toContain('kendi hikâyesinin uzmanıdır');
+  it('about: three tabs (hidden until the script runs) for the story, how I work, education and career', () => {
+    for (const [path, labels] of [
+      ['/hakkimda/', ['Hikayem', 'Nasıl Çalışırım', 'Eğitim ve Kariyer']],
+      ['/en/about/', ['My Story', 'How I Work', 'Education and Career']],
+    ] as const) {
+      const d = loadPage(path);
+      const bar = d.querySelector('main .about-tabs')!;
+      expect(bar.hasAttribute('hidden'), path).toBe(true);
+      const tabs = bar.querySelectorAll('[role="tab"]');
+      expect(tabs.map((x) => x.text.trim()), path).toEqual([...labels]);
+      expect(tabs.map((x) => x.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+      const panels = d.querySelectorAll('main .about-panel[role="tabpanel"]');
+      expect(panels.map((p) => p.id)).toEqual(['panel-story', 'panel-how', 'panel-education']);
+      tabs.forEach((x, i) => expect(x.getAttribute('aria-controls')).toBe(panels[i].id));
+      // Without JavaScript every panel shows.
+      panels.forEach((p) => expect(p.hasAttribute('hidden')).toBe(false));
+    }
   });
 
-  it('about: work areas as tile pairs, and a link to contact', () => {
+  it('about: the story keeps the quote; the education panel shows the timeline, the counters and the cards', () => {
     const d = loadPage('/hakkimda/');
-    expect(d.querySelectorAll('main .areas .tile-pair')).toHaveLength(2);
-    expect(d.querySelectorAll('main .areas .tile').map((t) => t.text.trim())).toEqual(
+    expect(d.querySelector('#panel-story blockquote')?.text).toContain('kendi hikayesinin uzmanıdır');
+    expect(d.querySelector('#panel-story .read-more')?.hasAttribute('hidden')).toBe(true);
+    const edu = d.querySelector('#panel-education')!;
+    expect(edu.querySelectorAll('.timeline li')).toHaveLength(4);
+    expect(edu.querySelectorAll('.counter b').map((b) => squash(b.text))).toEqual(['96+ saat', '70+ saat']);
+    expect(squash(edu.querySelector('.ledger .intro')?.text)).toBe('Dersler de eğitimdir.');
+    expect(edu.querySelectorAll('.group-title').map((h) => squash(h.text))).toEqual(['Lisans', 'Uygulama']);
+    // A card with lines opens like an FAQ box; one without stays plain.
+    const open = edu.querySelector('details.card')!;
+    expect(open.querySelectorAll('.line').map((l) => [l.childNodes[0].text?.trim(), squash(l.querySelector('.line-hours')?.text)])).toEqual([
+      ['Psikopatoloji', '48 sa. teorik'],
+      ['Klinik Psikoloji', '48 sa. teorik'],
+    ]);
+    expect(edu.querySelectorAll('div.card')).toHaveLength(1);
+    expect(squash(loadPage('/en/about/').querySelector('#panel-education .counter b')?.text)).toBe('96+ hours');
+  });
+
+  it('about: work areas, topics and approaches as chips, and links to booking and contact', () => {
+    const d = loadPage('/hakkimda/');
+    const how = d.querySelector('#panel-how')!;
+    expect(how.querySelectorAll('.chips--areas li').map((t) => t.text.trim())).toEqual(
       fixture('about.json').areas.map((a: { label: { tr: string } }) => a.label.tr),
     );
-    expect(d.querySelector('main .areas h2')?.text).toBe('Çalışma alanlarım');
-    const contact = d.querySelector('main a.list-item[href="/iletisim/"]')!;
-    expect(contact.text).toContain('Benimle iletişime geç');
+    expect(how.querySelectorAll('.box h3').map((h) => h.text)).toEqual(['Çalışma Alanlarım', 'Konular', 'Yaklaşımlar']);
+    expect(how.querySelectorAll('.chips--green li').map((t) => t.text.trim())).toEqual(['BDT']);
+    const cta = d.querySelector('main .about-cta')!;
+    expect(cta.querySelector('a.cta-book')?.getAttribute('href')).toBe('/randevu-al/');
+    expect(cta.querySelector('a.cta-contact[href="/iletisim/"]')?.text).toContain('Benimle iletişime geç');
   });
 
   it('resources: title, note, featured card', () => {
@@ -498,7 +493,7 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it("the client's own page: both languages, noindex, out of the sitemap, no page counter, no booking bar, no personal data", () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, title] of [['/randevum/', 'Randevularım'], ['/en/my-appointment/', 'My appointments']] as const) {
+    for (const [path, title] of [['/randevum/', 'Randevularım'], ['/en/my-appointment/', 'My Appointments']] as const) {
       const d = loadPage(path);
       expect(d.querySelector('h1')?.text).toBe(title);
       expect(d.querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');

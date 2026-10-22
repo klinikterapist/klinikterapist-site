@@ -76,7 +76,7 @@ export function HakkimdaScreen() {
           <MarkdownBlock label="Neden bu iş" value={a.whyThisWork} onChange={set('whyThisWork')} />
           <LocalizedField label="Alıntı" value={a.quote} onChange={set('quote')} multiline issues={file.issues} path="quote" />
           <h3>klinikterapist nedir?</h3>
-          <MarkdownBlock label="Marka hikâyesi" value={a.brand} onChange={set('brand')} />
+          <MarkdownBlock label="Marka hikayesi" value={a.brand} onChange={set('brand')} />
           <h3>Eğitim ve mesleki gelişim</h3>
           <RowList<Step>
             items={a.timeline}

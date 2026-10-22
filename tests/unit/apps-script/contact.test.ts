@@ -234,7 +234,7 @@ describe('validateContact (shared by the form and the backend)', () => {
   });
   it('has the seven fixed topics in order, without an appointment topic', () => {
     expect(CONTACT_TOPICS.map((t) => t.tr)).toEqual([
-      'Genel mesaj', 'İstek ve öneri', 'Şikâyet', 'İş birliği', 'Reklam ve sponsorluk', 'Basın ve röportaj', 'Diğer',
+      'Genel mesaj', 'İstek ve öneri', 'Şikayet', 'İş birliği', 'Reklam ve sponsorluk', 'Basın ve röportaj', 'Diğer',
     ]);
     expect(CONTACT_TOPICS.map((t) => t.en)).toEqual([
       'General message', 'Request or suggestion', 'Complaint', 'Collaboration', 'Advertising and sponsorship', 'Press and interviews', 'Other',

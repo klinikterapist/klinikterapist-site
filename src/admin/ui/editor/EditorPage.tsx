@@ -501,7 +501,7 @@ function Editing({ loaded, intent }: { loaded: Loaded; intent?: PostIntent }) {
           }
         >
           <p>{`Yazı ${formatSchedule(planAt)}'da yayına girecek.`}</p>
-          <p className="k-hint">{PLAN_HINT} O ana kadar metin yalnızca taslakta durur; düzenlemeye devam edebilirsiniz, son kaydedilen hâli yayınlanır.</p>
+          <p className="k-hint">{PLAN_HINT} O ana kadar metin yalnızca taslakta durur; düzenlemeye devam edebilirsiniz, son kaydedilen hali yayınlanır.</p>
         </Dialog>
       )}
       {confirm === 'publish' && !planning && (

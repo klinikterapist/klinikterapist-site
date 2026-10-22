@@ -106,8 +106,15 @@ const homeSchema = z.object({
 
 const aboutSchema = z.object({
   heading: localized,
+  /** The big greeting of the intro card ("Merhaba, ben *Güneş.*"; *…* is set in italics). Empty: the heading. */
+  hello: localized.default({ tr: '', en: '' }),
   lead: localized,
+  /** Short facts under the lead ("2023'ten beri" + "online terapi"). A value of "{hours}" shows the theory hours total. */
+  facts: z.array(z.object({ value: localized, label: localized })).default([]),
   areas: z.array(z.object({ icon: z.string(), label: localized })),
+  /** "Konular" and "Yaklaşımlar": short labels shown as chips under the work areas (owner's review 2026-10-22). */
+  topics: z.array(localized).default([]),
+  approaches: z.array(localized).default([]),
   whoAmI: localized,
   whyThisWork: localized,
   quote: localized,
@@ -126,6 +133,56 @@ const aboutSchema = z.object({
       }),
     )
     .default([]),
+  /** "Kariyer": schools and jobs by year, newest first (owner's review 2026-10-22). Replaces the timeline when filled. */
+  career: z
+    .array(
+      z.object({
+        period: z.union([z.string(), localized]),
+        title: localized,
+        detail: localized,
+        kind: z.enum(['school', 'work', 'volunteer']),
+      }),
+    )
+    .default([]),
+  /**
+   * "Eğitimler ve Sertifikalar" (owner's review 2026-10-22): groups (Lisans, Yüksek lisans, Sertifika…) of cards; a card with
+   * `lines` opens like an FAQ box to list its courses. The two counters add up every card's `theory` and `practice` hours.
+   * Replaces the certificates list when filled.
+   */
+  education: z
+    .object({
+      intro: localized,
+      groups: z.array(
+        z.object({
+          kind: z.enum(['degree', 'certificate', 'supervision', 'practice', 'workshop', 'congress']),
+          title: localized,
+          items: z.array(
+            z.object({
+              title: localized,
+              meta: localized,
+              text: localized.default({ tr: '', en: '' }),
+              /** What the card shows top right ("1.440+ sa.", "10 seans"); empty hides it. */
+              badge: localized.default({ tr: '', en: '' }),
+              theory: z.number().nonnegative().default(0),
+              practice: z.number().nonnegative().default(0),
+              note: localized.default({ tr: '', en: '' }),
+              lines: z
+                .array(
+                  z.object({
+                    /** A small heading above the following lines ("Gelişim"). */
+                    heading: localized.optional(),
+                    title: localized.optional(),
+                    theory: z.number().nonnegative().optional(),
+                    practice: z.number().nonnegative().optional(),
+                  }),
+                )
+                .default([]),
+            }),
+          ),
+        }),
+      ),
+    })
+    .optional(),
 });
 
 const contactSchema = z.object({

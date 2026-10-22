@@ -1,0 +1,121 @@
+---
+/** "Kariyer" (owner's review 2026-10-22): schools and jobs by year, newest first; the first one is the current one. */
+import type { About, Lang } from '../lib/settings';
+import { periodText } from '../lib/settings';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  items: About['career'];
+}
+const { lang, items } = Astro.props;
+const KIND = { school: 'careerSchool', work: 'careerWork', volunteer: 'careerVolunteer' } as const;
+---
+
+<ol class="career">
+  {
+    items.map((item, i) => (
+      <li class:list={['item', { now: i === 0 }]}>
+        <span class="dot" aria-hidden="true" />
+        <p class="period">{periodText(item.period, lang)}</p>
+        <h3 class="title">
+          {item.title[lang]}
+          <span class:list={['kind', `kind--${item.kind}`]}>{t(lang, KIND[item.kind])}</span>
+        </h3>
+        {item.detail[lang] && <p class="detail">{item.detail[lang]}</p>}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .career {
+    position: relative;
+    margin: 0;
+    padding: 0 0 0 var(--space-6);
+    list-style: none;
+  }
+
+  .career::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: 7px;
+    width: 2px;
+    background: var(--line);
+  }
+
+  .item {
+    position: relative;
+    padding-bottom: var(--space-5);
+  }
+
+  .item:last-child {
+    padding-bottom: 0;
+  }
+
+  .dot {
+    position: absolute;
+    top: 5px;
+    left: calc(-1 * var(--space-6) + 1px);
+    width: 14px;
+    height: 14px;
+    border: 2.5px solid var(--sun-disc);
+    border-radius: 50%;
+    background: var(--bg);
+  }
+
+  .now .dot {
+    background: var(--sun-disc);
+  }
+
+  .period {
+    margin: 0;
+    color: var(--tone-gunes);
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .title {
+    margin: 2px 0 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .kind {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    vertical-align: 2px;
+  }
+
+  .kind--school {
+    background: var(--tone-lacivert-bg);
+    color: var(--tone-lacivert);
+  }
+
+  .kind--work {
+    background: var(--tone-adacayi-bg);
+    color: var(--tone-adacayi);
+  }
+
+  .kind--volunteer {
+    background: var(--tone-lavanta-bg);
+    color: var(--tone-lavanta);
+  }
+
+  .detail {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+</style>

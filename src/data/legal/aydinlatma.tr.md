@@ -12,7 +12,7 @@ E-posta: [iletisim@klinikterapist.com](mailto:iletisim@klinikterapist.com)
 ## Hangi verileri işliyorum?
 
 - **Siteyi ziyaret ettiğinizde:** Site kendi başına çerez kullanmaz. Ziyaret edilen sayfaların anonim, toplam sayıları tutulur (sayfa adresi, yazının sonuna kadar okunup okunmadığı, gelinen sitenin yalnızca alan adı, cihaz türü, sayfa dili ve bağlantı tıklamaları). IP adresi ve kişiyi tanımlayan hiçbir bilgi kaydedilmez; bu sayılar kişisel veri niteliği taşımaz ve yalnızca sitenin içeriğini geliştirmek için kullanılır. Siteyi barındıran hizmet sağlayıcı (GitHub Pages), güvenlik ve hizmetin işletilmesi amacıyla IP adresi gibi teknik bağlantı kayıtlarını kendi politikası çerçevesinde tutabilir.
-- **Google Analytics'e izin verdiğinizde:** Çerez penceresinde "Kabul ediyorum" derseniz Google Analytics çalışır. Tarayıcınızdaki `_ga` çerezinin taşıdığı rastgele numara, ziyaret ettiğiniz sayfalar ve sayfalarda geçirdiğiniz süre, geldiğiniz site, yaklaşık konumunuz (şehir ya da ülke düzeyinde), cihaz, tarayıcı ve dil bilgileriniz Google'a gönderilir. IP adresiniz Google Analytics'te saklanmaz. Bu bilgiler yalnızca sitenin nasıl kullanıldığını anlamak ve siteyi geliştirmek için, toplu raporlar hâlinde kullanılır; reklam için kullanılmaz. "Reddediyorum" derseniz bu bilgiler toplanmaz.
+- **Google Analytics'e izin verdiğinizde:** Çerez penceresinde "Kabul ediyorum" derseniz Google Analytics çalışır. Tarayıcınızdaki `_ga` çerezinin taşıdığı rastgele numara, ziyaret ettiğiniz sayfalar ve sayfalarda geçirdiğiniz süre, geldiğiniz site, yaklaşık konumunuz (şehir ya da ülke düzeyinde), cihaz, tarayıcı ve dil bilgileriniz Google'a gönderilir. IP adresiniz Google Analytics'te saklanmaz. Bu bilgiler yalnızca sitenin nasıl kullanıldığını anlamak ve siteyi geliştirmek için, toplu raporlar halinde kullanılır; reklam için kullanılmaz. "Reddediyorum" derseniz bu bilgiler toplanmaz.
 - **Bana e-posta gönderdiğinizde:** Adınız, e-posta adresiniz ve mesajınızda paylaştığınız bilgiler.
 - **İletişim formunu kullandığınızda:** Formda yazdığınız adınız, e-posta adresiniz, seçtiğiniz konu ve mesajınız Google altyapısı (Google Apps Script) üzerinden bana e-posta olarak ulaşır ve yalnızca size yanıt vermek için kullanılır. Mesajınız sitede saklanmaz; yalnızca kötüye kullanımı önlemek için e-posta adresinize bağlı bir sayaç Google tarafında en fazla 24 saat tutulur.
 
@@ -32,7 +32,7 @@ E-posta yazışmaları, iletişimin amacı için gerekli olan süre ve yasal sak
 
 ## Haklarınız
 
-KVKK'nın 11. maddesi uyarınca; verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, işlenme amacını öğrenme, aktarıldığı kişileri bilme, eksik ya da yanlış işlenmişse düzeltilmesini, şartları oluştuğunda silinmesini isteme ve zarara uğramanız hâlinde giderilmesini talep etme haklarına sahipsiniz.
+KVKK'nın 11. maddesi uyarınca; verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, işlenme amacını öğrenme, aktarıldığı kişileri bilme, eksik ya da yanlış işlenmişse düzeltilmesini, şartları oluştuğunda silinmesini isteme ve zarara uğramanız halinde giderilmesini talep etme haklarına sahipsiniz.
 
 Başvurularınızı [iletisim@klinikterapist.com](mailto:iletisim@klinikterapist.com) adresine iletebilirsiniz. Başvurunuz en geç 30 gün içinde yanıtlanır.
 

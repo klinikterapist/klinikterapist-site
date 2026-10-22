@@ -1,29 +1,24 @@
 ---
 /**
- * About (spec §5.9): "Hakkımda" first, centred at the top of the page (owner's review 2026-10-19), then
- * the photo (or the sun), name and title, membership, the lead sentence;
- * accordions "Ben kimim?" (open), "Bu işi neden yapıyorum?", the work areas as tile pairs,
- * "Eğitim ve deneyim" (timeline) and a row to the contact page. Empty texts render nothing.
- * Desktop (from 768 px): a biography / CV page (owner's review 2026-10-18, second round). A sticky side
- * column holds a large framed portrait, the heading, name and title, memberships, the lead and "Randevu
- * Al"; beside it `.about-cv` lays every section out open, CV style (a label on the left, the content on
- * the right): who I am with the quote, why I do this work, the work areas as a tile grid, and education
- * and experience as a timeline, and the certificates ("Sertifikalarım") as cards. Phones keep the single centred column with its accordions
- * (`.about-main`); CSS shows one of the two.
+ * About, design B "Tanışma kartı ve sekmeler" (owner's choice 2026-10-22): an intro card (round portrait, the greeting,
+ * name, title and memberships, the lead sentence, short facts, "Randevu Al"), then three tabs so only one part shows at a
+ * time: "Hikayem" (the story, its first three paragraphs until "read on", beside a training summary), "Nasıl çalışırım"
+ * (work areas, topics, approaches; why I do this work; the brand story) and "Eğitim ve kariyer" (the hours counters and
+ * note, the career line, the education cards). A closing band books or opens the contact page.
+ * Without JavaScript the tab row stays hidden and every panel shows, one after the other. Empty texts render nothing.
  */
 import PageShell from '../layouts/PageShell.astro';
 import { bookHref } from '../lib/booking-intake';
 import RoundPortrait from '../components/ui/RoundPortrait.astro';
-import Accordion from '../components/ui/Accordion.astro';
-import TilePair from '../components/ui/TilePair.astro';
-import ListItem from '../components/ui/ListItem.astro';
 import Timeline from '../components/Timeline.astro';
+import CareerTimeline from '../components/CareerTimeline.astro';
+import EducationLedger from '../components/EducationLedger.astro';
 import Icon from '../components/Icon.astro';
 import SunMark from '../components/brand/SunMark.astro';
 import Wordmark from '../components/brand/Wordmark.astro';
 import type { Lang } from '../lib/settings';
 import { getAbout, getProfile } from '../lib/settings';
-import { EMPTY_IMAGE, portraitImage } from '../lib/portrait-image';
+import { educationTotals, formatNumber } from '../lib/education';
 import { pageMeta } from '../lib/seo';
 import { profilePageLd } from '../lib/jsonld';
 import { renderMarkdown } from '../lib/markdown';
@@ -38,7 +33,6 @@ const about = getAbout();
 const profile = getProfile();
 const { meta, alternatePaths } = pageMeta('about', lang, about.heading[lang], about.lead[lang]);
 
-// Owner's review 2026-10-19: the title on its own line under the name.
 const role = profile.title[lang].trim();
 const memberships = (profile.memberships ?? []).map((m) => m.org[lang].trim()).filter(Boolean);
 const lead = about.lead[lang].trim();
@@ -47,303 +41,718 @@ const why = about.whyThisWork[lang].trim();
 const quote = about.quote[lang].trim();
 const brand = about.brand[lang].trim();
 
-type Tile = { title: string; icon: string };
+// The greeting: plain text with *…* in italics (the name).
+const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const hello = escape(about.hello[lang].trim() || about.heading[lang]).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+const education = about.education && about.education.groups.length > 0 ? about.education : null;
+const totals = educationTotals(education ?? undefined);
+const facts = about.facts
+  .map((f) => ({
+    value: f.value[lang].trim().replace('{hours}', `${formatNumber(totals.theory, lang)}+`),
+    label: f.label[lang].trim(),
+  }))
+  .filter((f) => f.value && !(f.value.startsWith('0+') && !education));
+
 const areas = about.areas.map((a) => ({ title: a.label[lang].trim(), icon: a.icon })).filter((a) => a.title);
-const areaPairs: ([Tile] | [Tile, Tile])[] = [];
-for (let i = 0; i < areas.length; i += 2) {
-  areaPairs.push(areas[i + 1] ? [areas[i], areas[i + 1]] : [areas[i]]);
-}
-// The desktop CV portrait, about 320 px wide. Phones never fetch it (the <source> matches from 768 px
-// and the <img> itself is an empty inline GIF); they keep the small round photo.
-const cvPhoto = profile.photo ? await portraitImage(profile.photo, [320, 640]) : null;
+const topics = about.topics.map((x) => x[lang].trim()).filter(Boolean);
+const approaches = about.approaches.map((x) => x[lang].trim()).filter(Boolean);
+const career = about.career;
 const certificates = about.certificates
   .map((c) => ({ title: c.title[lang].trim(), issuer: c.issuer.trim(), year: c.year.trim(), url: c.url?.trim() ?? '' }))
   .filter((c) => c.title);
-const certMeta = (c: (typeof certificates)[number]) => [c.issuer, c.year].filter(Boolean).join(' · ');
+
+const hasHow = areas.length > 0 || topics.length > 0 || approaches.length > 0 || !!why || !!brand;
+const hasEdu = !!education || career.length > 0 || about.timeline.length > 0 || certificates.length > 0;
+const tabs = [
+  { id: 'story', label: t(lang, 'tabStory'), show: !!(who || quote) },
+  { id: 'how', label: t(lang, 'tabHow'), show: hasHow },
+  { id: 'education', label: t(lang, 'tabEducation'), show: hasEdu },
+].filter((x) => x.show);
+const summary = t(lang, 'trainingSummary').replace('{p}', formatNumber(totals.practice, lang) + '+');
 const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
 ---
 
 <PageShell lang={lang} meta={meta} jsonLd={jsonLd} alternatePaths={alternatePaths}>
-  <div class="container-text inner-page about">
-    <header class="about-top">
-      <h1>{about.heading[lang]}</h1>
-    </header>
-
-    <div class="about-side">
-      <div class="side-head">
-        <div class="media">
-          <RoundPortrait class={cvPhoto ? 'phone-only' : undefined} photo={profile.photo} alt={profile.photoAlt[lang]} size={96} eager />
-          {
-            cvPhoto && (
-              <picture class="cv-photo">
-                <source media="(min-width: 768px)" srcset={cvPhoto.srcset ?? cvPhoto.src} sizes="320px" />
-                <img src={EMPTY_IMAGE} width={cvPhoto.width} height={cvPhoto.height} alt={profile.photoAlt[lang]} loading="eager" decoding="async" />
-              </picture>
-            )
-          }
-        </div>
+  <div class="container inner-page about">
+    <section class="about-intro" aria-labelledby="about-hello">
+      <div class="intro-photo">
+        <span class="intro-sun" aria-hidden="true"><SunMark size={64} /></span>
+        <RoundPortrait photo={profile.photo} alt={profile.photoAlt[lang]} size={184} desktopSize={300} eager />
+      </div>
+      <div class="intro-text">
+        <p class="kicker">{about.heading[lang]}</p>
+        <h1 id="about-hello" class="hello" set:html={hello} />
         <p class="who-line">
           <span class="who-name">{profile.name}</span>
           {role && <span class="who-role">{role}</span>}
+          {memberships.map((org) => <span class="tpd">{t(lang, 'memberOf').replace('{org}', org)}</span>)}
         </p>
-        {
-          memberships.map((org) => (
-            <p class="tpd">
-              <Icon name="shield" size={14} />
-              {t(lang, 'memberOf').replace('{org}', org)}
-            </p>
-          ))
-        }
         {lead && <p class="lead">{lead}</p>}
-      </div>
-      <a class="big-cta side-cta" href={bookHref(lang)}>
-        <Icon name="calendar" size={18} />
-        {t(lang, 'bookSession')}
-      </a>
-    </div>
-
-    <div class="page-stack about-main">
-      {
-        (who || quote) && (
-          <Accordion class="who" title={t(lang, 'whoAmI')} open>
-            {who && <div class="md" set:html={renderMarkdown(who)} />}
-            {quote && (
-              <blockquote class="quote">
-                <p>{quote}</p>
-              </blockquote>
-            )}
-          </Accordion>
-        )
-      }
-
-      {
-        why && (
-          <Accordion class="why" title={t(lang, 'whyThisWork')}>
-            <div class="md" set:html={renderMarkdown(why)} />
-          </Accordion>
-        )
-      }
-
-      {
-        brand && (
-          <Accordion class="brand" title={t(lang, 'brandTitle')}>
-            <div class="brand-logo" aria-hidden="true">
-              <SunMark size={64} />
-              <Wordmark height={30} decorative />
-            </div>
-            <div class="md" set:html={renderMarkdown(brand)} />
-          </Accordion>
-        )
-      }
-
-      {
-        areaPairs.length > 0 && (
-          <section class="areas" aria-labelledby="areas-title">
-            <h2 id="areas-title" class="section-label">
-              {t(lang, 'areasOfWork')}
-            </h2>
-            {areaPairs.map((pair) => (
-              <TilePair tiles={pair} />
-            ))}
-          </section>
-        )
-      }
-
-      {
-        about.timeline.length > 0 && (
-          <Accordion class="edu" title={t(lang, 'education')} subtitle={t(lang, 'timelineHint')}>
-            <Timeline lang={lang} items={about.timeline} />
-          </Accordion>
-        )
-      }
-
-      {
-        certificates.length > 0 && (
-          <Accordion class="certs" title={t(lang, 'certificates')} subtitle={t(lang, 'certificatesHint')}>
-            <ul class="cert-list">
-              {certificates.map((c) => (
-                <li class="cert">
-                  <span class="cert-ic">
-                    <Icon name="award" size={18} />
-                  </span>
-                  <span class="cert-text">
-                    <b>{c.title}</b>
-                    {certMeta(c) && <small>{certMeta(c)}</small>}
-                    {c.url && (
-                      <a href={c.url} target="_blank" rel="noopener noreferrer">
-                        {t(lang, 'viewCertificate')}
-                        <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
-                      </a>
-                    )}
-                  </span>
+        {
+          facts.length > 0 && (
+            <ul class="facts">
+              {facts.map((f) => (
+                <li>
+                  <b>{f.value}</b> {f.label}
                 </li>
               ))}
             </ul>
-          </Accordion>
-        )
-      }
+          )
+        }
+        <div class="intro-actions">
+          <a class="big-cta intro-cta" href={bookHref(lang)}>
+            <Icon name="calendar" size={18} />
+            {t(lang, 'bookSession')}
+          </a>
+          <span class="intro-wordmark"><Wordmark height={28} decorative /></span>
+        </div>
+      </div>
+    </section>
 
-      <ListItem icon="chat" tone="deniz" title={t(lang, 'contactMe')} subtitle={t(lang, 'contactMeHint')} href={pathFor('contact', lang)} />
-    </div>
+    {
+      tabs.length > 1 && (
+        <div class="about-tabs" hidden>
+          <div class="tab-row" role="tablist" aria-label={t(lang, 'aboutTabs')}>
+            {tabs.map((tab, i) => (
+              <button
+                type="button"
+                class="tab"
+                role="tab"
+                id={`tab-${tab.id}`}
+                aria-controls={`panel-${tab.id}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                tabindex={i === 0 ? 0 : -1}
+                data-tab={tab.id}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )
+    }
 
-    <div class="about-cv">
-      {
-        (who || quote) && (
-          <section class="cv-row" aria-labelledby="cv-who">
-            <h2 id="cv-who" class="cv-label">{t(lang, 'whoAmI')}</h2>
-            <div class="cv-body">
-              {who && <div class="md md--cv" set:html={renderMarkdown(who)} />}
+    {
+      (who || quote) && (
+        <section class="about-panel" id="panel-story" role="tabpanel" aria-labelledby="tab-story" data-panel="story">
+          <h2 class="visually-hidden">{t(lang, 'whoAmI')}</h2>
+          <div class="story-grid">
+            <div class="story">
+              {who && <div class="md md--story" set:html={renderMarkdown(who)} />}
               {quote && (
-                <blockquote class="quote quote--cv">
+                <blockquote class="quote">
                   <p>{quote}</p>
                 </blockquote>
               )}
+              <button type="button" class="read-more" hidden>
+                {t(lang, 'readStory')}
+              </button>
             </div>
-          </section>
-        )
-      }
+            {(education || areas.length > 0 || topics.length > 0) && (
+              <aside class="story-side">
+                {education && (
+                  <div class="side-card">
+                    <p class="side-label">{t(lang, 'trainingShort')}</p>
+                    <p class="side-big">
+                      {formatNumber(totals.theory, lang)}+ {t(lang, 'hoursUnit')}
+                    </p>
+                    <p class="side-text">{summary}</p>
+                    <a class="side-link" href="#panel-education" data-go="education">
+                      {t(lang, 'tabEducation')} →
+                    </a>
+                  </div>
+                )}
+                {areas.length > 0 && (
+                  <div class="side-card">
+                    <p class="side-label">{t(lang, 'areasOfWork')}</p>
+                    <ul class="side-list">
+                      {areas.map((a) => (
+                        <li>
+                          <Icon name={a.icon} size={16} />
+                          {a.title}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {topics.length > 0 && (
+                  <div class="side-card">
+                    <p class="side-label">{t(lang, 'topics')}</p>
+                    <ul class="chips chips--side">
+                      {topics.map((x) => (
+                        <li>{x}</li>
+                      ))}
+                    </ul>
+                    <a class="side-link" href="#panel-how" data-go="how">
+                      {t(lang, 'tabHow')} →
+                    </a>
+                  </div>
+                )}
+              </aside>
+            )}
+          </div>
+        </section>
+      )
+    }
 
-      {
-        why && (
-          <section class="cv-row" aria-labelledby="cv-why">
-            <h2 id="cv-why" class="cv-label">{t(lang, 'whyThisWork')}</h2>
-            <div class="cv-body md md--cv" set:html={renderMarkdown(why)} />
-          </section>
-        )
-      }
+    {
+      hasHow && (
+        <section class="about-panel" id="panel-how" role="tabpanel" aria-labelledby="tab-how" data-panel="how">
+          <h2 class="panel-title">{t(lang, 'tabHow')}</h2>
+          {(areas.length > 0 || topics.length > 0 || approaches.length > 0) && (
+            <div class="boxes">
+              {areas.length > 0 && (
+                <div class="box">
+                  <h3>{t(lang, 'areasOfWork')}</h3>
+                  <ul class="chips chips--areas">
+                    {areas.map((a) => (
+                      <li>
+                        <Icon name={a.icon} size={16} />
+                        {a.title}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {topics.length > 0 && (
+                <div class="box">
+                  <h3>{t(lang, 'topics')}</h3>
+                  <ul class="chips">
+                    {topics.map((x) => (
+                      <li>{x}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {approaches.length > 0 && (
+                <div class="box">
+                  <h3>{t(lang, 'approaches')}</h3>
+                  <ul class="chips chips--green">
+                    {approaches.map((x) => (
+                      <li>{x}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          {(why || brand) && (
+            <div class="why-brand">
+              {why && (
+                <div>
+                  <h3 class="sub-title">{t(lang, 'whyThisWork')}</h3>
+                  <div class="md" set:html={renderMarkdown(why)} />
+                </div>
+              )}
+              {brand && (
+                <div>
+                  <div class="brand-logo" aria-hidden="true">
+                    <SunMark size={44} />
+                    <Wordmark height={24} decorative />
+                  </div>
+                  <h3 class="sub-title">{t(lang, 'brandTitle')}</h3>
+                  <div class="md" set:html={renderMarkdown(brand)} />
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )
+    }
 
-      {
-        brand && (
-          <section class="cv-row" aria-labelledby="cv-brand">
-            <h2 id="cv-brand" class="cv-label">{t(lang, 'brandTitle')}</h2>
-            <div class="cv-body">
-              <div class="brand-logo brand-logo--cv" aria-hidden="true">
-                <SunMark size={84} />
-                <Wordmark height={40} decorative />
+    {
+      hasEdu && (
+        <section class="about-panel" id="panel-education" role="tabpanel" aria-labelledby="tab-education" data-panel="education">
+          <h2 class="panel-title">{t(lang, 'tabEducation')}</h2>
+          {education && <EducationLedger lang={lang} education={education} part="summary" />}
+          <div class="edu-grid">
+            {(career.length > 0 || about.timeline.length > 0) && (
+              <div>
+                <h3 class="sub-title">{t(lang, career.length > 0 ? 'career' : 'education')}</h3>
+                {career.length > 0 ? <CareerTimeline lang={lang} items={career} /> : <Timeline lang={lang} items={about.timeline} />}
               </div>
-              <div class="md md--cv" set:html={renderMarkdown(brand)} />
-            </div>
-          </section>
-        )
-      }
+            )}
+            {education ? (
+              <div>
+                <h3 class="sub-title">{t(lang, 'educationCerts')}</h3>
+                <EducationLedger lang={lang} education={education} part="groups" />
+              </div>
+            ) : (
+              certificates.length > 0 && (
+                <div>
+                  <h3 class="sub-title">{t(lang, 'certificates')}</h3>
+                  <ul class="cert-list">
+                    {certificates.map((c) => (
+                      <li>
+                        <b>{c.title}</b>
+                        <small>{[c.issuer, c.year].filter(Boolean).join(' · ')}</small>
+                        {c.url && (
+                          <a href={c.url} target="_blank" rel="noopener noreferrer">
+                            {t(lang, 'viewCertificate')}
+                            <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            )}
+          </div>
+        </section>
+      )
+    }
 
-      {
-        areas.length > 0 && (
-          <section class="cv-row" aria-labelledby="cv-areas">
-            <h2 id="cv-areas" class="cv-label">{t(lang, 'areasOfWork')}</h2>
-            <ul class="cv-body cv-areas">
-              {areas.map((a) => (
-                <li>
-                  <Icon name={a.icon} size={20} />
-                  <span>{a.title}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      }
-
-      {
-        about.timeline.length > 0 && (
-          <section class="cv-row" aria-labelledby="cv-edu">
-            <h2 id="cv-edu" class="cv-label">{t(lang, 'education')}</h2>
-            <div class="cv-body">
-              <Timeline lang={lang} items={about.timeline} />
-            </div>
-          </section>
-        )
-      }
-
-      {
-        certificates.length > 0 && (
-          <section class="cv-row" aria-labelledby="cv-certs">
-            <h2 id="cv-certs" class="cv-label">{t(lang, 'certificates')}</h2>
-            <ul class="cv-body cert-list cert-list--cv">
-              {certificates.map((c) => (
-                <li class="cert">
-                  <span class="cert-ic">
-                    <Icon name="award" size={20} />
-                  </span>
-                  <span class="cert-text">
-                    <b>{c.title}</b>
-                    {certMeta(c) && <small>{certMeta(c)}</small>}
-                    {c.url && (
-                      <a href={c.url} target="_blank" rel="noopener noreferrer">
-                        {t(lang, 'viewCertificate')}
-                        <span class="visually-hidden">{t(lang, 'opensInNewTab')}</span>
-                      </a>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )
-      }
-
-      <div class="cv-row cv-row--end">
-        <span class="cv-label" aria-hidden="true"></span>
-        <ListItem class="cv-body" icon="chat" tone="deniz" title={t(lang, 'contactMe')} subtitle={t(lang, 'contactMeHint')} href={pathFor('contact', lang)} />
+    <section class="about-cta">
+      <p class="cta-title">{t(lang, 'aboutCta')}</p>
+      <div class="cta-actions">
+        <a class="cta-book" href={bookHref(lang)}>
+          <Icon name="calendar" size={18} />
+          {t(lang, 'bookSession')}
+        </a>
+        <a class="cta-contact" href={pathFor('contact', lang)}>{t(lang, 'contactMe')}</a>
       </div>
-    </div>
+    </section>
   </div>
 </PageShell>
 
+<script>
+  // Tabs: only one panel shows at a time; arrow keys move between tabs; #panel-… links open their tab.
+  const root = document.querySelector<HTMLElement>('.about');
+  const bar = root?.querySelector<HTMLElement>('.about-tabs');
+  if (root && bar) {
+    const tabs = [...bar.querySelectorAll<HTMLButtonElement>('.tab')];
+    const panels = [...root.querySelectorAll<HTMLElement>('.about-panel')];
+    const show = (id: string, focus = false, scroll = false) => {
+      tabs.forEach((tab) => {
+        const on = tab.dataset.tab === id;
+        tab.setAttribute('aria-selected', String(on));
+        tab.tabIndex = on ? 0 : -1;
+        if (on && focus) tab.focus();
+      });
+      panels.forEach((p) => (p.hidden = p.dataset.panel !== id));
+      if (scroll) bar.scrollIntoView({ block: 'start' });
+    };
+    bar.hidden = false;
+    const fromHash = location.hash.replace('#panel-', '');
+    show(tabs.some((x) => x.dataset.tab === fromHash) ? fromHash : (tabs[0]?.dataset.tab ?? ''));
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => show(tab.dataset.tab ?? ''));
+      tab.addEventListener('keydown', (e) => {
+        const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+        if (!step) return;
+        e.preventDefault();
+        show(tabs[(i + step + tabs.length) % tabs.length].dataset.tab ?? '', true);
+      });
+    });
+    root.querySelectorAll<HTMLElement>('[data-go]').forEach((link) =>
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        show(link.dataset.go ?? '', false, true);
+      }),
+    );
+  }
+
+  // The story: the first three paragraphs, then "read on" (without JavaScript the whole story shows).
+  const story = document.querySelector<HTMLElement>('.about .story');
+  const more = story?.querySelector<HTMLButtonElement>('.read-more');
+  if (story && more && story.querySelectorAll('.md--story > *').length > 3) {
+    story.classList.add('clamped');
+    more.hidden = false;
+    more.addEventListener('click', () => {
+      story.classList.remove('clamped');
+      more.hidden = true;
+    });
+  }
+</script>
+
 <style>
-  /* Phones: the side column is the centred head; its button stays hidden (the sticky bar books).
-     The desktop CV and its framed portrait stay hidden too. */
-  .side-cta,
-  .about-cv,
-  .cv-photo {
-    display: none;
-  }
-
-  /* The page title, centred at the very top on every screen. */
-  .about-top {
+  /* Intro card: centred on phones; photo beside the text from 768 px. */
+  .about-intro {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) 0 var(--space-6);
     text-align: center;
   }
 
-  .about-top h1 {
-    margin: 4px 0 var(--space-4);
-    font-size: 1.875rem;
-    font-variation-settings: 'SOFT' 100;
-    line-height: 1.12;
+  .intro-photo {
+    position: relative;
   }
 
-  /* Phones: photo, name and title, membership and the lead, centred under the title. */
-  .side-head {
-    text-align: center;
-  }
-
-  .side-head .media {
+  /* The brand sun behind the photo, peeking out at its top right corner. */
+  .intro-sun {
+    position: absolute;
+    z-index: 0;
+    top: -22px;
+    right: -26px;
     display: flex;
-    justify-content: center;
-    margin-bottom: 8px;
+  }
+
+  .intro-sun :global(.sun-mark) {
+    width: 84px;
+    height: 84px;
+  }
+
+  .intro-photo :global(.portrait) {
+    position: relative;
+    z-index: 1;
+    border: 5px solid var(--bg);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .kicker {
+    margin: 0;
+    color: var(--tone-gunes);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .hello {
+    margin: 4px 0 var(--space-3);
+    font-size: clamp(2.125rem, 1.5rem + 2.6vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+  }
+
+  .hello :global(em) {
+    color: var(--tone-gunes);
+    font-weight: 400;
   }
 
   .who-line {
-    display: grid;
-    gap: 2px;
-    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 10px;
+    margin: 0 0 var(--space-3);
     color: var(--muted);
     font-size: var(--text-sm);
-    line-height: 1.5;
+  }
+
+  .who-name {
+    color: var(--text);
+    font-weight: 700;
   }
 
   .who-role {
     color: var(--link);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
     font-weight: 600;
-    letter-spacing: 0.02em;
   }
 
-  /* The logo above the brand story: the sun beside the wordmark, in the text colour. */
+  .lead {
+    max-width: 36rem;
+    margin: 0 auto var(--space-4);
+    font-family: var(--font-serif);
+    font-size: 1.1875rem;
+    line-height: 1.5;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .facts li {
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    font-size: var(--text-sm);
+  }
+
+  .facts b {
+    color: var(--link);
+    font-family: var(--font-serif);
+  }
+
+  /* Phones book from the sticky bar; the card's own button shows from 768 px. The wordmark sits beside it. */
+  .intro-cta {
+    display: none;
+  }
+
+  .intro-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3) var(--space-5);
+    margin-top: var(--space-4);
+  }
+
+  .intro-wordmark {
+    display: flex;
+    color: var(--text);
+  }
+
+  .intro-wordmark :global(.wordmark) {
+    width: auto;
+  }
+
+  /* Tabs: a sticky row under the intro card. */
+  .about-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 calc(-1 * var(--gutter));
+    padding: 0 var(--gutter);
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  .tab-row {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tab {
+    flex: none;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .tab[aria-selected='true'] {
+    border-bottom-color: var(--sun-disc);
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .tab:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: -2px;
+  }
+
+  .about-panel {
+    padding: var(--space-6) 0;
+  }
+
+  .about-panel + .about-panel {
+    border-top: 1px solid var(--line);
+  }
+
+  .panel-title {
+    margin: 0 0 var(--space-5);
+    font-size: 1.75rem;
+    line-height: 1.15;
+  }
+
+  .sub-title {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  /* Story */
+  .story-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .md {
+    color: var(--muted);
+    font-size: var(--text-base);
+    line-height: 1.7;
+  }
+
+  .md :global(p) {
+    margin: 0 0 var(--space-4);
+  }
+
+  .md > :global(:last-child) {
+    margin-bottom: 0;
+  }
+
+  .md--story {
+    color: var(--text);
+  }
+
+  .md--story > :global(p:first-child::first-letter) {
+    float: left;
+    padding: 6px 8px 0 0;
+    color: var(--link);
+    font-family: var(--font-serif);
+    font-size: 3.6rem;
+    font-weight: 600;
+    line-height: 0.85;
+  }
+
+  .md--story > :global(p:last-child) {
+    font-family: var(--font-serif);
+    font-size: 1.375rem;
+  }
+
+  .story.clamped .md--story > :global(:nth-child(n + 4)) {
+    display: none;
+  }
+
+  .read-more {
+    margin-top: var(--space-2);
+    padding: 8px 18px;
+    border: 1.5px solid var(--link);
+    border-radius: var(--radius-pill);
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .quote {
+    margin: var(--space-5) 0 0;
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--sun-disc);
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-style: italic;
+  }
+
+  .side-card {
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .side-label {
+    margin: 0 0 4px;
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .side-big {
+    margin: 0;
+    color: var(--link);
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  .side-text {
+    margin: 4px 0 var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .side-link {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .story-side {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .side-list {
+    display: grid;
+    gap: 6px;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .side-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .side-list :global(svg) {
+    flex: none;
+    color: var(--link);
+  }
+
+  .chips--side {
+    margin: var(--space-2) 0 var(--space-3);
+  }
+
+  .side-card .chips--side li {
+    padding: 2px 10px;
+    background: var(--bg);
+    font-size: var(--text-xs);
+  }
+
+  /* How I work */
+  .boxes {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .box {
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+
+  .box h3 {
+    margin: 0 0 var(--space-3);
+    font-size: 1.1875rem;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .chips li {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    font-size: var(--text-sm);
+  }
+
+  .chips--areas li {
+    background: var(--tone-lacivert-bg);
+    color: var(--tone-lacivert);
+  }
+
+  .chips--green li {
+    background: var(--tone-adacayi-bg);
+    color: var(--tone-adacayi);
+  }
+
+  .why-brand {
+    display: grid;
+    gap: var(--space-6);
+    margin-top: var(--space-6);
+  }
+
   .brand-logo {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
     color: var(--text);
   }
 
@@ -351,19 +760,11 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     width: auto;
   }
 
-  .tpd {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    margin: 8px 0 0;
-    color: var(--muted);
-    font-size: var(--text-xs);
-  }
-
-  .side-head .lead {
-    margin: 14px 6px 4px;
-    font-size: 0.9375rem;
-    line-height: 1.5;
+  /* Education and career */
+  .edu-grid {
+    display: grid;
+    gap: var(--space-6);
+    margin-top: var(--space-6);
   }
 
   .cert-list {
@@ -373,242 +774,136 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     margin: 0;
     padding: 0;
     list-style: none;
+    font-size: var(--text-sm);
   }
 
-  .cert {
+  .cert-list li {
     display: flex;
-    align-items: flex-start;
-    gap: var(--space-3);
+    flex-direction: column;
   }
 
-  .cert-ic {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--sun-halo) 25%, transparent);
+  .cert-list small {
+    color: var(--muted);
+  }
+
+  /* Closing band */
+  .about-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+    padding: var(--space-5) var(--space-6);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .cta-title {
+    margin: 0;
+    font-family: var(--font-serif);
+    font-size: 1.75rem;
+  }
+
+  .cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  .cta-book,
+  .cta-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .cta-book {
+    background: var(--btn-bg);
+    color: var(--btn-text);
+  }
+
+  .cta-book:hover {
+    background: var(--btn-bg-hover);
+    color: var(--btn-text);
+  }
+
+  .cta-contact {
+    border: 1.5px solid var(--link);
     color: var(--link);
   }
 
-  .cert-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: var(--text-sm);
-    line-height: 1.4;
-  }
-
-  .cert-text small {
-    color: var(--muted);
-    font-size: var(--text-xs);
-  }
-
-  .cert-text a {
-    font-size: var(--text-xs);
-    font-weight: 600;
-  }
-
   @media (min-width: 768px) {
-    .about-top {
-      grid-column: 1 / -1;
-    }
-
-    .about-top h1 {
-      margin: 0 0 var(--space-3);
-      font-size: var(--text-2xl);
-    }
-
-    .about {
-      display: grid;
-      grid-template-columns: minmax(220px, 320px) minmax(0, 46rem);
-      justify-content: center;
-      align-items: start;
-      gap: clamp(2rem, 5vw, 4.5rem);
-      max-width: calc(var(--max-wide) + 2 * var(--gutter));
-    }
-
-    /* Sticky only where the whole side column fits in the window; on short screens it scrolls. */
-    @media (min-height: 700px) {
-      .about-side {
-        position: sticky;
-        top: var(--space-5);
-      }
-    }
-
-    .side-head {
+    .about-intro {
+      grid-template-columns: auto 1fr;
+      justify-items: start;
+      align-items: center;
+      gap: var(--space-7);
+      padding: var(--space-6) 0 var(--space-7);
       text-align: left;
     }
 
-    .side-head .media {
-      display: block;
-      margin-bottom: var(--space-5);
+    .who-line,
+    .facts {
+      justify-content: flex-start;
     }
 
-    .who-line {
-      color: var(--text);
-      font-family: var(--font-serif);
-      font-size: var(--text-lg);
+    .lead {
+      margin-inline: 0;
     }
 
-    .side-head .lead {
-      margin: var(--space-4) 0 0;
-      color: var(--muted);
-      font-size: var(--text-sm);
+    .intro-actions {
+      justify-content: flex-start;
     }
 
-    .tpd {
-      display: flex;
+    .intro-sun {
+      top: -30px;
+      right: -34px;
     }
 
-    .side-cta {
-      display: flex;
-      margin-top: var(--space-5);
+    .intro-sun :global(.sun-mark) {
+      width: 128px;
+      height: 128px;
     }
 
-    /* The phone column and its small round photo give way to the CV and the framed portrait. */
-    .about-main,
-    .about-side :global(.phone-only) {
-      display: none;
+    .intro-cta {
+      display: inline-flex;
+      margin-top: 0;
+      padding: 0 var(--space-6);
     }
 
-    .cv-photo {
-      display: block;
+    .story-grid {
+      grid-template-columns: minmax(0, 40rem) 17rem;
+      justify-content: space-between;
+      align-items: start;
     }
 
-    .cv-photo img {
-      display: block;
-      width: 100%;
-      height: auto;
-      aspect-ratio: 4 / 5;
-      border-radius: var(--radius-lg);
-      background: var(--surface);
-      box-shadow: var(--shadow-soft);
-      object-fit: cover;
-      object-position: center 20%;
+    .story-side {
+      position: sticky;
+      top: 64px;
     }
 
-    .about-cv {
-      display: flex;
-      flex-direction: column;
+    .boxes {
+      grid-template-columns: repeat(3, 1fr);
     }
 
-    /* One CV row: the label on the left, the content on the right, a hairline between rows. */
-    .cv-row {
-      display: grid;
-      grid-template-columns: minmax(8rem, 11rem) minmax(0, 1fr);
-      gap: var(--space-5);
-      padding-block: var(--space-6);
-      border-top: 1px solid var(--line);
+    .why-brand,
+    .edu-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-7);
     }
 
-    .cv-row:first-child {
-      padding-top: var(--space-2);
-      border-top: 0;
+    .about-panel {
+      padding: var(--space-7) 0;
     }
 
-    .cv-row--end {
-      padding-top: 0;
-      border-top: 0;
+    .panel-title {
+      font-size: 2rem;
     }
-
-    .cv-label {
-      margin: 0;
-      color: var(--link);
-      font-family: var(--font-sans);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      line-height: 1.8;
-      text-transform: uppercase;
-    }
-
-    .md--cv {
-      color: var(--text);
-      font-size: var(--text-base);
-      line-height: 1.7;
-    }
-
-    .quote--cv {
-      margin-top: var(--space-5);
-      background: var(--surface);
-    }
-
-    .cv-areas {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-      gap: var(--space-3);
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .cv-areas li {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-      min-height: 56px;
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-md);
-      background: var(--surface);
-      font-size: var(--text-sm);
-      font-weight: 600;
-    }
-
-    .cert-list--cv {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-    }
-
-    .cert-list--cv .cert {
-      padding: var(--space-4);
-      border-radius: var(--radius-md);
-      background: var(--surface);
-    }
-
-    .cv-areas li :global(svg) {
-      flex: none;
-      color: var(--link);
-    }
-  }
-
-  .areas {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  /* Markdown output (about.json whoAmI / whyThisWork): paragraphs, lists, links. */
-  .md {
-    color: var(--muted);
-    font-size: var(--text-sm);
-    line-height: 1.55;
-  }
-
-  .md :global(p),
-  .md :global(ul),
-  .md :global(ol) {
-    margin: 0 0 var(--space-3);
-  }
-
-  .md > :global(:last-child) {
-    margin-bottom: 0;
-  }
-
-  .quote {
-    margin: var(--space-3) 0 0;
-    padding: 12px 14px;
-    border-left: 4px solid var(--quote-rule);
-    border-radius: 0 12px 12px 0;
-    background: var(--bg);
-  }
-
-  .quote p {
-    margin: 0;
-    font-family: var(--font-serif);
-    font-size: var(--text-base);
-    font-style: italic;
-    line-height: 1.45;
   }
 </style>

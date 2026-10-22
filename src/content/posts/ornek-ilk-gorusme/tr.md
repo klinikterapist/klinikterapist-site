@@ -27,7 +27,7 @@ Bazen kısa sorular sorulur: yaşamınızdaki önemli alanlar, uyku ve gündelik
 
 Hazırlık yapmak şart değildir, ama bazı küçük şeyler rahatlatabilir:
 
-- Aklınıza gelen soruları bir kâğıda not edin.
+- Aklınıza gelen soruları bir kağıda not edin.
 - Görüşmeyi sakin ve kesintisiz bir yerde yapmaya çalışın.
 - Online görüşecekseniz bağlantınızı ve kulaklığınızı önceden deneyin.
 - Kendinize biraz zaman tanıyın; görüşmeden önce ve sonra.

@@ -22,7 +22,7 @@ Bulgular, bir duyguyu adlandırmanın o duyguyla aramıza küçük bir mesafe ko
 
 ## Sonraki çalışmalar
 
-<cite data-refs="torre2018" data-narrative>Torre ve Lieberman (2018)</cite>, bu alandaki çalışmaları bir araya getiren bir derleme yazdı. Derlemede duyguyu adlandırmanın, kişinin fark etmeden kullandığı bir duygu düzenleme yolu gibi işleyebileceği tartışılıyor. Bu alanın hâlâ araştırıldığını ve bulguların herkes için aynı sonucu vermeyebileceğini akılda tutmak önemlidir.
+<cite data-refs="torre2018" data-narrative>Torre ve Lieberman (2018)</cite>, bu alandaki çalışmaları bir araya getiren bir derleme yazdı. Derlemede duyguyu adlandırmanın, kişinin fark etmeden kullandığı bir duygu düzenleme yolu gibi işleyebileceği tartışılıyor. Bu alanın hala araştırıldığını ve bulguların herkes için aynı sonucu vermeyebileceğini akılda tutmak önemlidir.
 
 ## Sınırlar
 
