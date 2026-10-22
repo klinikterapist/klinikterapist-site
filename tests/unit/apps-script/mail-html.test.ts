@@ -25,6 +25,14 @@ describe('e-mails with the e-mail check link get an HTML part with a button (own
     expect(html).toContain('<a href="https://klinikterapist.com/randevum/#k=x"');
   });
 
+  it('"→ Label: site address" lines become link buttons; neighbouring ones share a row; other sites stay plain links', () => {
+    const html = mailHtml(['Merhaba,', '', 'Yanıt.', '→ Aydınlatma metnini okuyun: https://klinikterapist.com/aydinlatma-metni/', '', '→ Ön görüşme <planlayın>: https://klinikterapist.com/on-gorusme/', '→ Randevu alın: https://klinikterapist.com/randevu/', '→ Başka: https://example.com/', '', 'Osman Güneş Özkurt', 'klinikterapist.com'].join('\n'))!;
+    expect(html).toContain('<p style="margin:0 0 14px">Yanıt.</p><p style="margin:4px 0 14px"><a href="https://klinikterapist.com/aydinlatma-metni/"');
+    expect(html).toContain('>Aydınlatma metnini okuyun</a>');
+    expect(html).toContain('>Ön görüşme &lt;planlayın&gt;</a><a href="https://klinikterapist.com/randevu/"');
+    expect(html).toContain('→ Başka: <a href="https://example.com/"');
+  });
+
   it("e-mails without the check link or the signature stay plain text (the owner's notifications)", () => {
     expect(mailHtml('Merhaba,\n\nhttps://klinikterapist.com/admin/#/randevular')).toBeUndefined();
   });

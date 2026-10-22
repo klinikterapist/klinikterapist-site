@@ -766,15 +766,16 @@ describe('Faz 3: mistyped addresses and Süreç bilgisi', () => {
     const s = withDns();
     s.gas.mails.length = 0;
     expect(handle(s.gas, JSON.stringify({ action: 'info.request', email: 'Merak@Example.com', topics: ['sure', 'ucret'], consent: true, lang: 'tr' })).ok).toBe(true);
-    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merak@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'İstediğiniz bilgiler – klinikterapist.com' })]);
+    expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merak@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Bilgilendirme – klinikterapist.com' })]);
     const body = s.gas.mails[0].body;
     expect(body).toContain('Seanslar ne kadar sürer, ne sıklıkla olur?');
-    expect(body).toContain('randevunuz oluştuğunda size e-postayla iletilir');
+    expect(body).toContain('randevu ya da ön görüşme talebinizden sonra size e-postayla iletirim');
+    expect(body).toContain('→ Ücretsiz ön görüşme planlayın: https://klinikterapist.com/on-gorusme/');
     expect(body).not.toContain('Gizlilik nasıl korunur?');
     expect(body).toContain('https://klinikterapist.com/on-gorusme/');
     expect(body).not.toMatch(/\d+\s?TL/);
     const events = s.call<{ events: { kind: string; text: string }[] }>('events.list').data.events;
-    expect(events[0]).toMatchObject({ kind: 'info', text: 'Bilgi talebi: Seanslar ne kadar sürer, ne sıklıkla olur; Seans ücreti ne kadar' });
+    expect(events[0]).toMatchObject({ kind: 'info', text: 'Bilgi talebi: Seanslar ne kadar sürer, ne sıklıkla olur; Seans ücretleri nasıl belirlenir' });
     expect(JSON.stringify(events)).not.toContain('merak@');
     // No topic, an unknown topic or no consent: refused.
     for (const bad of [{ topics: [] }, { topics: ['bogus'] }, { topics: ['sure'], consent: false }]) {

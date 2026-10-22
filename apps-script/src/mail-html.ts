@@ -3,6 +3,8 @@
  * written; in the HTML part
  * - the e-mail check link's own line becomes a button in the site's navy, with the plain address
  *   under it for mail apps that block buttons;
+ * - a "→ Label: https://klinikterapist.com/…" line becomes a link button with that label, and a
+ *   "■ " line a heading (the information e-mail's questions);
  * - the signature at the end (the name, then "Klinik Psikolog" / "klinikterapist.com" lines) becomes
  *   the logo signature: the sun, name, title, online therapy, site and Instagram, then the wordmark.
  * E-mails with neither (the owner's own notifications) stay plain text only. The images are the
@@ -67,6 +69,14 @@ function button(link: string): string {
   ].join('');
 }
 
+/** "→ Ön görüşme planlayın: https://klinikterapist.com/…": a link button with that label (the information e-mail). */
+const ACTION_RE = /^→ (.{2,60}?): (https:\/\/klinikterapist\.com\/[^\s<>"]*)$/;
+
+function action(label: string, link: string): string {
+  const href = escape(link);
+  return `<a href="${href}" style="display:inline-block;margin:0 8px 8px 0;padding:10px 20px;border-radius:999px;background:#1F2E4A;color:#FBF3E4;font-weight:bold;text-decoration:none">${escape(label)}</a>`;
+}
+
 const line = (s: string) => escape(s).replace(URL_RE, (u) => `<a href="${u}" style="color:#1F2E4A">${u}</a>`);
 
 export function mailHtml(body: string): string | undefined {
@@ -78,16 +88,29 @@ export function mailHtml(body: string): string | undefined {
   const html = blocks.map((block) => {
     const out: string[] = [];
     let text: string[] = [];
+    let actions: string[] = [];
     const flush = () => {
       if (text.length) out.push(`<p style="margin:0 0 14px">${text.join('<br>')}</p>`);
+      if (actions.length) out.push(`<p style="margin:4px 0 14px">${actions.join('')}</p>`);
       text = [];
+      actions = [];
     };
     for (const raw of block.split('\n')) {
       const l = raw.trim();
+      const a = ACTION_RE.exec(l);
       if (isCheckLink(l)) {
         flush();
         out.push(button(l));
-      } else text.push(line(raw));
+      } else if (l.startsWith('■ ')) {
+        flush();
+        out.push(`<p style="margin:26px 0 8px;font-size:16px;font-weight:bold;color:#1F2E4A">${escape(l.slice(2))}</p>`);
+      } else if (a) {
+        if (text.length) flush();
+        actions.push(action(a[1], a[2]));
+      } else {
+        if (actions.length) flush();
+        text.push(line(raw));
+      }
     }
     flush();
     return out.join('');
