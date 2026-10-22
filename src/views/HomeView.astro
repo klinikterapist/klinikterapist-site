@@ -13,6 +13,8 @@ import Accordion from '../components/ui/Accordion.astro';
 import SocialAccordion from '../components/ui/SocialAccordion.astro';
 import ListItem from '../components/ui/ListItem.astro';
 import TilePair from '../components/ui/TilePair.astro';
+import HandwritingFont from '../components/home/HandwritingFont.astro';
+import ReadingCards from '../components/home/ReadingCards.astro';
 import StickyCta from '../components/ui/StickyCta.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
@@ -61,7 +63,8 @@ const newestMeta = newest
       .join(' · ')
   : '';
 // "Popüler yazılar" needs something to show: posts marked featured, or shown read counts.
-const hasPopular = pickPopular(posts).length > 0;
+const popular = pickPopular(posts);
+const hasPopular = popular.length > 0;
 const blogHref = pathFor('blog', lang);
 type Tile = { icon: string; title: string; subtitle: string; href: string };
 const tiles: Tile[] = [];
@@ -76,6 +79,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
 ---
 
 <BaseLayout lang={lang} meta={meta} alternatePaths={alternatePaths} jsonLd={[personLd(lang), professionalServiceLd(lang)]}>
+  <HandwritingFont slot="head" />
   <div class="home-phone">
     <PortraitHero style={style} lang={lang} alternatePaths={alternatePaths} photo={profile.photo} alt={alt}>
       <div class="profile">
@@ -191,7 +195,13 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
           </>
         )
       }
-      {tilePair && <TilePair tiles={tilePair} />}
+      <ReadingCards
+        lang={lang}
+        posts={posts}
+        popular={popular}
+        blog={blogCard ? { title: blogCard.title[lang], subtitle: blogCard.subtitle[lang], href: blogHref } : null}
+        popularHref={pathFor('popular', lang)}
+      />
     </section>
 
     <ProcessSteps lang={lang} steps={getHome().process} />

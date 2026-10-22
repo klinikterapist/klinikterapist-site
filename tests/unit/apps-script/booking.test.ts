@@ -63,6 +63,25 @@ describe('booking.request', () => {
     expect(visitor.subject).toBe('Your request has been received – klinikterapist.com');
     expect(visitor.body).toContain('Free intro call, Saturday 24 October 2026, 12:00');
     expect(visitor.body).not.toContain('İlişki');
+    // Asked since 2026-10-22: a form sent before then says "Belirtmedi".
+    expect(owner.body).toContain('– Yaşadığı ülke: Belirtmedi');
+  });
+
+  it('a session note comes with its explicit consent; without it the request is refused (owner’s note 2026-10-22)', () => {
+    const { gas, send } = setup();
+    expect(send({ ...session, healthConsent: true }).ok).toBe(true);
+    expect(gas.mails[0].body).toContain('– Not için açık rıza: Verildi');
+    const other = setup();
+    expect(other.send({ ...session, healthConsent: false }).ok).toBe(false);
+  });
+
+  it('the intro call keeps where the person lives and tells the owner; an unknown country is refused', () => {
+    const { gas, send } = setup();
+    expect(send({ ...intro, country: 'DE', phone: '+49 15112345678' }).ok).toBe(true);
+    expect(gas.mails[0].body).toContain('– Yaşadığı ülke: Almanya');
+    expect(gas.mails[0].body).toContain('Telefon: +49 15112345678');
+    const other = setup();
+    expect(other.send({ ...intro, country: 'XX' })).toMatchObject({ ok: false, error: { message: 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.' } });
   });
 
   it('a time that is not free says so; other bad input is refused as a whole', () => {

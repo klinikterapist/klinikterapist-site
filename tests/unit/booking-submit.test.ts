@@ -124,7 +124,7 @@ describe('mountBookingForm', () => {
     expect(init.credentials).toBe('omit');
     expect(JSON.parse(String(init.body))).toEqual({
       action: 'booking.request', kind: 'session', type: 'individual', day: '2026-10-22', time: '15:00',
-      name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, hp_field: '', lang: 'tr',
+      name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, healthConsent: false, hp_field: '', lang: 'tr',
     });
     expect($('[data-step="4"]').hidden).toBe(true);
     expect($('.stepper').hidden).toBe(true);
@@ -219,4 +219,26 @@ describe('e-mail check and closed booking on the site', () => {
     expect(posts).toEqual([expect.objectContaining({ action: 'booking.waitlist', name: 'Elif Bekler', kinds: ['individual'], consent: true, lang: 'tr' })]);
   });
 
+});
+
+describe('the session note consent (owner’s note 2026-10-22)', () => {
+  it('shows and requires the consent once a note is written, and clears it when the note is emptied', async () => {
+    const { mountNoteConsent } = await import('../../src/components/appointment/booking-submit');
+    document.body.innerHTML = `<div id="r"><textarea name="note"></textarea><label data-note-consent hidden><input type="checkbox" name="healthConsent" /></label></div>`;
+    mountNoteConsent(document.querySelector<HTMLElement>('#r')!);
+    const box = $('[data-note-consent]');
+    const input = $<HTMLInputElement>('[name=healthConsent]');
+    const note = $<HTMLTextAreaElement>('[name=note]');
+    expect(box.hidden).toBe(true);
+    expect(input.required).toBe(false);
+    note.value = 'Uyku sorunu';
+    note.dispatchEvent(new Event('input'));
+    expect(box.hidden).toBe(false);
+    expect(input.required).toBe(true);
+    input.checked = true;
+    note.value = '';
+    note.dispatchEvent(new Event('input'));
+    expect(box.hidden).toBe(true);
+    expect(input.checked).toBe(false);
+  });
 });

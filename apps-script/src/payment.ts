@@ -22,7 +22,7 @@ import { PANEL_URL, SENDER_NAME } from './text';
 import { logEvent, shortWhen } from './events';
 import { INTRO_MINUTES, slotInstant } from '../../src/lib/booking-form';
 import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type SessionRecord } from '../../src/lib/sessions';
-import { EMPTY_PAYMENT, parsePayment, paymentReminderMail, sessionReminderMail, type PaymentSettings } from '../../src/lib/payment';
+import { EMPTY_PAYMENT, parseFee, parsePayment, paymentReminderMail, sessionReminderMail, withClientFee, type PaymentSettings } from '../../src/lib/payment';
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { readQr, saveQr } from './qr';
@@ -80,6 +80,21 @@ export function payClient(gas: Gas, p: Record<string, unknown>): { client: Clien
   });
 }
 
+/** `clients.fee` (panel): the client's own fee; none (empty, 0, `null`) goes back to their session type's fee. */
+export function setClientFee(gas: Gas, p: Record<string, unknown>): { client: Client } {
+  const fee = parseFee(p.fee);
+  if (p.fee !== null && p.fee !== '' && p.fee !== 0 && fee === undefined) throw badRequest('Ücret 1 ile 999.999 TL arasında bir sayı olmalı.');
+  return gas.withLock(() => {
+    const clients = readItems<StoredClient>(gas, CLIENTS);
+    const c = clients.find((x) => x.id === p.id);
+    if (!c) throw new ApiError('not_found', NO_CLIENT);
+    const { fee: _old, ...rest } = c;
+    const updated: StoredClient = fee ? { ...rest, fee } : rest;
+    writeItems(gas, CLIENTS, clients.map((x) => (x.id === c.id ? updated : x)));
+    logEvent(gas, 'payment', `${c.number}: ${fee ? `özel ücret ${fee.toLocaleString('tr-TR')} TL` : 'standart ücrete dönüldü'}`, `#/seans-takip/${c.id}`);
+    return { client: publicClient(updated) };
+  });
+}
 
 /** The hourly reminders. Returns the e-mails sent, for the log and the tests. */
 export function runReminders(gas: Gas): number {
@@ -110,12 +125,12 @@ export function runReminders(gas: Gas): number {
           changed = true;
         };
         if (!sent.includes('r72') && left > 24 * HOUR) {
-          toClient(c.contact, sessionReminderMail(c.contact, s, { type: c.type, free, paid }, pay, trackLink(gas, c), qr));
+          toClient(c.contact, sessionReminderMail(c.contact, s, { type: c.type, free, paid }, withClientFee(pay, c.type, c.fee), trackLink(gas, c), qr));
           mark('r72');
           // Sent late (the client came in under 48 hours): it already asked for the payment.
           if (left <= 48 * HOUR) mark('r48');
         } else if (!free && !paid && !sent.includes('r48') && left <= 48 * HOUR && left > 24 * HOUR) {
-          toClient(c.contact, paymentReminderMail(c.contact, s, c.type, pay, trackLink(gas, c), qr));
+          toClient(c.contact, paymentReminderMail(c.contact, s, c.type, withClientFee(pay, c.type, c.fee), trackLink(gas, c), qr));
           mark('r48');
         }
         if (!free && !paid && !sent.includes('due') && left <= pay.dueHours * HOUR) {

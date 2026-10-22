@@ -26,12 +26,12 @@ import { formatDay } from '../../../lib/booking-form';
 import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type SessionRecord, type SessionStatus } from '../../../lib/sessions';
 import { usePanel } from '../context';
 import { useFreshData } from '../fresh-data';
-import { ArrowLeft, CalendarCheck, CalendarPlus, Flag, Icon, Mail as MailIcon, Trash2, Undo2 } from '../icons';
+import { ArrowLeft, CalendarCheck, CalendarPlus, CircleCheck, Flag, Icon, Mail as MailIcon, Trash2, Undo2 } from '../icons';
 import { ActionMenu } from '../ActionMenu';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
-import { endMail, linkMail, revertMail, type Mail } from '../../lib/booking-mail';
+import { endMail, linkMail, revertMail, sessionChangeMail, type Mail } from '../../lib/booking-mail';
 import { CLOSING_PICK_DAYS, closingDeadline, closingState } from '../../../lib/closing';
-import { EMPTY_PAYMENT, paymentReminderMail, thanksMail, type PaymentSettings } from '../../../lib/payment';
+import { EMPTY_PAYMENT, feeOf, formatFee, parseFee, paymentReminderMail, thanksMail, withClientFee, type PaymentSettings } from '../../../lib/payment';
 import { MailDialog } from './MailDialog';
 import { hasFee } from '../../lib/attention';
 import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
@@ -49,8 +49,9 @@ const paidOn = (ms: number) => {
 };
 const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s.time.replace(':', '.')}`;
 
-type Marking = { s: SessionRecord; status: 'cancelled' | 'postponed'; by: 'client' | 'owner'; note: string; day: string; time: string };
-type Adding = { kind: 'closing' | 'extra'; day: string; time: string };
+/** `send`: the client gets an e-mail about it (owner's note 2026-10-22); `mail`: that e-mail, open for editing (the second step). */
+type Marking = { s: SessionRecord; status: 'cancelled' | 'postponed'; by: 'client' | 'owner'; note: string; day: string; time: string; send: boolean; mail?: Mail };
+type Adding = { kind: 'closing' | 'extra'; day: string; time: string; send: boolean; mail?: Mail };
 type Linking = { step: 'mail'; mail: Mail } | { step: 'renew' };
 type Ending = { mode: 'complete' | 'closing'; mail: Mail };
 
@@ -72,6 +73,8 @@ export function ClientPage({ id }: { id: string }) {
   const [payment, setPayment] = useState<PaymentSettings>(EMPTY_PAYMENT);
   const [paying, setPaying] = useState<{ s: SessionRecord; mail: Mail; send: boolean } | null>(null);
   const [reminding, setReminding] = useState<{ s: SessionRecord; mail: Mail } | null>(null);
+  /** "Özel ücret" (owner's note 2026-10-22): the amount as typed, '' for the session type's fee. */
+  const [feeEdit, setFeeEdit] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -131,17 +134,28 @@ export function ClientPage({ id }: { id: string }) {
     };
   }, [api, id, fresh]);
 
-  const change = async (input: Parameters<typeof api.clientSession>[0], done: string) => {
+  /** A session change; with `mail`, the client is told by e-mail once it is saved (owner's note 2026-10-22). */
+  const change = async (input: Parameters<typeof api.clientSession>[0], done: string, mail?: Mail) => {
     setBusy(true);
     setError(null);
+    let saved = false;
     try {
       const { client } = await api.clientSession(input);
+      saved = true;
       setClient(client);
-      setNotice(done);
+      if (mail) await api.clientMail({ id, ...mail });
+      setNotice(mail ? `${done} Danışana e-posta gönderildi.` : done);
       setMarking(null);
       setAdding(null);
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Kaydedilemedi. Tekrar deneyin.');
+      if (saved) {
+        setNotice(done);
+        setMarking(null);
+        setAdding(null);
+        setError(`Değişiklik kaydedildi ama danışana e-posta gönderilemedi${e instanceof ApiFailure ? `: ${e.message}` : '.'} "E-posta yaz" ile kendiniz bildirebilirsiniz.`);
+      } else {
+        setError(e instanceof ApiFailure ? e.message : 'Kaydedilemedi. Tekrar deneyin.');
+      }
     } finally {
       setBusy(false);
     }
@@ -257,6 +271,43 @@ export function ClientPage({ id }: { id: string }) {
   const closing = closingState(client, now);
   const numbers = sessionNumbers(client, next.at(-1)?.day ?? past.at(-1)?.day ?? client.since);
   const times = (day: string) => (day ? templateTimes(day) : []);
+  /** One session's fee for this client: their own, else their session type's (0: not set in Ücret ve ödeme). */
+  const fee = feeOf(payment, client.type, client.fee);
+
+  const standard = feeOf(payment, client.type);
+  const saveFee = async (value: number | null) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const { client: next } = await api.clientFee({ id, fee: value });
+      setClient(next);
+      setNotice(value ? `Bu danışanın seans ücreti ${formatFee(value, 'tr')} olarak kaydedildi.` : 'Bu danışan için yeniden görüşme türünün standart ücreti geçerli.');
+      setFeeEdit(null);
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : 'Kaydedilemedi. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  /** The e-mail that tells the client about a cancelled or moved session (owner's note 2026-10-22). */
+  const markingMail = (m: Marking): Mail =>
+    sessionChangeMail(client.contact, {
+      mode: m.status === 'cancelled' ? 'cancel' : 'postpone',
+      day: m.s.day,
+      time: m.s.time,
+      type: client.type,
+      closing: m.s.kind === 'closing',
+      by: m.by,
+      ...(m.day && m.time ? { to: { day: m.day, time: m.time } } : {}),
+    });
+  const addingMail = (a: Adding): Mail => sessionChangeMail(client.contact, { mode: 'add', day: a.day, time: a.time, type: client.type, closing: a.kind === 'closing' });
+  const saveMarking = (m: Marking, mail?: Mail) =>
+    change(
+      { op: 'mark', id, day: m.s.day, time: m.s.time, status: m.status, by: m.by, note: m.note, ...(m.day && m.time ? { newDay: m.day, newTime: m.time } : {}) },
+      m.status === 'cancelled' ? `${at(m.s)} iptal edildi; saat açıldı.` : `${at(m.s)} ertelendi${m.day && m.time ? `: yeni tarih ${at(m)}` : ''}.`,
+      mail,
+    );
+  const saveAdding = (a: Adding, mail?: Mail) => change({ op: 'add', id, kind: a.kind, day: a.day, time: a.time }, `${at(a)} eklendi; takvime işlendi.`, mail);
 
   const row = (s: SessionRecord, past: boolean) => {
     const { d, m, w } = short(s.day);
@@ -285,7 +336,24 @@ export function ClientPage({ id }: { id: string }) {
           {s.by && <small>{s.by === 'client' ? 'danışan istedi' : 'siz'}</small>}
           {s.late && <small className="ss-late">24 saatten az kala · tam ücret</small>}
           {s.movedTo && <small>{`→ ${short(s.movedTo.day).d} ${short(s.movedTo.day).m} ${s.movedTo.time.replace(':', '.')}`}</small>}
-          {payable && (s.paid ? <small className="ss-paid">{`Ödendi · ${paidOn(s.paid)}`}</small> : <small className="ss-unpaid">Ödenmedi</small>)}
+        </span>
+        {/* Owner's note 2026-10-22: the payment in a column of its own, a state ("bekleniyor", "alındı") apart from the session's. */}
+        <span className="ss-money">
+          {free ? (
+            <span className="ss-chip is-free">Ücretsiz</span>
+          ) : payable && s.paid ? (
+            <span className="ss-chip is-paid">
+              <Icon as={CircleCheck} size={15} />
+              {`Ödeme alındı · ${paidOn(s.paid)}`}
+            </span>
+          ) : payable ? (
+            <span className="ss-chip is-due">
+              <span>{`Ödeme bekleniyor${fee ? ` · ${formatFee(fee, 'tr')}` : ''}`}</span>
+              <button type="button" className="ss-chip-btn" disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s, client.type), send: true })}>
+                Ödeme alındı
+              </button>
+            </span>
+          ) : null}
         </span>
         <span className="ss-actions">
           {/* Owner's review 2026-10-21: the step that is due now as a button, the rest in "Diğer". */}
@@ -299,19 +367,14 @@ export function ClientPage({ id }: { id: string }) {
               </Button>
             </span>
           )}
-          {payable && !s.paid && (
-            <Button className="ss-pay" disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s, client.type), send: true })}>
-              Ödendi
-            </Button>
-          )}
           <ActionMenu
             compact
             label={`${at(s)}: diğer işlemler`}
             items={[
               ...(s.status === 'planned'
                 ? [
-                    { label: 'İptal', hint: 'Saat takvimde ve sitede açılır', onSelect: () => setMarking({ s, status: 'cancelled', by: 'client', note: '', day: '', time: '' }) },
-                    { label: 'Ertele', hint: 'Yeni tarih takvime işlenir', onSelect: () => setMarking({ s, status: 'postponed', by: 'client', note: '', day: '', time: '' }) },
+                    { label: 'İptal', hint: 'Saat takvimde ve sitede açılır', onSelect: () => setMarking({ s, status: 'cancelled', by: 'client', note: '', day: '', time: '', send: true }) },
+                    { label: 'Ertele', hint: 'Yeni tarih takvime işlenir', onSelect: () => setMarking({ s, status: 'postponed', by: 'client', note: '', day: '', time: '', send: true }) },
                     ...(added && !s.from ? [{ label: 'Sil', hint: 'Eklenen seansı listeden kaldırır', danger: true, onSelect: () => change({ op: 'remove', id, day: s.day, time: s.time }, `${at(s)} silindi.`) }] : []),
                   ]
                 : [{ label: 'İşareti kaldır', hint: 'Seans yeniden işaretlenmemiş olur', onSelect: () => mark(s, 'planned') }]),
@@ -319,8 +382,8 @@ export function ClientPage({ id }: { id: string }) {
                 ? [
                     'divider' as const,
                     ...(s.paid
-                      ? [{ label: 'Ödemeyi geri al', hint: 'Ödendi işareti kalkar', onSelect: () => pay(s, false) }]
-                      : [{ label: 'Ödeme hatırlat', hint: 'Ücret ve ödeme bilgisiyle e-posta', onSelect: () => setReminding({ s, mail: paymentReminderMail(client.contact, s, client.type, payment) }) }]),
+                      ? [{ label: 'Ödemeyi geri al', hint: '"Ödeme alındı" işareti kalkar', onSelect: () => pay(s, false) }]
+                      : [{ label: 'Ödeme hatırlat', hint: 'Ücret ve ödeme bilgisiyle e-posta', onSelect: () => setReminding({ s, mail: paymentReminderMail(client.contact, s, client.type, withClientFee(payment, client.type, client.fee)) }) }]),
                   ]
                 : []),
             ]}
@@ -349,7 +412,7 @@ export function ClientPage({ id }: { id: string }) {
         </div>
         {/* Owner's review 2026-10-21: every step about this client in one place, grouped by what it does. */}
         <div className="head-actions cl-actions">
-          <Button variant="primary" onClick={() => setAdding({ kind: 'extra', day: '', time: '' })}>
+          <Button variant="primary" onClick={() => setAdding({ kind: 'extra', day: '', time: '', send: true })}>
             <Icon as={CalendarPlus} size={16} />
             Ek seans ekle
           </Button>
@@ -361,7 +424,7 @@ export function ClientPage({ id }: { id: string }) {
             label="Sonlandırma"
             icon={Flag}
             items={[
-              { label: 'Sonlandırma görüşmesi ekle', hint: 'Ücretsiz son görüşmeyi takvime ekler', icon: CalendarPlus, onSelect: () => setAdding({ kind: 'closing', day: '', time: '' }) },
+              { label: 'Sonlandırma görüşmesi ekle', hint: 'Ücretsiz son görüşmeyi takvime ekler', icon: CalendarPlus, onSelect: () => setAdding({ kind: 'closing', day: '', time: '', send: true }) },
               { label: 'Terapiyi sonlandır', hint: 'Tamamlandı ya da sonlandırma görüşmesi daveti', icon: Flag, onSelect: () => setEnding({ mode: 'complete', mail: endMail(client.contact, 'complete') }) },
             ]}
           />
@@ -430,6 +493,16 @@ export function ClientPage({ id }: { id: string }) {
                 <dt>Terapiye başlangıç</dt>
                 <dd>{formatDay(client.since, 'tr')}</dd>
               </div>
+              <div className="cl-fee">
+                <dt>Seans ücreti</dt>
+                <dd>
+                  <b>{fee ? formatFee(fee, 'tr') : 'Girilmedi'}</b>
+                  <small>{client.fee ? 'bu danışana özel' : 'görüşme türünün standart ücreti'}</small>
+                  <Button variant="ghost" onClick={() => setFeeEdit(client.fee ? String(client.fee) : '')}>
+                    {client.fee ? 'Değiştir' : 'Özel ücret belirle'}
+                  </Button>
+                </dd>
+              </div>
             </dl>
           </div>
           <div className="k-group">
@@ -456,7 +529,7 @@ export function ClientPage({ id }: { id: string }) {
         </aside>
       </div>
 
-      {marking && (
+      {marking && !marking.mail && (
         <Dialog
           title={`${at(marking.s)}: ${marking.status === 'cancelled' ? 'iptal' : 'ertele'}`}
           history
@@ -470,14 +543,9 @@ export function ClientPage({ id }: { id: string }) {
                 variant="primary"
                 busy={busy}
                 disabled={marking.status === 'postponed' && !!marking.day && !marking.time}
-                onClick={() =>
-                  change(
-                    { op: 'mark', id, day: marking.s.day, time: marking.s.time, status: marking.status, by: marking.by, note: marking.note, ...(marking.day && marking.time ? { newDay: marking.day, newTime: marking.time } : {}) },
-                    marking.status === 'cancelled' ? `${at(marking.s)} iptal edildi; saat açıldı.` : `${at(marking.s)} ertelendi${marking.day && marking.time ? `: yeni tarih ${at(marking)}` : ''}.`,
-                  )
-                }
+                onClick={() => (marking.send ? setMarking({ ...marking, mail: markingMail(marking) }) : saveMarking(marking))}
               >
-                Kaydet
+                {marking.send ? 'Devam: e-postayı gör' : 'Kaydet'}
               </Button>
             </>
           }
@@ -501,9 +569,28 @@ export function ClientPage({ id }: { id: string }) {
               />
             </div>
           )}
-          <Field label="Not (isteğe bağlı)" value={marking.note} onChange={(note) => setMarking({ ...marking, note })} maxLength={300} />
-          <p className="k-hint">Bu seansın saati takvimde ve sitede açılır. Kişiye e-posta gitmez.</p>
+          <Field label="Not (isteğe bağlı, yalnızca panelde görünür)" value={marking.note} onChange={(note) => setMarking({ ...marking, note })} maxLength={300} />
+          <MailChoice send={marking.send} onSend={(send) => setMarking({ ...marking, send })} />
+          <p className="k-hint">
+            {marking.status === 'cancelled' ? 'Bu seansın saati takvimde ve sitede açılır.' : 'Yeni tarih seçerseniz takvime işlenir; eski saat açılır.'}{' '}
+            {marking.send ? 'Sonraki adımda danışana gidecek e-postayı görüp düzeltebilirsiniz.' : 'Danışana e-posta gitmez.'}
+          </p>
         </Dialog>
+      )}
+
+      {marking?.mail && (
+        <MailDialog
+          title={`${at(marking.s)}: ${marking.status === 'cancelled' ? 'iptal' : 'ertele'}`}
+          to={client.contact}
+          mail={marking.mail}
+          onMail={(mail) => setMarking({ ...marking, mail })}
+          send="Kaydet ve gönder"
+          busy={busy}
+          onClose={() => setMarking({ ...marking, mail: undefined })}
+          onSend={() => saveMarking(marking, marking.mail)}
+        >
+          <p className="k-hint">{`Seans ${marking.status === 'cancelled' ? 'iptal edilir' : 'ertelenir'}; ardından bu e-posta danışana gider. Vazgeç ile bir önceki adıma dönersiniz.`}</p>
+        </MailDialog>
       )}
 
       {ending && (
@@ -578,7 +665,7 @@ export function ClientPage({ id }: { id: string }) {
       {paying &&
         (paying.send ? (
           <MailDialog
-            title={`${at(paying.s)}: ödendi`}
+            title={`${at(paying.s)}: ödeme alındı`}
             to={client.contact}
             mail={paying.mail}
             onMail={(mail) => setPaying({ ...paying, mail })}
@@ -598,7 +685,7 @@ export function ClientPage({ id }: { id: string }) {
           </MailDialog>
         ) : (
           <Dialog
-            title={`${at(paying.s)}: ödendi`}
+            title={`${at(paying.s)}: ödeme alındı`}
             history
             onClose={() => !busy && setPaying(null)}
             actions={
@@ -620,9 +707,42 @@ export function ClientPage({ id }: { id: string }) {
                 Yalnızca işaretle
               </button>
             </div>
-            <p className="k-hint">Seans ödendi olarak işaretlenir; danışana e-posta gitmez.</p>
+            <p className="k-hint">Seansın ödemesi alındı olarak işaretlenir; danışana e-posta gitmez.</p>
           </Dialog>
         ))}
+
+      {feeEdit !== null && (
+        <Dialog
+          title={`${client.number}: seans ücreti`}
+          history
+          onClose={() => !busy && setFeeEdit(null)}
+          actions={
+            <>
+              <Button onClick={() => setFeeEdit(null)} disabled={busy}>
+                Vazgeç
+              </Button>
+              {client.fee && (
+                <Button variant="ghost" disabled={busy} onClick={() => saveFee(null)}>
+                  Standart ücrete dön
+                </Button>
+              )}
+              <Button variant="primary" busy={busy} disabled={feeEdit.trim() !== '' && !parseFee(feeEdit)} onClick={() => saveFee(parseFee(feeEdit) ?? null)}>
+                Kaydet
+              </Button>
+            </>
+          }
+        >
+          <Field
+            label="Bu danışana özel ücret (TL)"
+            type="number"
+            value={feeEdit}
+            onChange={setFeeEdit}
+            placeholder={standard ? `${standard} (standart)` : ''}
+            hint={`Boş bırakırsanız ${labelOf({ kind: 'session', type: client.type }).toLocaleLowerCase('tr-TR')} standart ücreti ${standard ? `(${formatFee(standard, 'tr')})` : '(Ücret ve ödeme ayarlarında girilmedi)'} geçerli olur.`}
+          />
+          <p className="k-hint">Ödeme hatırlatmaları, 3 gün önceki seans hatırlatması ve geç iptal e-postası bu danışana bu ücreti yazar.</p>
+        </Dialog>
+      )}
 
       {writing && (
         <MailDialog
@@ -701,7 +821,7 @@ export function ClientPage({ id }: { id: string }) {
         </Dialog>
       )}
 
-      {adding && (
+      {adding && !adding.mail && (
         <Dialog
           title={adding.kind === 'closing' ? 'Sonlandırma görüşmesi ekle' : 'Ek seans ekle'}
           history
@@ -715,9 +835,9 @@ export function ClientPage({ id }: { id: string }) {
                 variant="primary"
                 busy={busy}
                 disabled={!adding.day || !adding.time}
-                onClick={() => change({ op: 'add', id, kind: adding.kind, day: adding.day, time: adding.time }, `${at(adding)} eklendi; takvime işlendi.`)}
+                onClick={() => (adding.send ? setAdding({ ...adding, mail: addingMail(adding) }) : saveAdding(adding))}
               >
-                Ekle
+                {adding.send ? 'Devam: e-postayı gör' : 'Ekle'}
               </Button>
             </>
           }
@@ -732,8 +852,39 @@ export function ClientPage({ id }: { id: string }) {
               onChange={(time) => setAdding({ ...adding, time })}
             />
           </div>
+          <MailChoice send={adding.send} onSend={(send) => setAdding({ ...adding, send })} />
+          <p className="k-hint">{adding.send ? 'Sonraki adımda danışana gidecek e-postayı görüp düzeltebilirsiniz.' : 'Danışana e-posta gitmez.'}</p>
         </Dialog>
       )}
+
+      {adding?.mail && (
+        <MailDialog
+          title={adding.kind === 'closing' ? 'Sonlandırma görüşmesi ekle' : 'Ek seans ekle'}
+          to={client.contact}
+          mail={adding.mail}
+          onMail={(mail) => setAdding({ ...adding, mail })}
+          send="Ekle ve gönder"
+          busy={busy}
+          onClose={() => setAdding({ ...adding, mail: undefined })}
+          onSend={() => saveAdding(adding, adding.mail)}
+        >
+          <p className="k-hint">Görüşme takvime işlenir; ardından bu e-posta danışana gider. Vazgeç ile bir önceki adıma dönersiniz.</p>
+        </MailDialog>
+      )}
     </section>
+  );
+}
+
+/** "Danışana e-posta gönder" or "Yalnızca kaydet", in the session dialogs (owner's note 2026-10-22). */
+function MailChoice({ send, onSend }: { send: boolean; onSend: (send: boolean) => void }) {
+  return (
+    <div className="segmented end-choice" role="group" aria-label="Danışana e-posta">
+      <button type="button" aria-pressed={send} onClick={() => onSend(true)}>
+        Danışana e-posta gönder
+      </button>
+      <button type="button" aria-pressed={!send} onClick={() => onSend(false)}>
+        Yalnızca kaydet
+      </button>
+    </div>
   );
 }

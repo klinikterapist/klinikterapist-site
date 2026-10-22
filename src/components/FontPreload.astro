@@ -1,0 +1,16 @@
+---
+/**
+ * Starts the site's fonts (DM Sans, Fraunces; Latin and the Latin Extended part for Turkish letters)
+ * with the page instead of after the stylesheet, so text is set in them from the first paint and
+ * does not move when they arrive (owner's note 2026-10-22: "Hoş geldiniz" jumped on load). The URLs
+ * are the same files the @font-face rules in tokens.css load.
+ */
+import dmSans from '@fontsource-variable/dm-sans/files/dm-sans-latin-wght-normal.woff2?url';
+import dmSansExt from '@fontsource-variable/dm-sans/files/dm-sans-latin-ext-wght-normal.woff2?url';
+import fraunces from '@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2?url';
+import frauncesExt from '@fontsource-variable/fraunces/files/fraunces-latin-ext-wght-normal.woff2?url';
+
+const files = [dmSans, dmSansExt, fraunces, frauncesExt];
+---
+
+{files.map((href) => <link rel="preload" as="font" type="font/woff2" href={href} crossorigin="anonymous" />)}

@@ -1,8 +1,8 @@
 ---
 /**
- * Site footer. Every screen: the page end (112 line and copyright, spec §5.5). Desktop only: the
- * social icons and the legal links (spec §5.7); on phones the accounts live in the home page's
- * "Sosyal medyada takip et" box.
+ * Site footer. Every screen: the page end (copyright line, spec §5.5). Desktop only: the social
+ * icons and the legal links with the cookie choice next to them (spec §5.7); on phones the accounts
+ * live in the home page's "Sosyal medyada takip et" box and the cookie choice sits on the copyright line.
  */
 import type { Lang } from '../lib/settings';
 import { contactEmail, getLinks, getSeo } from '../lib/settings';
@@ -47,12 +47,12 @@ const hasAnalytics = Boolean(getSeo().gaId);
       <ul class="legal">
         <li><a href={pathFor('privacyNotice', lang)}>{t(lang, 'navPrivacyNotice')}</a></li>
         <li><a href={pathFor('privacyPolicy', lang)}>{t(lang, 'navPrivacyPolicy')}</a></li>
+        {hasAnalytics && <li><button type="button" class="cookie-prefs" data-cookie-prefs>{t(lang, 'cookiePrefs')}</button></li>}
       </ul>
     </nav>
   </div>
   <div class="container">
-    <PageEnd lang={lang} />
-    {hasAnalytics && <button type="button" class="cookie-prefs" data-cookie-prefs>{t(lang, 'cookiePrefs')}</button>}
+    <PageEnd lang={lang} cookiePrefs={hasAnalytics} />
   </div>
 </footer>
 
@@ -75,19 +75,6 @@ const hasAnalytics = Boolean(getSeo().gaId);
       gap: var(--space-2) var(--space-4);
       padding-top: var(--space-3);
     }
-  }
-
-  .cookie-prefs {
-    display: block;
-    margin: 0 auto var(--space-4);
-    padding: 8px;
-    border: 0;
-    background: none;
-    color: var(--muted);
-    font: inherit;
-    font-size: var(--text-xs);
-    text-decoration: underline;
-    cursor: pointer;
   }
 
   .social,
@@ -117,7 +104,8 @@ const hasAnalytics = Boolean(getSeo().gaId);
     gap: 0 var(--space-4);
   }
 
-  .legal a {
+  .legal a,
+  .cookie-prefs {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
@@ -126,7 +114,16 @@ const hasAnalytics = Boolean(getSeo().gaId);
     text-decoration: none;
   }
 
-  .legal a:hover {
+  .cookie-prefs {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .legal a:hover,
+  .cookie-prefs:hover {
     color: var(--link);
     text-decoration: underline;
   }

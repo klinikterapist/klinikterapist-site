@@ -6,6 +6,7 @@
  * Times are Istanbul wall times (Turkey has kept +03:00 all year since 2016).
  */
 import { DAY_RE, EMAIL_RE, TIME_RE } from './field-rules';
+import { isCountry } from './phone';
 
 export type BookingLang = 'tr' | 'en';
 export type BookingKind = 'session' | 'intro';
@@ -126,11 +127,17 @@ export type BookingInput = {
   before?: 'yes' | 'no' | '';
   /** Intro: index into AGE_RANGES. */
   age?: number;
-  /** Intro: explicit consent for the health-related topic choices (required when a topic is picked). */
+  /**
+   * Explicit consent for health-related data. Intro: the topic choices (required when a topic is
+   * picked). Session: the note (owner's note 2026-10-22), required when a note is written; left out
+   * by forms sent before it was asked.
+   */
   healthConsent?: boolean;
+  /** Intro: where the person lives, one of COUNTRIES (lib/phone.ts); optional for forms sent before it was asked. */
+  country?: string;
 };
 
-export type BookingField = 'type' | 'slot' | 'name' | 'email' | 'phone' | 'note' | 'consent' | 'forWhom' | 'topics' | 'age' | 'healthConsent';
+export type BookingField = 'type' | 'slot' | 'name' | 'email' | 'phone' | 'note' | 'consent' | 'forWhom' | 'topics' | 'age' | 'healthConsent' | 'country';
 export type BookingErrors = Partial<Record<BookingField, 'required' | 'invalid' | 'tooLong' | 'taken'>>;
 
 const HOUR = 3600 * 1000;
@@ -232,6 +239,7 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
   else if (digits < BOOKING_LIMITS.phoneMin || phone.length > BOOKING_LIMITS.phoneMax) errors.phone = 'invalid';
   if (input.note.trim().length > BOOKING_LIMITS.noteMax) errors.note = 'tooLong';
   if (!input.consent) errors.consent = 'required';
+  if (input.kind === 'session' && input.healthConsent === false && input.note.trim()) errors.healthConsent = 'required';
   if (input.kind === 'intro') {
     if (!INTRO_FOR.some((f) => f.id === input.forWhom)) errors.forWhom = 'required';
     const topics = input.topics ?? [];
@@ -239,6 +247,7 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
     else if (topics.some((i) => !Number.isInteger(i) || i < 0 || i >= INTRO_TOPICS.tr.length) || new Set(topics).size !== topics.length) errors.topics = 'invalid';
     if (!Number.isInteger(input.age) || input.age! < 0 || input.age! >= AGE_RANGES.tr.length) errors.age = 'required';
     if (topics.length && !input.healthConsent) errors.healthConsent = 'required';
+    if (input.country && !isCountry(input.country)) errors.country = 'invalid';
   }
   return errors;
 }

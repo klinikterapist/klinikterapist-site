@@ -98,6 +98,22 @@ describe('ready e-mails', () => {
 });
 
 describe('Randevu talepleri', () => {
+  it('lists the newest active request first and the approved ones by appointment date (owner’s note 2026-10-22)', async () => {
+    const t = Date.now();
+    const old = { ...session, id: 'a', name: 'Eski Talep', createdAt: t - 3 * 864e5, holdId: 'ha' };
+    const fresh = { ...session, id: 'b', name: 'Yeni Talep', createdAt: t - 1000, holdId: 'hb' };
+    const mid = { ...intro, id: 'c', name: 'Orta Talep', createdAt: t - 864e5, holdId: 'hc' };
+    const late = { ...session, id: 'd', name: 'Geç Onay', status: 'approved' as const, day: '2026-11-20', time: '10:00', createdAt: t - 5 * 864e5, holdId: 'hd' };
+    const soon = { ...session, id: 'e', name: 'Yakın Onay', status: 'approved' as const, day: '2026-11-02', time: '18:00', createdAt: t - 1000, holdId: 'he' };
+    setup('requests', [old, fresh, late, mid, soon]);
+    await card('Yeni Talep');
+    const names = () => [...document.querySelectorAll('.rq-list .rq-who b')].map((b) => b.textContent);
+    expect(names()).toEqual(['Yeni Talep', 'Orta Talep', 'Eski Talep']);
+    fireEvent.click(screen.getByRole('button', { name: /Onaylanan/ }));
+    await card('Yakın Onay');
+    expect(names()).toEqual(['Yakın Onay', 'Geç Onay']);
+  });
+
   it('shows each request with its details and the three buttons, beside the calendar', async () => {
     setup('requests');
     const c = await card('Ayşe Yılmaz');
@@ -380,10 +396,43 @@ describe('a client’s page in Seans takip', () => {
     fireEvent.click(within(within(next).getAllByRole('listitem')[0]).getByRole('button', { name: /diğer işlemler/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'İptal' }));
     const dialog = screen.getByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText('Not (isteğe bağlı)'), { target: { value: 'Seyahat' } });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    fireEvent.change(within(dialog).getByLabelText('Not (isteğe bağlı, yalnızca panelde görünür)'), { target: { value: 'Seyahat' } });
+    // Owner's note 2026-10-22: the client hears of it; the e-mail is shown for editing first.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Devam: e-postayı gör' }));
+    const mail = await screen.findByRole('dialog');
+    const body = within(mail).getByLabelText('E-posta metni') as HTMLTextAreaElement;
+    expect(body.value).toContain('İsteğiniz üzerine aşağıdaki seansınız iptal edildi.');
+    // The panel's own note stays in the panel.
+    expect(body.value).not.toContain('Seyahat');
+    fireEvent.click(within(mail).getByRole('button', { name: 'Kaydet ve gönder' }));
     await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ status: 'cancelled', by: 'client', note: 'Seyahat' })));
+    await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Seansınız iptal edildi – klinikterapist.com' })));
+    expect(await screen.findByText(/Danışana e-posta gönderildi/)).toBeTruthy();
     expect(await screen.findByText('danışan istedi')).toBeTruthy();
+  });
+
+  it('a session moved by the owner tells the client the new time; "Yalnızca kaydet" sends nothing (owner’s note 2026-10-22)', async () => {
+    const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+    const weekday = new Date(`${day(2)}T12:00:00Z`).getUTCDay();
+    const { api } = setup('client:c1', [], [client({ weekday, time: '10:00', since: day(2) })]);
+    await screen.findByText('KT007OGO');
+    const next = () => screen.getByRole('heading', { name: /Sıradaki seanslar/ }).parentElement!;
+    fireEvent.click(within(within(next()).getAllByRole('listitem')[0]).getByRole('button', { name: /diğer işlemler/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Ertele' }));
+    let dialog = screen.getByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Ben erteledim' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Devam: e-postayı gör' }));
+    dialog = await screen.findByRole('dialog');
+    const body = (within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value;
+    expect(body).toContain('ertelemek durumunda kaldığımı');
+    expect(body).toContain('Yeni tarihi ve saati en kısa sürede sizinle birlikte belirleyeceğiz.');
+    // Back to the first step, then save without an e-mail.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Vazgeç' }));
+    dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yalnızca kaydet' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ status: 'postponed', by: 'owner' })));
+    expect(api.state.sent).toHaveLength(0);
   });
 });
 
@@ -412,36 +461,65 @@ describe("the client's own page, seen from the panel", () => {
 });
 
 describe('Faz 1: payments on the client’s page', () => {
-  it('Ödendi sends the thank-you (or not) and marks the session; Ödeme hatırlat sends the reminder with the fee', async () => {
+  it('"Ödeme alındı" sends the thank-you (or not) and marks the session; Ödeme hatırlat sends the reminder with the fee', async () => {
     const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
     const weekday = new Date(`${day(3)}T12:00:00Z`).getUTCDay();
     const { api } = setup('client:c1', [], [client({ weekday, since: day(3) })]);
     api.state.payment = { year: 2026, fees: { individual: 1500, couple: 0, accessible: 0 }, bank: 'TR00 ÖRNEK', holder: '', bankName: '', iban: '', link: '', dueHours: 24 };
     const next = (await screen.findByRole('heading', { name: /Sıradaki seanslar/ })).parentElement!;
     const first = () => within(next).getAllByRole('listitem')[0];
-    expect(first().textContent).toContain('Ödenmedi');
+    // Owner's note 2026-10-22: the payment is a state of its own, with the amount; the step is a verb.
+    expect(first().querySelector('.ss-chip.is-due')!.textContent).toBe('Ödeme bekleniyor · 1.500 TLÖdeme alındı');
+    expect(first().querySelector('.ss-status')!.textContent).toBe('Planlandı');
     fireEvent.click(within(first()).getByRole('button', { name: /diğer işlemler/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Ödeme hatırlat' }));
     let dialog = await screen.findByRole('dialog');
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('– Seans ücreti: 1.500 TL');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
     await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Seans ödemesi hatırlatması – klinikterapist.com' })));
-    fireEvent.click(within(first()).getByRole('button', { name: 'Ödendi' }));
+    fireEvent.click(within(first()).getByRole('button', { name: 'Ödeme alındı' }));
     dialog = await screen.findByRole('dialog');
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('yaptığınız ödeme bana ulaştı.');
     fireEvent.click(within(dialog).getByRole('button', { name: 'İşaretle ve gönder' }));
     await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(3), paid: expect.any(Number) })));
     expect(api.state.sent.at(-1)).toMatchObject({ subject: 'Seans ödemeniz alındı – klinikterapist.com' });
-    expect(await within(next).findByText(/^Ödendi · /)).toBeTruthy();
+    expect(await within(next).findByText(/^Ödeme alındı · /)).toBeTruthy();
     // Only marking: no e-mail.
     const sent = api.state.sent.length;
     const second = within(next).getAllByRole('listitem')[1];
-    fireEvent.click(within(second).getByRole('button', { name: 'Ödendi' }));
+    fireEvent.click(within(second).getByRole('button', { name: 'Ödeme alındı' }));
     dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Yalnızca işaretle' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'İşaretle' }));
     await waitFor(() => expect(api.state.clients[0].sessions?.filter((x) => x.paid)).toHaveLength(2));
     expect(api.state.sent).toHaveLength(sent);
+  });
+
+  it('a client’s own fee: set, shown in the rows and the reminder, and back to the standard fee (owner’s note 2026-10-22)', async () => {
+    const day = (n: number) => new Date(Date.now() + 3 * 3600e3 + n * 864e5).toISOString().slice(0, 10);
+    const weekday = new Date(`${day(3)}T12:00:00Z`).getUTCDay();
+    const { api } = setup('client:c1', [], [client({ weekday, since: day(3) })]);
+    api.state.payment = { year: 2026, fees: { individual: 1500, couple: 0, accessible: 0 }, bank: 'TR00 ÖRNEK', holder: '', bankName: '', iban: '', link: '', dueHours: 24 };
+    const next = (await screen.findByRole('heading', { name: /Sıradaki seanslar/ })).parentElement!;
+    await within(next).findAllByText(/1\.500 TL/);
+    expect(screen.getByText('görüşme türünün standart ücreti')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Özel ücret belirle' }));
+    let dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Bu danışana özel ücret (TL)'), { target: { value: '1750' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(api.state.clients[0].fee).toBe(1750));
+    expect(await screen.findByText('bu danışana özel')).toBeTruthy();
+    const first = within(next).getAllByRole('listitem')[0];
+    expect(first.querySelector('.ss-chip.is-due')!.textContent).toContain('1.750 TL');
+    fireEvent.click(within(first).getByRole('button', { name: /diğer işlemler/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Ödeme hatırlat' }));
+    dialog = await screen.findByRole('dialog');
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('– Seans ücreti: 1.750 TL');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Vazgeç' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Değiştir' }));
+    dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Standart ücrete dön' }));
+    await waitFor(() => expect(api.state.clients[0]).not.toHaveProperty('fee'));
   });
 });
 

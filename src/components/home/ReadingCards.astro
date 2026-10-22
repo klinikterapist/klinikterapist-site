@@ -1,0 +1,108 @@
+---
+/**
+ * The desktop home page's way into the blog, under the latest posts (owner's note 2026-10-22, choice
+ * 6B): one reading band. "Okumaya Devam Edin", how many posts and topics there are and the blog
+ * card's line, then "Blog Yazıları" and "Popüler Yazılar" (the latter only when there are popular posts).
+ */
+import type { Lang } from '../../lib/settings';
+import type { PostEntry } from '../../lib/posts';
+import { getCategories } from '../../lib/settings';
+import { t } from '../../i18n/ui';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  posts: PostEntry[];
+  popular: PostEntry[];
+  blog: { title: string; subtitle: string; href: string } | null;
+  popularHref: string;
+}
+const { lang, posts, popular, blog, popularHref } = Astro.props;
+
+const TEXT = {
+  tr: { title: 'Okumaya Devam Edin', counts: (p: number, c: number) => `${p} yazı${c ? `, ${c} konu` : ''}.` },
+  en: { title: 'Keep Reading', counts: (p: number, c: number) => `${p} posts${c ? `, ${c} topics` : ''}.` },
+}[lang];
+
+const used = new Set(posts.map((p) => p.data.category));
+const topics = getCategories().filter((c) => used.has(c.id) && c.label[lang].trim()).length;
+const line = [posts.length ? TEXT.counts(posts.length, topics) : '', blog?.subtitle.trim() ?? ''].filter(Boolean).join(' ');
+---
+
+{
+  (blog || popular.length > 0) && (
+    <div class="reading-band">
+      <div class="text">
+        <h3>{TEXT.title}</h3>
+        {line && <p>{line}</p>}
+      </div>
+      <div class="links">
+        {blog && (
+          <a class="btn" href={blog.href}>
+            <Icon name="book" size={18} />
+            {blog.title}
+          </a>
+        )}
+        {popular.length > 0 && (
+          <a class="btn btn-quiet" href={popularHref}>
+            <Icon name="flame" size={18} />
+            {t(lang, 'popularPosts')}
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+<style>
+  .reading-band {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-5);
+    align-items: center;
+    padding: 28px 32px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(120deg, var(--surface) 0%, var(--surface-2) 100%);
+  }
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .btn {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .btn-quiet {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .btn-quiet:hover {
+    border-color: var(--text);
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  @media (max-width: 900px) {
+    .reading-band {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

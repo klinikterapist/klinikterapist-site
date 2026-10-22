@@ -45,6 +45,7 @@ const PATCHES: Partial<Record<keyof Api, Patch>> = {
   requestToClient: (l, _i, o) => ({ set: upsertClient(l, o.client), forget: ['requestsList', 'calendarList'] }),
   clientSession: (l, _i, o) => ({ set: upsertClient(l, o.client), forget: ['calendarList'] }),
   clientPay: (l, _i, o) => ({ set: upsertClient(l, o.client) }),
+  clientFee: (l, _i, o) => ({ set: upsertClient(l, o.client) }),
   clientEnd: (l, i) => (i.mode === 'closing' ? { forget: ['clientsList', 'calendarList'] } : { set: withoutClient(l, i.id), forget: ['calendarList'] }),
   clientRevert: () => ({ forget: ['clientsList', 'requestsList', 'calendarList'] }),
   calendarAdd: (l, _i, o) => (l.calendarList ? { set: { calendarList: { entries: [...l.calendarList.entries, o.entry].sort((a, b) => a.start - b.start) } } } : {}),

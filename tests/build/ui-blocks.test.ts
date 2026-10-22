@@ -26,13 +26,13 @@ describe('ui blocks', () => {
     expect(double.querySelectorAll('a.tile')).toHaveLength(2);
   });
 
-  it('PageEnd has the 112 line and the current year, in both languages', () => {
+  it('PageEnd has the copyright line with the current year and no emergency line, in both languages', () => {
     const year = String(new Date().getFullYear());
     const trEnd = tr().querySelector('.page-end')!;
-    expect(trEnd.querySelector('b')?.text).toBe('112');
+    expect(trEnd.text).not.toContain('112');
     expect(trEnd.text).toContain(`© ${year} klinikterapist.com · Tüm hakları saklıdır.`);
     const enEnd = en().querySelector('.page-end')!;
-    expect(enEnd.text).toContain('112');
+    expect(enEnd.text).not.toContain('112');
     expect(enEnd.text).toContain(`© ${year} klinikterapist.com · All rights reserved.`);
   });
 

@@ -5083,15 +5083,6 @@ html[data-theme='dark'] {
   background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--p-muted) 16%, transparent) 5px 7px);
 }
 
-.ss-status small.ss-paid {
-  color: var(--p-ok);
-  font-weight: 600;
-}
-
-.ss-status small.ss-unpaid {
-  color: var(--p-muted);
-}
-
 .pay-form .add-grid {
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 }

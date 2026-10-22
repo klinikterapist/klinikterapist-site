@@ -143,6 +143,10 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
     font-size: clamp(3.4rem, 2rem + 3.6vw, 5.6rem);
     font-weight: 700;
     line-height: 1.05;
+    /* One line of a fixed height: the handwriting arriving after the first paint changes how the
+       letters look, never where the lines below sit (owner's note 2026-10-22). */
+    height: 1.05em;
+    white-space: nowrap;
     transform: rotate(-2deg);
     transform-origin: left center;
   }

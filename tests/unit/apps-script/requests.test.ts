@@ -665,6 +665,23 @@ describe('Faz 1: fees, payments and reminders', () => {
     expect(t.client().sessions.find((x) => x.day === '2026-10-29')!.sent).toEqual(['r72', 'r48', 'due']);
   });
 
+  it('a client’s own fee goes into their reminders; clearing it goes back to the session type’s fee (owner’s note 2026-10-22)', async () => {
+    const t = withClient();
+    expect(t.call('clients.fee', { id: t.cid, fee: 'abc' }).ok).toBe(false);
+    const set = t.call<{ client: { fee?: number } }>('clients.fee', { id: t.cid, fee: 1750 });
+    expect(set.data.client.fee).toBe(1750);
+    expect(t.call<{ clients: { fee?: number }[] }>('clients.list').data.clients[0].fee).toBe(1750);
+    t.gas.clock.now = at('2026-10-26T19:30:00');
+    await runHourly(t.gas);
+    expect(t.gas.mails[0].body).toContain('– Seans ücreti: 1.750 TL');
+    expect(t.call<{ client: { fee?: number } }>('clients.fee', { id: t.cid, fee: null }).data.client).not.toHaveProperty('fee');
+    t.gas.clock.now = at('2026-10-27T19:30:00');
+    await runHourly(t.gas);
+    expect(t.gas.mails.at(-1)!.body).toContain('2.000 TL');
+    // Not for the public.
+    expect(handle(t.gas, JSON.stringify({ action: 'clients.fee', id: t.cid, fee: 1 }))).toMatchObject({ ok: false });
+  });
+
   it('a paid session gets the reminder without the payment part, and nothing more', async () => {
     const t = withClient();
     expect(t.call('clients.pay', { id: t.cid, day: '2026-10-29', time: '19:20', paid: true, mail: { subject: 'Ödemeniz alındı', body: 'Teşekkürler' } }).ok).toBe(true);

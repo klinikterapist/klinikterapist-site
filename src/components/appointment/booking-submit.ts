@@ -7,8 +7,8 @@
  *
  * Markup contract, besides wizard.ts's:
  *   data-kind="session|intro" data-config='{…}' data-endpoint="…" data-messages='{…}' on the root
- *   named inputs: type (session), forWhom, topics, before, age, note, name, email, phone, consent,
- *   healthConsent (intro), hp_field (honeypot)
+ *   named inputs: type (session), forWhom, topics, before, age, country, note, name, email, phone
+ *   (+ phoneCode, PhoneField.astro), consent, healthConsent (intro), hp_field (honeypot)
  *   [data-submit] the send button, [data-soon] the e-mail fallback line, [data-submit-error] the
  *   message under the button, [data-done] the thank-you panel (hidden), [data-hide-on-done] parts
  *   to hide after sending
@@ -19,6 +19,7 @@
 import { closedOn, intakeOpen, previewClosedKey, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
 import { sameEmail } from '../../lib/email-check';
 import { mountEmailGuard } from './email-guard';
+import { mountCountry, readPhone } from './phone-field';
 import { mountWaitlist } from './waitlist-submit';
 import { mountWizard } from './wizard';
 
@@ -53,7 +54,12 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   // A couple session is longer: the taken times depend on the chosen type.
   root.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', () => wizard.refresh()));
   const details = root.querySelector<HTMLElement>('[data-step="3"]');
-  if (details) mountEmailGuard(details, lang);
+  if (details) {
+    mountEmailGuard(details, lang);
+    // The details step's own phone code (the "Haber et" form has one too).
+    mountCountry(details);
+  }
+  mountNoteConsent(root);
 
   /** Booking closed in the panel (in this language): the page says so and offers "Haber et". */
   let closed = false;
@@ -115,12 +121,12 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
       time: time ?? '',
       name: value('name'),
       email: value('email'),
-      phone: value('phone'),
+      phone: readPhone(root, 'phone'),
       note: value('note'),
       consent: checked('consent').length > 0,
       hp_field: value('hp_field'),
     };
-    if (kind === 'session') return { ...base, type: checked('type')[0] ?? '' };
+    if (kind === 'session') return { ...base, type: checked('type')[0] ?? '', healthConsent: checked('healthConsent').length > 0 };
     const age = value('age');
     return {
       ...base,
@@ -128,6 +134,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
       topics: checked('topics').map(Number),
       before: (checked('before')[0] ?? '') as BookingInput['before'],
       age: age === '' ? -1 : Number(age),
+      country: value('country'),
       healthConsent: checked('healthConsent').length > 0,
     };
   };
@@ -213,4 +220,23 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     }
   });
   return wizard;
+}
+
+/**
+ * The session form's note consent (`[data-note-consent]`): shown and required once a note is written,
+ * as the intro call asks for the topics (owner's note 2026-10-22).
+ */
+export function mountNoteConsent(root: HTMLElement): void {
+  const box = root.querySelector<HTMLElement>('[data-note-consent]');
+  const note = root.querySelector<HTMLTextAreaElement>('textarea[name="note"]');
+  const input = box?.querySelector<HTMLInputElement>('input');
+  if (!box || !note || !input) return;
+  const sync = () => {
+    const needed = note.value.trim() !== '';
+    box.hidden = !needed;
+    input.required = needed;
+    if (!needed) input.checked = false;
+  };
+  note.addEventListener('input', sync);
+  sync();
 }

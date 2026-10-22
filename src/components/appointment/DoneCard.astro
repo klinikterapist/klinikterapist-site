@@ -1,0 +1,98 @@
+---
+/**
+ * What the booking forms show once a request is sent (owner's texts, 2026-10-22): the request is
+ * received, the address is checked with the button in the e-mail, the owner writes back within
+ * working hours. Then a short note that everything goes by e-mail, in confidence and openly, and two
+ * ways to stay on the site (the home page, the blog). booking-submit.ts shows it (`[data-done]`).
+ */
+import type { Lang } from '../../lib/settings';
+import { pathFor } from '../../i18n/routes';
+import Icon from '../Icon.astro';
+
+interface Props {
+  lang: Lang;
+  kind: 'session' | 'intro';
+  /** The heading's id (the card is labelled by it). */
+  id: string;
+}
+const { lang, kind, id } = Astro.props;
+
+const TEXT = {
+  tr: {
+    intro: {
+      title: 'Ön Görüşme Randevu Talebiniz Alınmıştır 🌿',
+      body: [
+        'Ön görüşme talebiniz bana ulaştı. Talebinizi doğrulayabilmem için lütfen size gönderdiğim e-postadaki “E-posta adresimi doğrula” düğmesine tıklayın.',
+        'Onayınızın ardından, çalışma saatleri içerisinde ön görüşmemizin gün ve saatini netleştirmek üzere size e-posta yoluyla dönüş yapacağım.',
+      ],
+    },
+    session: {
+      title: 'Seans Randevunuz Alınmıştır',
+      body: [
+        'Size kısa bir “randevu talebiniz alındı” e-postası gönderdim. E-posta adresinizi doğrulamak için o e-postadaki “E-posta adresimi doğrula” düğmesine tıklayın.',
+        'Çalışma saatleri içerisinde, seansın tarihini ve saatini onaylamak için en kısa sürede e-postanıza dönüş yapacağım.',
+      ],
+    },
+    hello: 'Merhaba,',
+    privacyTitle: 'Bütün süreç e-postayla yürür',
+    privacy: [
+      'Randevu, ödeme ve görüşme bağlantısıyla ilgili her bilgiyi yalnızca e-postayla, klinikterapist.com adreslerinden gönderiyorum. Başka bir yoldan gelen böyle bir mesajı dikkate almayın.',
+      'Paylaştığınız bilgiler gizli tutulur ve yalnızca görüşmemizi hazırlamak için kullanılır. Her adımda ne olacağını size önceden yazarım.',
+    ],
+    spam: 'E-postam gelen kutunuzda yoksa istenmeyen e-postalar klasörüne bakın.',
+    meanwhile: 'Bu arada sitede gezinebilirsiniz:',
+    home: 'Ana sayfaya dön',
+    blog: 'Blog yazılarını oku',
+    signOff: 'Görüşmek üzere,',
+    sign: 'Psikolog Osman Güneş Özkurt',
+  },
+  en: {
+    intro: {
+      title: 'Your Intro Call Request Has Been Received 🌿',
+      body: [
+        'Your intro call request has reached me. So that I can confirm it, please click the “Confirm my e-mail address” button in the e-mail I have sent you.',
+        'Once you have confirmed, I will write to you within working hours to settle the day and time of our intro call.',
+      ],
+    },
+    session: {
+      title: 'Your Session Request Has Been Received',
+      body: [
+        'I have sent you a short acknowledgement by e-mail. To confirm your address, please click the “Confirm my e-mail address” button in it.',
+        'Within working hours I will write back as soon as possible to confirm the date and time of the session.',
+      ],
+    },
+    hello: 'Hello,',
+    privacyTitle: 'Everything goes by e-mail',
+    privacy: [
+      'I send every detail about appointments, payment and the call link only by e-mail, from klinikterapist.com addresses. Please ignore such a message if it comes any other way.',
+      'What you share is kept confidential and used only to prepare our meeting. I always tell you beforehand what happens next.',
+    ],
+    spam: 'If my e-mail is not in your inbox, please check your spam folder.',
+    meanwhile: 'In the meantime, feel free to look around:',
+    home: 'Back to the home page',
+    blog: 'Read the blog',
+    signOff: 'Speak soon,',
+    sign: 'Psychologist Osman Güneş Özkurt',
+  },
+}[lang];
+const K = TEXT[kind];
+---
+
+<section class="card done" data-done tabindex="-1" aria-labelledby={id} hidden>
+  <h2 id={id}><Icon name="send" size={22} /> {K.title}</h2>
+  <p>{TEXT.hello}</p>
+  {K.body.map((line) => <p>{line}</p>)}
+  <p class="done-spam">{TEXT.spam}</p>
+  <div class="done-privacy">
+    <p class="done-privacy-title"><Icon name="shield" size={16} /> {TEXT.privacyTitle}</p>
+    {TEXT.privacy.map((line) => <p>{line}</p>)}
+  </div>
+  <p class="done-sign">
+    {TEXT.signOff}<br /><em>{TEXT.sign}</em>
+  </p>
+  <p class="done-more">{TEXT.meanwhile}</p>
+  <div class="done-links">
+    <a class="done-btn" href={pathFor('home', lang)}><Icon name="home" size={18} />{TEXT.home}</a>
+    <a class="done-btn is-quiet" href={pathFor('blog', lang)}><Icon name="book" size={18} />{TEXT.blog}</a>
+  </div>
+</section>

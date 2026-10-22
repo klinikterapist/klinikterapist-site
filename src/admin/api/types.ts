@@ -141,6 +141,8 @@ export type BookingRequest = {
   topics?: number[];
   before?: 'yes' | 'no' | '';
   age?: number;
+  /** Intro: where the person lives (lib/phone.ts COUNTRIES). */
+  country?: string;
   status: 'pending' | 'approved';
   /** The 24-hour hold the request put in the calendar. */
   holdId: string;
@@ -225,6 +227,8 @@ export type Client = {
   endAsked?: { at: number; note?: string };
   /** The closing-session invitation: until when the client may pick a time, and what came of it (closing.ts). */
   closingAsk?: ClosingAsk;
+  /** This client's own fee per session, TL (owner's note 2026-10-22); none: the fee of their session type. */
+  fee?: number;
 };
 
 /** How therapy ends: `complete` (e-mail: therapy is over), `closing` (e-mail: a free closing session), `delete` (no e-mail). */
@@ -312,6 +316,8 @@ export interface Api {
   mailTest(): Promise<{ sent: number }>;
   /** A session paid or not; when paid with `mail`, the owner's thank-you goes to the client. */
   clientPay(input: { id: string; day: string; time: string; paid: boolean; mail?: { subject: string; body: string } }): Promise<{ client: Client }>;
+  /** Sets the client's own fee; `null` goes back to the fee of their session type. */
+  clientFee(input: { id: string; fee: number | null }): Promise<{ client: Client }>;
   /** The owner's (edited) e-mail to the client, e.g. a payment reminder. */
   clientMail(input: { id: string; subject: string; body: string }): Promise<void>;
   /** The client's secret page link; `renew` makes a new one (the old one stops working). */
@@ -390,6 +396,7 @@ export const ACTIONS = {
   mailSettingsSet: 'mail.settings.set',
   mailTest: 'mail.test',
   clientPay: 'clients.pay',
+  clientFee: 'clients.fee',
   clientMail: 'clients.mail',
   bookingState: 'booking.state',
   bookingSetOpen: 'booking.setOpen',

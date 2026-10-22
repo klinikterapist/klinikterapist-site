@@ -1,0 +1,12 @@
+---
+/**
+ * Preloads "Hoş geldiniz"'s notebook handwriting (Kalam 700, owner's choice E, 2026-10-19) with the
+ * home page, so the line is drawn in it from the first paint (owner's note 2026-10-22: the line
+ * jumped on load). The @font-face rules stay DesktopHero's fontsource imports; these are the same files.
+ */
+import latin from '@fontsource/kalam/files/kalam-latin-700-normal.woff2?url';
+import latinExt from '@fontsource/kalam/files/kalam-latin-ext-700-normal.woff2?url';
+---
+
+<link rel="preload" as="font" type="font/woff2" href={latin} crossorigin="anonymous" />
+<link rel="preload" as="font" type="font/woff2" href={latinExt} crossorigin="anonymous" />

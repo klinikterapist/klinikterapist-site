@@ -96,6 +96,7 @@ export function createHttpApi(
     mailSettingsSet: (mailboxes) => call(ACTIONS.mailSettingsSet, { mailboxes }),
     mailTest: () => call(ACTIONS.mailTest, {}),
     clientPay: (input) => call(ACTIONS.clientPay, input),
+    clientFee: (input) => call(ACTIONS.clientFee, input),
     clientMail: (input) => call(ACTIONS.clientMail, input).then(() => undefined),
     bookingState: () => call(ACTIONS.bookingState),
     bookingSetOpen: (open, lang) => call(ACTIONS.bookingSetOpen, { open, lang }).then(() => undefined),
