@@ -10,6 +10,7 @@ import { ApiFailure, type BookingRequest, type Client, type PanelEvent, type Pan
 import { formatDay } from '../../../lib/booking-form';
 import { attentionOf } from '../../lib/attention';
 import { usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { BellRing, CalendarClock, CheckCheck, ChevronRight, CircleAlert, Icon, Inbox, MessagesSquare, TriangleAlert, UsersRound, Wallet, type LucideIcon } from '../icons';
 import { EVENT_LOOK, dayGroup, timeOf } from '../NotificationBell';
 import { markSeen, readSeen } from '../notifications';
@@ -27,6 +28,7 @@ const dayOf = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 1
 
 export function NotificationsPage() {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [data, setData] = useState<{ events: PanelEvent[]; clients: Client[]; requests: BookingRequest[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -46,7 +48,7 @@ export function NotificationsPage() {
     return () => {
       alive = false;
     };
-  }, [api, attempt]);
+  }, [api, attempt, fresh]);
 
   const now = Date.now();
   const attention = data ? attentionOf(data.clients, data.requests, now) : [];

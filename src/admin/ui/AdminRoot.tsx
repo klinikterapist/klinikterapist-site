@@ -1,6 +1,7 @@
-/** Island entry for /admin/: picks the real backend, or the in-memory one in dev with `?mock`. */
+/** Island entry for /admin/: picks the real backend, or the in-memory one in dev with `?mock`, behind the list memory (api/cache.ts). */
 import { useEffect, useState } from 'react';
 import type { Api } from '../api/types';
+import { withListCache } from '../api/cache';
 import { createHttpApi } from '../api/http';
 import { createSessionStore, type SessionStore } from '../api/session';
 import { ADMIN_CONFIG, MOCK_API_URL, type AdminConfig } from '../config';
@@ -15,11 +16,11 @@ export default function AdminRoot() {
     const store = createSessionStore(window.localStorage);
     if (import.meta.env.DEV && new URLSearchParams(location.search).has('mock')) {
       import('../api/mock').then(({ createMockApi }) =>
-        setReady({ api: createMockApi({ latency: 300, demoRequests: true }), store, config: { ...ADMIN_CONFIG, apiUrl: MOCK_API_URL, googleClientId: 'mock' } }),
+        setReady({ api: withListCache(createMockApi({ latency: 300, demoRequests: true }), store), store, config: { ...ADMIN_CONFIG, apiUrl: MOCK_API_URL, googleClientId: 'mock' } }),
       );
       return;
     }
-    setReady({ api: createHttpApi(ADMIN_CONFIG.apiUrl, store), store, config: ADMIN_CONFIG });
+    setReady({ api: withListCache(createHttpApi(ADMIN_CONFIG.apiUrl, store), store), store, config: ADMIN_CONFIG });
   }, []);
   return ready ? <App {...ready} /> : <Spinner />;
 }

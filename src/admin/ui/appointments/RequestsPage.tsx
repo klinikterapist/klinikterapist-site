@@ -19,6 +19,7 @@ import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, REQUEST_KEEP_DAYS, SESSION_TYPES, 
 import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
 import type { PaymentSettings } from '../../../lib/payment';
 import { go, usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { BellRing, ChevronDown, CircleCheck, Icon, Inbox, Plus } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { AddAppointmentDialog, type AddInitial } from './AddAppointmentDialog';
@@ -164,6 +165,7 @@ type View = 'pending' | 'approved' | 'waitlist';
 
 export function RequestsPage({ add, list = false }: { add: { day: string; time: string; type: string } | null; list?: boolean }) {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [requests, setRequests] = useState<BookingRequest[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ text: string; link?: boolean } | null>(null);
@@ -187,7 +189,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
     return () => {
       alive = false;
     };
-  }, [api]);
+  }, [api, fresh]);
   // The "… önce" times move on every minute.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -208,7 +210,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
     return () => {
       alive = false;
     };
-  }, [api, attempt]);
+  }, [api, attempt, fresh]);
   const reload = () => setAttempt((n) => n + 1);
 
   const decide = (r: BookingRequest, decision: RequestDecision) =>

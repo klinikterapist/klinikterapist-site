@@ -16,6 +16,7 @@ import { SESSION_TYPES, closedOn, formatDay, holdOf, minutesOf, overlaps, timesF
 import { FREE_KINDS, clientsBusy, sessionsOf, type SessionKind } from '../../../lib/sessions';
 import { istanbulParts } from '../../lib/draft';
 import { usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { Banner, Button, Dialog, Field, Spinner } from '../kit';
 
 export const cfg = booking as BookingConfig;
@@ -76,6 +77,7 @@ function Marks({ n, tone }: { n: number; tone: 'ok' | 'wait' }) {
 /** `version`: bump it after the page changed something (an approval, a move), so the calendar loads again. */
 export function AppointmentCalendar({ version = 0 }: { version?: number }) {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [entries, setEntries] = useState<CalendarEntry[] | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +102,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
     return () => {
       alive = false;
     };
-  }, [api, attempt, version]);
+  }, [api, attempt, version, fresh]);
 
   const reload = () => setAttempt((n) => n + 1);
   const [y, m] = month.split('-').map(Number);

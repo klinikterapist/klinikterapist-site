@@ -11,6 +11,7 @@ import { ApiFailure, type Client } from '../../api/types';
 import { formatDay } from '../../../lib/booking-form';
 import { pastAndNext, sessionKey, type SessionRecord } from '../../../lib/sessions';
 import { usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { CalendarCheck, CalendarRange, ChevronRight, Clock, HandHeart, Icon, UsersRound } from '../icons';
 import { Banner, Button, EmptyState, Spinner } from '../kit';
 import { feesOutdated, type PaymentSettings } from '../../../lib/payment';
@@ -55,6 +56,7 @@ export function NowClock() {
 
 export function TrackingPage() {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [clients, setClients] = useState<Client[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -81,7 +83,7 @@ export function TrackingPage() {
     return () => {
       alive = false;
     };
-  }, [api, attempt]);
+  }, [api, attempt, fresh]);
 
   const now = Date.now();
   const today = istanbulDay(now);

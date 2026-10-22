@@ -13,6 +13,7 @@ import { formatDay } from '../../lib/booking-form';
 import { cachedDrafts, coverPathOf, ensureTriggersOnce, loadDrafts, loadSiteState, type LoadedPost, type SiteState } from '../lib/posts-repo';
 import { readingTime } from '../../lib/readingTime';
 import { usePanel } from './context';
+import { useFreshData } from './fresh-data';
 import { useDeploy } from './DeployStatus';
 import { CalendarCheck, CalendarClock, CalendarPlus, CalendarX, CheckCircle2, ChevronRight, CircleAlert, FileText, Icon, Inbox, PencilLine, Sparkles, UsersRound, Zap, type LucideIcon } from './icons';
 import { go } from './context';
@@ -50,6 +51,7 @@ function summaryLine(sessions: number, waiting: number): string {
 
 export function Home() {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const { phase } = useDeploy();
   const [data, setData] = useState<{ site: SiteState; drafts: DraftSummary[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +84,7 @@ export function Home() {
     return () => {
       alive = false;
     };
-  }, [api, attempt]);
+  }, [api, attempt, fresh]);
 
   const d = useMemo(() => (data ? dashboard(data.site.posts, data.drafts, now) : null), [data, now]);
   const [lastCover, setLastCover] = useState<string | null>(null);

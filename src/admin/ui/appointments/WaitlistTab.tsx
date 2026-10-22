@@ -10,6 +10,7 @@ import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS } from '../../../lib/waitlist-form'
 import { formatDay } from '../../../lib/booking-form';
 import { waitlistMail, type Mail } from '../../lib/booking-mail';
 import { usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { Inbox } from '../icons';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { templateTimes } from './AppointmentCalendar';
@@ -24,6 +25,7 @@ type Writing = { e: WaitlistEntry; mode: 'offer' | 'open' | 'remove'; day: strin
 
 export function WaitlistTab({ version, onCount, onBook }: { version: number; onCount: (n: number) => void; onBook: (e: WaitlistEntry, initial: AddInitial) => void }) {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [entries, setEntries] = useState<WaitlistEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export function WaitlistTab({ version, onCount, onBook }: { version: number; onC
     return () => {
       alive = false;
     };
-  }, [api, attempt, version]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [api, attempt, version, fresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const write = (e: WaitlistEntry, mode: Writing['mode']) => setWriting({ e, mode, day: '', time: '', mail: waitlistMail(e, mode) });
   const remake = (w: Writing, patch: Partial<Writing>) => {

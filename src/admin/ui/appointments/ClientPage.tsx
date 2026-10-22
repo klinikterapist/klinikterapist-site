@@ -25,6 +25,7 @@ import { ApiFailure, type Client } from '../../api/types';
 import { formatDay } from '../../../lib/booking-form';
 import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type SessionRecord, type SessionStatus } from '../../../lib/sessions';
 import { usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { ArrowLeft, CalendarCheck, CalendarPlus, Flag, Icon, Mail as MailIcon, Trash2, Undo2 } from '../icons';
 import { ActionMenu } from '../ActionMenu';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
@@ -59,6 +60,7 @@ const END_CHOICES = [
 
 export function ClientPage({ id }: { id: string }) {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [client, setClient] = useState<Client | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export function ClientPage({ id }: { id: string }) {
     return () => {
       alive = false;
     };
-  }, [api]);
+  }, [api, fresh]);
 
   /** Ödendi (with or without the thank-you) or taking the mark off. */
   const pay = async (s: SessionRecord, paid: boolean, mail?: Mail) => {
@@ -126,7 +128,7 @@ export function ClientPage({ id }: { id: string }) {
     return () => {
       alive = false;
     };
-  }, [api, id]);
+  }, [api, id, fresh]);
 
   const change = async (input: Parameters<typeof api.clientSession>[0], done: string) => {
     setBusy(true);

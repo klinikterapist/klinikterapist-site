@@ -7,6 +7,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { Api, PanelEvent } from '../api/types';
 import { attentionOf, type Attention } from '../lib/attention';
+import { useFreshData } from './fresh-data';
 
 export const SEEN_KEY = 'kt.events.seen';
 const SEEN_EVENT = 'kt:events-seen';
@@ -40,6 +41,7 @@ export function useNotifications(api: Api): NotificationState & { refresh: () =>
   const [state, setState] = useState<NotificationState>(() => ({ events: [], pending: 0, attention: [], seen: readSeen(), loaded: false, failed: false }));
   const [tick, setTick] = useState(0);
   const refresh = useCallback(() => setTick((n) => n + 1), []);
+  const fresh = useFreshData(api);
 
   useEffect(() => {
     let alive = true;
@@ -54,7 +56,7 @@ export function useNotifications(api: Api): NotificationState & { refresh: () =>
     return () => {
       alive = false;
     };
-  }, [api, tick]);
+  }, [api, tick, fresh]);
 
   useEffect(() => {
     const t = setInterval(() => document.visibilityState === 'visible' && refresh(), POLL_MS);

@@ -12,6 +12,7 @@ import { formatDay, slotInstant } from '../../../lib/booking-form';
 import { sessionKey, sessionsOf } from '../../../lib/sessions';
 import { attentionOf, hasFee } from '../../lib/attention';
 import { usePanel } from '../context';
+import { useFreshData } from '../fresh-data';
 import { CalendarCheck, CalendarClock, CalendarRange, CircleAlert, Icon, Inbox, MessagesSquare, UsersRound } from '../icons';
 import { NotificationBell } from '../NotificationBell';
 import { WeekStrip } from './WeekStrip';
@@ -48,6 +49,7 @@ function upcoming(clients: Client[], requests: BookingRequest[], now: number): U
 
 export function ProfilePage() {
   const { api } = usePanel();
+  const fresh = useFreshData(api);
   const [data, setData] = useState<{ clients: Client[]; requests: BookingRequest[]; events: PanelEvent[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -60,7 +62,7 @@ export function ProfilePage() {
     return () => {
       alive = false;
     };
-  }, [api, attempt]);
+  }, [api, attempt, fresh]);
 
   const now = Date.now();
   const next = data ? upcoming(data.clients, data.requests, now) : [];
