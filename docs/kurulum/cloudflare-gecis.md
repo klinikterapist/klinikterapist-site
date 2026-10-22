@@ -17,6 +17,7 @@ Bu liste Cloudflare'e taşınırken **birebir korunmalı**. Özellikle e-posta s
 | MX | `@` (klinikterapist.com) | `smtp.google.com`, öncelik 1 | **E-posta** gelişi (Google Workspace) |
 | TXT | `@` | `v=spf1 include:_spf.google.com ~all` | **E-posta**: gönderdiğiniz postaların spam sayılmaması |
 | TXT | `google._domainkey` | `v=DKIM1; k=rsa; p=MIIBIjANBgkq…` (uzun anahtar; Cloudflare tarayınca kendisi getirir, sonundaki `…IDAQAB` dahil tam olmalı) | **E-posta** imzası |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:merhaba@klinikterapist.com` | **E-posta**: alan adınız adına sahte e-posta gönderilmesine karşı (22 Ekim 2026'da eklendi) |
 | A | `@` | 185.199.108.153, .109.153, .110.153, .111.153 | Bugünkü site (GitHub). **Geçişte silinecek.** |
 | AAAA | `@` | 2606:50c0:8000::153 … 8003::153 | Bugünkü site (GitHub). **Geçişte silinecek.** |
 | CNAME | `www` | `klinikterapist.github.io` | Bugünkü site (GitHub). **Geçişte silinecek.** |
@@ -60,7 +61,7 @@ Bu andan sonra site GitHub Pages'e değil Cloudflare'e gönderilir. Alan adı he
 ## 5. Alan adını Cloudflare'e taşımak
 
 1. Cloudflare'de **Add a domain** › `klinikterapist.com` › **Free** planı seçin. Cloudflare mevcut kayıtları tarar.
-2. Taranan listeyi yukarıdaki tabloyla karşılaştırın: MX, SPF (TXT) ve `google._domainkey` (TXT) **mutlaka** listede olsun. Eksik varsa **Add record** ile ekleyin.
+2. Taranan listeyi yukarıdaki tabloyla karşılaştırın: MX, SPF (TXT), `google._domainkey` (TXT) ve `_dmarc` (TXT) **mutlaka** listede olsun. Eksik varsa **Add record** ile ekleyin.
 3. GitHub'a ait A, AAAA ve `www` CNAME kayıtlarını silin (tabloda "silinecek" yazanlar).
 4. Cloudflare size iki ad sunucusu verir (örneğin `xxx.ns.cloudflare.com`). Squarespace'te **Domains › klinikterapist.com › DNS › Nameservers › Use custom nameservers** yolunu izleyip bu ikisini yazın ve kaydedin.
 5. Cloudflare'de alan adı "Active" olunca (birkaç dakikadan birkaç saate kadar sürebilir) **Workers & Pages › klinikterapist › Custom domains** ekranına gidin. Önce `klinikterapist.com`, sonra `www.klinikterapist.com` ekleyin. Gerekli kayıtları Cloudflare kendisi oluşturur.
