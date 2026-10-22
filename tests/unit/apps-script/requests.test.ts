@@ -338,14 +338,16 @@ describe("The client's own page (tracking.ts)", () => {
     return { ...s, cid, link, code, pub, client };
   }
 
-  it('the link opens the next sessions without the name, the e-mail or the notes', () => {
+  it('the link opens the next sessions with the client code, without the name, the e-mail or the notes', () => {
     const t = withClient();
     expect(t.link).toMatch(/^https:\/\/klinikterapist\.com\/randevum\/#k=[\w-]+\.[\w-]{32}$/);
     t.call('clients.session', { id: t.cid, op: 'mark', day: '2026-10-29', time: '19:20', status: 'cancelled', by: 'owner', note: 'Özel not' });
     const out = t.pub('track.view', { code: t.code });
     expect(out.ok).toBe(true);
     const text = JSON.stringify(out);
-    for (const secret of ['Ayşe', 'ayse@example.com', 'Özel not', 'KT001']) expect(text).not.toContain(secret);
+    for (const secret of ['Ayşe', 'ayse@example.com', 'Özel not']) expect(text).not.toContain(secret);
+    // Owner's request 2026-10-22: the code is shown, so the client can give it when they write.
+    expect(out.data!.number).toBe('KT001AY');
     expect((out.data!.next as unknown[]).slice(0, 2)).toEqual([
       expect.objectContaining({ day: '2026-10-22', status: 'planned', late: false }),
       expect.objectContaining({ day: '2026-10-29', status: 'cancelled', by: 'owner' }),

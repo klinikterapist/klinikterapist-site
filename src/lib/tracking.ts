@@ -2,8 +2,9 @@
  * The client's own page (owner's decisions 2026-10-20, review a5): a secret link per client, sent
  * from the panel, opens `/randevum/` (`/en/my-appointment/`) with the code after `#`, so it never
  * reaches a server log or a referrer. The page shows what the owner sees of the therapy — the
- * weekly session, the session type, when therapy began and the chart of the sessions so far — and
- * the next sessions, with no name, no e-mail and no notes. The client can cancel a session, move it
+ * weekly session, the session type, when therapy began and the chart of the sessions so far — the
+ * last two sessions and the next ones with their fee (paid or not), and the client's code (owner's
+ * request 2026-10-22), with no name, no e-mail and no notes. The client can cancel a session, move it
  * to a free time of the booking calendar, or say they want to end therapy. Less than 24 hours before
  * a session, the page first says the full fee is due and that this is the client's responsibility.
  * After the owner's closing-session invitation, the client picks its day and time here (closing.ts).
@@ -12,7 +13,7 @@
  */
 import { holdOf, slotInstant, timesFor, overlaps, type BookingConfig, type BusyInterval } from './booking-form';
 import { CLOSING_MINUTES, canPickClosing, closingDay, closingTarget, type ClosingAsk } from './closing';
-import { clientsBusy, pastAndNext, sessionKey, sessionStats, type SessionKind, type SessionRecord, type SessionStats, type SessionStatus, type TrackedClient } from './sessions';
+import { FREE_KINDS, clientsBusy, pastAndNext, sessionKey, sessionStats, type SessionKind, type SessionRecord, type SessionStats, type SessionStatus, type TrackedClient } from './sessions';
 
 export const TRACK_PATH = { tr: '/randevum/', en: '/en/my-appointment/' } as const;
 /** The code's name after `#` in the link. */
@@ -40,10 +41,19 @@ export type TrackSession = {
   movedTo?: { day: string; time: string };
   /** Less than 24 hours to go: a change costs the full fee (the page warns first). */
   late: boolean;
+  /**
+   * The fee: `paid` (the owner marked it), `due`, or `free` (intro call, closing session). None
+   * for a session cancelled or moved in time, which has no fee.
+   */
+  pay?: TrackPay;
 };
+
+export type TrackPay = 'paid' | 'due' | 'free';
 
 export type TrackView = {
   lang: 'tr' | 'en';
+  /** The client's code (KT001AY), so they can name it when they write (owner's request 2026-10-22). */
+  number: string;
   type: string;
   weekday: number;
   time: string;
@@ -60,6 +70,8 @@ export type TrackView = {
   closingPick?: { lastDay: string; target?: { day: string; time: string } };
   stats: SessionStats;
   next: TrackSession[];
+  /** The last two sessions before now, with how they went and their fee. */
+  past: TrackSession[];
   /** Times taken by others from now on (rest included), for the free times of a postponement. */
   busy: BusyInterval[];
 };
@@ -68,6 +80,7 @@ export type TrackView = {
 export type TrackFailure = 'link' | 'late' | 'gone' | 'taken' | 'busy' | 'invalid';
 
 export type TrackClient = TrackedClient & {
+  number: string;
   type: string;
   status?: 'active' | 'closing';
   contact: { lang: 'tr' | 'en' };
@@ -82,10 +95,34 @@ function closingPickOf(c: TrackClient): NonNullable<TrackView['closingPick']> {
   return { lastDay: closingDay(c.closingAsk!), ...(target ? { target: { day: target.day, time: target.time } } : {}) };
 }
 
+/** A late change keeps its fee; one made in time has none. */
+export function payOf(s: Pick<SessionRecord, 'kind' | 'status' | 'paid' | 'late'>): TrackPay | undefined {
+  if (FREE_KINDS.includes(s.kind)) return 'free';
+  if ((s.status === 'cancelled' || s.status === 'postponed') && !s.late) return undefined;
+  return s.paid ? 'paid' : 'due';
+}
+
+const shown = (s: SessionRecord, now: number): TrackSession => {
+  const pay = payOf(s);
+  return {
+    day: s.day,
+    time: s.time,
+    kind: s.kind,
+    minutes: s.minutes,
+    status: s.status,
+    ...(s.by ? { by: s.by } : {}),
+    ...(s.movedTo ? { movedTo: s.movedTo } : {}),
+    late: isLate(s, now),
+    ...(pay ? { pay } : {}),
+  };
+};
+
 /** What the page shows. `busy`: the others' times (the backend leaves this client's own out). */
 export function trackView(c: TrackClient, now: number, busy: BusyInterval[] = []): TrackView {
+  const { past, next } = pastAndNext(c, now);
   return {
     lang: c.contact.lang,
+    number: c.number,
     type: c.type,
     weekday: c.weekday,
     time: c.time,
@@ -95,16 +132,8 @@ export function trackView(c: TrackClient, now: number, busy: BusyInterval[] = []
     endAsked: !!c.endAsked,
     ...(canPickClosing(c, now) ? { closingPick: closingPickOf(c) } : {}),
     stats: sessionStats(c, now),
-    next: pastAndNext(c, now).next.map((s) => ({
-      day: s.day,
-      time: s.time,
-      kind: s.kind,
-      minutes: s.minutes,
-      status: s.status,
-      ...(s.by ? { by: s.by } : {}),
-      ...(s.movedTo ? { movedTo: s.movedTo } : {}),
-      late: isLate(s, now),
-    })),
+    next: next.map((s) => shown(s, now)),
+    past: past.slice(-2).map((s) => ({ ...shown(s, now), late: false })),
     busy,
   };
 }

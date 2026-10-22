@@ -13,7 +13,8 @@ const NOW = Date.parse('2026-10-20T10:00:00+03:00');
 const at = (s: string) => Date.parse(`${s}+03:00`);
 const cfg = parseBooking(JSON.parse(readFileSync('src/data/booking.json', 'utf8')));
 /** Weekly on Wednesdays 09:00, invited at NOW: until the end of Friday 23 October. */
-const client: ClosingClient & { type: string; contact: { lang: 'tr' } } = {
+const client: ClosingClient & { number: string; type: string; contact: { lang: 'tr' } } = {
+  number: 'KT001AY',
   type: 'individual',
   weekday: 3,
   time: '09:00',
@@ -117,6 +118,8 @@ const m = {
   endTitle: 'Sonlandırmak', endText: 'Metin', endButton: 'Sonlandırmak istiyorum', endNote: 'Not', endSend: 'Gönder', endDone: 'İsteğiniz ulaştı',
   closing: 'Sonlandırma planlanıyor',
   closingPick: { title: 'Saat seçin', text: '{date} sonuna kadar', target: 'Seçmezseniz {when}', day: 'Gün', send: 'Bu saati seç', done: 'Planlandı: {when}' },
+  code: 'Danışan kodu', codeNote: 'Kodu belirtin', firstTitle: 'Sıradaki seansınız', pastTitle: 'Geçmiş seanslar', pastNone: 'Geçmiş yok',
+  past: { attended: 'Katıldınız', noshow: 'Katılmadınız', unmarked: 'İşaretlenmedi' }, pay: { paid: 'Ödendi', due: 'Ödeme bekleniyor', free: 'Ücretsiz' }, minutes: 'dk',
   weekdays: ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'],
 } satisfies TrackMessages;
 

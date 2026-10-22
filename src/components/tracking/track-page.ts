@@ -1,11 +1,12 @@
 /**
  * Browser side of the client's own page (TrackingView.astro, src/lib/tracking.ts). Reads the code
- * after `#k=`, asks the backend for the therapy (`track.view`) and draws it: the next sessions with
- * "İptal et" and "Ertele" (a free time of the booking calendar: a day, then its free times), the
- * session details and the chart the owner sees, and at the bottom "I want to end therapy". Less than
- * 24 hours before a session, a button first shows the full-fee warning, and goes on only when the
- * client accepts it. After the owner's closing-session invitation, a card at the top lets the client
- * pick the closing session's day and time (closing.ts). Each change sends `track.ask` and draws the answer. Text/plain JSON POSTs, no
+ * after `#k=`, asks the backend for the therapy (`track.view`) and draws it: the client's code and
+ * session details, the next sessions with "İptal et" and "Ertele" (a free time of the booking
+ * calendar: a day, then its free times), the last two sessions, each with its fee (paid or not), the
+ * chart the owner sees, and "I want to end therapy". Less than 24 hours before a session, a button
+ * first shows the full-fee warning, and goes on only when the client accepts it. After the owner's
+ * closing-session invitation, a card above the sessions lets the client pick the closing session's
+ * day and time (closing.ts). Each change sends `track.ask` and draws the answer. Text/plain JSON POSTs, no
  * cookies. Everything is put in with textContent: nothing from the answer is read as HTML.
  *
  * On the dev server the page also opens with `#k=demo` (and `#k=demo-closing`, with the closing
@@ -54,6 +55,18 @@ export type TrackMessages = {
   endDone: string;
   closing: string;
   closingPick: { title: string; text: string; target: string; day: string; send: string; done: string };
+  /** The client's code, and why it is shown. */
+  code: string;
+  codeNote: string;
+  /** Above the next session. */
+  firstTitle: string;
+  pastTitle: string;
+  pastNone: string;
+  /** How a past session went. */
+  past: { attended: string; noshow: string; unmarked: string };
+  pay: { paid: string; due: string; free: string };
+  /** "dk" after a session's length. */
+  minutes: string;
   weekdays: string[];
 };
 
@@ -79,8 +92,10 @@ function demoView(now: number, closing: boolean): TrackView {
   let d = now + 2 * DAY_MS;
   while (new Date(d + 3 * 3600e3).getUTCDay() !== 2) d += DAY_MS;
   const tue = (n: number) => iso(d + n * 7 * DAY_MS);
+  const before = (n: number) => iso(d - n * 7 * DAY_MS);
   return {
     lang: 'tr',
+    number: 'KT007AY',
     type: 'individual',
     weekday: 2,
     time: '18:00',
@@ -91,10 +106,14 @@ function demoView(now: number, closing: boolean): TrackView {
     ...(closing ? { closingPick: { lastDay: iso(now + 3 * DAY_MS), target: { day: tue(1), time: '18:00' } } } : {}),
     stats: { held: 5, attended: 4, noshow: 0, cancelled: 1, postponed: 1, unmarked: 0, total: 6, free: 1 },
     next: [
-      { day: soonDay, time: soonTime, kind: 'extra', minutes: 50, status: 'planned', late: true },
-      { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'planned', late: false },
+      { day: soonDay, time: soonTime, kind: 'extra', minutes: 50, status: 'planned', late: true, pay: 'paid' },
+      { day: tue(0), time: '18:00', kind: 'weekly', minutes: 50, status: 'planned', late: false, pay: 'due' },
       { day: tue(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'cancelled', by: 'client', late: false },
-      { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'planned', late: false },
+      { day: tue(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'planned', late: false, pay: 'due' },
+    ],
+    past: [
+      { day: before(2), time: '18:00', kind: 'weekly', minutes: 50, status: 'attended', late: false, pay: 'paid' },
+      { day: before(1), time: '18:00', kind: 'weekly', minutes: 50, status: 'noshow', late: false, pay: 'due' },
     ],
     busy: [],
   };
@@ -163,7 +182,7 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     if (action === 'track.view') return v;
     if (p.ask === 'end') demoState = { ...v, endAsked: true };
     else if (p.ask === 'closing') {
-      const added: TrackSession = { day: String(p.day), time: String(p.time), kind: 'closing', minutes: 30, status: 'planned', late: false };
+      const added: TrackSession = { day: String(p.day), time: String(p.time), kind: 'closing', minutes: 30, status: 'planned', late: false, pay: 'free' };
       demoState = { ...v, closingPick: undefined, next: [...v.next, added].sort((a, b) => sessionKey(a).localeCompare(sessionKey(b))).slice(0, 5) };
     } else {
       const s = v.next.find((x) => x.day === p.day && x.time === p.time);
@@ -333,20 +352,49 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     return sec;
   }
 
-  function sessionRow(v: TrackView, s: TrackSession): HTMLLIElement {
-    const li = el('li', `tp-session is-${s.status}`);
+  /** The day as a small calendar leaf: the date, the month, the weekday. */
+  function dateLeaf(day: string): HTMLElement {
+    const d = new Date(`${day}T12:00:00Z`);
+    const leaf = el('div', 'tp-leaf');
+    leaf.setAttribute('aria-hidden', 'true');
+    leaf.append(
+      el('small', undefined, d.toLocaleDateString(lang, { month: 'short', timeZone: 'UTC' })),
+      el('b', undefined, String(d.getUTCDate())),
+      el('small', undefined, d.toLocaleDateString(lang, { weekday: 'short', timeZone: 'UTC' })),
+    );
+    return leaf;
+  }
+
+  /** A small label: how the session went, the fee, the 24-hour line. Words always, colour only helps. */
+  const tag = (tone: string, text: string) => el('span', `tp-tag tone-${tone}`, text);
+
+  /** One session: its leaf, when and what, its labels, and (a next one) "Ertele" and "İptal et". `first`: the next session, drawn larger. */
+  function sessionRow(v: TrackView, s: TrackSession, first = false): HTMLLIElement {
+    const li = el('li', `tp-session is-${s.status}${first ? ' is-first' : ''}`);
+    li.append(dateLeaf(s.day));
+    const main = el('div', 'tp-main-col');
+    li.append(main);
+    if (first) main.append(el('span', 'tp-eyebrow', m.firstTitle));
     const head = el('div', 'tp-when');
-    head.append(el('b', undefined, when(s)), el('span', undefined, kindLabel(v, s)));
-    li.append(head);
+    head.append(el('b', undefined, when(s)), el('span', undefined, `${kindLabel(v, s)}${s.kind === 'weekly' ? '' : ` · ${s.minutes} ${m.minutes}`}`));
+    main.append(head);
+    const tags = el('div', 'tp-tags');
     const state = el('p', 'tp-state');
     if (s.status === 'cancelled' || s.status === 'postponed') {
       state.textContent = `${m.status[s.status]}${s.movedTo ? ` → ${when(s.movedTo)}` : ''}${s.by === 'client' ? ` · ${m.byClient}` : ''}`;
+    } else if (s.status !== 'planned') {
+      tags.append(tag(s.status === 'attended' ? 'adacayi' : 'kiremit', m.past[s.status]));
+    } else if (slotInstant(s.day, s.time) <= deps.now()) {
+      tags.append(tag('lacivert', m.past.unmarked));
     } else if (s.late) {
       state.textContent = m.late;
       state.classList.add('is-late');
     }
-    if (state.textContent) li.append(state);
+    if (s.pay) tags.append(tag(s.pay === 'paid' ? 'adacayi' : s.pay === 'due' ? 'gunes' : 'deniz', m.pay[s.pay]));
+    if (tags.childElementCount) main.append(tags);
+    if (state.textContent) main.append(state);
     if (s.status !== 'planned' || s.kind === 'intro' || slotInstant(s.day, s.time) <= deps.now()) return li;
+    const actionsTo = main;
 
     const row = el('div', 'tp-row');
     // Postponing keeps the therapy going: it comes first; cancelling is the quieter button.
@@ -388,18 +436,22 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
         panel.append(f);
         queueMicrotask(() => f.querySelector<HTMLElement>('textarea, select')?.focus());
       }
-      li.append(panel);
+      actionsTo.append(panel);
     };
     cancel.addEventListener('click', () => open('cancel'));
     move.addEventListener('click', () => open('postpone'));
     row.append(move, cancel);
-    li.append(row);
+    actionsTo.append(row);
     return li;
   }
 
+  /** The client's code and the therapy at a glance. */
   function infoCard(v: TrackView): HTMLElement {
-    const sec = el('section', 'tp-card');
+    const sec = el('section', 'tp-card tp-id');
     sec.append(el('h2', undefined, m.infoTitle));
+    const code = el('div', 'tp-code');
+    code.append(el('span', undefined, m.code), el('b', undefined, v.number));
+    sec.append(code, el('p', 'tp-note tp-code-note', m.codeNote));
     const dl = el('dl', 'tp-info');
     const rows: [string, string][] = [
       [m.info.weekly, m.info.every.replace('{day}', m.weekdays[v.weekday]).replace('{time}', v.time.replace(':', '.'))],
@@ -419,7 +471,7 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
   function chartCard(v: TrackView): HTMLElement {
     const st = v.stats;
     const pct = (n: number) => (st.total ? Math.round((n / st.total) * 100) : 0);
-    const sec = el('section', 'tp-card');
+    const sec = el('section', 'tp-card tp-chart');
     sec.append(el('h2', undefined, m.chartTitle));
     const count = el('p', 'tp-count');
     count.append(el('b', undefined, String(st.held)), document.createTextNode(` ${m.chart.count}`));
@@ -446,17 +498,30 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     return sec;
   }
 
+  /**
+   * Owner's request 2026-10-22: one column on a phone (code and details, the closing card, the next
+   * sessions, the last two, the chart, ending therapy); on a wide screen the sessions on the left
+   * and the code, the chart and ending therapy on the right (TrackingView.astro places them).
+   */
   function draw(v: TrackView) {
     body.replaceChildren();
-    if (v.closingPick) body.append(closingCard(v, v.closingPick));
+    const sessions = el('div', 'tp-sessions');
+    if (v.closingPick) sessions.append(closingCard(v, v.closingPick));
     const next = el('section', 'tp-next');
     next.append(el('h2', undefined, m.nextTitle));
     const list = el('ul', 'tp-list');
-    for (const s of v.next) list.append(sessionRow(v, s));
+    v.next.forEach((s, i) => list.append(sessionRow(v, s, i === 0)));
     next.append(v.next.length ? list : el('p', 'tp-note', m.none));
-    body.append(next, infoCard(v), chartCard(v));
+    const past = el('section', 'tp-past');
+    past.append(el('h2', undefined, m.pastTitle));
+    const pastList = el('ul', 'tp-list');
+    // The latest first.
+    for (const s of [...v.past].reverse()) pastList.append(sessionRow(v, s));
+    past.append(v.past.length ? pastList : el('p', 'tp-note', m.pastNone));
+    sessions.append(next, past);
+    body.append(infoCard(v), sessions, chartCard(v));
 
-    const end = el('section', 'tp-end');
+    const end = el('section', 'tp-card tp-end');
     const title = el('h2', undefined, m.endTitle);
     end.append(title);
     if (v.endAsked) end.append(el('p', 'tp-done', m.endDone));

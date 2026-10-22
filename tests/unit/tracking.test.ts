@@ -3,7 +3,7 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { applyChange } from '../../src/lib/sessions';
 import { parseBooking } from '../../src/lib/schemas';
-import { codeFromHash, freeTimes, trackView, type TrackView } from '../../src/lib/tracking';
+import { codeFromHash, freeTimes, payOf, trackView, type TrackView } from '../../src/lib/tracking';
 import { mountTrackingPage, type TrackMessages } from '../../src/components/tracking/track-page';
 
 // Tuesday 20 October 2026, 10:00 Istanbul.
@@ -11,6 +11,7 @@ const NOW = Date.parse('2026-10-20T10:00:00+03:00');
 const CODE = `abc123def456.${'x'.repeat(32)}`;
 const cfg = parseBooking(JSON.parse(readFileSync('src/data/booking.json', 'utf8')));
 const client = {
+  number: 'KT001AY',
   type: 'individual',
   weekday: 3,
   time: '09:00',
@@ -68,6 +69,8 @@ const m: TrackMessages = {
   endTitle: 'Sonlandırmak', endText: 'Metin', endButton: 'Sonlandırmak istiyorum', endNote: 'Not', endSend: 'Gönder', endDone: 'İsteğiniz ulaştı',
   closing: 'Sonlandırma planlanıyor',
   closingPick: { title: 'Saat seçin', text: '{date} sonuna kadar', target: 'Seçmezseniz {when}', day: 'Gün', send: 'Bu saati seç', done: 'Planlandı: {when}' },
+  code: 'Danışan kodu', codeNote: 'Kodu belirtin', firstTitle: 'Sıradaki seansınız', pastTitle: 'Geçmiş seanslar', pastNone: 'Geçmiş yok',
+  past: { attended: 'Katıldınız', noshow: 'Katılmadınız', unmarked: 'İşaretlenmedi' }, pay: { paid: 'Ödendi', due: 'Ödeme bekleniyor', free: 'Ücretsiz' }, minutes: 'dk',
   weekdays: ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'],
 };
 
@@ -116,7 +119,7 @@ describe('the page (track-page.ts)', () => {
     await flush();
     expect(sent[0]).toEqual({ action: 'track.view', code: CODE });
     expect(document.querySelector('a.lang-switch')!.getAttribute('href')).toBe(`/en/my-appointment/#k=${CODE}`);
-    const rows = root.querySelectorAll('.tp-session');
+    const rows = root.querySelectorAll('.tp-next .tp-session');
     expect(rows).toHaveLength(4);
     expect(rows[0].textContent).toContain('24 saatten az');
     expect(rows[1].textContent).toContain('İptal edildi');
@@ -128,7 +131,7 @@ describe('the page (track-page.ts)', () => {
     buttonIn(rows[2], 'Seansı iptal et').click();
     await flush();
     expect(sent[1]).toEqual({ action: 'track.ask', code: CODE, ask: 'cancel', note: 'Hastayım', day: '2026-11-04', time: '09:00' });
-    expect(root.querySelectorAll('.tp-session')[2].textContent).toContain('İptal edildi · sizin isteğinizle');
+    expect(root.querySelectorAll('.tp-next .tp-session')[2].textContent).toContain('İptal edildi · sizin isteğinizle');
     expect(root.querySelector('[data-live]')!.textContent).toContain('iptal edildi');
   });
 
@@ -136,7 +139,7 @@ describe('the page (track-page.ts)', () => {
     const view = trackView(client, NOW);
     const { sent, root } = mount([{ ok: true, data: view }, { ok: true, data: { view } }]);
     await flush();
-    const late = root.querySelectorAll('.tp-session')[0];
+    const late = root.querySelectorAll('.tp-next .tp-session')[0];
     buttonIn(late, 'İptal et').click();
     expect(late.querySelector('.tp-warn')!.textContent).toContain('Tam ücret');
     expect(late.querySelector('textarea')).toBeNull();
@@ -150,7 +153,7 @@ describe('the page (track-page.ts)', () => {
     const view = trackView(client, NOW);
     const { sent, root } = mount([{ ok: true, data: view }, { ok: false, data: { reason: 'taken' } }]);
     await flush();
-    const row = root.querySelectorAll('.tp-session')[2];
+    const row = root.querySelectorAll('.tp-next .tp-session')[2];
     buttonIn(row, 'Ertele').click();
     const select = row.querySelector('select')!;
     expect(select.options.length).toBeGreaterThan(5);
@@ -177,5 +180,42 @@ describe('the page (track-page.ts)', () => {
     await flush();
     expect(sent.at(-1)).toMatchObject({ action: 'track.ask', ask: 'end' });
     expect(root.querySelector('.tp-end')!.textContent).toContain('İsteğiniz ulaştı');
+  });
+});
+
+describe("the page's blocks (owner's request 2026-10-22)", () => {
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('the view carries the code, the last two sessions and each fee; a cancellation in time has no fee', () => {
+    const paid = { ...client, sessions: [...client.sessions, { day: '2026-10-14', time: '09:00', kind: 'weekly' as const, minutes: 50, status: 'attended' as const, paid: 1 }] };
+    const v = trackView(paid, NOW);
+    expect(v.number).toBe('KT001AY');
+    expect(v.past.map((s) => [s.day, s.status, s.pay])).toEqual([
+      ['2026-10-07', 'planned', 'due'],
+      ['2026-10-14', 'attended', 'paid'],
+    ]);
+    expect(v.next.map((s) => s.pay)).toEqual(['due', undefined, 'due', 'due']);
+    expect(payOf({ kind: 'closing', status: 'planned' })).toBe('free');
+    expect(payOf({ kind: 'weekly', status: 'cancelled', late: true })).toBe('due');
+  });
+
+  it('draws the code, the next session larger, the past two latest first, and the labels in words', async () => {
+    const v = trackView({ ...client, sessions: [...client.sessions, { day: '2026-10-14', time: '09:00', kind: 'weekly' as const, minutes: 50, status: 'attended' as const, paid: 1 }] }, NOW);
+    const { root } = mount([{ ok: true, data: v }]);
+    await flush();
+    expect(root.querySelector('.tp-code')!.textContent).toBe('Danışan koduKT001AY');
+    const next = root.querySelectorAll('.tp-next .tp-session');
+    expect(next[0].classList.contains('is-first')).toBe(true);
+    expect(next[0].textContent).toContain('Sıradaki seansınız');
+    expect(next[0].querySelector('.tp-tag')!.textContent).toBe('Ödeme bekleniyor');
+    const past = [...root.querySelectorAll('.tp-past .tp-session')].map((li) => [...li.querySelectorAll('.tp-tag')].map((t) => t.textContent));
+    expect(past).toEqual([
+      ['Katıldınız', 'Ödendi'],
+      ['İşaretlenmedi', 'Ödeme bekleniyor'],
+    ]);
+    // On a wide screen the code comes first in the page, then the sessions, the chart and ending therapy.
+    expect([...root.querySelector('[data-body]')!.children].map((c) => c.className)).toEqual(['tp-card tp-id', 'tp-sessions', 'tp-card tp-chart', 'tp-card tp-end']);
   });
 });
