@@ -37,7 +37,7 @@ function setup(draft: Draft, extra: Record<string, string> = {}) {
     },
   });
   api.state.drafts.set(draft.key, { ...draft, rev: 1 });
-  const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+  const config = { apiUrl: 'mock', googleClientId: 'x' };
   render(
     <Panel.Provider value={{ api, config, store: createSessionStore(localStorage) }}>
       <DeployProvider api={api}>
@@ -58,7 +58,7 @@ describe('EditorPage', () => {
 
   it('a post that cannot be found links back to the posts list', async () => {
     const api = createMockApi({ seed: { 'src/data/categories.json': '[]\n', 'src/data/redirects.json': '[]\n' } });
-    const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+    const config = { apiUrl: 'mock', googleClientId: 'x' };
     render(
       <Panel.Provider value={{ api, config, store: createSessionStore(localStorage) }}>
         <DeployProvider api={api}>

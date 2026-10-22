@@ -230,12 +230,19 @@ export type ClientEnd = 'complete' | 'closing' | 'delete';
 /** One snapshot of a draft (the stored copy as it was before a later save). */
 export type VersionSummary = { name: string; rev: number; savedAt: string };
 
-export type Session = { session: string; email: string; expiresAt: number };
+/** `needsPassword`: no panel password is set yet; the panel asks for one at once. */
+export type Session = { session: string; email: string; expiresAt: number; needsPassword?: boolean };
 
 /** One method per backend action. Methods throw `ApiFailure`. */
 export interface Api {
-  login(idToken: string): Promise<Session>;
+  /** Whether sign-in starts with the panel's user name and password. */
+  loginStart(): Promise<{ password: boolean }>;
+  /** The first lock: a short-lived step token for `login`. */
+  loginPassword(username: string, password: string): Promise<{ step: string }>;
+  login(idToken: string, step?: string): Promise<Session>;
   logout(): Promise<void>;
+  /** Sets the panel's user name and password; changing them needs the current password. */
+  setPassword(input: { username: string; password: string; current?: string }): Promise<void>;
   tree(): Promise<{ headSha: string; files: TreeEntry[] }>;
   read(paths: string[]): Promise<{ files: RepoFile[] }>;
   /** The tree plus every post and the data files the posts screens need, in one call. */
@@ -336,8 +343,11 @@ export class ApiFailure extends Error {
 
 /** Action names on the wire, by `Api` method. */
 export const ACTIONS = {
+  loginStart: 'auth.start',
+  loginPassword: 'auth.password',
   login: 'auth.login',
   logout: 'auth.logout',
+  setPassword: 'auth.setPassword',
   tree: 'site.tree',
   read: 'site.read',
   snapshot: 'site.snapshot',

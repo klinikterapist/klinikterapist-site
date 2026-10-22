@@ -33,6 +33,7 @@ export function Field(props: {
   field?: string;
   /** Explanation opened by a small "?" button beside the label. */
   help?: ReactNode;
+  autoComplete?: string;
 }) {
   const id = useId();
   const describedBy = [props.hint ? `${id}-hint` : '', props.error ? `${id}-err` : ''].filter(Boolean).join(' ') || undefined;
@@ -43,6 +44,7 @@ export function Field(props: {
     maxLength: props.maxLength,
     lang: props.lang,
     'data-field': props.field,
+    autoComplete: props.autoComplete,
     className: `k-input ${props.inputClassName ?? ''}`,
     'aria-invalid': props.error ? true : undefined,
     'aria-describedby': describedBy,

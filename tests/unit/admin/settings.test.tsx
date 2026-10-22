@@ -38,7 +38,7 @@ function setup(screenId: string, tweak: (api: ReturnType<typeof createMockApi>) 
   const api = createMockApi({ seed: fixtureSeed() });
   tweak(api);
   render(
-    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
+    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
       <DeployProvider api={api}>
         <SettingsPage screen={screenId} />
       </DeployProvider>

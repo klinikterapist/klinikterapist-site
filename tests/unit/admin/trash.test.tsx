@@ -26,7 +26,7 @@ const draft = (key: string, title: string) =>
 
 function show(api: ReturnType<typeof createMockApi>) {
   render(
-    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'a@b.c' }, store: createSessionStore(localStorage) }}>
+    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
       <TrashPage />
     </Panel.Provider>,
   );

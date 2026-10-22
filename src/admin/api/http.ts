@@ -1,5 +1,5 @@
 /** The real backend: one POST endpoint on the Apps Script web app. */
-import { ACTIONS, ApiFailure, type Api, type ApiResponse } from './types';
+import { ACTIONS, ApiFailure, type Api, type ApiResponse, type Session } from './types';
 import type { SessionStore } from './session';
 
 const NETWORK_MESSAGE = 'İnternet bağlantısı yok gibi görünüyor. Değişiklikleriniz bu cihazda saklandı.';
@@ -36,8 +36,11 @@ export function createHttpApi(
   }
 
   return {
-    async login(idToken) {
-      const s = await call<{ session: string; email: string; expiresAt: number }>(ACTIONS.login, { idToken }, false);
+    loginStart: () => call(ACTIONS.loginStart, {}, false),
+    loginPassword: (username, password) => call(ACTIONS.loginPassword, { username, password }, false),
+    setPassword: (input) => call(ACTIONS.setPassword, input).then(() => undefined),
+    async login(idToken, step) {
+      const s = await call<Session>(ACTIONS.login, { idToken, ...(step ? { step } : {}) }, false);
       store.set(s.session, s.expiresAt);
       return s;
     },

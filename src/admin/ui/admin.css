@@ -475,6 +475,21 @@ textarea.k-input {
   margin-top: var(--space-4);
 }
 
+.login-form {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: stretch;
+}
+
+.login-step {
+  margin: 0;
+  font-weight: 600;
+}
+
+.login-settings {
+  margin-inline: 0;
+}
+
 .deploy-status {
   display: grid;
   gap: var(--space-2);

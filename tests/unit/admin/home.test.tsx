@@ -35,7 +35,7 @@ describe('Home', () => {
       en: { title: '', seoTitle: '', description: '', slug: '', focusKeyword: '', coverAlt: '', body: '' },
     } as never);
     render(
-      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'a@b.c' }, store: createSessionStore(localStorage) }}>
+      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
         <DeployProvider api={api}>
           <Home />
         </DeployProvider>
@@ -53,7 +53,7 @@ describe('Home', () => {
   it('has no "Yeni yazı" button (the sidebar has it)', async () => {
     const api = createMockApi();
     render(
-      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'a@b.c' }, store: createSessionStore(localStorage) }}>
+      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
         <DeployProvider api={api}>
           <Home />
         </DeployProvider>

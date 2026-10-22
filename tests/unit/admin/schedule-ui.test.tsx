@@ -67,7 +67,7 @@ function setupEditor(over: Partial<Draft> = {}, scheduleError?: string) {
   api.state.drafts.set(draft.key, { ...draft, rev: 1 });
   if (scheduleError) api.state.scheduleErrors.set(draft.key, scheduleError);
   render(
-    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
+    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
       <DeployProvider api={api}>
         <EditorPage postKey={draft.key} />
       </DeployProvider>
@@ -130,7 +130,7 @@ describe('Planlanan tab', () => {
     await api.saveDraft({ ...fresh, key: 'taslak-1', tr: { ...fresh.tr, title: 'Planlı yazı' }, scheduledAt: '2026-10-25T09:00:00+03:00' });
     await api.saveDraft({ ...fresh, key: 'taslak-2', tr: { ...fresh.tr, title: 'Düz taslak' } });
     render(
-      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
+      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
         <PostsList tab="planned" />
       </Panel.Provider>,
     );

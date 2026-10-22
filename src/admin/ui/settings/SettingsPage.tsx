@@ -8,6 +8,7 @@ import { AnaSayfaScreen, KaynaklarScreen, LinklerScreen } from './screens/lists'
 import { IletisimScreen, ProfilScreen, SeoScreen } from './screens/simple';
 import { GizlilikScreen } from './screens/privacy';
 import { GorunumScreen } from './screens/appearance';
+import { GirisScreen } from './screens/login';
 import { EpostaScreen } from './screens/mail';
 import { OnemliScreen } from './screens/important';
 
@@ -23,6 +24,7 @@ const SCREENS: Record<string, ComponentType> = {
   seo: SeoScreen,
   gizlilik: GizlilikScreen,
   eposta: EpostaScreen,
+  giris: GirisScreen,
   gorunum: GorunumScreen,
   yasal: YasalScreen,
   onemli: OnemliScreen,

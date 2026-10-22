@@ -7,7 +7,7 @@
  */
 import type { ApiResponse } from '../../src/admin/api/types';
 import { realGas, type Gas } from './gas';
-import { checkSession, issueSession, logout, verifyIdToken } from './auth';
+import { checkPassword, checkSession, checkStep, issueSession, loginStart, logout, passwordSet, setPassword, verifyIdToken } from './auth';
 import { ApiError, INTERNAL_MESSAGE, badRequest, fail, ok } from './respond';
 import { commit, read, snapshot, status, tree } from './github';
 import { deleteDraft, getDraft, getImage, getVersion, listDrafts, listTrash, listVersions, purgeTrash, putImage, restoreTrash, saveDraft } from './drive';
@@ -30,6 +30,8 @@ type Handler = (gas: Gas, p: Params) => unknown;
 
 /** Actions anyone may call without a session: the forms, the client's page, the page counter and read counts. */
 export const PUBLIC_ACTIONS: Record<string, Handler> = {
+  'auth.start': (gas) => loginStart(gas),
+  'auth.password': (gas, p) => checkPassword(gas, p),
   'contact.send': (gas, p) => sendContact(gas, p),
   'booking.request': (gas, p) => sendBooking(gas, p),
   'booking.waitlist': (gas, p) => joinWaitlist(gas, p),
@@ -51,6 +53,7 @@ export const ACTIONS: Record<string, Handler> = {
     logout(gas);
     return {};
   },
+  'auth.setPassword': (gas, p) => setPassword(gas, p),
   'site.tree': (gas) => tree(gas),
   'site.read': (gas, p) => read(gas, p),
   'site.snapshot': (gas) => snapshot(gas),
@@ -169,8 +172,9 @@ export function handle(gas: Gas, body: string): ApiResponse {
   const action = String(req.action ?? '');
   try {
     if (action === 'auth.login') {
+      checkStep(gas, req.step);
       const { email } = verifyIdToken(gas, typeof req.idToken === 'string' ? req.idToken : '');
-      return ok(issueSession(gas, email));
+      return ok({ ...issueSession(gas, email), needsPassword: !passwordSet(gas) });
     }
     if (Object.prototype.hasOwnProperty.call(PUBLIC_ACTIONS, action)) return ok(PUBLIC_ACTIONS[action](gas, req));
     checkSession(gas, req.session);

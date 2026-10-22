@@ -2,6 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 export {
+  KeyRound,
   AtSign,
   RotateCcw,
   Flag,

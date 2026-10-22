@@ -70,7 +70,13 @@ export type MockState = {
 
 const TRASH_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
 
-export function createMockApi(opts: { latency?: number; seed?: Record<string, string>; now?: () => number; stats?: StatsSummary; demoRequests?: boolean } = {}): Api & { state: MockState } {
+/** The demo panel password (`/admin/?mock`): user name `deneme`, password `deneme-sifresi`. */
+export const MOCK_LOGIN = { user: 'deneme', password: 'deneme-sifresi' };
+
+export function createMockApi(
+  opts: { latency?: number; seed?: Record<string, string>; now?: () => number; stats?: StatsSummary; demoRequests?: boolean; panelLogin?: { user: string; password: string } | null } = {},
+): Api & { state: MockState } {
+  let mockLogin = opts.panelLogin === undefined ? { ...MOCK_LOGIN } : opts.panelLogin;
   const files = new Map<string, File>();
   const put = (path: string, content: string, encoding: Encoding) => files.set(path, { content, encoding, sha: sha(content) });
   if (opts.seed) {
@@ -184,7 +190,18 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
 
   return {
     state,
-    login: () => wait(() => ({ session: 'mock-session', email: 'merhaba@klinikterapist.com', expiresAt: Date.now() + 12 * 3600e3 })),
+    loginStart: () => wait(() => ({ password: !!mockLogin })),
+    loginPassword: (username, password) =>
+      wait(() => {
+        if (!mockLogin || username.trim().toLowerCase() !== mockLogin.user || password !== mockLogin.password) throw new ApiFailure('unauthorized', 'Kullanıcı adı ya da şifre yanlış.');
+        return { step: 'mock-step' };
+      }),
+    setPassword: (input) =>
+      wait(() => {
+        if (mockLogin && input.current !== mockLogin.password) throw new ApiFailure('unauthorized', 'Kullanıcı adı ya da şifre yanlış.');
+        mockLogin = { user: input.username.trim().toLowerCase(), password: input.password };
+      }),
+    login: () => wait(() => ({ session: 'mock-session', email: OWNER, expiresAt: Date.now() + 12 * 3600e3, needsPassword: !mockLogin })),
     logout: () => wait(() => undefined),
     tree: () => wait(() => ({ headSha: `c${head}`, files: [...files].map(([path, f]) => ({ path, sha: f.sha, size: f.content.length })) })),
     read: (paths) =>

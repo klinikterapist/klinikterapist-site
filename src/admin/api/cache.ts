@@ -143,9 +143,9 @@ export function withListCache(api: Api, store: SessionStore, now: () => number =
       }
     };
   }
-  out.login = async (idToken: string) => {
+  out.login = async (idToken: string, step?: string) => {
     forgetAll();
-    return api.login(idToken);
+    return api.login(idToken, step);
   };
   out.logout = async () => {
     forgetAll();

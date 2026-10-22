@@ -74,7 +74,12 @@ Bundan sonra Claude panelin son ayarını yapar ve sizden **yayına alma (push) 
 
 ## 5. Günlük kullanım
 
-- **Giriş:** https://klinikterapist.com/admin adresini açın ve **Google ile giriş yap**'a basın. Yalnızca merhaba@klinikterapist.com hesabı girebilir. Giriş 12 saat geçerlidir; sonra yeniden giriş istenir.
+- **Giriş (iki adım):** https://klinikterapist.com/admin adresini açın. **1. adım:** panelin kullanıcı adı ve şifresi. **2. adım:** **Google ile giriş yap**, ardından sitenin sahibi olan Google hesabınızı kendiniz seçin (sayfa hesap adını yazmaz, Google da kendiliğinden seçmez). Giriş 12 saat geçerlidir; sonra yeniden giriş istenir.
+  - **İlk kez:** şifre henüz belirlenmemişse yalnızca Google sorulur ve panel hemen "Panel şifrenizi belirleyin" penceresini açar. Kullanıcı adı ve şifreyi siz seçersiniz; Claude'a yazmayın.
+  - **Değiştirmek:** **Ayarlar › Giriş Bilgileri**. Şu anki şifre istenir.
+  - **5 yanlış deneme:** giriş 15 dakika kapanır ve size "Panel girişinde art arda yanlış şifre" e-postası gelir.
+  - **Şifreyi unutursanız:** script.google.com › "Klinikterapist Panel" › **Proje ayarları › Komut dosyası özellikleri**'nde `PANEL_LOGIN` satırını silin. Sonraki girişte yalnızca Google sorulur ve panel yeni şifre ister.
+  - **En güçlü koruma:** Google hesabınızda **2 adımlı doğrulama** açık olsun (myaccount.google.com › Güvenlik).
 - **Yazı yazmak:** **Yazılar › Yeni yazı**. Türkçe ve İngilizce sekmelerini ayrı ayrı doldurun. Metni seçince küçük bir araç çubuğu açılır (kalın, italik, alt başlık, bağlantı, alıntı). Boş bir satırın başındaki **+** ile görsel, ayraç, YouTube videosu ya da vurgu kutusu eklenir.
 - **Otomatik kayıt:** Yazdıklarınız birkaç saniyede bir Drive'ınızdaki "Klinikterapist Panel" klasörüne kaydedilir. Sağ üstteki yazı durumu gösterir:
   - **Taslak kaydedildi:** her şey güvende.
@@ -112,7 +117,9 @@ Planlanan yazı, seçilen saatten sonraki bir saat içinde yayına girer. O ana 
 
 | Ne görüyorsunuz | Ne yapmalı |
 |---|---|
-| "Bu panel yalnızca site sahibine açıktır." | merhaba@klinikterapist.com dışında bir hesapla girmişsiniz. Çıkış yapıp doğru hesapla girin. |
+| "Bu panel yalnızca site sahibine açıktır." | Sitenin sahibi olmayan bir Google hesabı seçtiniz. Yeniden girip doğru hesabı seçin. |
+| "Kullanıcı adı ya da şifre yanlış." | Panelin kullanıcı adını ve şifresini kontrol edin (Google şifreniz değil). |
+| "Çok fazla yanlış deneme yapıldı…" | 15 dakika bekleyin. Denemeleri siz yapmadıysanız girdikten sonra şifrenizi değiştirin. |
 | "Panel henüz kurulmadı" | Kurulum tamamlanmamış. Claude'a haber verin. |
 | Google düğmesi görünmüyor | Reklam/izleme engelleyici Google girişini engelliyor olabilir. Bu site için kapatın ya da başka bir tarayıcı deneyin. |
 | "GitHub bağlantı anahtarının süresi dolmuş…" | 6. bölümü uygulayın. |

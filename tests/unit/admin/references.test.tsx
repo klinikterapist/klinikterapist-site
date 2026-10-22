@@ -464,7 +464,7 @@ describe('invalid citations in a stored draft (Task 10 carry-over)', () => {
     });
     const draft = { ...newDraft(new Date('2026-10-17T10:00:00')), category: 'terapi', tr: fields(bad(), [rayRef]), en: fields(para()) };
     api.state.drafts.set(draft.key, { ...draft, rev: 1 });
-    const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+    const config = { apiUrl: 'mock', googleClientId: 'x' };
     render(
       <Panel.Provider value={{ api, config, store: createSessionStore(localStorage) }}>
         <DeployProvider api={api}>

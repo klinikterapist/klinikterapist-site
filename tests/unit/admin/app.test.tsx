@@ -2,7 +2,7 @@
 import { afterEach, describe, it, expect } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from '../../../src/admin/ui/App';
-import { createMockApi } from '../../../src/admin/api/mock';
+import { MOCK_LOGIN, createMockApi } from '../../../src/admin/api/mock';
 import { createSessionStore } from '../../../src/admin/api/session';
 
 afterEach(() => {
@@ -11,7 +11,14 @@ afterEach(() => {
   location.hash = '';
 });
 
-const config = { apiUrl: 'https://script.example/exec', googleClientId: 'cid', ownerEmail: 'merhaba@klinikterapist.com' };
+const config = { apiUrl: 'https://script.example/exec', googleClientId: 'cid' };
+
+/** The first lock with the mock's demo user name and password. */
+async function passwordStep(password = MOCK_LOGIN.password) {
+  fireEvent.change(await screen.findByLabelText('Kullanıcı adı'), { target: { value: MOCK_LOGIN.user } });
+  fireEvent.change(screen.getByLabelText('Şifre'), { target: { value: password } });
+  fireEvent.click(screen.getByRole('button', { name: 'Devam' }));
+}
 
 describe('App', () => {
   it('without a session shows the sign-in screen', async () => {
@@ -28,10 +35,37 @@ describe('App', () => {
     expect(screen.getByRole('navigation', { name: 'Panel menüsü' })).toBeTruthy();
   });
 
-  it('signing in (mock backend) opens the panel', async () => {
+  it('signing in (mock backend) asks the user name and password, then Google, and opens the panel', async () => {
     render(<App api={createMockApi()} store={createSessionStore(localStorage)} config={{ ...config, apiUrl: 'mock' }} />);
+    await passwordStep();
     fireEvent.click(await screen.findByRole('button', { name: /Deneme girişi/ }));
     expect(await screen.findByRole('heading', { level: 2, name: 'Genel Bakış' })).toBeTruthy();
+  });
+
+  it('the sign-in page names no account', async () => {
+    render(<App api={createMockApi()} store={createSessionStore(localStorage)} config={{ ...config, apiUrl: 'mock' }} />);
+    await screen.findByLabelText('Kullanıcı adı');
+    expect(document.body.textContent).not.toMatch(/@|klinikterapist\.com/);
+  });
+
+  it('a wrong password stays on the first step and says so', async () => {
+    render(<App api={createMockApi()} store={createSessionStore(localStorage)} config={{ ...config, apiUrl: 'mock' }} />);
+    await passwordStep('yanlis');
+    expect(await screen.findByText('Kullanıcı adı ya da şifre yanlış.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Deneme girişi/ })).toBeNull();
+  });
+
+  it('without a password yet, Google alone signs in and the panel asks for one at once', async () => {
+    const api = createMockApi({ panelLogin: null });
+    render(<App api={api} store={createSessionStore(localStorage)} config={{ ...config, apiUrl: 'mock' }} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Deneme girişi/ }));
+    const dialog = await screen.findByRole('dialog', { name: 'Panel şifrenizi belirleyin' });
+    fireEvent.change(within(dialog).getByLabelText('Kullanıcı adı'), { target: { value: 'gunes' } });
+    fireEvent.change(within(dialog).getByLabelText('Şifre'), { target: { value: 'uzun-bir-sifre' } });
+    fireEvent.change(within(dialog).getByLabelText('Şifre (tekrar)'), { target: { value: 'uzun-bir-sifre' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Kaydet' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Panel şifrenizi belirleyin' })).toBeNull());
+    expect(await api.loginStart()).toEqual({ password: true });
   });
 
   it('when the session ends, sign-in appears on top and the open screen keeps its edits (review I6)', async () => {
@@ -44,7 +78,8 @@ describe('App', () => {
     act(() => store.clear());
     expect(await screen.findByRole('heading', { name: /giriş/i })).toBeTruthy();
     expect((screen.getByLabelText('E-posta adresi') as HTMLInputElement).value).toBe('yeni@klinikterapist.com');
-    fireEvent.click(screen.getByRole('button', { name: /Deneme girişi/ }));
+    await passwordStep();
+    fireEvent.click(await screen.findByRole('button', { name: /Deneme girişi/ }));
     await screen.findByRole('heading', { level: 2, name: 'İletişim' });
     // The screen underneath was there all along; wait for the sign-in on top to go.
     await waitFor(() => expect(screen.queryByRole('heading', { name: /giriş/i })).toBeNull());
@@ -100,7 +135,7 @@ describe('App', () => {
 });
 
 describe('grouped menu and the bell (owner 2026-10-21)', () => {
-  const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'a@b.c' };
+  const config = { apiUrl: 'mock', googleClientId: 'x' };
   afterEach(() => localStorage.clear());
 
   it('has Genel Bakış and four groups in order, with the renamed screens', async () => {

@@ -1,11 +1,12 @@
 /** Panel root: sign-in gate, shell and routing. */
 import { useEffect, useState } from 'react';
-import type { Api } from '../api/types';
+import type { Api, Session } from '../api/types';
 import type { SessionStore } from '../api/session';
 import type { AdminConfig } from '../config';
 import { Panel, useRoute } from './context';
 import { DeployProvider } from './DeployStatus';
 import { Login } from './Login';
+import { PasswordForm } from './PasswordForm';
 import { Shell } from './Shell';
 import { Home } from './Home';
 import { TrashPage } from './TrashPage';
@@ -23,6 +24,9 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
   // Once the panel has been open, a lapsed session shows sign-in on top of it, so no open
   // screen (and none of its unsaved text) is thrown away.
   const [opened, setOpened] = useState(signedIn);
+  // Signed in with Google alone because no panel password is set yet: ask for one before anything else.
+  const [mustSetPassword, setMustSetPassword] = useState(false);
+  const onSignedIn = (s: Session) => setMustSetPassword(!!s.needsPassword);
   const route = useRoute();
   useEffect(
     () =>
@@ -46,7 +50,7 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
   return (
     <Panel.Provider value={{ api, config, store }}>
       {!opened ? (
-        <Login />
+        <Login onSignedIn={onSignedIn} />
       ) : (
         <DeployProvider api={api}>
           <Shell route={route}>
@@ -72,10 +76,19 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <PostsList tab={route.tab} />
             )}
           </Shell>
+          {signedIn && mustSetPassword && (
+            <div className="k-backdrop">
+              <div className="k-dialog login" role="dialog" aria-modal="true" aria-labelledby="first-password-title">
+                <h2 id="first-password-title">Panel şifrenizi belirleyin</h2>
+                <p>Bundan sonra panele girerken önce bu kullanıcı adı ve şifre, ardından Google hesabınız sorulacak. Bunları yalnızca siz bilin; kimseyle paylaşmayın.</p>
+                <PasswordForm change={false} onDone={() => setMustSetPassword(false)} />
+              </div>
+            </div>
+          )}
           {!signedIn && (
             <div className="k-backdrop">
               <div className="k-dialog" role="dialog" aria-modal="true" aria-label="Yeniden giriş">
-                <Login again />
+                <Login again onSignedIn={onSignedIn} />
               </div>
             </div>
           )}

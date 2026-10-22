@@ -90,7 +90,7 @@ describe('EditorPage version history', () => {
     const first = await mock.saveDraft({ ...draft(1, 'Eski başlık', 'Old') }, { snapshot: true });
     await mock.saveDraft({ ...draft(first.rev, 'Yeni başlık', 'Old') });
     const saveDraft = vi.spyOn(mock, 'saveDraft');
-    const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+    const config = { apiUrl: 'mock', googleClientId: 'x' };
     render(
       <Panel.Provider value={{ api: mock, config, store: createSessionStore(localStorage) }}>
         <DeployProvider api={mock}>
@@ -122,7 +122,7 @@ describe('EditorPage restore with unsaved text', () => {
     mock.state.drafts.set('k1', { ...draft(1, 'Eski başlık', 'Old'), rev: 1 });
     const first = await mock.saveDraft({ ...draft(1, 'Eski başlık', 'Old') }, { snapshot: true });
     await mock.saveDraft({ ...draft(first.rev, 'Yeni başlık', 'Old') });
-    const config = { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' };
+    const config = { apiUrl: 'mock', googleClientId: 'x' };
     render(
       <Panel.Provider value={{ api: mock, config, store: createSessionStore(localStorage) }}>
         <DeployProvider api={mock}>

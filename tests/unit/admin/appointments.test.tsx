@@ -42,7 +42,7 @@ function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'ma
   );
   api.state.clients.push(...clients);
   render(
-    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
+    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
       {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : page === 'important' ? <OnemliScreen /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );

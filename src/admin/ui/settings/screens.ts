@@ -1,5 +1,5 @@
 /** The settings screens: menu label (each word capitalised, "ve"/"ile" small), icon and the one-line intro under the title. */
-import { AtSign, BookOpen, IdCard, LayoutTemplate, Mail, MessageCircleQuestion, Palette, Scale, Search, Share2, ShieldCheck, Tags, TriangleAlert, UserRound, type LucideIcon } from '../icons';
+import { AtSign, BookOpen, IdCard, KeyRound, LayoutTemplate, Mail, MessageCircleQuestion, Palette, Scale, Search, Share2, ShieldCheck, Tags, TriangleAlert, UserRound, type LucideIcon } from '../icons';
 
 export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; intro: string }[] = [
   { id: 'profil', label: 'Profil ve Kimlik', icon: UserRound, intro: 'Adınız, unvanınız ve fotoğrafınız; ana sayfada ve yazıların altındaki yazar kutusunda görünür.' },
@@ -13,6 +13,7 @@ export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; in
   { id: 'eposta', label: 'E-posta Ayarları', icon: AtSign, intro: 'Adresler, imza ve danışanlara giden hazır e-postalar.' },
   { id: 'seo', label: 'Arama Motoru (SEO)', icon: Search, intro: "Google'da ve paylaşımlarda sitenin geneli için kullanılan bilgiler." },
   { id: 'gizlilik', label: 'Gizlilik ve Analitik', icon: ShieldCheck, intro: 'Google Analytics, Search Console, arama motorları, çerez bildirimi, sitenin sayacı ve sayfalara eklenen kodlar.' },
+  { id: 'giris', label: 'Giriş Bilgileri', icon: KeyRound, intro: 'Panele girerken Google hesabınızdan önce sorulan kullanıcı adı ve şifre.' },
   { id: 'gorunum', label: 'Görünüm', icon: Palette, intro: 'Panelin teması, menü genişliği ve renk paleti. Bu ayarlar yalnızca bu tarayıcıda geçerlidir.' },
   { id: 'yasal', label: 'Yasal Metinler', icon: Scale, intro: 'Gizlilik ve kullanım metinleri.' },
   { id: 'onemli', label: 'Önemli Ayarlar', icon: TriangleAlert, intro: 'Bütün ziyaretçileri etkileyen, acil durumda kullanılan ayarlar. Her değişiklik önce onayınızı ister.' },

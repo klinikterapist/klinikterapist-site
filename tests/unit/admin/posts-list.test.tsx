@@ -34,7 +34,7 @@ function setup(tab: 'live' | 'drafts' = 'live', withDrafts = false) {
     void api.saveDraft({ ...fresh, key: 'kaygi', published: true, tr: { ...fresh.tr, title: 'Kaygı ile yaşamak' } });
   }
   render(
-    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x', ownerEmail: 'merhaba@klinikterapist.com' }, store: createSessionStore(localStorage) }}>
+    <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
       <PostsList tab={tab} />
     </Panel.Provider>,
   );
