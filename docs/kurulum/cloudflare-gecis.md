@@ -24,6 +24,10 @@ Bu liste Cloudflare'e taşınırken **birebir korunmalı**. Özellikle e-posta s
 
 Alan adı şu an Squarespace'te kayıtlı (ad sunucuları `nsd1…nsd4.squarespacedns.com`).
 
+**DNSSEC açık (22 Ekim 2026'da görüldü):** Squarespace alan adında DNSSEC'i açık tutuyor (`.com` kaydında bir DS satırı var, süresi 24 saat). Ad sunucuları DNSSEC kapatılmadan değiştirilirse alan adı (site **ve e-posta**) bir güne kadar açılmaz. Sıra şöyle olmalı: önce Squarespace'te DNSSEC'i kapatın, Claude DS satırının kalktığını görene kadar bekleyin (genelde 1 gün), sonra ad sunucularını değiştirin. Taşıma bitince DNSSEC'i Cloudflare'de açıp verdiği DS bilgisini Squarespace'e girin.
+
+**pages.dev Türkiye'de açılmıyor olabilir:** 22 Ekim'de Türkiye'deki bağlantıdan `klinikterapist.pages.dev` açılmadı (internet sağlayıcısı `pages.dev` adlarını engelliyor). Bu yalnızca deneme adresini etkiler; ziyaretçiler siteyi `klinikterapist.com` adresinden açar.
+
 ## 0. Önce: iki adımlı doğrulama
 
 Google (merhaba@klinikterapist.com), GitHub ve açacağınız Cloudflare hesabında iki adımlı doğrulamayı açın. Site bu hesaplara emanet olacak.
@@ -63,7 +67,7 @@ Bu andan sonra site GitHub Pages'e değil Cloudflare'e gönderilir. Alan adı he
 1. Cloudflare'de **Add a domain** › `klinikterapist.com` › **Free** planı seçin. Cloudflare mevcut kayıtları tarar.
 2. Taranan listeyi yukarıdaki tabloyla karşılaştırın: MX, SPF (TXT), `google._domainkey` (TXT) ve `_dmarc` (TXT) **mutlaka** listede olsun. Eksik varsa **Add record** ile ekleyin.
 3. GitHub'a ait A, AAAA ve `www` CNAME kayıtlarını silin (tabloda "silinecek" yazanlar).
-4. Cloudflare size iki ad sunucusu verir (örneğin `xxx.ns.cloudflare.com`). Squarespace'te **Domains › klinikterapist.com › DNS › Nameservers › Use custom nameservers** yolunu izleyip bu ikisini yazın ve kaydedin.
+4. **DNSSEC kapalı olmalı** (yukarıdaki nota bakın; Claude DS satırının kalktığını doğrulamadan bu adıma geçmeyin). Cloudflare size iki ad sunucusu verir (örneğin `xxx.ns.cloudflare.com`). Squarespace'te **Domains › klinikterapist.com › DNS › Nameservers › Use custom nameservers** yolunu izleyip bu ikisini yazın ve kaydedin.
 5. Cloudflare'de alan adı "Active" olunca (birkaç dakikadan birkaç saate kadar sürebilir) **Workers & Pages › klinikterapist › Custom domains** ekranına gidin. Önce `klinikterapist.com`, sonra `www.klinikterapist.com` ekleyin. Gerekli kayıtları Cloudflare kendisi oluşturur.
 6. **SSL/TLS** ayarı "Full" olsun. **Always Use HTTPS** açık olsun.
 
