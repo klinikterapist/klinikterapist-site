@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type RequestDecision, type WaitlistEntry } from '../../api/types';
 import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, REQUEST_KEEP_DAYS, SESSION_TYPES, clientNumber, formatDay, requestKeepUntil } from '../../../lib/booking-form';
 import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
+import { countryName } from '../../../lib/phone';
 import type { PaymentSettings } from '../../../lib/payment';
 import { go, usePanel } from '../context';
 import { useFreshData } from '../fresh-data';
@@ -25,7 +26,7 @@ import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../k
 import { AddAppointmentDialog, type AddInitial } from './AddAppointmentDialog';
 import { AppointmentCalendar, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
 import { MailDialog } from './MailDialog';
-import { initialsOf } from './shared';
+import { byAppointment, initialsOf, newestFirst } from './shared';
 import { VerifiedMark, WaitlistTab } from './WaitlistTab';
 
 const KEEP_DAYS = REQUEST_KEEP_DAYS;
@@ -146,6 +147,7 @@ function RequestCard({ r, open, onToggle, children }: { r: BookingRequest; open:
             <Row label="Konular">{(r.topics ?? []).map((i) => INTRO_TOPICS.tr[i]).join(', ') || '—'}</Row>
             <Row label="Daha önce destek">{r.before === 'yes' ? 'Evet' : r.before === 'no' ? 'Hayır' : 'Belirtmedi'}</Row>
             <Row label="Yaş aralığı">{AGE_RANGES.tr[r.age ?? -1] ?? '—'}</Row>
+            {r.country && <Row label="Yaşadığı ülke">{countryName(r.country, 'tr')}</Row>}
           </>
         )}
         {r.note && (
@@ -276,8 +278,8 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
     }
   };
 
-  const pending = (requests ?? []).filter((r) => r.status === 'pending');
-  const approved = (requests ?? []).filter((r) => r.status === 'approved');
+  const pending = newestFirst((requests ?? []).filter((r) => r.status === 'pending'));
+  const approved = byAppointment((requests ?? []).filter((r) => r.status === 'approved'));
   const shown = view === 'pending' ? pending : approved;
   const weekdayTimes = moving ? templateTimes(nextWeekday(moving.weekday), 'session') : [];
 

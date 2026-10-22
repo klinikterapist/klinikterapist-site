@@ -1,0 +1,41 @@
+---
+/**
+ * The phone field of the booking forms with its country code in a field of its own (owner's note
+ * 2026-10-22: people abroad have other codes). The code select is named `<name>Code`; its options
+ * carry `data-dial`, and booking-submit.ts / waitlist-submit.ts join the two with `joinPhone`
+ * (lib/phone.ts). "Diğer": the number is typed with its own code. Styled by wizard.css (`.wz`).
+ */
+import type { Lang } from '../../lib/settings';
+import { COUNTRIES } from '../../lib/phone';
+
+interface Props {
+  lang: Lang;
+  name: string;
+  label: string;
+  /** The `data-sum-src` of the number (the summary's contact line). */
+  sum?: string;
+}
+const { lang, name, label, sum } = Astro.props;
+const id = `${name}-input`;
+const T = {
+  tr: { code: 'Ülke kodu', other: 'Diğer (numarayı + ile yazın)', hint: 'Yurt dışındaysanız ülke kodunu seçin.' },
+  en: { code: 'Country code', other: 'Other (type the number with +)', hint: 'If you live abroad, choose your country code.' },
+}[lang];
+---
+
+<div class="field phone-field">
+  <label for={id}>{label} <span class="req" aria-hidden="true">*</span></label>
+  <div class="phone-row">
+    <select name={`${name}Code`} aria-label={T.code} data-phone-code>
+      {
+        COUNTRIES.map((c) => (
+          <option value={c.id} data-dial={c.dial} selected={c.id === 'TR'}>
+            {c.id === 'other' ? T.other : `${c[lang]} (${c.dial})`}
+          </option>
+        ))
+      }
+    </select>
+    <input id={id} type="tel" name={name} autocomplete="tel-national" inputmode="tel" required minlength="6" maxlength="20" data-sum-src={sum} data-phone />
+  </div>
+  <small>{T.hint}</small>
+</div>

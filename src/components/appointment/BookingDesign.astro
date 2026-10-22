@@ -17,6 +17,8 @@ import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
 import WaitlistForm from './WaitlistForm.astro';
+import PhoneField from './PhoneField.astro';
+import DoneCard from './DoneCard.astro';
 import { FORM_TEXT } from './form-text';
 import './wizard.css';
 
@@ -37,8 +39,6 @@ const T = {
     invalid: 'Bazı bilgiler eksik ya da hatalı. Lütfen önceki adımlara dönüp kontrol edin.',
     taken: 'Seçtiğiniz saat artık uygun değil. Lütfen takvimden başka bir saat seçin.',
     failed: 'Talep gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da e-posta ile yazın.',
-    doneTitle: 'Talebiniz alındı',
-    doneText: 'Size kısa bir alındı e-postası gönderdim. Saati onaylamak ya da başka bir saat önermek için en kısa sürede e-postayla dönüş yapacağım.',
     firstTitle: 'İlk kez mi randevu alıyorsunuz?',
     firstText: 'Terapiye başlamadan önce ücretsiz ön görüşme talep etmenizi öneririm. 25–30 dakikalık bu görüşmede tanışır, sizin için doğru adımın ne olduğuna birlikte karar veririz.',
     firstCta: 'Ücretsiz ön görüşme talep et',
@@ -80,6 +80,7 @@ const T = {
     noteHint: 'Sağlık durumunuza ilişkin ayrıntıları burada paylaşmayın; bunları görüşmede konuşuruz.',
     consentA: 'Aydınlatma metnini',
     consentB: ' okudum.',
+    noteConsent: 'Yazdığım notun, seansı hazırlamak amacıyla Klinik Psikolog Osman Güneş Özkurt’a e-postayla iletilmesine açık rıza veriyorum.',
     s4: 'Özet ve onay',
     s4Hint: 'Bilgilerinizi kontrol edin; talebiniz bana e-postayla ulaşır, size dönüş yaparım.',
     summary: 'Randevu özeti',
@@ -105,8 +106,6 @@ const T = {
     invalid: 'Some details are missing or wrong. Please go back and check the earlier steps.',
     taken: 'The time you chose is no longer free. Please pick another time in the calendar.',
     failed: 'The request could not be sent. Please try again a little later or write by e-mail.',
-    doneTitle: 'Your request has been received',
-    doneText: 'I have sent you a short acknowledgement by e-mail. I will reply soon to confirm the time or suggest another one.',
     firstTitle: 'Booking for the first time?',
     firstText: 'Before starting therapy, I recommend asking for a free intro call. In these 25–30 minutes we get to know each other and decide together on the right next step for you.',
     firstCta: 'Ask for a free intro call',
@@ -148,6 +147,7 @@ const T = {
     noteHint: 'Please do not share health details here; we will talk about them in the session.',
     consentA: 'I have read the ',
     consentB: 'privacy notice.',
+    noteConsent: 'I give my explicit consent for my note to be sent by e-mail to Clinical Psychologist Osman Güneş Özkurt to prepare the session.',
     s4: 'Summary and confirm',
     s4Hint: 'Check your details; your request reaches me by e-mail and I get back to you.',
     summary: 'Booking summary',
@@ -320,14 +320,16 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             <input type="email" name="email2" autocomplete="off" inputmode="email" required maxlength="254" data-email-again />
             <small class="email-hint is-error" data-email-mismatch hidden></small>
           </label>
-          <label class="field">
-            <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
-            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required minlength="10" maxlength="20" data-sum-src="contact" />
-          </label>
+          <PhoneField lang={lang} name="phone" label={T.phone} sum="contact" />
           <label class="field field-wide">
             <span>{T.note}</span>
             <textarea name="note" rows="3" maxlength="500"></textarea>
             <small>{T.noteHint}</small>
+          </label>
+          {/* Shown (and required) once a note is written: the note may be about health (owner's note 2026-10-22). */}
+          <label class="consent field-wide" data-note-consent hidden>
+            <input type="checkbox" name="healthConsent" value="1" />
+            <span>{T.noteConsent} <span class="req" aria-hidden="true"> *</span></span>
           </label>
           <label class="hp" aria-hidden="true">
             <span>Website</span>
@@ -378,10 +380,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
         </div>
       </section>
 
-      <section class="card done" data-done tabindex="-1" aria-labelledby="bk-done" hidden>
-        <h2 id="bk-done"><Icon name="send" size={22} /> {T.doneTitle}</h2>
-        <p>{T.doneText}</p>
-      </section>
+      <DoneCard lang={lang} kind="session" id="bk-done" />
 
       <div class="wz-nav" data-nav>
         <button type="button" class="wz-back" data-back hidden><Icon name="arrow" size={18} />{T.back}</button>

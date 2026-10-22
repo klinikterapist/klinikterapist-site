@@ -65,6 +65,19 @@ export function parsePayment(v: unknown): PaymentSettings {
   };
 }
 
+/** A client's own fee (owner's note 2026-10-22), or none: the fee of their session type then applies. */
+export const parseFee = (v: unknown): number | undefined => {
+  const n = typeof v === 'string' ? Number(v.replace(/\D/g, '')) : Number(v);
+  return Number.isFinite(n) && n > 0 && n < 1e6 ? Math.round(n) : undefined;
+};
+
+/** The settings with `fee` in place of the type's fee, so every e-mail to that client says their fee. */
+export const withClientFee = (p: PaymentSettings, type: string | undefined, fee?: number): PaymentSettings =>
+  fee ? { ...p, fees: { ...p.fees, [typeOf(type).id]: fee } } : p;
+
+/** What one session of this client costs: their own fee, else their session type's (0: not set). */
+export const feeOf = (p: PaymentSettings, type: string | undefined, fee?: number): number => fee ?? p.fees[typeOf(type).id] ?? 0;
+
 /** The Istanbul year of `now`. */
 export const istanbulYear = (now: number) => new Date(now + 3 * 3600e3).getUTCFullYear();
 

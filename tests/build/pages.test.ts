@@ -253,7 +253,7 @@ describe('page shell (every page but home)', () => {
   const isPost = (p: string) => /^\/(en\/)?blog\/[^/]+\/$/.test(p);
   const langOf = (p: string) => (p.startsWith('/en/') ? 'en' : 'tr');
   // No bottom bar on the client's page, the start page and the forms themselves.
-  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/randevu/', '/on-gorusme/'];
+  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/randevu/', '/on-gorusme/'];
 
   /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
   const pageCss = (p: string) => {
@@ -290,7 +290,7 @@ describe('page shell (every page but home)', () => {
     expect(d.querySelectorAll('header.site-header')).toHaveLength(1);
 
     expect(d.querySelectorAll('.page-end')).toHaveLength(1);
-    expect(d.querySelector('.page-end b')?.text).toBe('112');
+    expect(d.querySelector('.page-end')?.text).not.toContain('112');
 
     // The client's own page is for people already in therapy: no "Randevu Al" bar (checked below).
     if (NO_CTA.includes(p)) return;
@@ -511,13 +511,32 @@ describe('inner pages redesign (spec §5.9)', () => {
     }
   });
 
-  it('the booking start page: three ways (intro call recommended), the info form, in search now that booking is live', () => {
+  it('the booking start page: three ways (intro call recommended), each a link to its own page, in search now that booking is live', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, intro, appt] of [['/randevu-al/', '/on-gorusme/#pc-form', '/randevu/'], ['/en/book/', '/en/intro-call/#pc-form', '/en/appointment/']] as const) {
+    for (const [path, intro, appt, info] of [['/randevu-al/', '/on-gorusme/#pc-form', '/randevu/', '/bilgi-al/'], ['/en/book/', '/en/intro-call/#pc-form', '/en/appointment/', '/en/information/']] as const) {
       const d = loadPage(path);
       expect(d.querySelectorAll('main .way').length, path).toBe(3);
       expect(d.querySelector('main .way.is-recommended a')?.getAttribute('href'), path).toBe(intro);
       expect(d.querySelector(`main .way a[href="${appt}"]`), path).not.toBeNull();
+      // "Önce bilgi almak istiyorum" opens its own page like the other two (owner's note 2026-10-22).
+      expect(d.querySelector(`main .way a[href="${info}"]`), path).not.toBeNull();
+      expect(d.querySelector('main details'), path).toBeNull();
+      expect(d.querySelector('main form'), path).toBeNull();
+      expect(d.querySelector('meta[name=robots]'), path).toBeNull();
+      expect(sm).toContain(path);
+      expect(d.querySelector('.sticky-cta'), path).toBeNull();
+    }
+    // With the forms live, "Randevu Al" opens the start page and the intro button leaves the home page.
+    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu-al/');
+    expect(loadPage('/').querySelector('a.pre-cta')).toBeNull();
+  });
+
+  it('the information page: the topic form with its e-mail check and consent, a way back, no booking bar', () => {
+    const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
+    for (const [path, start] of [['/bilgi-al/', '/randevu-al/'], ['/en/information/', '/en/book/']] as const) {
+      const d = loadPage(path);
+      expect(d.querySelectorAll('h1'), path).toHaveLength(1);
+      expect(d.querySelector(`main a[href="${start}"]`), path).not.toBeNull();
       const form = d.querySelector('main form[data-info]')!;
       expect(form.querySelectorAll('input[name="info-topic"]').length, path).toBeGreaterThan(3);
       expect(form.querySelector('input[name="info-email2"]'), path).not.toBeNull();
@@ -528,15 +547,12 @@ describe('inner pages redesign (spec §5.9)', () => {
       expect(sm).toContain(path);
       expect(d.querySelector('.sticky-cta'), path).toBeNull();
     }
-    // With the forms live, "Randevu Al" opens the start page and the intro button leaves the home page.
-    expect(loadPage('/').querySelector('#top-cta')?.getAttribute('href')).toBe('/randevu-al/');
-    expect(loadPage('/').querySelector('a.pre-cta')).toBeNull();
   });
 
   it('the client’s own page and the booking pages load no Google Analytics, even where the site has it (real data build)', () => {
     const home = loadPage('/', DIST_SAMPLES).toString();
     expect(home).toContain('googletagmanager');
-    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/randevu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
+    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/randevu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
       const d = loadPage(path, DIST_SAMPLES);
       expect(d.toString(), path).not.toContain('googletagmanager');
       expect(d.querySelector('[data-consent-bar]'), path).toBeNull();

@@ -102,6 +102,22 @@ describe('validateBooking', () => {
     expect(validateBooking(intro({ healthConsent: false }), cfg, NOW).healthConsent).toBe('required');
     expect(validateBooking(intro({ day: '2026-10-22' }), cfg, NOW).slot).toBe('invalid');
   });
+
+  it('a session note needs explicit consent once the form asks for it (owner’s note 2026-10-22)', () => {
+    const s = (o: Partial<BookingInput>) => validateBooking({ ...session(), note: 'Uykusuzluk', ...o } as BookingInput, cfg, NOW);
+    expect(s({ healthConsent: false }).healthConsent).toBe('required');
+    expect(s({ healthConsent: true })).toEqual({});
+    expect(s({ healthConsent: false, note: '  ' })).toEqual({});
+    // A form from before the question was asked leaves it out.
+    expect(s({ healthConsent: undefined })).toEqual({});
+  });
+
+  it('the intro call’s country is one of the listed ones; a form sent before it was asked still passes', () => {
+    expect(validateBooking(intro({ country: 'DE' }), cfg, NOW)).toEqual({});
+    expect(validateBooking(intro({ country: 'other' }), cfg, NOW)).toEqual({});
+    expect(validateBooking(intro({ country: 'XX' }), cfg, NOW).country).toBe('invalid');
+    expect(validateBooking(intro({ country: undefined }), cfg, NOW)).toEqual({});
+  });
 });
 
 describe('formatDay', () => {

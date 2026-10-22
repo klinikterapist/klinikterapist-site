@@ -10,6 +10,9 @@ import { pathFor } from '../i18n/routes';
 
 export const ENTRY_PATH = { tr: '/randevu-al/', en: '/en/book/' } as const;
 
+/** The start page's third way, "Önce bilgi almak istiyorum": the process information form on its own page. */
+export const INFO_PATH = { tr: '/bilgi-al/', en: '/en/information/' } as const;
+
 /** Whether the booking forms (and so the start page) are in use: live since 2026-10-21. */
 export const bookingLive = (): boolean => true;
 

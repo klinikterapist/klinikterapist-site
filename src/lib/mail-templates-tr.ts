@@ -107,6 +107,21 @@ export const MAIL_TR = {
     subject: "Önceki e-postamla ilgili düzeltme – klinikterapist.com",
     body: "Sayın {ad},\n\nTalebinizle ilgili bir önceki e-postam teknik bir sorun nedeniyle yanlışlıkla gönderildi. Lütfen o e-postayı dikkate almayın. Oluşan karışıklık için özür dilerim.\n\nTalebiniz bana ulaştı ve değerlendirmesi sürüyor. Talebinizi yeniden değerlendirip doğru ve güncel yanıtımı en kısa sürede ayrı bir e-postayla göndereceğim.\n\nAnlayışınız için teşekkür ederim.\n\nSaygılarımla,\n{imza}",
   },
+  // Panelden seans iptali (owner's note 2026-10-22: the client hears of it)
+  "danisan.iptal": {
+    subject: "Seansınız iptal edildi – klinikterapist.com",
+    body: "Sayın {ad},\n\n[[ben]]\nAşağıdaki seansımızı iptal etmek durumunda kaldığımı bildirmek isterim. Anlayışınız için teşekkür ederim.\n[[/ben]]\n[[siz]]\nİsteğiniz üzerine aşağıdaki seansınız iptal edildi.\n[[/siz]]\n\n– Seans türü: {tur}\n– Tarih: {tarih}\n– Saat: {saat} (Türkiye saati)\n\nDiğer seanslarınız planlandığı gibi devam eder. Bir sorunuz olursa bu e-postayı yanıtlayarak bana yazabilirsiniz.\n\nSaygılarımla,\n{imza}",
+  },
+  // Panelden seans ertelemesi
+  "danisan.erteleme": {
+    subject: "Seansınız ertelendi – klinikterapist.com",
+    body: "Sayın {ad},\n\n[[ben]]\nAşağıdaki seansımızı ertelemek durumunda kaldığımı bildirmek isterim. Anlayışınız için teşekkür ederim.\n[[/ben]]\n[[siz]]\nİsteğiniz üzerine aşağıdaki seansınız ertelendi.\n[[/siz]]\n\n– Seans türü: {tur}\n– Önceki tarih ve saat: {tarih}, {saat}\n[[yeni]]\n– Yeni tarih ve saat: {yeni_tarih}, {yeni_saat} (Türkiye saati)\n[[/yeni]]\n[[yenisiz]]\n\nYeni tarihi ve saati en kısa sürede sizinle birlikte belirleyeceğiz.\n[[/yenisiz]]\n\nOnline görüşme bağlantısını seanstan önce size e-postayla göndereceğim. Bir sorunuz olursa bu e-postayı yanıtlayarak bana yazabilirsiniz.\n\nSaygılarımla,\n{imza}",
+  },
+  // Panelden ek seans ya da sonlandırma görüşmesi ekleme
+  "danisan.ek-seans": {
+    subject: "Yeni seansınız planlandı – klinikterapist.com",
+    body: "Sayın {ad},\n\nSizin için aşağıdaki görüşmeyi planladım.\n\n– Görüşme türü: {tur}\n– Tarih: {tarih}\n– Saat: {saat} (Türkiye saati)\n– Biçim: Online\n\nOnline görüşme bağlantısını seanstan önce size e-postayla göndereceğim. Bu saat size uymuyorsa bu e-postayı yanıtlayarak bana yazabilirsiniz.\n\nSaygılarımla,\n{imza}",
+  },
   // Ödeme alındı (teşekkür)
   "odeme.tesekkur": {
     subject: "Seans ödemeniz alındı – klinikterapist.com",
@@ -130,12 +145,12 @@ export const MAIL_TR = {
   // Yeni seans talebi (sahibe)
   "bildirim.seans-talebi": {
     subject: "Randevu talebi – {ad} – {tarih}, {saat}",
-    body: "Yeni bir seans talebi geldi.\n\n■ Randevu bilgileri\n\n– Görüşme türü: {tur}\n– Talep edilen tarih: {tarih}\n– Talep edilen saat: {saat} (Türkiye saati)\n– Başvuru tarihi: {gonderim} (Türkiye saati)\n\n■ Danışan bilgileri\n\n– Ad soyad: {ad}\n– E-posta: {e_posta}\n– Telefon: {telefon}\n– Konuşma dili: {dil}\n\n[[not]]\n■ Danışanın notu\n\n{not}\n[[/not]]\n\n■ Yapılması gereken\n\nTalep edilen saat 24 saat boyunca sitede \"Dolu\" görünür. Bu süre içinde talebi Randevu Talepleri ekranında inceleyip onaylayabilir ya da danışana yanıt verebilirsiniz.\n\n→ Randevu Talepleri ekranını aç: {panel_baglantisi}\n\nPanelde Yanıtla seçeneğiyle randevuyu onaylayabilir ya da başka bir saat önerebilirsiniz; yanıtınız doğrudan danışana e-postayla gider.\n\nÖnemli: Talep 24 saat içinde sonuçlanmazsa saat kendiliğinden yeniden açılır.\n\nBu bildirim kendiliğinden gönderildi. Talebi panelden sonuçlandırabilirsiniz.",
+    body: "Yeni bir seans talebi geldi.\n\n■ Randevu bilgileri\n\n– Görüşme türü: {tur}\n– Talep edilen tarih: {tarih}\n– Talep edilen saat: {saat} (Türkiye saati)\n– Başvuru tarihi: {gonderim} (Türkiye saati)\n\n■ Danışan bilgileri\n\n– Ad soyad: {ad}\n– E-posta: {e_posta}\n– Telefon: {telefon}\n– Konuşma dili: {dil}\n\n[[not]]\n■ Danışanın notu\n\n{not}\n\n– Not için açık rıza: {not_rizasi}\n[[/not]]\n\n■ Yapılması gereken\n\nTalep edilen saat 24 saat boyunca sitede \"Dolu\" görünür. Bu süre içinde talebi Randevu Talepleri ekranında inceleyip onaylayabilir ya da danışana yanıt verebilirsiniz.\n\n→ Randevu Talepleri ekranını aç: {panel_baglantisi}\n\nPanelde Yanıtla seçeneğiyle randevuyu onaylayabilir ya da başka bir saat önerebilirsiniz; yanıtınız doğrudan danışana e-postayla gider.\n\nÖnemli: Talep 24 saat içinde sonuçlanmazsa saat kendiliğinden yeniden açılır.\n\nBu bildirim kendiliğinden gönderildi. Talebi panelden sonuçlandırabilirsiniz.",
   },
   // Yeni ön görüşme talebi (sahibe)
   "bildirim.ongorusme-talebi": {
     subject: "Ön görüşme talebi – {ad} – {tarih}, {saat}",
-    body: "Yeni bir ücretsiz ön görüşme talebi geldi.\n\n■ Talep bilgileri\n\n– Ad soyad: {ad}\n– Talep edilen tarih: {tarih}\n– Talep edilen saat: {saat} (Türkiye saati)\n– Görüşme türü: Ücretsiz ön görüşme\n– Başvuru: {kimin_icin}\n– Konuşma dili: {dil}\n\n■ Başvuru içeriği\n\n– Daha önce psikolojik destek aldı mı: {daha_once_destek}\n– Yaş aralığı: {yas}\n– Ek not: {not}\n– Konu seçimleri için açık rıza: Verildi\n\nBelirttiği konular:\n\n{konular}\n\n■ İletişim bilgileri\n\n– E-posta: {e_posta}\n– Telefon: {telefon}\n\n■ İşlem durumu\n\nTalep edilen saat 24 saat boyunca sitede \"Dolu\" görünür. Bu süre içinde talebi panelden onaylayabilir ya da danışana yanıt verebilirsiniz.\n\n→ Randevu Talepleri ekranını aç: {panel_baglantisi}\n\nÖnemli: Talep hakkında karar vermezseniz saat 24 saat sonra kendiliğinden yeniden açılır. Panelde Yanıtla seçeneğiyle gönderdiğiniz e-posta doğrudan danışana gider.\n\nTalep zamanı: {gonderim} (Türkiye saati)",
+    body: "Yeni bir ücretsiz ön görüşme talebi geldi.\n\n■ Talep bilgileri\n\n– Ad soyad: {ad}\n– Talep edilen tarih: {tarih}\n– Talep edilen saat: {saat} (Türkiye saati)\n– Görüşme türü: Ücretsiz ön görüşme\n– Başvuru: {kimin_icin}\n– Konuşma dili: {dil}\n\n■ Başvuru içeriği\n\n– Daha önce psikolojik destek aldı mı: {daha_once_destek}\n– Yaş aralığı: {yas}\n– Yaşadığı ülke: {ulke}\n– Ek not: {not}\n– Konu seçimleri için açık rıza: Verildi\n\nBelirttiği konular:\n\n{konular}\n\n■ İletişim bilgileri\n\n– E-posta: {e_posta}\n– Telefon: {telefon}\n\n■ İşlem durumu\n\nTalep edilen saat 24 saat boyunca sitede \"Dolu\" görünür. Bu süre içinde talebi panelden onaylayabilir ya da danışana yanıt verebilirsiniz.\n\n→ Randevu Talepleri ekranını aç: {panel_baglantisi}\n\nÖnemli: Talep hakkında karar vermezseniz saat 24 saat sonra kendiliğinden yeniden açılır. Panelde Yanıtla seçeneğiyle gönderdiğiniz e-posta doğrudan danışana gider.\n\nTalep zamanı: {gonderim} (Türkiye saati)",
   },
   // Haber et (bekleme listesi, sahibe)
   "bildirim.bekleme": {

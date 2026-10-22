@@ -3,6 +3,7 @@
  * text/plain JSON request (`booking.waitlist`) and shows the thank-you card. Without an endpoint the
  * button stays disabled and the e-mail line is the way.
  */
+import { readPhone } from './phone-field';
 import { sameEmail } from '../../lib/email-check';
 import { validateWaitlist, type WaitlistInput } from '../../lib/waitlist-form';
 import { mountEmailGuard } from './email-guard';
@@ -35,7 +36,7 @@ export function mountWaitlist(section: HTMLElement, endpoint: string, lang: 'tr'
     const input: WaitlistInput = {
       name: value('wl-name'),
       email: value('wl-email'),
-      phone: value('wl-phone'),
+      phone: readPhone(section, 'wl-phone'),
       kinds: checked('wl-kinds'),
       times: checked('wl-times'),
       reason: value('wl-reason'),

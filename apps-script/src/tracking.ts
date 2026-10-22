@@ -35,7 +35,7 @@ import { getPayment } from './payment';
 import { readQr } from './qr';
 import { mailTr } from '../../src/lib/mail-texts';
 import { typeVars, whenVars } from '../../src/lib/mail-vars';
-import { payVars } from '../../src/lib/payment';
+import { payVars, withClientFee } from '../../src/lib/payment';
 
 export const TRACK_BAD_MAX = 30;
 const HOUR_MS = 3600 * 1000;
@@ -132,7 +132,7 @@ function clientMail(gas: Gas, c: StoredClient, ask: TrackAsk, ch: Change | null)
   }
   const id = ask === 'cancel' ? (ch?.late ? 'oto.iptal-gec' : 'oto.iptal') : ask === 'postpone' ? 'oto.erteleme' : ask === 'closing' ? 'oto.sonlandirma-secildi' : 'oto.sonlandirma-istegi';
   // A late cancellation gives the fee and how to pay, as the page said.
-  const pay = ask === 'cancel' && ch?.late ? payVars(getPayment(gas), c.type, !!readQr(gas)) : {};
+  const pay = ask === 'cancel' && ch?.late ? payVars(withClientFee(getPayment(gas), c.type, c.fee), c.type, !!readQr(gas)) : {};
   return mailTr(id, {
     ...typeVars(c.type),
     ...(ch ? whenVars(ch.s.day, ch.s.time) : {}),

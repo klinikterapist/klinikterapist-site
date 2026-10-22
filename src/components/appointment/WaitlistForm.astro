@@ -10,6 +10,7 @@ import type { Lang } from '../../lib/settings';
 import { pathFor } from '../../i18n/routes';
 import { WAITLIST_KEEP_DAYS, WAITLIST_KINDS, WAITLIST_LABELS, WAITLIST_TIMES } from '../../lib/waitlist-form';
 import Icon from '../Icon.astro';
+import PhoneField from './PhoneField.astro';
 
 interface Props {
   lang: Lang;
@@ -106,10 +107,7 @@ const id = (s: string) => `wl-${kind}-${s}`;
         <span>{T.name} <span class="req" aria-hidden="true">*</span></span>
         <input type="text" name="wl-name" autocomplete="name" required maxlength="100" />
       </label>
-      <label class="field">
-        <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
-        <input type="tel" name="wl-phone" autocomplete="tel" inputmode="tel" required minlength="10" maxlength="20" />
-      </label>
+      <PhoneField lang={lang} name="wl-phone" label={T.phone} />
       <label class="field">
         <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
         <input type="email" name="wl-email" autocomplete="email" inputmode="email" required maxlength="254" data-email />

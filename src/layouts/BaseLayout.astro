@@ -12,6 +12,7 @@ import { COUNTER_ENABLED } from '../lib/site';
 import { getSeo, injectionFits } from '../lib/settings';
 import { pathFor } from '../i18n/routes';
 import Analytics from '../components/Analytics.astro';
+import FontPreload from '../components/FontPreload.astro';
 
 interface Props {
   lang: Lang;
@@ -54,6 +55,7 @@ const code = (where: 'head' | 'body') => (seo.inject ?? []).filter((c) => c.enab
     <meta name="apple-mobile-web-app-title" content="Klinik Terapist" />
     <meta name="generator" content={Astro.generator} />
     {noindex && <meta name="robots" content="noindex" />}
+    <FontPreload />
     <Seo meta={meta} jsonLd={jsonLd} />
     <slot name="head" />
     {code('head').map((c) => <Fragment set:html={c.code} />)}

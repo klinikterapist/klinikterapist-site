@@ -18,7 +18,7 @@ import { addManual, assertFree, changeSession, decideRequest, endClient, holdFor
 import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist } from './waitlist';
 import { listEvents } from './events';
 import { sendInfo } from './info';
-import { payClient, readPayment, runReminders, savePayment } from './payment';
+import { payClient, readPayment, runReminders, savePayment, setClientFee } from './payment';
 import { runClosing } from './closing';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { flushStats, recordHit, statsReads, statsSummary } from './stats';
@@ -129,6 +129,7 @@ export const ACTIONS: Record<string, Handler> = {
   'clients.linkMail': (gas, p) => mailClientLink(gas, p),
   'clients.mail': (gas, p) => mailClientLink(gas, p),
   'clients.pay': (gas, p) => payClient(gas, p),
+  'clients.fee': (gas, p) => setClientFee(gas, p),
   'events.list': (gas) => listEvents(gas),
   'payment.get': (gas) => readPayment(gas),
   'payment.set': (gas, p) => savePayment(gas, p),

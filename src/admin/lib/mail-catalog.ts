@@ -11,7 +11,7 @@ import { payVars, paymentLines, ruleLine, sessionReminderMail, thanksMail, payme
 import { mailTexts, setMailTexts, toTemplate, type Mail } from '../../lib/mail-texts';
 import { MAIL_TR } from '../../lib/mail-templates-tr';
 import { LINKS_TR, RULE_TR, typeVars, whenVars } from '../../lib/mail-vars';
-import { SITE, decisionMail, decisionVarsTr, endMail, introNote, linkMail, revertMail, waitlistMail, what, type PanelMailId } from './booking-mail';
+import { SITE, decisionMail, decisionVarsTr, endMail, introNote, linkMail, revertMail, sessionChangeMail, sessionChangeVarsTr, waitlistMail, what, type PanelMailId, type SessionChange } from './booking-mail';
 
 type Lang = 'tr' | 'en';
 export type MailGroup = 'Randevu talepleri' | 'Danışanlar' | 'Ödemeler' | 'Bekleme listesi' | 'Otomatik';
@@ -108,6 +108,26 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     sample: (lang) => builtIn(() => endMail(person(lang), 'complete')),
     vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR } : { ad: person(lang).name, baglanti: link(lang) }),
   },
+  ...(
+    [
+      ['danisan.iptal', 'Seans iptali', 'Danışanın sayfasında bir seansı "İptal" ile işaretlediğinizde', { mode: 'cancel', by: 'owner' }],
+      ['danisan.erteleme', 'Seans ertelemesi', 'Danışanın sayfasında bir seansı "Ertele" ile işaretlediğinizde', { mode: 'postpone', by: 'owner', to: { day: '2026-11-14', time: '10:00' } }],
+      ['danisan.ek-seans', 'Ek seans', 'Danışanın sayfasında "Ek seans ekle" ya da "Sonlandırma görüşmesi ekle" ile', { mode: 'add' }],
+    ] as const
+  ).map(([id, label, whenText, facts]): CatalogEntry => {
+    const ch: SessionChange = { ...facts, day: DAY, time: TIME, type: 'individual' };
+    return {
+      id,
+      group: 'Danışanlar',
+      label,
+      when: whenText,
+      sample: (lang) => builtIn(() => sessionChangeMail(person(lang), ch)),
+      vars: (lang): Record<string, string> =>
+        lang === 'tr'
+          ? sessionChangeVarsTr(person(lang), ch)
+          : { ad: person(lang).name, zaman: when(lang), ...('to' in facts ? { yeni_tarih: formatDay(facts.to.day, 'en'), yeni_saat: facts.to.time.replace(':', '.') } : {}) },
+    };
+  }),
   {
     id: 'danisan.geri-al',
     group: 'Danışanlar',

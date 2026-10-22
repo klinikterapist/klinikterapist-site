@@ -26,6 +26,9 @@ export type PanelMailId =
   | 'danisan.sonlandirma'
   | 'danisan.geri-al'
   | 'danisan.sayfa'
+  | 'danisan.iptal'
+  | 'danisan.erteleme'
+  | 'danisan.ek-seans'
   | 'bekleme.yer-acildi'
   | 'bekleme.alim-acik'
   | 'bekleme.cikarma';
@@ -292,4 +295,51 @@ export function waitlistMail(c: Contact, mode: 'offer' | 'open' | 'remove', when
 export function linkMail(c: Contact, link: string): Mail {
   if (c.lang === 'tr') return mailTr('danisan.sayfa', { ad: c.name.trim(), sayfa_baglantisi: link, kural: RULE_TR });
   return withTexts('danisan.sayfa', 'en', { ad: c.name.trim(), baglanti: link }, builtLinkMailEn(c, link));
+}
+
+/**
+ * A session the owner cancels, moves or adds on the client's page (owner's note 2026-10-22: the
+ * client heard nothing of these; only their own changes on their page sent an e-mail). `by`: who
+ * asked for it; `to`: the new day and time of a postponed session, when already set.
+ */
+export type SessionChange = { mode: 'cancel' | 'postpone' | 'add'; day: string; time: string; type: string; closing?: boolean; by?: 'client' | 'owner'; to?: { day: string; time: string } };
+
+const CHANGE_ID = { cancel: 'danisan.iptal', postpone: 'danisan.erteleme', add: 'danisan.ek-seans' } as const;
+
+function builtSessionChangeMailEn(c: Contact, ch: SessionChange): Mail {
+  const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'en')}, at ${s.time.replace(':', '.')}`;
+  const kind = ch.closing ? 'our free closing session' : `your ${what({ kind: 'session', type: ch.type } as BookingRequest, 'en')} session`;
+  const asked = ch.by === 'client';
+  const lines =
+    ch.mode === 'cancel'
+      ? [asked ? `As you asked, ${kind} on ${at(ch)} (Turkey time) has been cancelled.` : `I am sorry to let you know that I have had to cancel ${kind} on ${at(ch)} (Turkey time). Thank you for your understanding.`, 'Your other sessions go ahead as planned.']
+      : ch.mode === 'postpone'
+        ? [
+            asked ? `As you asked, ${kind} on ${at(ch)} has been moved.` : `I am sorry to let you know that I have had to move ${kind} on ${at(ch)}. Thank you for your understanding.`,
+            ch.to ? `The new time is ${at(ch.to)} (Turkey time).` : 'We will settle the new day and time together soon.',
+          ]
+        : [`I have planned ${ch.closing ? 'our free closing session' : 'an extra session'} for you on ${at(ch)} (Turkey time). It is held online; I will send you the link before it.`, 'If the time does not suit you, please reply to this e-mail.'];
+  const subject = { cancel: 'Your session has been cancelled', postpone: 'Your session has been moved', add: 'A new session has been planned' }[ch.mode];
+  return { subject: `${subject} – klinikterapist.com`, body: [`Dear ${c.name.trim()},`, '', ...lines, '', ...SIGN_EN].join('\n') };
+}
+
+/** The Turkish values of a session change e-mail. */
+export function sessionChangeVarsTr(c: Contact, ch: SessionChange): Record<string, string> {
+  return {
+    ad: c.name.trim(),
+    ...whenVars(ch.day, ch.time),
+    tur: ch.closing ? 'Sonlandırma görüşmesi (ücretsiz)' : typeVars(ch.type).tur,
+    ...(ch.to ? { yeni_tarih: formatDay(ch.to.day, 'tr'), yeni_saat: ch.to.time.replace(':', '.') } : {}),
+    '#ben': ch.by === 'client' ? '' : '1',
+    '#siz': ch.by === 'client' ? '1' : '',
+    '#yeni': ch.to ? '1' : '',
+    '#yenisiz': ch.to ? '' : '1',
+  };
+}
+
+export function sessionChangeMail(c: Contact, ch: SessionChange): Mail {
+  const id = CHANGE_ID[ch.mode];
+  if (c.lang === 'tr') return mailTr(id, sessionChangeVarsTr(c, ch));
+  const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'en')}, at ${s.time.replace(':', '.')}`;
+  return withTexts(id, 'en', { ad: c.name.trim(), zaman: at(ch), ...(ch.to ? { yeni_tarih: formatDay(ch.to.day, 'en'), yeni_saat: ch.to.time.replace(':', '.') } : {}) }, builtSessionChangeMailEn(c, ch));
 }

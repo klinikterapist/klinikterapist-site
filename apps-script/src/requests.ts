@@ -90,7 +90,7 @@ export function saveRequest(gas: Gas, input: BookingInput, lang: 'tr' | 'en', ho
     phone: input.phone.trim(),
     note: input.note.trim(),
     lang,
-    ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age } : {}),
+    ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age, ...(input.country ? { country: input.country } : {}) } : {}),
     status: 'pending',
     holdId,
     source: 'site',

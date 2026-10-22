@@ -2,6 +2,29 @@
 @import '@fontsource-variable/fraunces/wght.css';
 @import '@fontsource-variable/dm-sans/wght.css';
 
+/*
+ * Stand-ins sized like DM Sans and Fraunces (widths and line heights measured 2026-10-22): until the
+ * real fonts arrive, lines wrap where they will wrap in them, so nothing moves when they do (owner's
+ * note 2026-10-22: the home page's "Hoş geldiniz" jumped on load). FontPreload.astro starts the files early.
+ */
+@font-face {
+  font-family: 'DM Sans Fallback';
+  src: local('Arial'), local('Helvetica Neue'), local('Helvetica');
+  size-adjust: 102.07%;
+  ascent-override: 97%;
+  descent-override: 30.4%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Fraunces Fallback';
+  src: local('Georgia');
+  size-adjust: 105.15%;
+  ascent-override: 93.2%;
+  descent-override: 24.7%;
+  line-gap-override: 0%;
+}
+
 :root,
 html[data-theme="light"] {
   color-scheme: light;
@@ -42,8 +65,8 @@ html[data-theme="light"] {
   --tone-deniz-bg: #D6ECEA;
 
   /* Type */
-  --font-serif: 'Fraunces Variable', 'Iowan Old Style', Georgia, serif;
-  --font-sans: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Fraunces Variable', 'Fraunces Fallback', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'DM Sans Variable', 'DM Sans Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --text-xs: 0.8125rem;
   --text-sm: 0.9375rem;

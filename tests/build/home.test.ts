@@ -228,17 +228,27 @@ describe('home (desktop)', () => {
     }
   });
 
-  it('latest three posts and the blog tiles', () => {
+  it('latest three posts and the reading band (owner’s choice 6B, 2026-10-22)', () => {
     const latest = tr().querySelector('.home-desk .latest')!;
     expect(latest.querySelectorAll('.post-card').length).toBeGreaterThan(0);
     expect(latest.querySelectorAll('.post-card').length).toBeLessThanOrEqual(3);
-    expect(latest.querySelector('.tile-pair a.tile[href="/blog/"]')).toBeTruthy();
+    const band = latest.querySelector('.reading-band')!;
+    expect(band.querySelector('h3')?.text).toBe('Okumaya Devam Edin');
+    expect(band.querySelector('p')?.text).toMatch(/^\d+ yazı/);
+    expect(band.querySelector('a.btn[href="/blog/"]')).toBeTruthy();
+    // "Popüler Yazılar" only when something is popular.
+    const popular = band.querySelector('a.btn[href="/blog/populer/"]');
+    expect(popular === null || popular.text.includes('Popüler')).toBe(true);
   });
 
-  it('process steps skip a step that is empty in the page language', () => {
-    expect(tr().querySelectorAll('.home-desk .process-steps li')).toHaveLength(3);
+  it('process steps: one strip with "Adım n" and a big number, a step empty in the page language skipped (owner’s choice 7B, 2026-10-22)', () => {
+    const steps = tr().querySelector('.home-desk .process-steps')!;
+    expect(steps.querySelectorAll('li')).toHaveLength(3);
+    expect(steps.querySelectorAll('li .step').map((d) => d.text.trim())).toEqual(['Adım 1', 'Adım 2', 'Adım 3']);
+    expect(steps.querySelectorAll('li .num').map((d) => d.text.trim())).toEqual(['1', '2', '3']);
     const enSteps = en().querySelectorAll('.home-desk .process-steps li');
     expect(enSteps).toHaveLength(2);
+    expect(en().querySelector('.home-desk .process-steps ol')?.classList.contains('n2')).toBe(true);
     expect(en().querySelector('.home-desk .process-steps')?.text).not.toContain('At your own pace');
   });
 
@@ -271,9 +281,21 @@ describe('desktop header and footer', () => {
     expect(h.querySelector('details')).toBeNull();
   });
 
-  it('footer has the page end (112 and copyright) and the legal links', () => {
+  it('the fonts start with the page, and the home page’s handwriting too, so "Hoş geldiniz" does not jump (owner’s note 2026-10-22)', () => {
+    const preloads = (d: ReturnType<typeof tr>) => d.querySelectorAll('head link[rel=preload][as=font]').map((l) => l.getAttribute('href')!);
+    const home = preloads(tr());
+    for (const f of ['dm-sans-latin-wght', 'dm-sans-latin-ext-wght', 'fraunces-latin-wght', 'fraunces-latin-ext-wght', 'kalam-latin-700', 'kalam-latin-ext-700']) {
+      expect(home.some((h) => h.includes(f)), f).toBe(true);
+    }
+    const about = preloads(loadPage('/hakkimda/'));
+    expect(about.some((h) => h.includes('dm-sans'))).toBe(true);
+    expect(about.some((h) => h.includes('kalam'))).toBe(false);
+  });
+
+  it('footer has the page end (copyright, no emergency line) and the legal links', () => {
     const f = tr().querySelector('footer.site-footer')!;
-    expect(f.querySelector('.page-end b')?.text).toBe('112');
+    expect(f.querySelector('.page-end b')).toBeNull();
+    expect(f.text).not.toContain('112');
     expect(f.text).toContain(`© ${new Date().getFullYear()} klinikterapist.com · Tüm hakları saklıdır.`);
     expect(f.querySelector('a[href="/aydinlatma-metni/"]')).toBeTruthy();
     expect(tr().querySelectorAll('.page-end')).toHaveLength(1);

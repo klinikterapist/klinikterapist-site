@@ -9,7 +9,7 @@ import { INTRO_MINUTES, clientNumber, intakeOpen, previewClosedKey, holdOf, minu
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
 import { closingDeadline } from '../../lib/closing';
-import { EMPTY_PAYMENT, parsePayment, type PaymentSettings } from '../../lib/payment';
+import { EMPTY_PAYMENT, parseFee, parsePayment, type PaymentSettings } from '../../lib/payment';
 import { EMAIL_RE } from '../../lib/field-rules';
 
 /** Faz 4 demo: the owner's address and the aliases added in Gmail ("Send mail as"). */
@@ -492,6 +492,16 @@ export function createMockApi(
           if (e instanceof SessionError) throw new ApiFailure('bad_request', e.message);
           throw e;
         }
+        const { origin: _o, ...pub } = c;
+        return { client: structuredClone(pub) };
+      }),
+    clientFee: ({ id, fee }) =>
+      wait(() => {
+        const c = state.clients.find((x) => x.id === id);
+        if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
+        const f = parseFee(fee);
+        if (f) c.fee = f;
+        else delete c.fee;
         const { origin: _o, ...pub } = c;
         return { client: structuredClone(pub) };
       }),

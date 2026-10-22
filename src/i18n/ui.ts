@@ -256,10 +256,6 @@ export const STRINGS = {
 
   // Mobile app blocks
   switchLangShort: { tr: 'ENG', en: 'TR' },
-  emergencyNote: {
-    tr: "Acil bir durumdaysanız lütfen {number}'yi arayın.",
-    en: 'If you are in an emergency, please call {number}.',
-  },
   rightsReserved: { tr: 'Tüm hakları saklıdır.', en: 'All rights reserved.' },
 
   // 404

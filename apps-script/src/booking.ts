@@ -27,6 +27,7 @@ import {
 import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { mailTr } from '../../src/lib/mail-texts';
 import { forWhom, stamp, topicList, typeVars, upFirst, whenVars } from '../../src/lib/mail-vars';
+import { countryName } from '../../src/lib/phone';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
@@ -108,8 +109,11 @@ function inputOf(p: Record<string, unknown>): BookingInput {
           before: p.before === 'yes' || p.before === 'no' ? p.before : '',
           age: typeof p.age === 'number' ? p.age : -1,
           healthConsent: p.healthConsent === true,
+          ...(str(p.country) ? { country: str(p.country) } : {}),
         }
-      : {}),
+      : 'healthConsent' in p
+        ? { healthConsent: p.healthConsent === true }
+        : {}),
   };
 }
 
@@ -129,6 +133,9 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
     konular: topicList(i.topics) || '– Seçilmedi',
     daha_once_destek: i.before === 'yes' ? 'Evet' : i.before === 'no' ? 'Hayır' : 'Belirtmedi',
     yas: i.age !== undefined ? (AGE_RANGES.tr[i.age] ?? '') : '',
+    ulke: countryName(i.country, 'tr') || 'Belirtmedi',
+    // Session notes: asked since 2026-10-22; a form from before says nothing about it.
+    not_rizasi: i.healthConsent ? 'Verildi' : 'Sorulmadı (eski form)',
     panel_baglantisi: `${PANEL_URL}#/randevular`,
   });
 }

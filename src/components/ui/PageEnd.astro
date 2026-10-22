@@ -1,19 +1,25 @@
 ---
-/** End of a mobile page: the calm emergency line and the copyright line. The year is written at build time. */
+/**
+ * End of a page: the copyright line. The year is written at build time. With `cookiePrefs` the
+ * cookie choice link sits on the same line on phones (the desktop footer shows it next to the legal
+ * links instead), so it never adds a row of its own.
+ */
 import type { Lang } from '../../lib/settings';
 import { t } from '../../i18n/ui';
 
 interface Props {
   lang: Lang;
+  cookiePrefs?: boolean;
 }
-const { lang } = Astro.props;
+const { lang, cookiePrefs = false } = Astro.props;
 const year = new Date().getFullYear();
-const [before, after] = t(lang, 'emergencyNote').split('{number}');
 ---
 
 <div class="page-end">
-  <p class="emergency">{before}<b>112</b>{after}</p>
-  <p class="copy">© {year} klinikterapist.com · {t(lang, 'rightsReserved')}</p>
+  <p class="copy">
+    © {year} klinikterapist.com · {t(lang, 'rightsReserved')}
+    {cookiePrefs && <span class="mob-prefs"> · <button type="button" data-cookie-prefs>{t(lang, 'cookiePrefs')}</button></span>}
+  </p>
 </div>
 
 <style>
@@ -23,23 +29,29 @@ const [before, after] = t(lang, 'emergencyNote').split('{number}');
     color: var(--muted);
   }
 
-  .emergency {
-    margin: 22px 0 6px;
-  }
-
-  .emergency b {
-    color: var(--text);
-  }
-
   .copy {
     margin: 0;
     padding: 14px 0 110px;
     border-top: 1px solid var(--line);
   }
 
+  .mob-prefs button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   @media (min-width: 768px) {
     .copy {
       padding-bottom: var(--space-5);
+    }
+
+    .mob-prefs {
+      display: none;
     }
   }
 </style>

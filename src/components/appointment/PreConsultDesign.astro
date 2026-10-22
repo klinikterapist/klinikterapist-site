@@ -17,6 +17,9 @@ import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
 import WaitlistForm from './WaitlistForm.astro';
+import PhoneField from './PhoneField.astro';
+import DoneCard from './DoneCard.astro';
+import { COUNTRIES } from '../../lib/phone';
 import { FORM_TEXT } from './form-text';
 import './wizard.css';
 
@@ -38,8 +41,6 @@ const T = {
     invalid: 'Bazı bilgiler eksik ya da hatalı. Lütfen önceki adımlara dönüp kontrol edin.',
     taken: 'Seçtiğiniz saat artık uygun değil. Lütfen takvimden başka bir saat seçin.',
     failed: 'Talep gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da e-posta ile yazın.',
-    doneTitle: 'Talebiniz alındı',
-    doneText: 'Size kısa bir alındı e-postası gönderdim. Saati onaylamak ve görüşme bağlantısını iletmek için en kısa sürede e-postayla dönüş yapacağım.',
     steps: ['Sizi tanıyalım', 'Gün ve saat', 'Bilgileriniz', 'Onay'],
     s1: 'Sizi tanıyalım',
     s1Hint: 'Birkaç kısa soru. Ayrıntıları görüşmede konuşacağız; burada yalnızca genel bir fikir edinmek istiyorum.',
@@ -78,6 +79,7 @@ const T = {
     phone: 'Telefon',
     age: 'Yaş aralığınız',
     agePick: 'Seçin',
+    country: 'Nerede yaşıyorsunuz?',
     consentA: 'Aydınlatma metnini',
     consentB: ' okudum.',
     s4: 'Özet ve onay',
@@ -110,8 +112,6 @@ const T = {
     invalid: 'Some details are missing or wrong. Please go back and check the earlier steps.',
     taken: 'The time you chose is no longer free. Please pick another time in the calendar.',
     failed: 'The request could not be sent. Please try again a little later or write by e-mail.',
-    doneTitle: 'Your request has been received',
-    doneText: 'I have sent you a short acknowledgement by e-mail. I will reply soon to confirm the time and send the call link.',
     steps: ['About you', 'Day and time', 'Your details', 'Confirm'],
     s1: 'About you',
     s1Hint: 'A few short questions. We will talk about the details in the call; here I only want a general picture.',
@@ -150,6 +150,7 @@ const T = {
     phone: 'Phone',
     age: 'Your age range',
     agePick: 'Choose',
+    country: 'Where do you live?',
     consentA: 'I have read the ',
     consentB: 'privacy notice.',
     s4: 'Summary and confirm',
@@ -330,6 +331,13 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             </select>
           </label>
           <label class="field">
+            <span>{T.country} <span class="req" aria-hidden="true">*</span></span>
+            <select name="country" required data-country>
+              <option value="">{T.agePick}</option>
+              {COUNTRIES.map((c) => <option value={c.id}>{c[lang]}</option>)}
+            </select>
+          </label>
+          <label class="field">
             <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
             <input type="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" data-sum-src="contact" data-email />
             <small class="email-hint" data-email-hint hidden></small>
@@ -339,10 +347,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             <input type="email" name="email2" autocomplete="off" inputmode="email" required maxlength="254" data-email-again />
             <small class="email-hint is-error" data-email-mismatch hidden></small>
           </label>
-          <label class="field">
-            <span>{T.phone} <span class="req" aria-hidden="true">*</span></span>
-            <input type="tel" name="phone" autocomplete="tel" inputmode="tel" required minlength="10" maxlength="20" data-sum-src="contact" />
-          </label>
+          <PhoneField lang={lang} name="phone" label={T.phone} sum="contact" />
           <label class="hp" aria-hidden="true">
             <span>Website</span>
             <input type="text" name="hp_field" tabindex="-1" autocomplete="off" />
@@ -398,10 +403,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
         </div>
       </section>
 
-      <section class="card done" data-done tabindex="-1" aria-labelledby="pc-done" hidden>
-        <h2 id="pc-done"><Icon name="send" size={22} /> {T.doneTitle}</h2>
-        <p>{T.doneText}</p>
-      </section>
+      <DoneCard lang={lang} kind="intro" id="pc-done" />
 
       <div class="wz-nav" data-nav>
         <button type="button" class="wz-back" data-back hidden><Icon name="arrow" size={18} />{T.back}</button>
