@@ -30,6 +30,16 @@ export const mailboxOf = (gas: Gas, box: Mailbox): string => gas.props.get(MAILB
 /** Where the system's notices to the owner go: bildirim@ when set, else the owner's address. */
 export const notifyTo = (gas: Gas, owner: string): string => mailboxOf(gas, 'notify') || owner;
 
+/**
+ * Sender of a notice to the owner. Gmail shows "ben" for mail from the owner's own address and hides
+ * the name we give, so a notice goes from bildirim@ (the contact form from iletisim@ / hello@) when
+ * that address is a Gmail sender; then the name ("Randevu Formu", "İletişim Formu"…) shows
+ * (owner's request 2026-10-22). Otherwise it goes from the owner's address as before.
+ */
+export function noticeFrom(gas: Gas, address = mailboxOf(gas, 'notify')): Pick<MailMessage, 'from'> {
+  return address && aliasesOf(gas).includes(address) ? { from: address } : {};
+}
+
 /** Where a contact form message arrives: iletisim@ (hello@ for the English form) when set, else the owner's address. */
 export const contactTo = (gas: Gas, lang: 'tr' | 'en', owner: string): string =>
   (lang === 'en' && mailboxOf(gas, 'contactEn')) || mailboxOf(gas, 'contact') || owner;
@@ -91,7 +101,7 @@ export function testMailboxes(gas: Gas): { sent: number } {
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw badRequest('OWNER_EMAIL eksik.');
   const lines = (what: string) => [`Bu bir deneme e-postasıdır (${what}).`, '', 'Panelde Terapist profili → E-posta adresleri bölümünden gönderildi. Bir şey yapmanıza gerek yok.'].join('\n');
-  gas.mail.send({ to: notifyTo(gas, owner), replyTo: owner, subject: '[klinikterapist] Deneme: bildirim adresi', body: lines('sistem bildirimleri buraya gelir'), name: 'klinikterapist.com randevu sistemi' });
+  gas.mail.send({ ...noticeFrom(gas), to: notifyTo(gas, owner), replyTo: owner, subject: '[klinikterapist] Deneme: bildirim adresi', body: lines('sistem bildirimleri buraya gelir'), name: 'Randevu Sistemi' });
   let sent = 1;
   for (const box of SENDERS) {
     const from = mailboxOf(gas, box);
@@ -102,7 +112,7 @@ export function testMailboxes(gas: Gas): { sent: number } {
   for (const [box, what] of [['contact', 'Türkçe iletişim formu'], ['contactEn', 'İngilizce iletişim formu']] as const) {
     const to = mailboxOf(gas, box);
     if (!to) continue;
-    gas.mail.send({ to, replyTo: owner, subject: `[klinikterapist] Deneme: ${to}`, body: lines(`${what} mesajları bu adrese gelir`), name: 'klinikterapist.com iletişim formu' });
+    gas.mail.send({ ...noticeFrom(gas, to), to, replyTo: owner, subject: `[klinikterapist] Deneme: ${to}`, body: lines(`${what} mesajları bu adrese gelir`), name: 'İletişim Formu' });
     sent++;
   }
   return { sent };

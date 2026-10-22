@@ -833,7 +833,8 @@ describe('Faz 4: the system’s e-mail addresses (bildirim@, randevu@, bilgi@)',
     s.gas.mails.length = 0;
     expect(s.send(session).ok).toBe(true);
     expect(s.gas.mails.map((m) => [m.to, m.from ?? null, m.replyTo])).toEqual([
-      ['bildirim@klinikterapist.com', null, 'ayse@example.com'],
+      // From bildirim@ (a Gmail sender here), so Gmail shows the name, not "ben".
+      ['bildirim@klinikterapist.com', 'bildirim@klinikterapist.com', 'ayse@example.com'],
       ['ayse@example.com', 'randevu@klinikterapist.com', 'randevu@klinikterapist.com'],
     ]);
     const id = s.requests()[0].id;
@@ -859,7 +860,7 @@ describe('Faz 4: the system’s e-mail addresses (bildirim@, randevu@, bilgi@)',
     s.gas.mails.length = 0;
     expect(s.call('mail.test').data).toEqual({ sent: 2 });
     expect(s.gas.mails.map((m) => [m.to, m.from ?? null])).toEqual([
-      ['bildirim@klinikterapist.com', null],
+      ['bildirim@klinikterapist.com', 'bildirim@klinikterapist.com'],
       ['merhaba@klinikterapist.com', 'randevu@klinikterapist.com'],
     ]);
     expect(s.call<{ quota: number }>('mail.settings').data.quota).toBe(98);

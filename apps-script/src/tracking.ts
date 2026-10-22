@@ -30,7 +30,7 @@ import { TRACK_CODE_RE, TRACK_NOTE_MAX, TRACK_PARAM, TRACK_PATH, trackView, type
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SENDER_NAME, SITE, sameString } from './text';
 import { logEvent, shortWhen } from './events';
-import { asSender, notifyTo } from './mailboxes';
+import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { getPayment } from './payment';
 import { readQr } from './qr';
 import { mailTr } from '../../src/lib/mail-texts';
@@ -210,7 +210,7 @@ export function askTracking(gas: Gas, p: Record<string, unknown>): { view: Track
     return { c: updated, clients: all, change };
   });
   const m = ownerMail(c, ask, change, note);
-  gas.mail.send({ to: notifyTo(gas, owner), replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'klinikterapist.com randevu sayfası' });
+  gas.mail.send({ ...noticeFrom(gas), to: notifyTo(gas, owner), replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'Danışan Sayfası' });
   const mine = clientMail(gas, c, ask, change);
   gas.mail.send({ to: c.contact.email, ...asSender(gas, 'booking', owner), subject: mine.subject, body: mine.body, name: SENDER_NAME });
   const did = ask === 'cancel' ? 'seansını iptal etti' : ask === 'postpone' ? 'seansını erteledi' : ask === 'closing' ? 'sonlandırma görüşmesinin saatini seçti' : 'terapiyi sonlandırmak istiyor';

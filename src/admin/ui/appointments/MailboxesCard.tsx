@@ -10,7 +10,7 @@ import { usePanel } from '../context';
 import { Banner, Button, Dialog, Field, Spinner } from '../kit';
 
 const BOXES: { key: MailboxKey; label: string; hint: string; example: string }[] = [
-  { key: 'notify', label: 'Bildirimler', hint: 'Yeni talepler, iptaller, ödenmeyen seanslar gibi sistem bildirimleri bu adrese gelir.', example: 'bildirim@klinikterapist.com' },
+  { key: 'notify', label: 'Bildirimler', hint: `Yeni talepler, iptaller, ödenmeyen seanslar gibi sistem bildirimleri bu adrese gelir. Gmail'de "Farklı adresten gönder" olarak da eklerseniz bildirimler bu adresten, "Randevu Formu" gibi açıklayıcı bir adla gelir.`, example: 'bildirim@klinikterapist.com' },
   { key: 'booking', label: 'Randevu e-postaları', hint: 'Danışanlara giden onay, hatırlatma ve ödeme e-postaları bu adresten gider; cevaplar da buraya gelir.', example: 'randevu@klinikterapist.com' },
   { key: 'info', label: 'Bilgi cevapları', hint: '"Önce bilgi almak istiyorum" formunun cevapları bu adresten gider.', example: 'bilgi@klinikterapist.com' },
   { key: 'contact', label: 'İletişim formu', hint: 'Sitedeki Türkçe iletişim formundan gelen mesajlar bu adrese gelir.', example: 'iletisim@klinikterapist.com' },

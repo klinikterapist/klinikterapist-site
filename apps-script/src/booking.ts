@@ -27,7 +27,7 @@ import {
 import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { mailTr } from '../../src/lib/mail-texts';
 import { forWhom, stamp, topicList, typeVars, upFirst, whenVars } from '../../src/lib/mail-vars';
-import { asSender, notifyTo } from './mailboxes';
+import { asSender, notifyTo, noticeFrom } from './mailboxes';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
 const TAKEN = 'Seçtiğiniz saat artık uygun değil. Lütfen başka bir saat seçin.';
@@ -215,7 +215,7 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   gas.cache.put(BUSY_CACHE, '', 1);
 
   const o = ownerMail(input, lang, now);
-  gas.mail.send({ to: notifyTo(gas, owner), replyTo: email, subject: o.subject, body: o.body, name: 'klinikterapist.com randevu formu' });
+  gas.mail.send({ ...noticeFrom(gas), to: notifyTo(gas, owner), replyTo: email, subject: o.subject, body: o.body, name: 'Randevu Formu' });
   const v = visitorMail(input, lang, verifyLink(gas, `r:${saved.id}`, input.kind === 'intro' ? 'preConsult' : 'appointment', lang));
   gas.mail.send({ to: email, ...asSender(gas, 'booking', owner), subject: v.subject, body: v.body, name: SENDER_NAME });
   logEvent(gas, 'request', `Yeni ${input.kind === 'intro' ? 'ön görüşme' : 'seans'} talebi: ${initials(input.name)} · ${shortWhen(input)}`, '#/randevular');

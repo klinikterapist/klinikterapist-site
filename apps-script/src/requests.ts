@@ -20,7 +20,7 @@ import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type S
 import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
-import { asSender, notifyTo } from './mailboxes';
+import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { mailTr } from '../../src/lib/mail-texts';
 import { closingDeadline } from '../../src/lib/closing';
 
@@ -190,11 +190,11 @@ export function warnExpiringHolds(gas: Gas): number {
   // The text speaks of one request; several make it plural.
   const many = due.length > 1;
   gas.mail.send({
-    to: notifyTo(gas, owner),
+    ...noticeFrom(gas), to: notifyTo(gas, owner),
     replyTo: owner,
     subject: many ? `${due.length} talebin tutma süresi doluyor` : m.subject,
     body: many ? m.body.replace('Aşağıdaki talep için', `Aşağıdaki ${due.length} talep için`) : m.body,
-    name: 'klinikterapist.com randevu sistemi',
+    name: 'Randevu Sistemi',
   });
   return due.length;
 }

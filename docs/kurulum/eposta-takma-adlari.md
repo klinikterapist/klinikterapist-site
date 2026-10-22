@@ -28,7 +28,7 @@ Bu rehber teknik bilgi gerektirmez. Adımları sırayla izleyin; takıldığın�
 
 ## 2. Gmail'de "farklı adresten gönder" ekleyin (randevu@ ve bilgi@ için)
 
-Sistem danışanlara bu adreslerden yazabilsin diye Gmail'e bunları tanıtırız. `bildirim@` için bu adım gerekmez; o adres yalnızca e-posta alır.
+Sistem danışanlara bu adreslerden yazabilsin diye Gmail'e bunları tanıtırız. `bildirim@`'i de ekleyin: sistemin size gönderdiği bildirimler bu adresten gelir ve gelen kutunuzda "ben" yerine "Randevu Formu", "İletişim Formu" gibi açıklayıcı bir ad görünür. (Gmail, ana adresinizden gelen e-postalarda verilen adı gizleyip "ben" yazar.)
 
 1. Bilgisayarda Gmail'i açın. Sağ üstteki **⚙ Ayarlar › Tüm ayarları görün**'e tıklayın.
 2. **Hesaplar** sekmesinde **Postayı farklı adresten gönder** satırını bulun ve **Başka bir e-posta adresi ekle**'ye basın.
@@ -37,7 +37,7 @@ Sistem danışanlara bu adreslerden yazabilsin diye Gmail'e bunları tanıtırı
    - E-posta adresi: `randevu@klinikterapist.com`
    - **Takma ad olarak işle** kutusu işaretli kalsın.
 4. **Sonraki adım**'a basın. Google bir doğrulama e-postası gönderirse aynı gelen kutusuna gelir; içindeki bağlantıya tıklayın.
-5. Aynı adımları `bilgi@`, `iletisim@` ve `hello@` için tekrarlayın.
+5. Aynı adımları `bilgi@`, `iletisim@`, `hello@` ve `bildirim@` için tekrarlayın.
 6. Aynı ekranda **Bir iletiyi yanıtlarken** seçeneğini **İletinin gönderildiği adresten yanıtla** yapın ve kaydedin.
 
 ## 3. Yeni Gmail iznini verin (tek seferlik)

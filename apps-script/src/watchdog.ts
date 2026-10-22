@@ -8,7 +8,7 @@
  * out, the 20-hour warning on undecided requests is not sent and the counter is not rolled up.
  */
 import type { Gas } from './gas';
-import { notifyTo } from './mailboxes';
+import { notifyTo, noticeFrom } from './mailboxes';
 
 export const LAST_RUN = 'hourly.lastRun';
 const WARNED = 'hourly.warnedAt';
@@ -38,9 +38,9 @@ export function checkHourly(gas: Gas): void {
   if (!owner) return;
   gas.props.set(WARNED, String(now));
   gas.mail.send({
-    to: notifyTo(gas, owner),
+    ...noticeFrom(gas), to: notifyTo(gas, owner),
     replyTo: owner,
-    name: 'klinikterapist.com randevu sistemi',
+    name: 'Site Sistemi',
     subject: '[klinikterapist] Saatlik görev durmuş görünüyor',
     body: [
       `Panelin saatlik görevi en son ${istanbul(last)} saatinde çalıştı (${Math.floor((now - last) / 3600e3)} saat önce).`,

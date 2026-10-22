@@ -11,7 +11,7 @@ import { CLIENTS, type StoredClient } from './requests';
 import { trackLink } from './tracking';
 import { PANEL_URL, SENDER_NAME } from './text';
 import { logEvent, shortWhen } from './events';
-import { asSender, notifyTo } from './mailboxes';
+import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { formatDay } from '../../src/lib/booking-form';
 import { closingDay, closingStep, closingTarget, convertToClosing } from '../../src/lib/closing';
 import { mailTr } from '../../src/lib/mail-texts';
@@ -81,7 +81,7 @@ export function runClosing(gas: Gas): number {
       const a = c.closingAsk!;
       const lastDay = closingDay(a);
       const toClient = (m: Mail) => out.push({ to: c.contact.email, ...asSender(gas, 'booking', owner), subject: m.subject, body: m.body, name: SENDER_NAME });
-      const toOwner = (m: Mail) => out.push({ to: notifyTo(gas, owner), replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'klinikterapist.com randevu sistemi' });
+      const toOwner = (m: Mail) => out.push({ ...noticeFrom(gas), to: notifyTo(gas, owner), replyTo: c.contact.email, subject: m.subject, body: m.body, name: 'Randevu Sistemi' });
       const panel = `${PANEL_URL}#/seans-takip/${c.id}`;
       changed = true;
       if (step === 'settle') return { ...c, closingAsk: { ...a, done: now } };

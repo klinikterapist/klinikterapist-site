@@ -24,7 +24,7 @@ import { INTRO_MINUTES, slotInstant } from '../../src/lib/booking-form';
 import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type SessionRecord } from '../../src/lib/sessions';
 import { EMPTY_PAYMENT, parsePayment, paymentReminderMail, sessionReminderMail, type PaymentSettings } from '../../src/lib/payment';
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
-import { asSender, notifyTo } from './mailboxes';
+import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { readQr, saveQr } from './qr';
 import { mailTr } from '../../src/lib/mail-texts';
 import { whenVars } from '../../src/lib/mail-vars';
@@ -125,7 +125,7 @@ export function runReminders(gas: Gas): number {
             odeme_suresi: String(Math.max(1, Math.round(left / HOUR))),
             panel_baglantisi: `${PANEL_URL}#/seans-takip/${c.id}`,
           });
-          out.push({ to: notifyTo(gas, owner), replyTo: c.contact.email, ...m, name: 'klinikterapist.com randevu sistemi' });
+          out.push({ ...noticeFrom(gas), to: notifyTo(gas, owner), replyTo: c.contact.email, ...m, name: 'Randevu Sistemi' });
           mark('due');
           logEvent(gas, 'payment', `${c.number}: ödeme alınmadı · ${shortWhen(s)}`, `#/seans-takip/${c.id}`);
         }

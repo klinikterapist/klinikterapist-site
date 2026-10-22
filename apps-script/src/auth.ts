@@ -6,9 +6,9 @@
  * in and the panel asks for one at once. No message names the owner's account.
  */
 import type { Gas } from './gas';
-import { notifyTo } from './mailboxes';
+import { notifyTo, noticeFrom } from './mailboxes';
 import { ApiError, badRequest } from './respond';
-import { PANEL_URL, SENDER_NAME, sameString, str } from './text';
+import { PANEL_URL, sameString, str } from './text';
 
 export const SESSION_TTL_MS = 12 * 3600 * 1000;
 const ISSUERS = new Set(['accounts.google.com', 'https://accounts.google.com']);
@@ -156,9 +156,9 @@ function warnOwner(gas: Gas): void {
   if (!owner) return;
   try {
     gas.mail.send({
-      to: notifyTo(gas, owner),
+      ...noticeFrom(gas), to: notifyTo(gas, owner),
       replyTo: owner,
-      name: SENDER_NAME,
+      name: 'Panel Güvenliği',
       subject: 'Panel girişinde art arda yanlış şifre',
       body: [
         `Yönetim paneline (${PANEL_URL}) art arda ${MAX_FAILS} kez yanlış kullanıcı adı ya da şifreyle girilmeye çalışıldı.`,

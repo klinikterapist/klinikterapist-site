@@ -19,7 +19,7 @@ import { initials, logEvent } from './events';
 import { assertMailDomain } from './mx';
 import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS, validateWaitlist, type WaitlistInput } from '../../src/lib/waitlist-form';
 import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
-import { asSender, notifyTo } from './mailboxes';
+import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { isClosed } from './booking';
 import { mailTr } from '../../src/lib/mail-texts';
 
@@ -102,7 +102,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
     saklama_gun: String(WAITLIST_KEEP_DAYS),
     panel_baglantisi: `${PANEL_URL}#/randevular?liste`,
   });
-  gas.mail.send({ to: notifyTo(gas, owner), replyTo: email, ...notice, name: 'klinikterapist.com randevu formu' });
+  gas.mail.send({ ...noticeFrom(gas), to: notifyTo(gas, owner), replyTo: email, ...notice, name: 'Randevu Formu' });
   const link = verifyLink(gas, `w:${entry.id}`, entry.kinds.length === 1 && entry.kinds[0] === 'intro' ? 'preConsult' : 'appointment', lang);
   gas.mail.send({
     to: email,

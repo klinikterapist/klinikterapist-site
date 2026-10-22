@@ -23,6 +23,14 @@ describe('contact.send', () => {
     send(gas, { email: 'b@example.com', lang: 'en' });
     expect(gas.mails.map((m) => m.to)).toEqual(['iletisim@klinikterapist.com', 'hello@klinikterapist.com']);
   });
+  it('comes from the address it arrives at when that is a Gmail sender, so Gmail shows "İletişim Formu", not "ben"', () => {
+    const gas = fakeGas({ props: { ...props, CONTACT_TO: 'iletisim@klinikterapist.com' }, aliases: ['iletisim@klinikterapist.com'] });
+    send(gas);
+    expect(gas.mails[0]).toMatchObject({ from: 'iletisim@klinikterapist.com', name: 'İletişim Formu', replyTo: 'ayse@example.com' });
+    const plain = fakeGas({ props: { ...props, CONTACT_TO: 'iletisim@klinikterapist.com' } });
+    send(plain);
+    expect(plain.mails[0].from).toBeUndefined();
+  });
   it('the English form falls back to iletisim@ without hello@', () => {
     const gas = fakeGas({ props: { ...props, CONTACT_TO: 'iletisim@klinikterapist.com' } });
     send(gas, { lang: 'en' });
