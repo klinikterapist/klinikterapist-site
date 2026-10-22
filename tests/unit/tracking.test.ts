@@ -66,7 +66,9 @@ const m: TrackMessages = {
   confirmPostpone: 'Seansı ertele', back: 'Vazgeç', sending: 'Gönderiliyor', cancelled: 'iptal edildi', postponed: 'ertelendi:',
   chart: { count: 'seans', since: 'Başlangıçtan beri', free: '{n} ücretsiz', empty: 'Boş', note: '{n} seans', parts: { attended: 'Katıldı', noshow: 'Gelmedi', cancelled: 'İptal', postponed: 'Ertelendi', unmarked: 'İşaretlenmedi' } },
   endTitle: 'Sonlandırmak', endText: 'Metin', endButton: 'Sonlandırmak istiyorum', endNote: 'Not', endSend: 'Gönder', endDone: 'İsteğiniz ulaştı',
-  closing: 'Sonlandırma planlanıyor', weekdays: ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'],
+  closing: 'Sonlandırma planlanıyor',
+  closingPick: { title: 'Saat seçin', text: '{date} sonuna kadar', target: 'Seçmezseniz {when}', day: 'Gün', send: 'Bu saati seç', done: 'Planlandı: {when}' },
+  weekdays: ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'],
 };
 
 function mount(answers: unknown[], hash = `#k=${CODE}`) {

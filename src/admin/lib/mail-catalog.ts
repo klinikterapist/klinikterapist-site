@@ -96,8 +96,9 @@ export const MAIL_CATALOG: CatalogEntry[] = [
     group: 'Danışanlar',
     label: 'Sonlandırma görüşmesi daveti',
     when: 'Terapiyi sonlandır › Sonlandırma görüşmesi talep et',
-    sample: (lang) => builtIn(() => endMail(person(lang), 'closing')),
-    vars: (lang): Record<string, string> => (lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR } : { ad: person(lang).name, baglanti: link(lang) }),
+    sample: (lang) => builtIn(() => endMail(person(lang), 'closing', { link: PAGE, lastDay: DAY })),
+    vars: (lang): Record<string, string> =>
+      lang === 'tr' ? { ad: person(lang).name, ...LINKS_TR, sayfa_baglantisi: PAGE, son_tarih: formatDay(DAY, 'tr') } : { ad: person(lang).name, baglanti: PAGE, sayfa_baglantisi: PAGE, son_tarih: formatDay(DAY, 'en') },
   },
   {
     id: 'danisan.tamamlandi',

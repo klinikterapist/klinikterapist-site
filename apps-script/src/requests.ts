@@ -22,6 +22,7 @@ import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
 import { asSender, notifyTo } from './mailboxes';
 import { mailTr } from '../../src/lib/mail-texts';
+import { closingDeadline } from '../../src/lib/closing';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
 export const REQUESTS = 'talepler.json';
@@ -369,7 +370,10 @@ export function endClient(gas: Gas, p: Record<string, unknown>): Record<string, 
     const c = clients.find((x) => x.id === p.id);
     if (!c) throw new ApiError('not_found', NO_CLIENT);
     if (mode !== 'delete') sendMail(gas, c.contact.email, p);
-    write(gas, CLIENTS, mode === 'closing' ? clients.map((x) => (x.id === c.id ? { ...x, status: 'closing' as const } : x)) : clients.filter((x) => x.id !== c.id));
+    // The closing session: the client has until the end of the third day to pick its time (closing.ts).
+    const now = gas.now();
+    const closing = (x: StoredClient): StoredClient => ({ ...x, status: 'closing', closingAsk: { at: now, until: closingDeadline(now).until } });
+    write(gas, CLIENTS, mode === 'closing' ? clients.map((x) => (x.id === c.id ? closing(x) : x)) : clients.filter((x) => x.id !== c.id));
     logEvent(gas, 'client', `${c.number}: ${{ complete: 'terapi tamamlandı', closing: 'sonlandırma görüşmesi daveti gitti', delete: 'Seans takipten silindi' }[mode]}`, mode === 'closing' ? `#/seans-takip/${c.id}` : '#/seans-takip');
     return {};
   });

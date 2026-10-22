@@ -4,15 +4,16 @@
  * "İptal et" and "Ertele" (a free time of the booking calendar: a day, then its free times), the
  * session details and the chart the owner sees, and at the bottom "I want to end therapy". Less than
  * 24 hours before a session, a button first shows the full-fee warning, and goes on only when the
- * client accepts it. Each change sends `track.ask` and draws the answer. Text/plain JSON POSTs, no
+ * client accepts it. After the owner's closing-session invitation, a card at the top lets the client
+ * pick the closing session's day and time (closing.ts). Each change sends `track.ask` and draws the answer. Text/plain JSON POSTs, no
  * cookies. Everything is put in with textContent: nothing from the answer is read as HTML.
  *
- * On the dev server the page also opens with `#k=demo`, on sample sessions held in the page, so the
- * owner can look at it before the backend is live.
+ * On the dev server the page also opens with `#k=demo` (and `#k=demo-closing`, with the closing
+ * card), on sample sessions held in the page, so the owner can look at it before the backend is live.
  */
 import { formatDay, slotInstant, type BookingConfig } from '../../lib/booking-form';
 import { sessionKey } from '../../lib/sessions';
-import { codeFromHash, freeTimes, isLate, type TrackAsk, type TrackFailure, type TrackSession, type TrackView } from '../../lib/tracking';
+import { closingTimes, codeFromHash, freeTimes, isLate, type TrackAsk, type TrackFailure, type TrackSession, type TrackView } from '../../lib/tracking';
 
 export type TrackMessages = {
   loading: string;
@@ -52,6 +53,7 @@ export type TrackMessages = {
   endSend: string;
   endDone: string;
   closing: string;
+  closingPick: { title: string; text: string; target: string; day: string; send: string; done: string };
   weekdays: string[];
 };
 
@@ -68,7 +70,7 @@ const DAY_MS = 864e5;
 const istanbulDay = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
 
 /** Sample sessions for `#k=demo` on the dev server: Tuesdays at 18:00, the first within 24 hours. */
-function demoView(now: number): TrackView {
+function demoView(now: number, closing: boolean): TrackView {
   const iso = (ms: number) => new Date(ms + 3 * 3600e3).toISOString().slice(0, 10);
   // Tomorrow at this hour: a little under 24 hours ahead.
   const soon = new Date(now + 3 * 3600e3 + DAY_MS);
@@ -84,8 +86,9 @@ function demoView(now: number): TrackView {
     time: '18:00',
     minutes: 50,
     since: iso(now - 40 * DAY_MS),
-    closing: false,
+    closing,
     endAsked: false,
+    ...(closing ? { closingPick: { lastDay: iso(now + 3 * DAY_MS), target: { day: tue(1), time: '18:00' } } } : {}),
     stats: { held: 5, attended: 4, noshow: 0, cancelled: 1, postponed: 1, unmarked: 0, total: 6, free: 1 },
     next: [
       { day: soonDay, time: soonTime, kind: 'extra', minutes: 50, status: 'planned', late: true },
@@ -105,9 +108,9 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
   const status = root.querySelector<HTMLElement>('[data-status]')!;
   const live = root.querySelector<HTMLElement>('[data-live]')!;
   const body = root.querySelector<HTMLElement>('[data-body]')!;
-  const demo = root.dataset.demo === '1' && /^#k=demo$/.test(location.hash);
+  const demo = root.dataset.demo === '1' && /^#k=demo(-closing)?$/.test(location.hash);
   const code = demo ? 'demo' : codeFromHash(location.hash);
-  let demoState: TrackView | null = demo ? demoView(deps.now()) : null;
+  let demoState: TrackView | null = demo ? demoView(deps.now(), location.hash.endsWith('-closing')) : null;
   let uid = 0;
 
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls?: string, text?: string): HTMLElementTagNameMap[K] => {
@@ -159,7 +162,10 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     const v = demoState!;
     if (action === 'track.view') return v;
     if (p.ask === 'end') demoState = { ...v, endAsked: true };
-    else {
+    else if (p.ask === 'closing') {
+      const added: TrackSession = { day: String(p.day), time: String(p.time), kind: 'closing', minutes: 30, status: 'planned', late: false };
+      demoState = { ...v, closingPick: undefined, next: [...v.next, added].sort((a, b) => sessionKey(a).localeCompare(sessionKey(b))).slice(0, 5) };
+    } else {
       const s = v.next.find((x) => x.day === p.day && x.time === p.time);
       if (!s || s.status !== 'planned') throw new Failure('gone');
       if (s.late && p.lateOk !== true) throw new Failure('late');
@@ -213,27 +219,30 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
 
   async function ask(ask: TrackAsk, note: string, s?: TrackSession, more: Record<string, unknown> = {}) {
     const out = await call<{ view: TrackView }>('track.ask', { ask, note, ...(s ? { day: s.day, time: s.time } : {}), ...more });
-    const done = ask === 'cancel' ? m.cancelled : ask === 'postpone' ? `${m.postponed} ${when({ day: String(more.newDay), time: String(more.newTime) })}` : m.endDone;
+    const done =
+      ask === 'cancel'
+        ? m.cancelled
+        : ask === 'postpone'
+          ? `${m.postponed} ${when({ day: String(more.newDay), time: String(more.newTime) })}`
+          : ask === 'closing'
+            ? m.closingPick.done.replace('{when}', when({ day: String(more.day), time: String(more.time) }))
+            : m.endDone;
     say('');
     draw(out.view);
     live.textContent = s ? `${when(s)}: ${done}` : done;
   }
 
-  /** The postponement: a day with free times, then one of its times, then a note. */
-  function postponeForm(v: TrackView, s: TrackSession, late: boolean, onBack: () => void): HTMLElement {
-    const box = el('div', 'tp-move');
+  /** A day with free times, then one of its times; null when no day has one. */
+  function dayAndTime(timesOf: (day: string, now: number) => string[], weeks: number, dayText: string) {
     const now = deps.now();
     const days: string[] = [];
-    if (cfg) for (let t = now; t <= now + (cfg.session.weeksAhead * 7 + 1) * DAY_MS; t += DAY_MS) {
+    if (cfg) for (let t = now; t <= now + (weeks * 7 + 1) * DAY_MS; t += DAY_MS) {
       const day = istanbulDay(t);
-      if (!days.includes(day) && freeTimes(cfg, v, s, day, now).length) days.push(day);
+      if (!days.includes(day) && timesOf(day, now).length) days.push(day);
     }
-    if (!days.length) {
-      box.append(el('p', 'tp-note', m.noDays), sendRow(null, m.back, async () => onBack(), onBack));
-      return box;
-    }
+    if (!days.length) return null;
     const dayId = `tp-day-${++uid}`;
-    const dayLabel = el('label', undefined, m.pickDay);
+    const dayLabel = el('label', undefined, dayText);
     dayLabel.htmlFor = dayId;
     const select = el('select');
     select.id = dayId;
@@ -248,7 +257,7 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     const fill = () => {
       picked = '';
       times.querySelectorAll('label').forEach((l) => l.remove());
-      for (const t of freeTimes(cfg!, v, s, select.value, deps.now())) {
+      for (const t of timesOf(select.value, deps.now())) {
         const lab = el('label', 'tp-time');
         const radio = el('input');
         radio.type = 'radio';
@@ -261,23 +270,67 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
     };
     select.addEventListener('change', fill);
     fill();
-    box.append(dayLabel, select, times);
+    const check = () => {
+      if (picked) return true;
+      say(m.pickTime, true);
+      times.querySelector('input')?.focus();
+      return false;
+    };
+    return { parts: [dayLabel, select, times], select, picked: () => picked, check };
+  }
+
+  /** The postponement: a day with free times, then one of its times, then a note. */
+  function postponeForm(v: TrackView, s: TrackSession, late: boolean, onBack: () => void): HTMLElement {
+    const box = el('div', 'tp-move');
+    const pick = dayAndTime((day, now) => freeTimes(cfg!, v, s, day, now), cfg?.session.weeksAhead ?? 0, m.pickDay);
+    if (!pick) {
+      box.append(el('p', 'tp-note', m.noDays), sendRow(null, m.back, async () => onBack(), onBack));
+      return box;
+    }
+    box.append(...pick.parts);
     box.append(
       sendRow(
         { label: m.postponeNote },
         m.confirmPostpone,
-        (note) => ask('postpone', note, s, { newDay: select.value, newTime: picked, ...(late ? { lateOk: true } : {}) }),
+        (note) => ask('postpone', note, s, { newDay: pick.select.value, newTime: pick.picked(), ...(late ? { lateOk: true } : {}) }),
         onBack,
-        () => {
-          if (picked) return true;
-          say(m.pickTime, true);
-          times.querySelector('input')?.focus();
-          return false;
-        },
+        pick.check,
       ),
     );
-    queueMicrotask(() => select.focus());
+    queueMicrotask(() => pick.select.focus());
     return box;
+  }
+
+  /** The closing session's card: until when, what happens with no pick, and a day and time from the intro-call calendar. */
+  function closingCard(v: TrackView, c: NonNullable<TrackView['closingPick']>): HTMLElement {
+    const sec = el('section', 'tp-card tp-closing');
+    sec.append(el('h2', undefined, m.closingPick.title), el('p', undefined, m.closingPick.text.replace('{date}', formatDay(c.lastDay, lang))));
+    if (c.target) sec.append(el('p', 'tp-note', m.closingPick.target.replace('{when}', when(c.target))));
+    const pick = dayAndTime((day, now) => closingTimes(cfg!, v, day, now), cfg?.intro.weeksAhead ?? 0, m.closingPick.day);
+    if (!pick) {
+      sec.append(el('p', 'tp-note', m.noDays));
+      return sec;
+    }
+    const box = el('div', 'tp-move');
+    box.append(...pick.parts);
+    const row = el('div', 'tp-row');
+    const go = button('btn', m.closingPick.send);
+    go.addEventListener('click', async () => {
+      if (!pick.check()) return;
+      go.disabled = true;
+      go.textContent = m.sending;
+      try {
+        await ask('closing', '', undefined, { day: pick.select.value, time: pick.picked() });
+      } catch (e) {
+        say(m.failures[e instanceof Failure ? e.reason : 'network'], true);
+        go.disabled = false;
+        go.textContent = m.closingPick.send;
+      }
+    });
+    row.append(go);
+    box.append(row);
+    sec.append(box);
+    return sec;
   }
 
   function sessionRow(v: TrackView, s: TrackSession): HTMLLIElement {
@@ -395,6 +448,7 @@ export function mountTrackingPage(root: HTMLElement, deps: Deps = { fetch: windo
 
   function draw(v: TrackView) {
     body.replaceChildren();
+    if (v.closingPick) body.append(closingCard(v, v.closingPick));
     const next = el('section', 'tp-next');
     next.append(el('h2', undefined, m.nextTitle));
     const list = el('ul', 'tp-list');

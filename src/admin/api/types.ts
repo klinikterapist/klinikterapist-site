@@ -8,6 +8,7 @@ import type { JSONContent } from '@tiptap/core';
 import type { Reference } from '../../lib/apa/types';
 import type { CropArea } from '../../lib/crop-area';
 import type { SessionRecord, SessionStatus } from '../../lib/sessions';
+import type { ClosingAsk } from '../../lib/closing';
 import type { PaymentSettings } from '../../lib/payment';
 
 export type ErrorCode =
@@ -222,6 +223,8 @@ export type Client = {
   sessions?: SessionRecord[];
   /** The client said on their own page that they want to end therapy (with their note). */
   endAsked?: { at: number; note?: string };
+  /** The closing-session invitation: until when the client may pick a time, and what came of it (closing.ts). */
+  closingAsk?: ClosingAsk;
 };
 
 /** How therapy ends: `complete` (e-mail: therapy is over), `closing` (e-mail: a free closing session), `delete` (no e-mail). */

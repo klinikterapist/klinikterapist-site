@@ -225,10 +225,17 @@ describe('Seans takip', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Terapiyi sonlandır' }));
     const dialog = screen.getByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Sonlandırma görüşmesi talep et' }));
-    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('sonlandırma görüşmesi');
+    // The invitation carries the client's page and the last day to pick a time (owner's decisions 2026-10-22).
+    await waitFor(() => expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('→ Görüşme saatini seç: '));
+    const body = (within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value;
+    expect(body).toContain('sonlandırma görüşmesi');
+    expect(body).toMatch(/→ Görüşme saatini seç: \S+\/randevum\/#k=/);
+    expect(body).not.toContain('yanıtlayarak bana yazabilirsiniz');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Daveti gönder' }));
     await waitFor(() => expect(api.state.clients[0].status).toBe('closing'));
+    expect(api.state.clients[0].closingAsk).toEqual(expect.objectContaining({ until: expect.any(Number) }));
     expect(await screen.findByText('Sonlandırma görüşmesi bekleniyor')).toBeTruthy();
+    expect(screen.getByText(/kendi randevu sayfasından seçebilir/)).toBeTruthy();
     cleanup();
     setup('tracking', [], [{ ...client(), status: 'closing' }]);
     expect(await screen.findByText('Sonlandırma aşamasında (1)')).toBeTruthy();

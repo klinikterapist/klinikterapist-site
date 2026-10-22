@@ -19,6 +19,7 @@ import { bookingState, joinWaitlist, listWaitlist, mailWaitlist, removeWaitlist 
 import { listEvents } from './events';
 import { sendInfo } from './info';
 import { payClient, readPayment, runReminders, savePayment } from './payment';
+import { runClosing } from './closing';
 import { askTracking, clientLink, mailClientLink, viewTracking } from './tracking';
 import { flushStats, recordHit, statsReads, statsSummary } from './stats';
 import { runScheduled } from './schedule';
@@ -210,6 +211,11 @@ export async function runHourly(gas: Gas): Promise<void> {
     warnExpiringHolds(gas);
   } catch (e) {
     gas.log(`hourly/holds: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  try {
+    runClosing(gas);
+  } catch (e) {
+    gas.log(`hourly/closing: ${e instanceof Error ? e.message : String(e)}`);
   }
   try {
     runReminders(gas);

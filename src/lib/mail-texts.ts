@@ -45,6 +45,7 @@ export const PLACEHOLDERS: { key: string; label: string }[] = [
   { key: 'konular', label: 'Seçtiği konular (ön görüşme)' },
   { key: 'sayfa_baglantisi', label: 'Kişisel randevu sayfası' },
   { key: 'randevu_baglantisi', label: 'Randevu sayfası' },
+  { key: 'son_tarih', label: 'Sonlandırma görüşmesi için son gün' },
   { key: 'aydinlatma_baglantisi', label: 'Aydınlatma metni' },
   { key: 'motivasyon', label: 'Teşekkür cümlesi' },
   { key: 'imza', label: 'İmza' },

@@ -29,6 +29,7 @@ import { ArrowLeft, CalendarCheck, CalendarPlus, Flag, Icon, Mail as MailIcon, T
 import { ActionMenu } from '../ActionMenu';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { endMail, linkMail, revertMail, type Mail } from '../../lib/booking-mail';
+import { CLOSING_PICK_DAYS, closingDeadline, closingState } from '../../../lib/closing';
 import { EMPTY_PAYMENT, paymentReminderMail, thanksMail, type PaymentSettings } from '../../../lib/payment';
 import { MailDialog } from './MailDialog';
 import { hasFee } from '../../lib/attention';
@@ -54,7 +55,7 @@ type Ending = { mode: 'complete' | 'closing'; mail: Mail };
 
 const END_CHOICES = [
   { mode: 'complete', label: 'Terapi tamamlandı', hint: 'Kişiye terapi sürecinin sona erdiğini bildiren e-posta gider. Danışan, bilgileriyle birlikte Seans takipten silinir; haftalık saat takvimde ve sitede yeniden açılır.' },
-  { mode: 'closing', label: 'Sonlandırma görüşmesi talep et', hint: 'Kişiye ücretsiz, 25–30 dakikalık sonlandırma görüşmesini anlatan bir davet gider. Danışan takipte kalır ve "Sonlandırma görüşmesi bekleniyor" diye işaretlenir; görüşmeden sonra "Terapi tamamlandı" ile kapatırsınız.' },
+  { mode: 'closing', label: 'Sonlandırma görüşmesi talep et', hint: `Kişiye ücretsiz, 25–30 dakikalık sonlandırma görüşmesini anlatan bir davet gider. Danışan, ${CLOSING_PICK_DAYS} gün içinde kendi randevu sayfasından görüşmenin gününü ve saatini seçer; seçmezse bir sonraki seansı kendiliğinden ücretsiz sonlandırma görüşmesi olur (son günden 1 gün önce ona hatırlatma, size bilgi gider). Danışan takipte kalır; görüşmeden sonra "Terapi tamamlandı" ile kapatırsınız.` },
 ] as const;
 
 export function ClientPage({ id }: { id: string }) {
@@ -178,6 +179,25 @@ export function ClientPage({ id }: { id: string }) {
     }
   };
 
+  /** Terapiyi sonlandır: the closing invitation carries the client's page link and the last day to pick a time. */
+  const chooseEnd = async (mode: 'complete' | 'closing') => {
+    if (!client) return;
+    if (mode === 'complete') {
+      setEnding({ mode, mail: endMail(client.contact, 'complete') });
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const { link } = await api.clientLink({ id });
+      setEnding({ mode, mail: endMail(client.contact, 'closing', { link, lastDay: closingDeadline(Date.now()).day }) });
+    } catch (e) {
+      setError(e instanceof ApiFailure ? e.message : 'Randevu sayfasının bağlantısı alınamadı. Tekrar deneyin.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   /** Terapiyi sonlandır, Geri al, Sil. `leaves`: the client is no longer in Seans takip afterwards. */
   const finish = async (job: () => Promise<void>, done: string, leaves: boolean, requests = false) => {
     setBusy(true);
@@ -192,7 +212,8 @@ export function ClientPage({ id }: { id: string }) {
         setClient(null);
       } else {
         setNotice(done);
-        setClient((c) => (c ? { ...c, status: 'closing' } : c));
+        const now = Date.now();
+        setClient((c) => (c ? { ...c, status: 'closing', closingAsk: { at: now, until: closingDeadline(now).until } } : c));
       }
     } catch (e) {
       setError(e instanceof ApiFailure ? e.message : 'İşlem yapılamadı. Tekrar deneyin.');
@@ -231,6 +252,7 @@ export function ClientPage({ id }: { id: string }) {
   const now = Date.now();
   const { past, next } = pastAndNext(client, now);
   const stats = sessionStats(client, now);
+  const closing = closingState(client, now);
   const numbers = sessionNumbers(client, next.at(-1)?.day ?? past.at(-1)?.day ?? client.since);
   const times = (day: string) => (day ? templateTimes(day) : []);
 
@@ -319,7 +341,7 @@ export function ClientPage({ id }: { id: string }) {
         <div className="cl-hero-text">
           <h2 id="cl-title">
             <span className="tk-number tk-number-lg">{client.number}</span>
-            {client.status === 'closing' && <span className="tk-badge">Sonlandırma görüşmesi bekleniyor</span>}
+            {client.status === 'closing' && <span className="tk-badge">{closing.step === 'wait' ? 'Sonlandırma görüşmesi bekleniyor' : closing.step === 'none' ? 'Sonlandırma aşamasında' : 'Sonlandırma görüşmesi planlandı'}</span>}
           </h2>
           <p>{`${labelOf({ kind: 'session', type: client.type })} · bugüne kadar ${stats.held} seans`}</p>
         </div>
@@ -354,6 +376,15 @@ export function ClientPage({ id }: { id: string }) {
       </header>
       {notice && <Banner tone="success">{notice}</Banner>}
       {error && <Banner tone="error">{error}</Banner>}
+      {client.status === 'closing' && closing.step !== 'none' && (
+        <Banner tone={closing.step === 'wait' ? 'info' : 'success'}>
+          {closing.step === 'wait'
+            ? `Danışan, sonlandırma görüşmesinin gününü ve saatini ${formatDay(closing.lastDay, 'tr')} gününün sonuna kadar kendi randevu sayfasından seçebilir. ${closing.target ? `Seçmezse ${at(closing.target)} seansı kendiliğinden ücretsiz, 30 dakikalık sonlandırma görüşmesi olur.` : 'Seçmezse dönüşecek planlı bir seans yok; görüşmeyi buradan siz eklersiniz.'}`
+            : closing.step === 'auto'
+              ? `Danışan saat seçmedi; ${at(closing.session)} seansı kendiliğinden ücretsiz sonlandırma görüşmesine dönüştü.`
+              : `Sonlandırma görüşmesi: ${at(closing.session)}.`}
+        </Banner>
+      )}
       {client.endAsked && (
         <Banner tone="warning" action={<span className="k-hint">Sağ üstte: Sonlandırma › Terapiyi sonlandır</span>}>
           {`${formatDay(new Date(client.endAsked.at + 3 * 3600e3).toISOString().slice(0, 10), 'tr')} tarihinde kendi sayfasından terapiyi sonlandırmak istediğini bildirdi.`}
@@ -491,7 +522,7 @@ export function ClientPage({ id }: { id: string }) {
         >
           <div className="segmented end-choice" role="group" aria-label="E-posta türü">
             {END_CHOICES.map((o) => (
-              <button key={o.mode} type="button" aria-pressed={ending.mode === o.mode} onClick={() => setEnding({ mode: o.mode, mail: endMail(client.contact, o.mode) })}>
+              <button key={o.mode} type="button" aria-pressed={ending.mode === o.mode} onClick={() => void chooseEnd(o.mode)}>
                 {o.label}
               </button>
             ))}

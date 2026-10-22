@@ -8,6 +8,7 @@ import type { StatsSummary } from '../../lib/stats-wire';
 import { INTRO_MINUTES, clientNumber, intakeOpen, previewClosedKey, holdOf, minutesOf, overlaps, slotInstant, type BusyInterval } from '../../lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput } from '../../lib/sessions';
 import { TRACK_PATH } from '../../lib/tracking';
+import { closingDeadline } from '../../lib/closing';
 import { EMPTY_PAYMENT, parsePayment, type PaymentSettings } from '../../lib/payment';
 import { EMAIL_RE } from '../../lib/field-rules';
 
@@ -536,7 +537,7 @@ export function createMockApi(opts: { latency?: number; seed?: Record<string, st
         const c = state.clients.find((x) => x.id === id);
         if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
         if (mode !== 'delete') mail(c.contact.email, subject, body);
-        state.clients = mode === 'closing' ? state.clients.map((x) => (x.id === id ? { ...x, status: 'closing' } : x)) : state.clients.filter((x) => x.id !== id);
+        state.clients = mode === 'closing' ? state.clients.map((x) => (x.id === id ? { ...x, status: 'closing', closingAsk: { at: clock(), until: closingDeadline(clock()).until } } : x)) : state.clients.filter((x) => x.id !== id);
       }),
     clientRevert: ({ id, subject, body }) =>
       wait(() => {

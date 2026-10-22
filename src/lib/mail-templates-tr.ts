@@ -80,7 +80,22 @@ export const MAIL_TR = {
   // Sonlandırma görüşmesi daveti
   "danisan.sonlandirma": {
     subject: "Sonlandırma görüşmesi – klinikterapist.com",
-    body: "Sayın {ad},\n\nTerapi sürecimizin sonlandırma aşamasına yaklaşıyoruz. Süreci birlikte değerlendirmek ve sağlıklı bir şekilde tamamlamak için sizinle ücretsiz, 25–30 dakikalık bir sonlandırma görüşmesi yapmak isterim.\n\nSonlandırma görüşmesi terapi sürecinin önemli bir parçasıdır. Bu görüşmede:\n\n– Hedeflerimizi ve ilerlemenizi değerlendireceğiz: Terapiye başlarken belirlediğimiz hedeflere, süreç boyunca yaşadığınız değişimlere ve kaydettiğiniz ilerlemeye birlikte bakacağız.\n– Kazandığınız becerileri ele alacağız: Sizin için nelerin işe yaradığını ve bu kazanımları günlük yaşamınızda nasıl sürdürebileceğinizi konuşacağız.\n– Geleceğe yönelik bir yol haritası çıkaracağız: İleride karşılaşabileceğiniz zorlayıcı durumları ve bu durumlarla başa çıkmak için kullanabileceğiniz yolları değerlendireceğiz.\n– Süreci birlikte gözden geçireceğiz: Terapi deneyiminizle ilgili duygu ve düşüncelerinizi, varsa sorularınızı ve paylaşmak istediklerinizi konuşacağız.\n\n■ Görüşme bilgileri\n\n– Süre: 25–30 dakika\n– Görüşme biçimi: Online\n– Ücret: Ücretsiz\n\nGörüşmeyi planlayabilmemiz için size uygun gün ve saatleri bu e-postayı yanıtlayarak bana yazabilirsiniz. Uygunluğumuza göre birlikte bir zaman belirleriz.\n\nTerapi sürecinde sizinle birlikte çalışmış olmaktan memnuniyet duyuyorum. Bu son görüşmenin, edindiğiniz kazanımları fark etmenize ve sonraki adımlarınızı daha sağlam planlamanıza yardımcı olmasını dilerim.\n\nSaygılarımla,\n{imza}",
+    body: "Sayın {ad},\n\nTerapi sürecimizin sonlandırma aşamasına yaklaşıyoruz. Süreci birlikte değerlendirmek ve sağlıklı bir şekilde tamamlamak için sizinle ücretsiz, 25–30 dakikalık bir sonlandırma görüşmesi yapmak isterim.\n\nSonlandırma görüşmesi terapi sürecinin önemli bir parçasıdır. Bu görüşmede:\n\n– Hedeflerimizi ve ilerlemenizi değerlendireceğiz: Terapiye başlarken belirlediğimiz hedeflere, süreç boyunca yaşadığınız değişimlere ve kaydettiğiniz ilerlemeye birlikte bakacağız.\n– Kazandığınız becerileri ele alacağız: Sizin için nelerin işe yaradığını ve bu kazanımları günlük yaşamınızda nasıl sürdürebileceğinizi konuşacağız.\n– Geleceğe yönelik bir yol haritası çıkaracağız: İleride karşılaşabileceğiniz zorlayıcı durumları ve bu durumlarla başa çıkmak için kullanabileceğiniz yolları değerlendireceğiz.\n– Süreci birlikte gözden geçireceğiz: Terapi deneyiminizle ilgili duygu ve düşüncelerinizi, varsa sorularınızı ve paylaşmak istediklerinizi konuşacağız.\n\n■ Görüşme bilgileri\n\n– Süre: 25–30 dakika\n– Görüşme biçimi: Online\n– Ücret: Ücretsiz\n\nGörüşmenin gününü ve saatini, size özel randevu sayfanızdan takvimimdeki boş saatler arasından seçebilirsiniz. Seçiminizi {son_tarih} gününün sonuna kadar yapmanızı rica ederim.\n\n→ Görüşme saatini seç: {sayfa_baglantisi}\n\nBu tarihe kadar bir saat seçmezseniz, bu tarihten sonraki ilk seansınızı ücretsiz sonlandırma görüşmesi olarak planlayacağım. Bu durumda görüşme seans saatinizde başlar ve 25–30 dakika sürer.\n\nTerapi sürecinde sizinle birlikte çalışmış olmaktan memnuniyet duyuyorum. Bu son görüşmenin, edindiğiniz kazanımları fark etmenize ve sonraki adımlarınızı daha sağlam planlamanıza yardımcı olmasını dilerim.\n\nSaygılarımla,\n{imza}",
+  },
+  // Sonlandırma görüşmesi: danışan saati seçti
+  "oto.sonlandirma-secildi": {
+    subject: "Sonlandırma görüşmeniz planlandı – klinikterapist.com",
+    body: "Merhaba,\n\nRandevu sayfanızdan yaptığınız seçimle sonlandırma görüşmemizin planlandığını bildirmek isterim.\n\n– Tarih: {tarih}\n– Saat: {saat} (Türkiye saati)\n– Süre: 25–30 dakika\n– Görüşme biçimi: Online\n– Ücret: Ücretsiz\n\nGörüşmeye katılmanız için gereken bağlantıyı görüşmeden önce size e-postayla göndereceğim.\n\n→ Randevu sayfama git: {sayfa_baglantisi}\n\nBu işlemi siz yapmadıysanız lütfen bu e-postayı yanıtlayarak hemen bana yazın.\n\nSaygılarımla,\n{imza}",
+  },
+  // Sonlandırma görüşmesi: saat seçimi hatırlatması
+  "oto.sonlandirma-hatirlatma": {
+    subject: "Sonlandırma görüşmesi için saat seçimi – klinikterapist.com",
+    body: "Sayın {ad},\n\nSonlandırma görüşmemizin gününü ve saatini henüz seçmediğinizi hatırlatmak isterim. Seçiminizi {son_tarih} gününün sonuna kadar randevu sayfanızdan yapabilirsiniz.\n\n→ Görüşme saatini seç: {sayfa_baglantisi}\n\n[[hedef]]\nBu tarihe kadar bir saat seçmezseniz, {tarih}, saat {saat} seansınızı ücretsiz, 25–30 dakikalık sonlandırma görüşmesi olarak planlayacağım.\n[[/hedef]]\n\nSaygılarımla,\n{imza}",
+  },
+  // Sonlandırma görüşmesi: seans kendiliğinden dönüştü
+  "oto.sonlandirma-otomatik": {
+    subject: "Sonlandırma görüşmeniz planlandı – klinikterapist.com",
+    body: "Sayın {ad},\n\nSonlandırma görüşmemiz için bir saat seçilmediğinden, aşağıdaki seansınızı ücretsiz sonlandırma görüşmesi olarak planladım.\n\n– Tarih: {tarih}\n– Saat: {saat} (Türkiye saati)\n– Süre: 25–30 dakika\n– Görüşme biçimi: Online\n– Ücret: Ücretsiz\n\nGörüşmeye katılmanız için gereken bağlantıyı görüşmeden önce size e-postayla göndereceğim. Bu saat size uygun değilse görüşmeyi randevu sayfanızdan erteleyebilirsiniz.\n\n→ Randevu sayfama git: {sayfa_baglantisi}\n\nSaygılarımla,\n{imza}",
   },
   // Terapi tamamlandı
   "danisan.tamamlandi": {
@@ -151,6 +166,21 @@ export const MAIL_TR = {
   "bildirim.sonlandirma": {
     subject: "{danisan_kodu} terapiyi sonlandırmak istiyor",
     body: "Danışan kendi randevu sayfasından terapiyi sonlandırmak istediğini bildirdi.\n\n– Danışan kodu: {danisan_kodu}\n\n[[not]]\n■ Danışanın notu\n\n{not}\n[[/not]]\n\nDanışanla konuştuktan sonra danışanın kaydında Terapiyi sonlandır seçeneğini kullanabilirsiniz.\n\n→ Danışanın kaydını aç: {panel_baglantisi}\n\nDanışana yazmak isterseniz bu e-postada Yanıtla seçeneğini kullanabilirsiniz; yanıtınız danışanın kayıtlı e-posta adresine gider.\n\nBu bildirim kendiliğinden gönderildi.",
+  },
+  // Sonlandırma görüşmesi saati seçildi (sahibe)
+  "bildirim.sonlandirma-secildi": {
+    subject: "{danisan_kodu} sonlandırma görüşmesinin saatini seçti – {tarih}, {saat}",
+    body: "Danışan kendi randevu sayfasından sonlandırma görüşmesinin gününü ve saatini seçti.\n\n– Danışan kodu: {danisan_kodu}\n– Tarih: {tarih}\n– Saat: {saat}\n– Süre ve ücret: 30 dakika, ücretsiz\n\nGörüşme danışanın seans listesine ve takvime işlendi.\n\n→ Danışanın kaydını aç: {panel_baglantisi}\n\nBu bildirim kendiliğinden gönderildi.",
+  },
+  // Sonlandırma görüşmesi saati seçilmedi, hatırlatma (sahibe)
+  "bildirim.sonlandirma-hatirlatma": {
+    subject: "{danisan_kodu} sonlandırma görüşmesinin saatini henüz seçmedi",
+    body: "Danışan sonlandırma görüşmesinin saatini henüz seçmedi. Kendisine bir hatırlatma e-postası gönderildi.\n\n– Danışan kodu: {danisan_kodu}\n– Seçim için son gün: {son_tarih}\n\n[[hedef]]\nDanışan bu tarihe kadar seçim yapmazsa, {tarih}, {saat} seansı kendiliğinden ücretsiz, 30 dakikalık sonlandırma görüşmesine dönüşecek.\n[[/hedef]]\n\n→ Danışanın kaydını aç: {panel_baglantisi}\n\nBu bildirim kendiliğinden gönderildi.",
+  },
+  // Sonlandırma görüşmesi: seans dönüştü ya da dönüşemedi (sahibe)
+  "bildirim.sonlandirma-otomatik": {
+    subject: "{danisan_kodu}: sonlandırma görüşmesi için saat seçilmedi",
+    body: "Danışan sonlandırma görüşmesi için {son_tarih} tarihine kadar bir saat seçmedi.\n\n[[hedef]]\nDanışanın bu tarihten sonraki ilk planlı seansı kendiliğinden ücretsiz, 30 dakikalık sonlandırma görüşmesine dönüştü; danışana e-postayla bilgi verildi.\n\n– Danışan kodu: {danisan_kodu}\n– Tarih: {tarih}\n– Saat: {saat}\n[[/hedef]]\n\n[[yok]]\nDanışanın ileride planlı bir seansı olmadığı için dönüştürülecek seans bulunamadı. Görüşmeyi danışanın kaydından kendiniz ekleyebilirsiniz.\n[[/yok]]\n\n→ Danışanın kaydını aç: {panel_baglantisi}\n\nBu bildirim kendiliğinden gönderildi.",
   },
   // Ödeme alınmadı (sahibe)
   "bildirim.odeme-yok": {

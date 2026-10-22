@@ -82,7 +82,7 @@ type Contact = { name: string; lang: 'tr' | 'en' };
  * ended. `closing`: an invitation to a free 25–30 minute closing session, why it matters and what
  * it covers.
  */
-function builtEndMailEn(c: Contact, mode: 'complete' | 'closing'): Mail {
+function builtEndMailEn(c: Contact, mode: 'complete' | 'closing', page?: ClosingPage): Mail {
   const hello = `Dear ${c.name.trim()},`;
   if (mode === 'complete') {
     return {
@@ -111,7 +111,13 @@ function builtEndMailEn(c: Contact, mode: 'complete' | 'closing'): Mail {
       '– talk about what worked for you and how you can keep using it in everyday life,',
       '– go over situations that may be hard in the future and what you can do at such times,',
       '– make room for your feelings and thoughts about the process and any questions you may have.',
-      'The session is held online and there is no fee. Please reply to this e-mail with the days and times that suit you, and we will plan it together.',
+      'The session is held online and there is no fee.',
+      ...(page
+        ? [
+            `You can pick its day and time from my free times on your own appointment page. Please do so by the end of ${formatDay(page.lastDay, 'en')}: ${page.link}`,
+            'If no time is picked by then, I will plan your first session after that date as the free closing session; it then starts at your session time and takes 25–30 minutes.',
+          ]
+        : ['Please reply to this e-mail with the days and times that suit you, and we will plan it together.']),
       '',
       ...SIGN_EN,
     ].join('\n'),
@@ -261,10 +267,14 @@ export function decisionMail(r: BookingRequest, decision: RequestDecision, pay?:
   );
 }
 
-export function endMail(c: Contact, mode: 'complete' | 'closing'): Mail {
+/** The closing invitation's page link and the last day to pick a time (closing.ts). */
+export type ClosingPage = { link: string; lastDay: string };
+
+export function endMail(c: Contact, mode: 'complete' | 'closing', page?: ClosingPage): Mail {
   const id = mode === 'complete' ? 'danisan.tamamlandi' : 'danisan.sonlandirma';
-  if (c.lang === 'tr') return mailTr(id, { ad: c.name.trim(), ...LINKS_TR });
-  return withTexts(id, 'en', { ad: c.name.trim(), baglanti: `${SITE}${pathFor('appointment', 'en')}` }, builtEndMailEn(c, mode));
+  const pick: Record<string, string> = page ? { sayfa_baglantisi: page.link, son_tarih: formatDay(page.lastDay, c.lang) } : {};
+  if (c.lang === 'tr') return mailTr(id, { ad: c.name.trim(), ...LINKS_TR, ...pick });
+  return withTexts(id, 'en', { ad: c.name.trim(), baglanti: page?.link ?? `${SITE}${pathFor('appointment', 'en')}`, ...pick }, builtEndMailEn(c, mode, page));
 }
 
 export function revertMail(c: Contact): Mail {

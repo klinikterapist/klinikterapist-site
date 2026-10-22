@@ -51,14 +51,19 @@ const istanbulDay = (ms: number) => new Date(ms + 3 * 3600 * 1000).toISOString()
 /** Whether `day`/`time` is one of the client's weekly sessions. */
 export const isWeekly = (c: TrackedClient, day: string, time: string) => time === c.time && day >= c.since && weekdayOf(day) === c.weekday;
 
-/** Every session from `from` to `to` (days, inclusive), soonest first: the weekly ones with their marks, and the others. */
+/**
+ * Every session from `from` to `to` (days, inclusive), soonest first: the weekly ones with their
+ * marks, and the others. A record of another kind at a weekly time (a weekly session that became
+ * the closing session, closing.ts) takes that week's place.
+ */
 export function sessionsOf(c: TrackedClient, from: string, to: string): SessionRecord[] {
-  const marks = new Map((c.sessions ?? []).filter((s) => s.kind === 'weekly').map((s) => [sessionKey(s), s]));
+  const atWeekly = (s: SessionRecord) => s.kind === 'weekly' || isWeekly(c, s.day, s.time);
+  const marks = new Map((c.sessions ?? []).filter(atWeekly).map((s) => [sessionKey(s), s]));
   const out: SessionRecord[] = [];
   let d = from > c.since ? from : c.since;
   while (weekdayOf(d) !== c.weekday) d = addDays(d, 1);
   for (; d <= to; d = addDays(d, 7)) out.push(marks.get(sessionKey({ day: d, time: c.time })) ?? { day: d, time: c.time, kind: 'weekly', minutes: c.minutes, status: 'planned' });
-  for (const s of c.sessions ?? []) if (s.kind !== 'weekly' && s.day >= from && s.day <= to) out.push(s);
+  for (const s of c.sessions ?? []) if (!atWeekly(s) && s.day >= from && s.day <= to) out.push(s);
   return out.sort((a, b) => sessionKey(a).localeCompare(sessionKey(b)));
 }
 
