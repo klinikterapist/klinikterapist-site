@@ -7,7 +7,7 @@ Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun ("KVKK") 10. ma
 ## Veri sorumlusu
 
 Osman Güneş Özkurt, Klinik Psikolog
-E-posta: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
+E-posta: [iletisim@klinikterapist.com](mailto:iletisim@klinikterapist.com)
 
 ## Hangi verileri işliyorum?
 
@@ -34,6 +34,6 @@ E-posta yazışmaları, iletişimin amacı için gerekli olan süre ve yasal sak
 
 KVKK'nın 11. maddesi uyarınca; verilerinizin işlenip işlenmediğini öğrenme, bilgi talep etme, işlenme amacını öğrenme, aktarıldığı kişileri bilme, eksik ya da yanlış işlenmişse düzeltilmesini, şartları oluştuğunda silinmesini isteme ve zarara uğramanız hâlinde giderilmesini talep etme haklarına sahipsiniz.
 
-Başvurularınızı [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com) adresine iletebilirsiniz. Başvurunuz en geç 30 gün içinde yanıtlanır.
+Başvurularınızı [iletisim@klinikterapist.com](mailto:iletisim@klinikterapist.com) adresine iletebilirsiniz. Başvurunuz en geç 30 gün içinde yanıtlanır.
 
 Online randevu sistemi devreye girdiğinde bu metin, randevu sürecinde işlenecek verileri de kapsayacak şekilde güncellenecektir.

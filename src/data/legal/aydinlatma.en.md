@@ -7,7 +7,7 @@ This notice is provided under Article 10 of the Turkish Personal Data Protection
 ## Data controller
 
 Osman Güneş Özkurt, Clinical Psychologist
-E-mail: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
+E-mail: [hello@klinikterapist.com](mailto:hello@klinikterapist.com)
 
 ## What data do I process?
 
@@ -34,6 +34,6 @@ E-mail correspondence is kept for as long as needed for its purpose and for any 
 
 Under Article 11 of the KVKK you have the right to learn whether your data is processed, request information about it, learn the purpose of processing and the recipients, request correction of incomplete or inaccurate data, request deletion when the conditions are met, and claim compensation for damage.
 
-Send requests to [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com). Requests are answered within 30 days at the latest.
+Send requests to [hello@klinikterapist.com](mailto:hello@klinikterapist.com). Requests are answered within 30 days at the latest.
 
 This notice will be updated to cover appointment data when the online booking system goes live.

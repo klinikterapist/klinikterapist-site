@@ -43,4 +43,4 @@ Online randevu sistemi gibi yeni özellikler eklendiğinde bu sayfa güncellenir
 
 ## İletişim
 
-Sorularınız için: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
+Sorularınız için: [iletisim@klinikterapist.com](mailto:iletisim@klinikterapist.com)

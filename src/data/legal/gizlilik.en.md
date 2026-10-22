@@ -43,4 +43,4 @@ This page will be updated when new features, such as online booking, are added. 
 
 ## Contact
 
-Questions: [merhaba@klinikterapist.com](mailto:merhaba@klinikterapist.com)
+Questions: [hello@klinikterapist.com](mailto:hello@klinikterapist.com)
