@@ -163,7 +163,7 @@ export const INFO_TOPICS: InfoTopic[] = [
           '– Grup terapisi (90 dakika): Kişi başı katılım ücreti, bireysel seans ücretinin üçte biridir (kayıtlar henüz açık değil).',
           '– Ücretsiz ön görüşme ve sonlandırma seansı: Ücret alınmaz.',
         ].join('\n'),
-        'Psikolojik desteğin ekonomik nedenlerle yarıda kalmamasını önemsiyorum. Terapi sürecinde iş kaybı, gelir azalması ya da benzeri ekonomik güçlükler yaşarsanız, koşullarınızı dikkate alan erişilebilir terapi uygulanabilir. Bu modelde seans süresi değişmez, ücret ekonomik durumunuza göre belirlenir. Üniversite eğitimine devam eden öğrenciler de erişilebilir terapi için başvurabilir.',
+        'Psikolojik desteğin ekonomik nedenlerle yarıda kalmamasını önemsiyorum. İş kaybı, gelir azalması ya da benzeri ekonomik güçlükler yaşıyorsanız, koşullarınızı dikkate alan erişilebilir terapi uygulanabilir. Bu modelde seans süresi değişmez, ücret ekonomik durumunuza göre belirlenir. Üniversite eğitimine devam eden öğrenciler de erişilebilir terapi için başvurabilir.',
         'Güncel ücretleri ve erişilebilir terapiyle ilgili ayrıntıları, randevu ya da ön görüşme talebinizden sonra size e-postayla iletirim.',
       ],
       en: [
@@ -175,7 +175,7 @@ export const INFO_TOPICS: InfoTopic[] = [
           '– Group therapy (90 minutes): a third of the individual session fee per person (registration is not open yet).',
           '– Free intro call and closing session: no fee.',
         ].join('\n'),
-        'I care that psychological support does not stop for financial reasons. If you lose your job, your income drops or you face similar difficulties during therapy, accessible therapy that takes your situation into account is possible. The session length stays the same; the fee is set by your financial situation. University students can apply for accessible therapy too.',
+        'I care that psychological support does not stop for financial reasons. If you have lost your job, your income has dropped or you face similar difficulties, accessible therapy that takes your situation into account is possible. The session length stays the same; the fee is set by your financial situation. University students can apply for accessible therapy too.',
         'I send the current fees and the details of accessible therapy by e-mail after your appointment or intro call request.',
       ],
     },
@@ -186,12 +186,12 @@ export const INFO_TOPICS: InfoTopic[] = [
     a: {
       tr: [
         'Ödeme her seans için ayrı yapılır. Tutar ve ödeme bilgileri, randevu onayı e-postasında size gelir. Ödemeyi havale/EFT ile IBAN\'a ya da e-postada bir ödeme bağlantısı varsa o bağlantıyla yapabilirsiniz.',
-        'Ödemenin, randevu onayında yazan süre içinde yapılması gerekir; bu süre çoğunlukla seanstan en geç 24 saat öncedir. Seanstan 3 gün önce gelen hatırlatma e-postasında ödeme bilgileri yeniden yer alır. Ödemeniz bana ulaştığında size bir teşekkür e-postası gelir.',
+        'Ödemeyi seanstan en geç 24 saat önce yapmanız gerekir. Seanstan 3 gün önce gelen hatırlatma e-postasında ödeme bilgileri yeniden yer alır. Ödemeniz bana ulaştığında size bir teşekkür e-postası gelir.',
         'Yurt dışından katılıyorsanız ödeme bilgilerini size ayrıca iletirim. Ücretsiz ön görüşme için ödeme yapılmaz.',
       ],
       en: [
         'Each session is paid separately. The amount and payment details come in the appointment confirmation e-mail. You can pay by bank transfer to the IBAN, or with the payment link if the e-mail has one.',
-        'Payment is due within the time given in the confirmation, usually at the latest 24 hours before the session. The reminder three days before the session repeats the payment details, and you get a thank-you e-mail once the payment reaches me.',
+        'Payment is due at the latest 24 hours before the session. The reminder three days before the session repeats the payment details, and you get a thank-you e-mail once the payment reaches me.',
         'If you join from abroad, I send you the payment details separately. The free intro call needs no payment.',
       ],
     },
