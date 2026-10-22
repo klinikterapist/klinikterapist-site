@@ -127,7 +127,9 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
           `Your details are kept for at most ${WAITLIST_KEEP_DAYS} days. To be taken off the list, simply reply to this e-mail.`,
           'If you did not send this, you can ignore this e-mail.',
           '',
+          'Kind regards,',
           'Osman Güneş Özkurt',
+          'Clinical Psychologist',
           'klinikterapist.com',
         ]
       : [
@@ -141,7 +143,9 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
           `Bilgileriniz en fazla ${WAITLIST_KEEP_DAYS} gün saklanır. Listeden çıkmak isterseniz bu e-postayı yanıtlamanız yeterli.`,
           'Bu formu siz doldurmadıysanız bu e-postayı dikkate almayın.',
           '',
+          'Saygılarımla,',
           'Osman Güneş Özkurt',
+          'Klinik Psikolog',
           'klinikterapist.com',
         ]
     ).join('\n'),

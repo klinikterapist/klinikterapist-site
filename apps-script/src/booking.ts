@@ -162,7 +162,9 @@ function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subjec
         '',
         'If you did not send this request, you can ignore this e-mail.',
         '',
+        'Kind regards,',
         'Osman Güneş Özkurt',
+        'Clinical Psychologist',
         'klinikterapist.com',
       ].join('\n'),
     };
@@ -180,7 +182,9 @@ function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subjec
       '',
       'Bu talebi siz göndermediyseniz bu e-postayı dikkate almayın.',
       '',
+      'Saygılarımla,',
       'Osman Güneş Özkurt',
+      'Klinik Psikolog',
       'klinikterapist.com',
     ].join('\n'),
   };

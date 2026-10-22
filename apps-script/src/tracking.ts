@@ -126,7 +126,9 @@ function clientMail(gas: Gas, c: StoredClient, ask: TrackAsk, ch: Change | null)
         `Your appointment page: ${link}`,
         'If you did not do this, please reply to this e-mail straight away.',
         '',
+        'Kind regards,',
         'Osman Güneş Özkurt',
+        'Clinical Psychologist',
         'klinikterapist.com',
       ].join('\n'),
     };
@@ -148,7 +150,9 @@ function clientMail(gas: Gas, c: StoredClient, ask: TrackAsk, ch: Change | null)
       `Randevu sayfanız: ${link}`,
       'Bu işlemi siz yapmadıysanız lütfen bu e-postayı yanıtlayarak hemen bana yazın.',
       '',
+      'Saygılarımla,',
       'Osman Güneş Özkurt',
+      'Klinik Psikolog',
       'klinikterapist.com',
     ].join('\n'),
   };

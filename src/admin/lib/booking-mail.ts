@@ -106,7 +106,7 @@ function builtDecisionMail(r: BookingRequest, decision: RequestDecision, pay?: P
             ruleLine('tr'),
             'Seansınızdan 3 gün önce size bir hatırlatma e-postası göndereceğim.',
           ];
-    return { subject: r.kind === 'intro' ? 'Ön görüşmeniz onaylandı – klinikterapist.com' : 'Randevunuz onaylandı – klinikterapist.com', body: [hello, '', ...lines, '', 'Görüşmek üzere,', ...SIGN_TR.slice(1)].join('\n') };
+    return { subject: r.kind === 'intro' ? 'Ön görüşmeniz onaylandı – klinikterapist.com' : 'Randevunuz onaylandı – klinikterapist.com', body: [hello, '', ...lines, '', 'Görüşmek üzere.', '', ...SIGN_TR].join('\n') };
   }
   if (decision === 'unavailable') {
     return {
