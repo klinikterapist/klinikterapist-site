@@ -21,6 +21,7 @@ import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
 import { asSender, notifyTo } from './mailboxes';
+import { mailTr } from '../../src/lib/mail-texts';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
 export const REQUESTS = 'talepler.json';
@@ -181,15 +182,19 @@ export function warnExpiringHolds(gas: Gas): number {
     return m <= 0 ? 'süre doldu, saat sitede yeniden açık' : `tutma ${Math.floor(m / 60)} sa ${m % 60} dk sonra bitiyor`;
   };
   const what = (r: BookingRequest) => (r.kind === 'intro' ? 'Ücretsiz ön görüşme' : `Seans randevusu (${SESSION_TYPES.find((t) => t.id === r.type)?.tr ?? 'Seans'})`);
-  const body = [
-    due.length === 1 ? 'Bu talebe henüz karar vermediniz:' : `Bu ${due.length} talebe henüz karar vermediniz:`,
-    '',
-    ...due.map((r) => `- ${oneLine(r.name)} · ${what(r)} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')} · ${left(r)}`),
-    '',
-    'Karar vermezseniz saat sitede yeniden açılır ve başka biri alabilir; talep ise 30 gün boyunca panelde kalır.',
-    `Randevu Talepleri: ${PANEL_URL}#/randevular`,
-  ].join('\n');
-  gas.mail.send({ to: notifyTo(gas, owner), replyTo: owner, subject: `[klinikterapist] ${due.length === 1 ? 'Bir talebin' : `${due.length} talebin`} tutma süresi doluyor`, body, name: 'klinikterapist.com randevu sistemi' });
+  const m = mailTr('bildirim.tutma', {
+    tutma_listesi: due.map((r) => `– ${oneLine(r.name)} · ${what(r)} · ${formatDay(r.day, 'tr')}, ${r.time.replace(':', '.')} · ${left(r)}`).join('\n'),
+    panel_baglantisi: `${PANEL_URL}#/randevular`,
+  });
+  // The text speaks of one request; several make it plural.
+  const many = due.length > 1;
+  gas.mail.send({
+    to: notifyTo(gas, owner),
+    replyTo: owner,
+    subject: many ? `${due.length} talebin tutma süresi doluyor` : m.subject,
+    body: many ? m.body.replace('Aşağıdaki talep için', `Aşağıdaki ${due.length} talep için`) : m.body,
+    name: 'klinikterapist.com randevu sistemi',
+  });
   return due.length;
 }
 

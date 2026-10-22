@@ -82,6 +82,9 @@ describe('e-mails with the e-mail check link get an HTML part with a button (own
     const visitor = gas.mails[1];
     expect(visitor.body).toContain('aşağıdaki düğmeye tıklayın');
     expect(mailHtml(visitor.body)).toContain('>E-posta adresimi doğrula</a>');
-    expect(mailHtml(gas.mails[0].body)).toBeUndefined();
+    // The owner's notice has headings and a button, and no signature.
+    const notice = mailHtml(gas.mails[0].body)!;
+    expect(notice).toContain('>Randevu Talepleri ekranını aç</a>');
+    expect(notice).not.toContain('icon-192.png');
   });
 });

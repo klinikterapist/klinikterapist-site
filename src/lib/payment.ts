@@ -13,7 +13,10 @@
  * Shared by the panel and the backend; the texts are drafts for the owner to approve.
  */
 import { SESSION_TYPES, formatDay } from './booking-form';
-import { mailTexts, withTexts } from './mail-texts';
+import { mailTexts, mailTr, withTexts } from './mail-texts';
+import { RULE_TR, typeVars, whenVars } from './mail-vars';
+
+const typeOf = (type?: string) => SESSION_TYPES.find((t) => t.id === type) ?? SESSION_TYPES[0];
 
 export type PaymentSettings = {
   /** The year the fees are for. */
@@ -98,6 +101,21 @@ export function paymentInfo(p: PaymentSettings, lang: 'tr' | 'en', hasQr = false
   return lines;
 }
 
+/**
+ * {ucret}, {odeme_bilgileri}, {odeme_suresi}. `qr`: a QR code is set (its line becomes the image).
+ * With no payment details yet, the e-mail says they follow.
+ */
+export function payVars(p: PaymentSettings, type: string | undefined, qr: boolean) {
+  const fee = p.fees[typeOf(type).id] ?? 0;
+  const info = paymentInfo(p, 'tr', qr);
+  return {
+    ucret: fee ? formatFee(fee, 'tr') : '',
+    odeme_bilgileri: info.length ? info.join('\n') : 'Ödeme bilgilerini ayrıca ileteceğim.',
+    odeme_suresi: String(p.dueHours),
+    kural: RULE_TR,
+  };
+}
+
 /** The lines that say how to pay: fee, when, where. Empty settings say the details follow. */
 export function paymentLines(p: PaymentSettings, type: string, lang: 'tr' | 'en', hasQr = false): string[] {
   const fee = p.fees[type] ?? 0;
@@ -155,41 +173,22 @@ export type Mail = { subject: string; body: string };
 type Person = { name: string; lang: 'tr' | 'en' };
 type Session = { day: string; time: string };
 
-const SIGN = { tr: ['Saygılarımla,', 'Osman Güneş Özkurt', 'Klinik Psikolog', 'klinikterapist.com'], en: ['Kind regards,', 'Osman Güneş Özkurt', 'Clinical Psychologist', 'klinikterapist.com'] };
+const SIGN_EN = ['Kind regards,', 'Osman Güneş Özkurt', 'Clinical Psychologist', 'klinikterapist.com'];
 const at = (s: Session, lang: 'tr' | 'en') => `${formatDay(s.day, lang)}, ${lang === 'en' ? 'at ' : 'saat '}${s.time.replace(':', '.')}`;
-const typeName = (type: string, lang: 'tr' | 'en') => {
-  const t = SESSION_TYPES.find((x) => x.id === type) ?? SESSION_TYPES[0];
-  return lang === 'en' ? t.en.toLowerCase() : t.tr.toLocaleLowerCase('tr-TR');
-};
 
-/** After the owner marks a session paid: thanks, and one sentence for the work ahead. */
+/** After the owner marks a session paid: thanks, and one sentence for the work ahead (English; Turkish: mail-templates-tr.ts). */
 function builtThanksMail(c: Person, s: Session): Mail {
-  const lang = c.lang;
-  const line = motivationFor(`${s.day}T${s.time}`, lang);
-  if (lang === 'en') {
-    return {
-      subject: 'Your payment has been received – klinikterapist.com',
-      body: [`Dear ${c.name.trim()},`, '', `The payment for your session on ${at(s, 'en')} (Turkey time) has been received. Thank you.`, '', line, '', 'See you in our session.', '', ...SIGN.en].join('\n'),
-    };
-  }
   return {
-    subject: 'Ödemeniz alındı – klinikterapist.com',
-    body: [`Sayın ${c.name.trim()},`, '', `${at(s, 'tr')} seansınızın ödemesi alındı. Teşekkür ederim.`, '', line, '', 'Seansımızda görüşmek üzere.', '', ...SIGN.tr].join('\n'),
+    subject: 'Your payment has been received – klinikterapist.com',
+    body: [`Dear ${c.name.trim()},`, '', `The payment for your session on ${at(s, 'en')} (Turkey time) has been received. Thank you.`, '', motivationFor(`${s.day}T${s.time}`, 'en'), '', 'See you in our session.', '', ...SIGN_EN].join('\n'),
   };
 }
 
-/** A payment reminder: the 48-hour one (automatic) and the owner's own from the client's page. */
+/** A payment reminder: the 48-hour one (automatic) and the owner's own from the client's page (English). */
 function builtPaymentReminderMail(c: Person, s: Session, type: string, p: PaymentSettings): Mail {
-  const lang = c.lang;
-  if (lang === 'en') {
-    return {
-      subject: 'Payment reminder for your session – klinikterapist.com',
-      body: [`Dear ${c.name.trim()},`, '', `The payment for your session on ${at(s, 'en')} (Turkey time) has not reached me yet.`, ...paymentLines(p, type, 'en'), '', 'If you have already paid, please disregard this e-mail.', ruleLine('en'), '', ...SIGN.en].join('\n'),
-    };
-  }
   return {
-    subject: 'Seans ödemesi hatırlatması – klinikterapist.com',
-    body: [`Sayın ${c.name.trim()},`, '', `${at(s, 'tr')} seansınızın ödemesi henüz bana ulaşmadı.`, ...paymentLines(p, type, 'tr'), '', 'Ödemeyi yaptıysanız bu e-postayı dikkate almayın.', ruleLine('tr'), '', ...SIGN.tr].join('\n'),
+    subject: 'Payment reminder for your session – klinikterapist.com',
+    body: [`Dear ${c.name.trim()},`, '', `The payment for your session on ${at(s, 'en')} (Turkey time) has not reached me yet.`, ...paymentLines(p, type, 'en'), '', 'If you have already paid, please disregard this e-mail.', ruleLine('en'), '', ...SIGN_EN].join('\n'),
   };
 }
 
@@ -197,14 +196,11 @@ function builtPaymentReminderMail(c: Person, s: Session, type: string, p: Paymen
  * Three days before: the session, the payment when it is a paid session not yet paid, the rule,
  * and the client's page (when there is one) to cancel or move it.
  */
-export function sessionReminderMail(c: Person, s: Session, what: { type: string; free: boolean; paid: boolean }, p: PaymentSettings, page?: string): Mail {
+export function sessionReminderMail(c: Person, s: Session, what: { type: string; free: boolean; paid: boolean }, p: PaymentSettings, page?: string, qr = !!p.qr): Mail {
   const lang = c.lang;
-  const pay =
-    !what.free && !what.paid
-      ? ['', ...paymentLines(p, what.type, lang), lang === 'en' ? 'If you have already paid, please disregard this part.' : 'Ödemeyi yaptıysanız bu kısmı dikkate almayın.']
-      : [];
   if (lang === 'en') {
-    const kind = what.free ? 'free session' : `${typeName(what.type, 'en').replace(/ session$/, '')} session`;
+    const pay = !what.free && !what.paid ? ['', ...paymentLines(p, what.type, 'en'), 'If you have already paid, please disregard this part.'] : [];
+    const kind = what.free ? 'free session' : `${typeOf(what.type).en.toLowerCase().replace(/ session$/, '')} session`;
     return {
       subject: `Reminder: your session on ${formatDay(s.day, 'en')} – klinikterapist.com`,
       body: [
@@ -216,33 +212,37 @@ export function sessionReminderMail(c: Person, s: Session, what: { type: string;
         ruleLine('en'),
         ...(page ? [`To cancel or move the session, use your appointment page: ${page}`] : ['To cancel or move the session, please reply to this e-mail.']),
         '',
-        ...SIGN.en,
+        ...SIGN_EN,
       ].join('\n'),
     };
   }
-  const kind = what.free ? 'ücretsiz görüşmenizi' : `${typeName(what.type, 'tr').replace(/ seans$/, '')} seansınızı`;
-  return {
-    subject: `Seans hatırlatması: ${formatDay(s.day, 'tr')} – klinikterapist.com`,
-    body: [
-      `Sayın ${c.name.trim()},`,
-      '',
-      `${at(s, 'tr')} ${kind} hatırlatmak isterim.`,
-      ...pay,
-      '',
-      ruleLine('tr'),
-      ...(page ? [`Seansı iptal etmek ya da ertelemek için randevu sayfanızı kullanabilirsiniz: ${page}`] : ['Seansı iptal etmek ya da ertelemek için bu e-postayı yanıtlayabilirsiniz.']),
-      '',
-      ...SIGN.tr,
-    ].join('\n'),
-  };
+  // A free session (intro call, closing session) has no fee; a paid one shows the payment part until it is paid.
+  return mailTr('oto.seans-hatirlatma', {
+    ad: c.name.trim(),
+    ...whenVars(s.day, s.time),
+    ...(what.free ? { tur: 'Ücretsiz görüşme', sure: '' } : typeVars(what.type)),
+    ...payVars(p, what.type, qr),
+    ...(what.free || what.paid ? { ucret: '' } : {}),
+    sayfa_baglantisi: page ?? '',
+    '#odeme': !what.free && !what.paid ? '1' : '',
+    '#sayfa': page ? '1' : '',
+  });
 }
 
 /** After the owner marks a session paid; the owner's template ("odeme.tesekkur") when there is one. */
-export function thanksMail(c: Person, s: Session): Mail {
-  return withTexts('odeme.tesekkur', c.lang, { ad: c.name.trim(), zaman: at(s, c.lang), motivasyon: motivationFor(`${s.day}T${s.time}`, c.lang) }, builtThanksMail(c, s));
+export function thanksMail(c: Person, s: Session, type?: string): Mail {
+  const motivasyon = motivationFor(`${s.day}T${s.time}`, c.lang);
+  if (c.lang === 'tr') return mailTr('odeme.tesekkur', { ad: c.name.trim(), ...whenVars(s.day, s.time), ...(type ? { tur: typeVars(type).tur } : { tur: '' }), motivasyon });
+  return withTexts('odeme.tesekkur', 'en', { ad: c.name.trim(), zaman: at(s, 'en'), motivasyon }, builtThanksMail(c, s));
 }
 
-/** The payment reminder; the owner's template ("odeme.hatirlatma") when there is one. */
-export function paymentReminderMail(c: Person, s: Session, type: string, p: PaymentSettings): Mail {
-  return withTexts('odeme.hatirlatma', c.lang, { ad: c.name.trim(), zaman: at(s, c.lang), odeme: paymentLines(p, type, c.lang).join('\n'), kural: ruleLine(c.lang) }, builtPaymentReminderMail(c, s, type, p));
+/**
+ * The payment reminder; the owner's template ("odeme.hatirlatma") when there is one. `page`: the
+ * client's own page, when known (the backend's 48-hour reminder). `qr`: a QR code is set.
+ */
+export function paymentReminderMail(c: Person, s: Session, type: string, p: PaymentSettings, page = '', qr = !!p.qr): Mail {
+  if (c.lang === 'tr') {
+    return mailTr('odeme.hatirlatma', { ad: c.name.trim(), ...whenVars(s.day, s.time), ...typeVars(type), ...payVars(p, type, qr), sayfa_baglantisi: page, '#sayfa': page ? '1' : '' });
+  }
+  return withTexts('odeme.hatirlatma', 'en', { ad: c.name.trim(), zaman: at(s, 'en'), odeme: paymentLines(p, type, 'en').join('\n'), kural: ruleLine('en') }, builtPaymentReminderMail(c, s, type, p));
 }

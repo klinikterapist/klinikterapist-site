@@ -22,9 +22,11 @@ import { initials, logEvent, shortWhen } from './events';
 import { assertMailDomain } from './mx';
 import { parseBooking } from '../../src/lib/schemas';
 import {
-  AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay, intakeOpen, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
+  AGE_RANGES, SESSION_TYPES, formatDay, intakeOpen, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
 } from '../../src/lib/booking-form';
 import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
+import { mailTr } from '../../src/lib/mail-texts';
+import { forWhom, stamp, topicList, typeVars, upFirst, whenVars } from '../../src/lib/mail-vars';
 import { asSender, notifyTo } from './mailboxes';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
@@ -112,37 +114,23 @@ function inputOf(p: Record<string, unknown>): BookingInput {
 }
 
 function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: string; body: string } {
-  const name = oneLine(i.name);
-  const when = `${formatDay(i.day, 'tr')}, ${i.time} (Türkiye saati)`;
-  const lines =
-    i.kind === 'session'
-      ? [`Görüşme türü: ${SESSION_TYPES.find((t) => t.id === i.type)!.tr}`]
-      : [
-          'Ücretsiz ön görüşme talebi',
-          `Kimin için: ${INTRO_FOR.find((f) => f.id === i.forWhom)!.tr}`,
-          `Konular: ${(i.topics ?? []).map((t) => INTRO_TOPICS.tr[t]).join(', ')}`,
-          `Daha önce destek aldı mı: ${i.before === 'yes' ? 'Evet' : i.before === 'no' ? 'Hayır' : 'Belirtmedi'}`,
-          `Yaş aralığı: ${AGE_RANGES.tr[i.age!]}`,
-          'Konu seçimleri için açık rıza: verildi',
-        ];
-  const body = [
-    ...lines,
-    `İstenen gün ve saat: ${when}`,
-    `Ad Soyad: ${name}`,
-    `E-posta: ${i.email.trim().toLowerCase()}`,
-    `Telefon: ${oneLine(i.phone)}`,
-    `Konuşma dili: ${lang === 'en' ? 'İngilizce' : 'Türkçe'}`,
-    `Gönderim: ${new Date(now).toISOString()}`,
-    '',
-    ...(i.note.trim() ? ['Not:', i.note.trim(), ''] : []),
-    'Bu saat 24 saat boyunca sitede "Dolu" görünüyor. Panelde Randevu Talepleri ekranından onaylayın ya da yanıtlayın; karar vermezseniz saat 24 saat sonra kendiliğinden açılır:',
-    `Randevu Talepleri: ${PANEL_URL}#/randevular`,
-    '',
-    '—',
-    'Yanıtla dediğinizde e-posta danışana gider; onayı ya da başka bir saat önerisini oradan yazabilirsiniz.',
-  ].join('\n');
-  const label = i.kind === 'session' ? 'Randevu talebi' : 'Ön görüşme talebi';
-  return { subject: `[klinikterapist] ${label} — ${name} — ${formatDay(i.day, 'tr')} ${i.time}`, body };
+  const note = i.note.trim();
+  return mailTr(i.kind === 'session' ? 'bildirim.seans-talebi' : 'bildirim.ongorusme-talebi', {
+    ad: oneLine(i.name),
+    ...whenVars(i.day, i.time),
+    ...typeVars(i.type, i.kind === 'intro'),
+    gonderim: stamp(now),
+    e_posta: i.email.trim().toLowerCase(),
+    telefon: oneLine(i.phone),
+    dil: lang === 'en' ? 'İngilizce' : 'Türkçe',
+    not: note,
+    '#not': note ? '1' : '',
+    kimin_icin: forWhom(i.forWhom, 'them'),
+    konular: topicList(i.topics) || '– Seçilmedi',
+    daha_once_destek: i.before === 'yes' ? 'Evet' : i.before === 'no' ? 'Hayır' : 'Belirtmedi',
+    yas: i.age !== undefined ? (AGE_RANGES.tr[i.age] ?? '') : '',
+    panel_baglantisi: `${PANEL_URL}#/randevular`,
+  });
 }
 
 /** Fixed text: nothing the visitor typed goes into it (the link is made here). */
@@ -169,25 +157,12 @@ function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subjec
       ].join('\n'),
     };
   }
-  const what = i.kind === 'session' ? SESSION_TYPES.find((t) => t.id === i.type)!.tr : 'Ücretsiz ön görüşme';
-  return {
-    subject: 'Talebiniz alındı – klinikterapist.com',
-    body: [
-      'Merhaba,',
-      '',
-      `Talebiniz alındı: ${what}, ${when} (Türkiye saati).`,
-      'Saat henüz kesinleşmedi. Onaylamak ya da başka bir saat önermek için size e-postayla yazacağım.',
-      '',
-      ...verifyLines(link, 'tr'),
-      '',
-      'Bu talebi siz göndermediyseniz bu e-postayı dikkate almayın.',
-      '',
-      'Saygılarımla,',
-      'Osman Güneş Özkurt',
-      'Klinik Psikolog',
-      'klinikterapist.com',
-    ].join('\n'),
-  };
+  return mailTr(i.kind === 'session' ? 'oto.talep-alindi.seans' : 'oto.talep-alindi.ongorusme', {
+    ...whenVars(i.day, i.time),
+    ...typeVars(i.type, i.kind === 'intro'),
+    kimin_icin: upFirst(forWhom(i.forWhom, 'you')),
+    dogrulama_baglantisi: link,
+  });
 }
 
 const BUSY_CACHE = 'booking.busy';

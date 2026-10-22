@@ -276,7 +276,7 @@ export function ClientPage({ id }: { id: string }) {
             </span>
           )}
           {payable && !s.paid && (
-            <Button className="ss-pay" disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s), send: true })}>
+            <Button className="ss-pay" disabled={busy} onClick={() => setPaying({ s, mail: thanksMail(client.contact, s, client.type), send: true })}>
               Ödendi
             </Button>
           )}

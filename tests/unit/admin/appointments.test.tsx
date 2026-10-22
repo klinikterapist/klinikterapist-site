@@ -73,10 +73,13 @@ describe('ready e-mails', () => {
     const a = decisionMail(session, 'approve');
     expect(a.subject).toBe('Randevunuz onaylandı – klinikterapist.com');
     expect(a.body).toContain('Sayın Ayşe Yılmaz,');
-    expect(a.body).toContain('22 Ekim 2026, Perşembe, saat 19.20 için çift terapisi randevu talebiniz onaylandı.');
-    expect(decisionMail(intro, 'approve').body).toContain('şu konuları konuşmak istediğinizi belirttiniz: Kaygı ve stres, Uyku');
+    expect(a.body).toContain('22 Ekim 2026, Perşembe, saat 19.20 için gönderdiğiniz randevu talebiniz onaylandı.');
+    expect(a.body).toContain('– Seans türü: Çift terapisi');
+    expect(a.body).toContain('→ Aydınlatma metnini oku: https://klinikterapist.com/aydinlatma-metni/');
+    expect(a.body).toMatch(/Saygılarımla,\nOsman Güneş Özkurt\nKlinik Psikolog\nklinikterapist\.com$/);
+    expect(decisionMail(intro, 'approve').body).toContain('konuları konuşmak istediğinizi belirttiniz:\n\n– Kaygı ve stres\n– Uyku');
     const u = decisionMail(session, 'unavailable');
-    expect(u.body).toContain('Ne yazık ki bu saatte uygun değilim.');
+    expect(u.body).toContain('Ne yazık ki bu tarih ve saatte uygun olmadığım için talebinizi onaylayamıyorum.');
     expect(u.body).toContain('https://klinikterapist.com/randevu/');
     expect(decisionMail({ ...intro, lang: 'en' }, 'cancel').body).toContain('https://klinikterapist.com/en/intro-call/');
   });
@@ -86,10 +89,10 @@ describe('ready e-mails', () => {
     expect(endMail(c, 'complete').body).toContain('terapi sürecinin sona erdiğini');
     const closing = endMail(c, 'closing').body;
     expect(closing).toContain('ücretsiz, 25–30 dakikalık bir sonlandırma görüşmesi');
-    expect(closing).toContain('Sonlandırma görüşmesi terapinin önemli bir parçasıdır.');
+    expect(closing).toContain('Sonlandırma görüşmesi terapi sürecinin önemli bir parçasıdır.');
     const sorry = revertMail(c).body;
     expect(sorry).toContain('teknik bir sorun nedeniyle yanlışlıkla gönderildi');
-    expect(sorry).toContain('bir sonraki e-postamda');
+    expect(sorry).toContain('ayrı bir e-postayla göndereceğim');
     expect(endMail({ ...c, lang: 'en' }, 'closing').subject).toBe('A closing session for our therapy – klinikterapist.com');
   });
 });
@@ -211,7 +214,7 @@ describe('Seans takip', () => {
     expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Sayın Osman Güneş Özkurt,');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder ve takipten çıkar' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(0));
-    expect(api.state.sent[0]).toMatchObject({ to: 'osman@example.com', subject: 'Terapi sürecimizin sonlanması – klinikterapist.com' });
+    expect(api.state.sent[0]).toMatchObject({ to: 'osman@example.com', subject: 'Terapi sürecimiz tamamlandı – klinikterapist.com' });
     expect(await screen.findByText(/Seans takipten çıkarıldı/)).toBeTruthy();
     expect(screen.getByRole('link', { name: '← Danışanlara dön' })).toBeTruthy();
   });
@@ -325,7 +328,7 @@ describe('Randevu ekle, randevu alımı, bekleme listesi (owner’s review 2026-
     let dialog = screen.getByRole('dialog', { name: 'Saat öner' });
     fireEvent.change(within(dialog).getByLabelText('Tarih (isteğe bağlı)'), { target: { value: '2026-10-22' } });
     fireEvent.change(within(dialog).getByLabelText('Saat'), { target: { value: '19:20' } });
-    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('22 Ekim 2026, Perşembe, saat 19.20');
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('– Tarih: 22 Ekim 2026, Perşembe\n– Saat: 19.20');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
     await waitFor(() => expect(api0.state.waitlist[0].offeredAt).toBeTruthy());
     fireEvent.click(within(await card('Elif Bekler')).getByRole('button', { name: 'Listeden çıkar' }));
@@ -392,7 +395,7 @@ describe("the client's own page, seen from the panel", () => {
     const body = within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement;
     expect(body.value).toMatch(/https:\/\/klinikterapist\.com\/randevum\/#k=c1\./);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
-    await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Randevu sayfanız – klinikterapist.com' })));
+    await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Randevu sayfanızın bağlantısı – klinikterapist.com' })));
     expect(await screen.findByText(/danışana e-postayla gönderildi/)).toBeTruthy();
     cleanup();
     setup('tracking', [], [asked]);
@@ -413,15 +416,15 @@ describe('Faz 1: payments on the client’s page', () => {
     fireEvent.click(within(first()).getByRole('button', { name: /diğer işlemler/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Ödeme hatırlat' }));
     let dialog = await screen.findByRole('dialog');
-    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('Seans ücreti: 1.500 TL.');
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('– Seans ücreti: 1.500 TL');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
     await waitFor(() => expect(api.state.sent).toContainEqual(expect.objectContaining({ to: 'osman@example.com', subject: 'Seans ödemesi hatırlatması – klinikterapist.com' })));
     fireEvent.click(within(first()).getByRole('button', { name: 'Ödendi' }));
     dialog = await screen.findByRole('dialog');
-    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('ödemesi alındı. Teşekkür ederim.');
+    expect((within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value).toContain('yaptığınız ödeme bana ulaştı.');
     fireEvent.click(within(dialog).getByRole('button', { name: 'İşaretle ve gönder' }));
     await waitFor(() => expect(api.state.clients[0].sessions).toContainEqual(expect.objectContaining({ day: day(3), paid: expect.any(Number) })));
-    expect(api.state.sent.at(-1)).toMatchObject({ subject: 'Ödemeniz alındı – klinikterapist.com' });
+    expect(api.state.sent.at(-1)).toMatchObject({ subject: 'Seans ödemeniz alındı – klinikterapist.com' });
     expect(await within(next).findByText(/^Ödendi · /)).toBeTruthy();
     // Only marking: no e-mail.
     const sent = api.state.sent.length;

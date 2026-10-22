@@ -28,6 +28,11 @@ import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SENDER_NAME, SITE, sameString } from './text';
 import { logEvent, shortWhen } from './events';
 import { asSender, notifyTo } from './mailboxes';
+import { getPayment } from './payment';
+import { readQr } from './qr';
+import { mailTr } from '../../src/lib/mail-texts';
+import { typeVars, whenVars } from '../../src/lib/mail-vars';
+import { payVars } from '../../src/lib/payment';
 
 export const TRACK_BAD_MAX = 30;
 const HOUR_MS = 3600 * 1000;
@@ -70,33 +75,20 @@ export function viewTracking(gas: Gas, p: Record<string, unknown>): TrackView {
   return viewOf(gas, clients, c, gas.now());
 }
 
-const when = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s.time.replace(':', '.')}`;
 
 type Change = { s: { day: string; time: string }; to?: { day: string; time: string }; late: boolean };
 
 function ownerMail(c: StoredClient, ask: TrackAsk, ch: Change | null, note: string): { subject: string; body: string } {
-  const page = `${PANEL_URL}#/seans-takip/${c.id}`;
-  const fee = ch?.late ? ['', 'Bu işlem seansa 24 saatten az kala yapıldı. Danışan, seans ücretinin tamamının ödeneceğini ve bunun kendi sorumluluğunda olduğunu belirten uyarıyı onayladı.'] : [];
-  const lines =
-    ask === 'cancel'
-      ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını iptal etti.`, 'Seans, Seans takip\'te "İptal edildi · danışan istedi" olarak işaretlendi; saat takvimde ve sitede açıldı.', ...fee]
-      : ask === 'postpone'
-        ? [`${c.number}, kendi randevu sayfasından ${when(ch!.s)} seansını ${when(ch!.to!)} tarihine erteledi.`, 'Seans, Seans takip\'te "Ertelendi · danışan istedi" olarak işaretlendi; yeni saat takvime işlendi, eski saat açıldı.', ...fee]
-        : [`${c.number}, kendi randevu sayfasından terapiyi sonlandırmak istediğini bildirdi.`, 'Danışanla konuştuktan sonra danışanın sayfasında "Terapiyi sonlandır"ı kullanabilirsiniz.'];
-  const late = ch?.late ? ' (24 saatten az kala)' : '';
-  const subject = { cancel: `seansını iptal etti${late} — ${ch ? when(ch.s) : ''}`, postpone: `seansını erteledi${late} — ${ch ? `${when(ch.s)} → ${ch.to ? when(ch.to) : ''}` : ''}`, end: 'terapiyi sonlandırmak istiyor' }[ask];
-  return {
-    subject: `[klinikterapist] ${c.number} ${subject}`,
-    body: [
-      ...lines,
-      '',
-      ...(note ? ['Danışanın notu:', note, ''] : []),
-      `Danışanın sayfası (panel): ${page}`,
-      '',
-      '—',
-      'Yanıtla dediğinizde e-posta danışanın adresine gider.',
-    ].join('\n'),
-  };
+  const id = ask === 'cancel' ? (ch?.late ? 'bildirim.iptal-gec' : 'bildirim.iptal') : ask === 'postpone' ? 'bildirim.erteleme' : 'bildirim.sonlandirma';
+  return mailTr(id, {
+    danisan_kodu: c.number,
+    ...(ch ? whenVars(ch.s.day, ch.s.time) : {}),
+    ...(ch?.to ? { yeni_tarih: whenVars(ch.to.day, ch.to.time).tarih, yeni_saat: whenVars(ch.to.day, ch.to.time).saat } : {}),
+    not: note,
+    '#not': note ? '1' : '',
+    '#gec': ch?.late ? '1' : '',
+    panel_baglantisi: `${PANEL_URL}#/seans-takip/${c.id}`,
+  });
 }
 
 /**
@@ -133,29 +125,17 @@ function clientMail(gas: Gas, c: StoredClient, ask: TrackAsk, ch: Change | null)
       ].join('\n'),
     };
   }
-  const lines =
-    ask === 'cancel'
-      ? [`${at(ch!.s)} seansınız, randevu sayfanızdan yaptığınız işlemle iptal edildi.`]
-      : ask === 'postpone'
-        ? [`${at(ch!.s)} seansınız ${at(ch!.to!)} tarihine ertelendi.`]
-        : ['Terapiyi sonlandırma isteğiniz bana ulaştı. En kısa sürede size yazacağım.'];
-  return {
-    subject: { cancel: 'Seansınız iptal edildi', postpone: 'Seansınız ertelendi', end: 'İsteğiniz bana ulaştı' }[ask] + ' – klinikterapist.com',
-    body: [
-      'Merhaba,',
-      '',
-      ...lines,
-      ...(ch?.late ? ['Bu işlem seansa 24 saatten az kala yapıldığı için, sayfada onayladığınız gibi seans ücretinin tamamı ödenir.'] : []),
-      '',
-      `Randevu sayfanız: ${link}`,
-      'Bu işlemi siz yapmadıysanız lütfen bu e-postayı yanıtlayarak hemen bana yazın.',
-      '',
-      'Saygılarımla,',
-      'Osman Güneş Özkurt',
-      'Klinik Psikolog',
-      'klinikterapist.com',
-    ].join('\n'),
-  };
+  const id = ask === 'cancel' ? (ch?.late ? 'oto.iptal-gec' : 'oto.iptal') : ask === 'postpone' ? 'oto.erteleme' : 'oto.sonlandirma-istegi';
+  // A late cancellation gives the fee and how to pay, as the page said.
+  const pay = ask === 'cancel' && ch?.late ? payVars(getPayment(gas), c.type, !!readQr(gas)) : {};
+  return mailTr(id, {
+    ...typeVars(c.type),
+    ...(ch ? whenVars(ch.s.day, ch.s.time) : {}),
+    ...(ch?.to ? { yeni_tarih: whenVars(ch.to.day, ch.to.time).tarih, yeni_saat: whenVars(ch.to.day, ch.to.time).saat } : {}),
+    ...pay,
+    sayfa_baglantisi: link,
+    '#gec': ch?.late ? '1' : '',
+  });
 }
 
 /** `track.ask` (public): what the client did on their page. */

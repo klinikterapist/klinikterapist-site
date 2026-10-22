@@ -21,6 +21,7 @@ import { WAITLIST_KEEP_DAYS, WAITLIST_LABELS, validateWaitlist, type WaitlistInp
 import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { asSender, notifyTo } from './mailboxes';
 import { isClosed } from './booking';
+import { mailTr } from '../../src/lib/mail-texts';
 
 const FILE = 'bekleme.json';
 const KEEP_MS = WAITLIST_KEEP_DAYS * 24 * 3600 * 1000;
@@ -90,26 +91,18 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
   gas.withLock(() => writeItems(gas, FILE, [...live(gas), entry]));
 
   const tr = WAITLIST_LABELS.tr;
-  gas.mail.send({
-    to: notifyTo(gas, owner),
-    replyTo: email,
-    subject: `[klinikterapist] Haber et — ${entry.name}`,
-    body: [
-      'Randevu alımı kapalıyken biri "Haber et" formunu doldurdu: boşalan bir saat olursa haber bekliyor.',
-      '',
-      `Ad Soyad: ${entry.name}`,
-      `E-posta: ${email}`,
-      `Telefon: ${entry.phone}`,
-      `Aradığı görüşme: ${entry.kinds.map((k) => tr[k as keyof typeof tr]).join(', ')}`,
-      `Uygun zamanlar: ${entry.times.map((t) => tr[t as keyof typeof tr]).join(', ') || 'Belirtmedi'}`,
-      `Konuşma dili: ${lang === 'en' ? 'İngilizce' : 'Türkçe'}`,
-      ...(entry.reason ? ['', 'Başvuru sebebi:', entry.reason] : []),
-      '',
-      `Bekleme listesi: ${PANEL_URL}#/randevular?liste`,
-      `Kayıt en fazla ${WAITLIST_KEEP_DAYS} gün tutulur.`,
-    ].join('\n'),
-    name: 'klinikterapist.com randevu formu',
+  const notice = mailTr('bildirim.bekleme', {
+    ad: entry.name,
+    e_posta: email,
+    telefon: entry.phone,
+    tur: entry.kinds.map((k) => tr[k as keyof typeof tr]).join(', '),
+    uygun_zamanlar: entry.times.map((t) => tr[t as keyof typeof tr]).join(', ') || 'Belirtmedi',
+    dil: lang === 'en' ? 'İngilizce' : 'Türkçe',
+    basvuru_nedeni: oneLine(entry.reason),
+    saklama_gun: String(WAITLIST_KEEP_DAYS),
+    panel_baglantisi: `${PANEL_URL}#/randevular?liste`,
   });
+  gas.mail.send({ to: notifyTo(gas, owner), replyTo: email, ...notice, name: 'klinikterapist.com randevu formu' });
   const link = verifyLink(gas, `w:${entry.id}`, entry.kinds.length === 1 && entry.kinds[0] === 'intro' ? 'preConsult' : 'appointment', lang);
   gas.mail.send({
     to: email,
@@ -132,22 +125,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
           'Clinical Psychologist',
           'klinikterapist.com',
         ]
-      : [
-          'Merhaba,',
-          '',
-          'İlginiz için teşekkür ederim. Şu an tüm seans saatlerim dolu olduğu için sizi bekleme listeme aldım.',
-          'Bir saat boşaldığında bu e-posta adresinize yazacağım.',
-          '',
-          ...verifyLines(link, 'tr'),
-          '',
-          `Bilgileriniz en fazla ${WAITLIST_KEEP_DAYS} gün saklanır. Listeden çıkmak isterseniz bu e-postayı yanıtlamanız yeterli.`,
-          'Bu formu siz doldurmadıysanız bu e-postayı dikkate almayın.',
-          '',
-          'Saygılarımla,',
-          'Osman Güneş Özkurt',
-          'Klinik Psikolog',
-          'klinikterapist.com',
-        ]
+      : mailTr('oto.bekleme-alindi', { dogrulama_baglantisi: link, saklama_gun: String(WAITLIST_KEEP_DAYS) }).body.split('\n')
     ).join('\n'),
     name: SENDER_NAME,
   });

@@ -20,12 +20,14 @@ import { CLIENTS, REQUESTS, publicClient, sendMail, type StoredClient } from './
 import { trackLink } from './tracking';
 import { PANEL_URL, SENDER_NAME } from './text';
 import { logEvent, shortWhen } from './events';
-import { INTRO_MINUTES, formatDay, slotInstant } from '../../src/lib/booking-form';
+import { INTRO_MINUTES, slotInstant } from '../../src/lib/booking-form';
 import { FREE_KINDS, SessionError, applyChange, markSent, sessionsOf, type SessionRecord } from '../../src/lib/sessions';
 import { EMPTY_PAYMENT, parsePayment, paymentReminderMail, sessionReminderMail, type PaymentSettings } from '../../src/lib/payment';
 import { DAY_RE, TIME_RE } from '../../src/lib/field-rules';
 import { asSender, notifyTo } from './mailboxes';
 import { readQr, saveQr } from './qr';
+import { mailTr } from '../../src/lib/mail-texts';
+import { whenVars } from '../../src/lib/mail-vars';
 
 const PROP = 'PAYMENT_SETTINGS';
 const HOUR = 3600 * 1000;
@@ -78,13 +80,13 @@ export function payClient(gas: Gas, p: Record<string, unknown>): { client: Clien
   });
 }
 
-const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'tr')}, ${s.time.replace(':', '.')}`;
 
 /** The hourly reminders. Returns the e-mails sent, for the log and the tests. */
 export function runReminders(gas: Gas): number {
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) return 0;
   const pay = getPayment(gas);
+  const qr = !!readQr(gas);
   const out: MailMessage[] = [];
   const toClient = (c: { email: string }, m: { subject: string; body: string }) => out.push({ to: c.email, ...asSender(gas, 'booking', owner), subject: m.subject, body: m.body, name: SENDER_NAME });
   gas.withLock(() => {
@@ -108,30 +110,22 @@ export function runReminders(gas: Gas): number {
           changed = true;
         };
         if (!sent.includes('r72') && left > 24 * HOUR) {
-          toClient(c.contact, sessionReminderMail(c.contact, s, { type: c.type, free, paid }, pay, trackLink(gas, c)));
+          toClient(c.contact, sessionReminderMail(c.contact, s, { type: c.type, free, paid }, pay, trackLink(gas, c), qr));
           mark('r72');
           // Sent late (the client came in under 48 hours): it already asked for the payment.
           if (left <= 48 * HOUR) mark('r48');
         } else if (!free && !paid && !sent.includes('r48') && left <= 48 * HOUR && left > 24 * HOUR) {
-          toClient(c.contact, paymentReminderMail(c.contact, s, c.type, pay));
+          toClient(c.contact, paymentReminderMail(c.contact, s, c.type, pay, trackLink(gas, c), qr));
           mark('r48');
         }
         if (!free && !paid && !sent.includes('due') && left <= pay.dueHours * HOUR) {
-          out.push({
-            to: notifyTo(gas, owner),
-            replyTo: c.contact.email,
-            subject: `[klinikterapist] ${c.number}: ödeme alınmadı — ${at(s)}`,
-            body: [
-              `${c.number} numaralı danışanın ${at(s)} seansına ${Math.max(1, Math.round(left / HOUR))} saat kaldı ve ödeme "ödendi" olarak işaretlenmedi.`,
-              'Ödeme geldiyse danışanın sayfasında "Ödendi" deyin. Ertelemek isterseniz yine oradan "Ertele"yi kullanın; sistem kendiliğinden bir şey yapmaz.',
-              '',
-              `Danışanın sayfası (panel): ${PANEL_URL}#/seans-takip/${c.id}`,
-              '',
-              '—',
-              'Yanıtla dediğinizde e-posta danışanın adresine gider.',
-            ].join('\n'),
-            name: 'klinikterapist.com randevu sistemi',
+          const m = mailTr('bildirim.odeme-yok', {
+            danisan_kodu: c.number,
+            ...whenVars(s.day, s.time),
+            odeme_suresi: String(Math.max(1, Math.round(left / HOUR))),
+            panel_baglantisi: `${PANEL_URL}#/seans-takip/${c.id}`,
           });
+          out.push({ to: notifyTo(gas, owner), replyTo: c.contact.email, ...m, name: 'klinikterapist.com randevu sistemi' });
           mark('due');
           logEvent(gas, 'payment', `${c.number}: ödeme alınmadı · ${shortWhen(s)}`, `#/seans-takip/${c.id}`);
         }
@@ -148,7 +142,7 @@ export function runReminders(gas: Gas): number {
       const left = slotInstant(r.day, r.time) - now;
       if (left <= 24 * HOUR || left > 72 * HOUR) return r;
       const free = r.kind === 'intro';
-      toClient(r, sessionReminderMail({ name: r.name, lang: r.lang }, r, { type: r.type ?? 'individual', free, paid: false }, pay));
+      toClient(r, sessionReminderMail({ name: r.name, lang: r.lang }, r, { type: r.type ?? 'individual', free, paid: false }, pay, undefined, qr));
       reqChanged = true;
       return { ...r, reminded: true };
     });
