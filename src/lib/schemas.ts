@@ -306,11 +306,10 @@ export const bookingSchema = z.object({
 /**
  * session-info.json (owner's review 2026-10-23): the session form's "Bilgilendirme" step, edited in
  * Ayarlar › Randevu Ayarları › Bilgilendirme. Per session type its name on the form and its text;
- * `online` is shown under every online type. Texts: blank lines part paragraphs, "- " lines make a
+ * Texts: blank lines part paragraphs, "- " lines make a
  * list, "### " a heading (booking-info textBlocks).
  */
 export const sessionInfoSchema = z.object({
-  online: localized,
   types: z.record(z.string(), z.object({ name: localized, info: localized })),
 });
 export type SessionInfo = z.infer<typeof sessionInfoSchema>;

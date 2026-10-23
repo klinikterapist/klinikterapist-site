@@ -7,8 +7,7 @@
  *   "Şu an uygun değil" or not at all, as chosen on its card; types with places say "Kontenjanlı".
  *   Below them, how the intro call can be held: by phone, by video call or both.
  * - Bilgilendirme: per type its name on the session form and the text of the form's "Bilgilendirme"
- *   step, Turkish and English, and the online-session text shown under every online type
- *   (session-info.json, owner's review 2026-10-23).
+ *   step, Turkish and English (session-info.json, owner's review 2026-10-23).
  * - Çalışma Saatleri: the weekly start times of sessions and of intro calls, a day per row; a day's times
  *   can be copied to the other weekdays.
  * - Kurallar: notice before booking, how far ahead, the rest between appointments.
@@ -35,7 +34,7 @@ type Kind = 'session' | 'intro';
 /** Each tab, what its Kaydet writes (paths in booking.json, or in session-info.json for `info`) and how the button reads. */
 const TABS: { id: Tab; label: string; icon: LucideIcon; paths: string[]; save: string }[] = [
   { id: 'types', label: 'Görüşme Türleri', icon: Tags, paths: ['types', 'closedAs', 'introVia'], save: 'Görüşme türlerini kaydet' },
-  { id: 'info', label: 'Bilgilendirme', icon: Info, paths: ['types', 'online'], save: 'Bilgilendirmeyi kaydet' },
+  { id: 'info', label: 'Bilgilendirme', icon: Info, paths: ['types'], save: 'Bilgilendirmeyi kaydet' },
   { id: 'hours', label: 'Çalışma Saatleri', icon: CalendarClock, paths: ['session.weekdays', 'intro.weekdays'], save: 'Çalışma saatlerini kaydet' },
   {
     id: 'rules',
@@ -408,21 +407,6 @@ export function RandevuScreen() {
                         <InfoCard key={t.id} id={t.id} value={info.types[t.id]} onChange={(v) => infoFile.setValue((x) => ({ ...x, types: { ...x.types, [t.id]: v } }))} />
                       ) : null,
                     )}
-                    <details className="info-card tone-deniz">
-                      <summary>
-                        <span className="tone-tile" aria-hidden="true">
-                          <SiteIcon name="laptop" size={18} />
-                        </span>
-                        <span className="tc-name">
-                          <b>Online görüşme için gerekenler</b>
-                          <span className="tc-meta">Bütün online türlerin altında görünür</span>
-                        </span>
-                      </summary>
-                      <div className="info-fields">
-                        <Field label="Türkçe" multiline rows={12} value={info.online.tr} onChange={(tr) => infoFile.setValue((x) => ({ ...x, online: { ...x.online, tr } }))} />
-                        <Field label="İngilizce" multiline rows={12} value={info.online.en} onChange={(en) => infoFile.setValue((x) => ({ ...x, online: { ...x.online, en } }))} />
-                      </div>
-                    </details>
                   </div>
                 </Part>
               )}

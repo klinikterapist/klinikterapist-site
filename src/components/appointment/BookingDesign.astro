@@ -225,7 +225,6 @@ const types = SESSION_TYPES.map((t) => {
     online: t.id !== 'face',
   };
 }).filter((x) => x.state !== 'hidden');
-const onlineInfo = textBlocks(sessionInfo.online[lang]);
 const firstOn = types.findIndex((x) => x.on);
 ---
 
@@ -313,11 +312,6 @@ const firstOn = types.findIndex((x) => x.on);
                   </p>
                 </header>
                 {x.info.map((b) => (typeof b === 'string' ? <p>{b}</p> : 'h' in b ? <h4>{b.h}</h4> : <ul>{b.ul.map((li) => <li>{li}</li>)}</ul>))}
-                {x.online && onlineInfo.length > 0 && (
-                  <div class="session-online">
-                    {onlineInfo.map((b) => (typeof b === 'string' ? <p>{b}</p> : 'h' in b ? <h4>{b.h}</h4> : <ul>{b.ul.map((li) => <li>{li}</li>)}</ul>))}
-                  </div>
-                )}
               </article>
             ))
         }
@@ -504,7 +498,7 @@ const firstOn = types.findIndex((x) => x.on);
 </script>
 
 <style>
-  .session-info {
+  .session-info:not([hidden]) {
     display: grid;
     gap: var(--space-3);
     line-height: 1.6;
@@ -537,15 +531,6 @@ const firstOn = types.findIndex((x) => x.on);
     display: grid;
     gap: 6px;
     padding-left: 1.2em;
-  }
-
-  .session-online {
-    display: grid;
-    gap: var(--space-3);
-    margin-top: var(--space-2);
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    background: color-mix(in srgb, var(--sun-halo) 14%, transparent);
   }
 
   .session-ask {

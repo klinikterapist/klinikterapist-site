@@ -131,7 +131,7 @@ describe('static pages', () => {
     expect(en.querySelector('main [data-closed]')).not.toBeNull();
   });
 
-  it('session form: a "Bilgilendirme" step after the type, per offered type, with the online text and "okudum" (owner, 2026-10-23)', () => {
+  it('session form: a "Bilgilendirme" step after the type, per offered type, with "okudum" (owner, 2026-10-23)', () => {
     const d = loadPage('/seans-randevusu/');
     const steps = d.querySelectorAll('main [data-booking] [data-step]').map((s) => s.getAttribute('data-step'));
     expect(steps).toEqual(['1', '2', '3', '4', '5']);
@@ -141,7 +141,7 @@ describe('static pages', () => {
     expect(info.querySelectorAll('[data-info-for]').map((a) => a.getAttribute('data-info-for'))).toEqual(offered);
     const couple = info.querySelector('[data-info-for="couple"]');
     if (couple) expect(couple.text).toMatch(/birlikte katıl/);
-    expect(info.querySelector('[data-info-for="individual"] .session-online')?.text).toContain('Online Görüşme İçin Gerekenler');
+    expect(info.text).not.toMatch(/Online Görüşme İçin Gerekenler/);
     expect(info.querySelector('input[name="infoRead"][required]')).not.toBeNull();
     expect(d.querySelector('main [data-step="3"]')?.getAttribute('data-need')).toBe('slot');
     expect(d.querySelector('main [data-step="4"][data-details]')).not.toBeNull();
