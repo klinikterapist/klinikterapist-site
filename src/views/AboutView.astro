@@ -54,7 +54,7 @@ const facts = about.facts
   }))
   .filter((f) => f.value && !(f.value.startsWith('0+') && !education));
 
-const areas = about.areas.map((a) => ({ title: a.label[lang].trim(), icon: a.icon })).filter((a) => a.title);
+const areas = about.areas.map((a) => ({ title: a.label[lang].trim(), icon: a.icon, desc: a.desc?.[lang].trim() ?? '' })).filter((a) => a.title);
 const topics = about.topics.map((x) => x[lang].trim()).filter(Boolean);
 // "Nasıl Çalışırım" as coloured cards (owner's choice A, 2026-10-23): each card takes the next of the
 // six tones; an approach shows its short name ("BDT", "ACT") in its tile, or a leaf when it has none.
@@ -225,6 +225,7 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
                       <li class={`tone-${toneAt(i)}`}>
                         <span class="how-tile" aria-hidden="true"><Icon name={a.icon} size={22} /></span>
                         <b>{a.title}</b>
+                        {a.desc && <small>{a.desc}</small>}
                       </li>
                     ))}
                   </ul>
@@ -793,6 +794,12 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
   .area-cards b {
     font-size: 0.98rem;
     line-height: 1.3;
+  }
+
+  .area-cards small {
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
   }
 
   .how-tile {

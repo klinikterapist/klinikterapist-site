@@ -111,7 +111,8 @@ const aboutSchema = z.object({
   lead: localized,
   /** Short facts under the lead ("2023'ten beri" + "online terapi"). A value of "{hours}" shows the theory hours total. */
   facts: z.array(z.object({ value: localized, label: localized })).default([]),
-  areas: z.array(z.object({ icon: z.string(), label: localized })),
+  /** `desc`: an optional short line on the area's card (owner's review 2026-10-23). */
+  areas: z.array(z.object({ icon: z.string(), label: localized, desc: localized.optional() })),
   /** "Konular" and "Yaklaşımlar": short labels shown as chips under the work areas (owner's review 2026-10-22). */
   topics: z.array(localized).default([]),
   approaches: z.array(localized).default([]),

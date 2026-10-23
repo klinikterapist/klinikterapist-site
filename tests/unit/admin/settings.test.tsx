@@ -223,7 +223,8 @@ describe('settings screens', () => {
   it('Hakkımda: a timeline period switched to "TR/EN ayrı" is saved as { tr, en }', async () => {
     const api = setup('hakkimda');
     const first = json(api, 'src/data/about.json').timeline[0].title.tr as string;
-    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) }));
+    // The old timeline sits last on the screen, under the education groups (which can have a card of the same name).
+    fireEvent.click((await screen.findAllByRole('button', { name: new RegExp(`^${first.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) })).at(-1)!);
     fireEvent.change(within(screen.getByRole('dialog')).getByLabelText('Dönem biçimi'), { target: { value: 'localized' } });
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tamam' }));
     save();
@@ -231,6 +232,30 @@ describe('settings screens', () => {
     const period = json(api, 'src/data/about.json').timeline[0].period;
     expect(typeof period).toBe('object');
     expect(Object.keys(period).sort()).toEqual(['en', 'tr']);
+  });
+
+  it('Hakkımda: topics, a work area’s short line and education cards are added in the panel (owner’s review 2026-10-23)', async () => {
+    const api = setup('hakkimda');
+    fireEvent.click(await screen.findByRole('button', { name: 'Konu ekle' }));
+    let dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Konu (Türkçe)'), { target: { value: 'Ebeveynlik' } });
+    fireEvent.change(within(dialog).getByLabelText('Konu (İngilizce)'), { target: { value: 'Parenting' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tamam' }));
+    fireEvent.click(screen.getByRole('button', { name: '+ Workshop ve webinar' }));
+    const addCard = screen.getAllByRole('button', { name: 'Kart ekle' }).at(-1)!;
+    fireEvent.click(addCard);
+    dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Başlık (Türkçe)'), { target: { value: 'Travma Webinarı' } });
+    fireEvent.change(within(dialog).getByLabelText('Başlık (İngilizce)'), { target: { value: 'Trauma Webinar' } });
+    fireEvent.change(within(dialog).getByLabelText('Kurum, tarih ve kısa bilgi (Türkçe)'), { target: { value: 'Online · 2026' } });
+    fireEvent.change(within(dialog).getByLabelText('Kurum, tarih ve kısa bilgi (İngilizce)'), { target: { value: 'Online · 2026' } });
+    fireEvent.change(within(dialog).getByLabelText('Teorik eğitim (saat)'), { target: { value: '3' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Tamam' }));
+    save();
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    const about = json(api, 'src/data/about.json');
+    expect(about.topics.at(-1)).toEqual({ tr: 'Ebeveynlik', en: 'Parenting' });
+    expect(about.education.groups.at(-1)).toMatchObject({ kind: 'workshop', items: [{ title: { tr: 'Travma Webinarı' }, theory: 3 }] });
   });
 
   it('Kategoriler: a category in use cannot be deleted', async () => {
