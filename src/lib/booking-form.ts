@@ -165,11 +165,16 @@ export const INTRO_TOPICS = {
   ],
 } as const;
 
-/** Adolescents, adults and older adults (owner's answer 2026-10-20); under 12 is not offered. */
+/**
+ * Age ranges, kept by index (stored requests hold the index). 12–17 stays for requests sent before
+ * 2026-10-23 but is no longer offered: the owner does not work online with children and teenagers.
+ */
 export const AGE_RANGES = {
   tr: ['12–17 (veli ya da vasi onayıyla)', '18–24', '25–34', '35–44', '45–54', '55–64', '65 ve üzeri'],
   en: ['12–17 (with a parent’s or guardian’s consent)', '18–24', '25–34', '35–44', '45–54', '55–64', '65 and over'],
 } as const;
+/** The first age range the intro form offers (18–24). */
+export const AGE_OFFERED_FROM = 1;
 
 export const BOOKING_LIMITS = { nameMax: 100, emailMax: 254, phoneMin: 10, phoneMax: 20, noteMax: 500 } as const;
 
@@ -318,7 +323,7 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
     const topics = input.topics ?? [];
     if (!topics.length) errors.topics = 'required';
     else if (topics.some((i) => !Number.isInteger(i) || i < 0 || i >= INTRO_TOPICS.tr.length) || new Set(topics).size !== topics.length) errors.topics = 'invalid';
-    if (!Number.isInteger(input.age) || input.age! < 0 || input.age! >= AGE_RANGES.tr.length) errors.age = 'required';
+    if (!Number.isInteger(input.age) || input.age! < AGE_OFFERED_FROM || input.age! >= AGE_RANGES.tr.length) errors.age = 'required';
     if (topics.length && !input.healthConsent) errors.healthConsent = 'required';
     if (input.via !== undefined && !introVias(cfg).includes(input.via)) errors.via = 'required';
   }

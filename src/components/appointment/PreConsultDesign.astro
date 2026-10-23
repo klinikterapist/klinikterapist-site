@@ -12,7 +12,7 @@
 import type { Lang } from '../../lib/settings';
 import { getBooking, getProfile } from '../../lib/settings';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
-import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, TYPE_BADGES, introVias, typeState } from '../../lib/booking-form';
+import { AGE_OFFERED_FROM, AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, TYPE_BADGES, introVias, typeState } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
@@ -78,6 +78,7 @@ const T = {
     mail: 'E-posta',
     phone: 'Telefon',
     age: 'Yaş aralığınız',
+    ageHint: 'Ön görüşme ve seanslar 18 yaşından büyükler içindir.',
     agePick: 'Seçin',
     country: 'Nerede yaşıyorsunuz?',
     consentA: 'Aydınlatma metnini',
@@ -155,6 +156,7 @@ const T = {
     mail: 'E-mail',
     phone: 'Phone',
     age: 'Your age range',
+    ageHint: 'Intro calls and sessions are for adults aged 18 and over.',
     agePick: 'Choose',
     country: 'Where do you live?',
     consentA: 'I have read the ',
@@ -332,8 +334,9 @@ const vias = introVias(booking);
             <span>{T.age} <span class="req" aria-hidden="true">*</span></span>
             <select name="age" required>
               <option value="">{T.agePick}</option>
-              {AGE_RANGES[lang].map((a, i) => <option value={i}>{a}</option>)}
+              {AGE_RANGES[lang].map((a, i) => i >= AGE_OFFERED_FROM && <option value={i}>{a}</option>)}
             </select>
+            <small>{T.ageHint}</small>
           </label>
           <label class="field">
             <span>{T.country} <span class="req" aria-hidden="true">*</span></span>

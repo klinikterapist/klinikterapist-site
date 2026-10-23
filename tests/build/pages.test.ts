@@ -157,6 +157,11 @@ describe('static pages', () => {
     expect(step.text).toContain('Telefonla arayın');
     expect(step.text).toContain('Görüntülü görüşme');
     expect(d.querySelectorAll('main [data-step="5"] [data-sum="via"]')).toHaveLength(1);
+    // No online work with children and teenagers (owner, 2026-10-23).
+    const ages = d.querySelectorAll('main select[name="age"] option').map((o) => o.text);
+    expect(ages[1]).toBe('18–24');
+    expect(ages.join(' ')).not.toContain('12–17');
+    expect(d.textContent).toContain('Ön görüşme ve seanslar 18 yaşından büyükler içindir.');
   });
 
   it('contact page has the form, the channels and the emergency note', () => {
@@ -761,7 +766,9 @@ describe('sample content (real posts and data)', () => {
     ] as const) {
       const items = sample(faq).querySelectorAll('main details');
       for (const it of items) expect(it.text.trim().length).toBeGreaterThan(0);
-      expect(sample(home).querySelectorAll('.home-phone details.faq details.faq-item')).toHaveLength(items.length);
+      // Questions set to the FAQ page only (`pages`) are not in the home accordion.
+      const faqOnly = (JSON.parse(readFileSync('src/data/faq.json', 'utf8')) as { pages?: string[] }[]).filter((f) => f.pages && f.pages.includes('faq') && !f.pages.includes('home')).length;
+      expect(sample(home).querySelectorAll('.home-phone details.faq details.faq-item')).toHaveLength(items.length - faqOnly);
       const ld = sample(faq)
         .querySelectorAll('script[type="application/ld+json"]')
         .map((s) => JSON.parse(s.text))

@@ -151,7 +151,7 @@ export const STRINGS = {
   readStory: { tr: 'Hikayenin devamını oku', en: 'Read the rest of my story' },
   trainingShort: { tr: 'Eğitim', en: 'Training' },
   trainingSummary: { tr: 'teorik, {p} saat uygulamalı eğitim', en: 'of theory, {p} hours of practice' },
-  aboutCta: { tr: 'Sıra sizde.', en: 'Your turn.' },
+  aboutCta: { tr: 'Hazır olduğunuzda buradayım.', en: 'I am here when you are ready.' },
   career: { tr: 'Kariyer', en: 'Career' },
   careerHint: { tr: 'Okul ve işler, yıllara göre', en: 'Schools and work, by year' },
   careerSchool: { tr: 'Okul', en: 'School' },

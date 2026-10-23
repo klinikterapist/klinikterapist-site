@@ -146,6 +146,9 @@ describe('validateBooking', () => {
     expect(validateBooking(intro({ topics: [0, 0] }), cfg, NOW).topics).toBe('invalid');
     expect(validateBooking(intro({ topics: [99] }), cfg, NOW).topics).toBe('invalid');
     expect(validateBooking(intro({ age: 9 }), cfg, NOW).age).toBe('required');
+    // 12–17 is no longer offered: no online work with children and teenagers (owner, 2026-10-23).
+    expect(validateBooking(intro({ age: 0 }), cfg, NOW).age).toBe('required');
+    expect(validateBooking(intro({ age: 1 }), cfg, NOW).age).toBeUndefined();
     expect(validateBooking(intro({ healthConsent: false }), cfg, NOW).healthConsent).toBe('required');
     expect(validateBooking(intro({ day: '2026-10-22' }), cfg, NOW).slot).toBe('invalid');
   });
