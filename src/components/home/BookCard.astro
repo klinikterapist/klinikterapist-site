@@ -1,0 +1,88 @@
+---
+/**
+ * The home page "Randevu Al" as a card (owner's choice D, 2026-10-23): an icon tile, "Randevu Al"
+ * with a short line under it, and an arrow. Phone (HomeView, full width, `id="top-cta"`) and desktop
+ * (DesktopHero) use the same card. The closed state stays with each page.
+ */
+import Icon from '../Icon.astro';
+import type { Lang } from '../../lib/settings';
+import { bookHref } from '../../lib/booking-intake';
+import { t } from '../../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  id?: string;
+  class?: string;
+}
+const { lang, id, class: cls } = Astro.props;
+---
+
+<a id={id} class:list={['book-card', cls]} href={bookHref(lang)}>
+  <span class="bc-tile" aria-hidden="true"><Icon name="booking" size={24} /></span>
+  <span class="bc-lines">
+    <b>{t(lang, 'bookSession')}</b>
+    <small>{t(lang, 'bookCardSub')}</small>
+  </span>
+  <span class="bc-go" aria-hidden="true"><Icon name="arrow" size={20} /></span>
+</a>
+
+<style>
+  .book-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+    max-width: 26rem;
+    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    text-align: left;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+  }
+
+  .book-card:hover {
+    background: var(--btn-bg-hover);
+    color: var(--btn-text);
+  }
+
+  .bc-tile {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--btn-text) 14%, transparent);
+  }
+
+  .bc-lines {
+    display: grid;
+    gap: 2px;
+    line-height: 1.25;
+  }
+
+  .bc-lines b {
+    font-size: 1.0625rem;
+  }
+
+  .bc-lines small {
+    opacity: 0.85;
+    font-size: 0.8125rem;
+  }
+
+  .bc-go {
+    display: grid;
+    transition: transform 0.2s ease;
+  }
+
+  .book-card:hover .bc-go {
+    transform: translateX(3px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bc-go {
+      transition: none;
+    }
+  }
+</style>

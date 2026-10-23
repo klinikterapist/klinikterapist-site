@@ -16,6 +16,7 @@ import TilePair from '../components/ui/TilePair.astro';
 import HandwritingFont from '../components/home/HandwritingFont.astro';
 import ReadingCards from '../components/home/ReadingCards.astro';
 import StickyCta from '../components/ui/StickyCta.astro';
+import BookCard from '../components/home/BookCard.astro';
 import PostCard from '../components/PostCard.astro';
 import Icon from '../components/Icon.astro';
 import Wordmark from '../components/brand/Wordmark.astro';
@@ -106,10 +107,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
             <span class="closed-badge">{t(lang, 'bookingClosed')}</span>
           </a>
         ) : (
-          <a id="top-cta" class="top-cta" href={bookHref(lang)}>
-            <Icon name="booking" size={20} />
-            {t(lang, 'bookSession')}
-          </a>
+          <BookCard lang={lang} id="top-cta" class="top-card" />
         )
       }
       {
@@ -292,6 +290,11 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     font-size: 0.96875rem;
     line-height: 1.55;
     text-align: center;
+  }
+
+  /* The card "Randevu Al" (owner's choice D, 2026-10-23) keeps the column's centre on the phone. */
+  :global(.top-card) {
+    margin-inline: auto;
   }
 
   .top-cta {
@@ -515,7 +518,7 @@ const newTab = { target: '_blank', rel: 'noopener noreferrer me' };
     align-items: center;
     min-height: 44px;
     padding: 0 var(--space-5);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-btn);
     background: var(--bg);
     color: var(--text);
     font-size: var(--text-sm);

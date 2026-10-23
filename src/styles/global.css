@@ -106,6 +106,13 @@ select option:disabled {
   color: var(--muted);
 }
 
+/* The desktop header floats over the page (owner's choice C, 2026-10-23): jumps to an anchor stop below it. */
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 104px;
+  }
+}
+
 /* Layout helpers */
 .container {
   width: 100%;
@@ -149,7 +156,7 @@ select option:disabled {
   color: var(--btn-text);
 }
 
-/* Primary pill button (Randevu Al etc.) */
+/* Primary button (Randevu Al etc.): soft corners (owner's choice C, 2026-10-23). */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -157,7 +164,7 @@ select option:disabled {
   gap: var(--space-2);
   min-height: 44px;
   padding: 0 var(--space-5);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-btn);
   background: var(--btn-bg);
   color: var(--btn-text);
   font-family: var(--font-sans);
@@ -171,6 +178,94 @@ select option:disabled {
 .btn:hover {
   background: var(--btn-bg-hover);
   color: var(--btn-text);
+}
+
+/* The other way beside the main one. */
+.btn-quiet {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.btn-quiet:hover {
+  border-color: var(--text);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* A button that leads somewhere ends in a small arrow circle that moves on hover (choice C). */
+.btn:has(> .go) {
+  padding-right: 6px;
+}
+
+.btn > .go {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 4px;
+  border-radius: calc(var(--radius-btn) - 4px);
+  background: var(--sun-disc);
+  color: #1F2E4A;
+  transition: transform 0.2s ease;
+}
+
+/* By night the button itself is sun yellow, so its circle is navy with a yellow arrow. */
+html[data-theme='dark'] .btn > .go {
+  background: var(--bg);
+  color: var(--sun-disc);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .btn > .go {
+    background: var(--bg);
+    color: var(--sun-disc);
+  }
+}
+
+.btn-quiet > .go,
+html[data-theme='dark'] .btn-quiet > .go {
+  background: var(--surface);
+  color: var(--link);
+}
+
+.btn:hover > .go {
+  transform: translateX(3px);
+}
+
+/* Small "go on" links: an arrow and a thin sun-yellow line under the words. */
+.link-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-go > span {
+  border-bottom: 2px solid color-mix(in srgb, var(--sun-disc) 70%, transparent);
+}
+
+.link-go > svg {
+  color: var(--link);
+  transition: transform 0.15s ease;
+}
+
+.link-go:hover {
+  color: var(--text);
+}
+
+.link-go:hover > svg {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn > .go,
+  .link-go > svg {
+    transition: none;
+  }
 }
 
 /* Inner pages (spec §5.9): one column of rounded boxes in the phone "app" language. */

@@ -76,7 +76,7 @@ describe('home (phone)', () => {
       expect(pair.querySelectorAll('a.tile')).toHaveLength(1);
     }
     expect(tr().querySelector('.home-phone .tile-pair a.tile')?.getAttribute('href')).toBe('/blog/');
-    expect(tr().textContent).not.toContain('Popüler yazılar');
+    expect(tr().textContent).not.toContain('Popüler Yazılar');
   });
 
   it('FAQ accordion nests one details per question answered in the page language', () => {
@@ -157,7 +157,8 @@ describe('home (desktop)', () => {
     expect(en().querySelector('.home-desk .desktop-hero h1.greeting .me')?.text).toBe("I'm Psychologist Osman Güneş Özkurt.");
     expect(hero.querySelector('p.tagline')?.text).toBe('Daha iyi bir yaşam mümkün.');
     expect(hero.text).toContain('Kendini anlamak');
-    expect(hero.querySelector('a.btn[href="/randevu-al/"]')).toBeTruthy();
+    // The card "Randevu Al" (owner's choice D, 2026-10-23).
+    expect(hero.querySelector('a.book-card[href="/randevu-al/"]')?.text).toContain('Randevu Al');
     // With the forms live (Faz 3, one way in) the intro call is offered on the start page, not beside "Randevu Al".
     expect(hero.querySelector('a.pre')).toBeNull();
     expect(en().querySelector('.home-desk .desktop-hero a.book.is-closed')?.getAttribute('href')).toBe('/en/appointment/');

@@ -41,6 +41,15 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
   const success = form.querySelector<HTMLElement>('[data-success]')!;
   const failure = form.querySelector<HTMLElement>('[data-failure]')!;
   const control = (name: string) => form.elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+  // The topic is a group of cards (radio buttons, owner's choice B 2026-10-23): its value is the checked
+  // one, and the group (a fieldset marked data-group) carries the error state and the change events.
+  const group = (name: string) => form.querySelector<HTMLElement>(`[data-group="${name}"]`);
+  const target = (name: string): HTMLElement | null => group(name) ?? (control(name) as HTMLElement | null);
+  const valueOf = (name: string) => (form.elements.namedItem(name) as RadioNodeList | HTMLInputElement | null)?.value ?? '';
+  const focusField = (name: string) => {
+    const g = group(name);
+    (g ? (g.querySelector<HTMLInputElement>('input:checked') ?? g.querySelector<HTMLInputElement>('input')) : (control(name) as HTMLElement | null))?.focus();
+  };
 
   // The script does the checking (with texts in the page's language) from here on, and only now
   // can the form be sent: the button is disabled in the markup.
@@ -48,7 +57,7 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
   button.disabled = false;
 
   const setError = (field: ContactField, text: string) => {
-    const el = control(field);
+    const el = target(field);
     const out = form.querySelector<HTMLElement>(`[data-error-for="${field}"]`);
     if (!el || !out) return;
     out.textContent = text;
@@ -60,14 +69,14 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
   const read = (): ContactInput & { hp_field: string } => ({
     name: control('name')?.value ?? '',
     email: control('email')?.value ?? '',
-    topic: control('topic')?.value ?? '',
+    topic: valueOf('topic'),
     message: control('message')?.value ?? '',
     consent: (control('consent') as HTMLInputElement | null)?.checked ?? false,
     hp_field: control('hp_field')?.value ?? '',
   });
 
   for (const field of FIELDS) {
-    control(field)?.addEventListener(field === 'consent' || field === 'topic' ? 'change' : 'input', () => setError(field, ''));
+    target(field)?.addEventListener(field === 'consent' || field === 'topic' ? 'change' : 'input', () => setError(field, ''));
   }
 
   const busy = (on: boolean) => {
@@ -86,7 +95,7 @@ export function initContactForm(form: HTMLFormElement, deps: Deps = { fetch: win
     for (const field of FIELDS) setError(field, errors[field] ? errorText(field, errors[field]!, messages) : '');
     const first = FIELDS.find((f) => errors[f]);
     if (first) {
-      control(first)?.focus();
+      focusField(first);
       return;
     }
 

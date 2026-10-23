@@ -1,20 +1,18 @@
 ---
 /**
- * Contact (spec §5.9, owner's review 2026-10-18): photo (or the sun), "İletişim", the intro; the contact
- * form (with a note sending appointment questions to the Randevu page); then "E-posta gönder", the
- * "Online görüşme" / "Dönüş süresi" pair, the social accordion, the membership, and the emergency note
- * in a dashed box drawn with theme tokens (readable by day and by night).
+ * Contact (owner's choice B, 2026-10-23): a short head (photo, "İletişim", the intro), the form that
+ * starts with the topic cards (with the note sending appointment questions to the Randevu page), one
+ * row of ways to reach me (e-mail, response time, social accounts) and the emergency note. The page
+ * does one job; the "Online görüşme" box, the social accordion and the membership line are gone (the
+ * membership stays on Hakkımda and in the search data). Same layout on the phone, in one column.
  */
 import PageShell from '../layouts/PageShell.astro';
 import PageHead from '../components/ui/PageHead.astro';
 import RoundPortrait from '../components/ui/RoundPortrait.astro';
-import ListItem from '../components/ui/ListItem.astro';
-import TilePair from '../components/ui/TilePair.astro';
-import SocialAccordion from '../components/ui/SocialAccordion.astro';
 import Icon from '../components/Icon.astro';
 import ContactForm from '../components/contact/ContactForm.astro';
 import type { Lang } from '../lib/settings';
-import { contactEmail, getContact, getProfile } from '../lib/settings';
+import { contactEmail, getContact, getLinks, getProfile } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
 import { t } from '../i18n/ui';
 
@@ -29,24 +27,9 @@ const title = t(lang, 'navContact');
 const intro = contact.intro[lang].trim();
 const { meta, alternatePaths } = pageMeta('contact', lang, title, intro);
 
-/** "Dönüş süresi: 24–48 saat." under the title "Dönüş süresi" reads "24–48 saat.". */
-function withoutLabel(text: string, label: string): string {
-  const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
-  if (!text.toLocaleLowerCase(locale).startsWith(label.toLocaleLowerCase(locale))) return text;
-  const rest = text.slice(label.length);
-  return /^\s*:/.test(rest) ? rest.replace(/^\s*:\s*/, '') : text;
-}
-
-type Tile = { title: string; subtitle: string; icon: string };
-const facts: Tile[] = [
-  { title: t(lang, 'onlineSessions'), subtitle: contact.workStyle[lang].trim(), icon: 'laptop' },
-  { title: t(lang, 'responseTitle'), subtitle: withoutLabel(contact.responseTime[lang].trim(), t(lang, 'responseTitle')), icon: 'clock' },
-].filter((f) => f.subtitle);
-const factPair: [Tile] | [Tile, Tile] | null = facts.length === 2 ? [facts[0], facts[1]] : facts.length === 1 ? [facts[0]] : null;
-
-const memberships = (profile.memberships ?? [])
-  .map((m) => ({ org: m.org[lang].trim(), number: m.number?.trim() ?? '' }))
-  .filter((m) => m.org);
+// "Dönüş süresi: 24–48 saat." as written in the panel, so the chip says what the time is.
+const response = contact.responseTime[lang].trim();
+const socials = getLinks().filter((l) => l.icon !== 'email');
 const emergency = contact.emergencyNote[lang].trim();
 ---
 
@@ -60,34 +43,32 @@ const emergency = contact.emergencyNote[lang].trim();
     <div class="page-stack">
       <ContactForm lang={lang} email={email} />
 
-      <ListItem icon="email" tone="lacivert" title={t(lang, 'sendEmail')} subtitle={email} href={`mailto:${email}`} />
-
-      {
-        factPair && (
-          <div class="facts">
-            <TilePair tiles={factPair} />
-          </div>
-        )
-      }
-
-      <SocialAccordion lang={lang} />
-
-      {
-        memberships.map((m) => (
-          <ListItem
-            class="membership"
-            icon="shield"
-            tone="adacayi"
-            title={t(lang, 'memberOf').replace('{org}', m.org)}
-            subtitle={m.number ? t(lang, 'memberNo').replace('{n}', m.number) : undefined}
-          />
-        ))
-      }
+      <ul class="reach" aria-label={t(lang, 'otherWays')}>
+        <li>
+          <a href={`mailto:${email}`}><Icon name="email" size={18} />{email}</a>
+        </li>
+        {
+          response && (
+            <li>
+              <span><Icon name="clock" size={18} />{response}</span>
+            </li>
+          )
+        }
+        {
+          socials.map((l) => (
+            <li>
+              <a href={l.url} target="_blank" rel="noopener noreferrer me" aria-label={l.label} title={l.label} class="soc">
+                <Icon name={l.icon} size={18} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
 
       {
         emergency && (
           <aside class="emergency-box" aria-label={t(lang, 'emergency')}>
-            <Icon name="alert" size={20} />
+            <Icon name="alert" size={18} />
             <p>{emergency}</p>
           </aside>
         )
@@ -97,12 +78,53 @@ const emergency = contact.emergencyNote[lang].trim();
 </PageShell>
 
 <style>
+  .reach {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .reach a,
+  .reach span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .reach a:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  .reach .soc {
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+  }
+
+  .reach :global(.icon) {
+    flex: none;
+    color: var(--link);
+  }
+
   .emergency-box {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 12px 14px;
-    border: 1px dashed var(--line);
+    padding: 10px 12px;
+    border-left: 3px solid #d9534f;
     border-radius: var(--radius-md);
     background: var(--surface);
     color: var(--muted);
@@ -113,7 +135,7 @@ const emergency = contact.emergencyNote[lang].trim();
   .emergency-box :global(.icon) {
     flex: none;
     margin-top: 1px;
-    color: var(--text);
+    color: #d9534f;
   }
 
   .emergency-box p {

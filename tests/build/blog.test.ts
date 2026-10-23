@@ -309,7 +309,7 @@ describe('blog list redesign (spec §5.8)', () => {
     for (const lang of ['tr', 'en'] as const) {
       const d = loadPage(pages[lang]);
       expect(d.querySelector('h1')?.text).toBe(lang === 'tr' ? 'Popüler Yazılar' : 'Popular Posts');
-      expect(d.querySelector('title')?.text).toMatch(lang === 'tr' ? /^Popüler yazılar \| / : /^Popular posts \| /);
+      expect(d.querySelector('title')?.text).toMatch(lang === 'tr' ? /^Popüler Yazılar \| / : /^Popular Posts \| /);
       expect(d.querySelector('meta[name=description]')?.getAttribute('content')).toBe(
         lang === 'tr'
           ? 'Psikoloji ve daha iyi bir yaşam üzerine en çok okunan ve öne çıkan yazılar.'

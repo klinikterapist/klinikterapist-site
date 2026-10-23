@@ -134,7 +134,7 @@ describe('static pages', () => {
       // POST, never GET: even a native submit (no script yet) cannot put personal data in a URL.
       expect(form.getAttribute('method')).toBe('post');
       expect(form.hasAttribute('action')).toBe(false);
-      for (const name of ['name', 'email', 'topic', 'message', 'consent']) {
+      for (const name of ['name', 'email', 'message', 'consent']) {
         const el = form.querySelector(`[name="${name}"]`)!;
         expect(el, `${path} ${name}`).toBeTruthy();
         expect(el.hasAttribute('required'), name).toBe(true);
@@ -144,8 +144,15 @@ describe('static pages', () => {
       expect(form.querySelector('[name=email]')?.getAttribute('type')).toBe('email');
       expect(form.querySelector('[name=name]')?.getAttribute('maxlength')).toBe('100');
       expect(form.querySelector('[name=message]')?.getAttribute('maxlength')).toBe('5000');
-      const options = form.querySelectorAll('select[name=topic] option').filter((o) => o.getAttribute('value')).map((o) => o.text.trim());
-      expect(options).toEqual(CONTACT_TOPICS.map((t) => t[lang]));
+      // The topics as cards (owner's choice B, 2026-10-23): one radio group, required, with its error line.
+      const group = form.querySelector('fieldset[data-group=topic]')!;
+      expect(group.querySelector('legend')?.text.trim()).toBeTruthy();
+      expect(form.querySelector(`#${group.getAttribute('aria-describedby')}[data-error-for="topic"]`)).toBeTruthy();
+      const radios = group.querySelectorAll('input[type=radio][name=topic]');
+      expect(radios.map((r) => r.getAttribute('value'))).toEqual(CONTACT_TOPICS.map((t) => t.id));
+      expect(radios[0].hasAttribute('required')).toBe(true);
+      expect(group.querySelectorAll('.topic-name').map((n) => n.text.trim())).toEqual(CONTACT_TOPICS.map((t) => t[lang]));
+      expect(form.querySelector('select')).toBeNull();
       const consent = form.querySelector('.consent label')!;
       expect(consent.querySelector('a')?.getAttribute('href')).toBe(lang === 'tr' ? '/aydinlatma-metni/' : '/en/privacy-notice/');
       const hp = form.querySelector('.hp')!;
@@ -181,9 +188,9 @@ describe('static pages', () => {
     expect(html.indexOf('data-contact-form')).toBeLessThan(html.indexOf('emergency-box'));
   });
 
-  it('contact page: the social accordion lists every social link in file order', () => {
+  it('contact page: one row of ways to reach me lists every social link in file order', () => {
     const links = JSON.parse(readFileSync('tests/fixtures/data/links.json', 'utf8')) as { label: string; icon: string }[];
-    const names = loadPage('/iletisim/').querySelectorAll('details.social a.soc .soc-name').map((n) => n.text.trim());
+    const names = loadPage('/iletisim/').querySelectorAll('main .reach a.soc').map((n) => n.getAttribute('aria-label'));
     const social = links.filter((l) => l.icon !== 'email').map((l) => l.label);
     expect(names).toEqual(social);
     expect(social).toEqual(expect.arrayContaining(['TikTok', 'X (Twitter)', 'Threads']));
@@ -389,14 +396,16 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(squash(loadPage('/en/about/').querySelector('#panel-education .counter b')?.text)).toBe('96+ hours');
   });
 
-  it('about: work areas, topics and approaches as chips, and links to booking and contact', () => {
+  it('about: work areas and approaches as coloured cards, topics as chips, and links to booking and contact', () => {
     const d = loadPage('/hakkimda/');
     const how = d.querySelector('#panel-how')!;
-    expect(how.querySelectorAll('.chips--areas li').map((t) => t.text.trim())).toEqual(
+    expect(how.querySelectorAll('.area-cards li b').map((t) => t.text.trim())).toEqual(
       fixture('about.json').areas.map((a: { label: { tr: string } }) => a.label.tr),
     );
-    expect(how.querySelectorAll('.box h3').map((h) => h.text)).toEqual(['Çalışma Alanlarım', 'Konular', 'Yaklaşımlar']);
-    expect(how.querySelectorAll('.chips--green li').map((t) => t.text.trim())).toEqual(['BDT']);
+    expect(how.querySelectorAll('.how-title').map((h) => h.text)).toEqual(['Çalışma Alanlarım', 'Yaklaşımlar', 'Konular']);
+    // An approach that is only a short name shows it in its tile, once.
+    expect(how.querySelectorAll('.appr-cards .appr-abbr').map((t) => t.text.trim())).toEqual(['BDT']);
+    expect(how.querySelectorAll('.appr-cards small')).toHaveLength(0);
     const cta = d.querySelector('main .about-cta')!;
     expect(cta.querySelector('a.cta-book')?.getAttribute('href')).toBe('/randevu-al/');
     expect(cta.querySelector('a.cta-contact[href="/iletisim/"]')?.text).toContain('Benimle iletişime geç');
@@ -449,31 +458,27 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(squash(d.querySelector('main .page-head .lead')?.text)).toBe(fixture('contact.json').intro.tr);
     // The form is the page's main content; appointment questions go to the Randevu page via its note.
     expect(d.querySelector('main a.big-cta')).toBeNull();
-    const mail = d.querySelector('main a.list-item[href="mailto:iletisim@example.com"]')!;
-    expect(mail.querySelector('.title')?.text).toBe('E-posta gönder');
-    expect(mail.querySelector('.subtitle')?.text).toBe('iletisim@example.com');
+    const mail = d.querySelector('main .reach a[href="mailto:iletisim@example.com"]')!;
+    expect(mail.text.trim()).toBe('iletisim@example.com');
   });
 
-  it('contact: "Online görüşme" / "Dönüş süresi" pair, social accordion, membership', () => {
+  it('contact: the response time in the row; no "Online görüşme" box, social accordion or membership (owner’s choice B, 2026-10-23)', () => {
     const d = loadPage('/iletisim/');
-    const tiles = d.querySelectorAll('main .facts .tile');
-    expect(tiles.map((t) => t.querySelector('.title')?.text)).toEqual(['Online görüşme', 'Dönüş süresi']);
-    expect(tiles[0].querySelector('.subtitle')?.text).toBe(fixture('contact.json').workStyle.tr);
-    expect(tiles[1].querySelector('.subtitle')?.text).toBe('24–48 saat.');
-    expect(d.querySelector('main details.social summary')?.text).toContain('Sosyal medyada takip et');
-    expect(squash(d.querySelector('main .membership .title')?.text)).toBe('Türk Psikologlar Derneği üyesi');
+    expect(d.querySelectorAll('main .reach span').map((s) => squash(s.text))).toContain(fixture('contact.json').responseTime.tr);
+    expect(d.querySelector('main .facts')).toBeNull();
+    expect(d.querySelector('main details.social')).toBeNull();
+    expect(d.querySelector('main .membership')).toBeNull();
     const en = loadPage('/en/contact/');
-    expect(en.querySelectorAll('main .facts .tile .title').map((t) => t.text)).toEqual(['Online sessions', 'Response time']);
-    expect(en.querySelectorAll('main .facts .tile .subtitle')[1].text).toBe('24–48 hours.');
+    expect(en.querySelectorAll('main .reach span').map((s) => squash(s.text))).toContain(fixture('contact.json').responseTime.en);
   });
 
-  it('contact: emergency note in a dashed, token-coloured box', () => {
+  it('contact: emergency note in a short, token-coloured box', () => {
     for (const [path, lang] of [['/iletisim/', 'tr'], ['/en/contact/', 'en']] as const) {
       const box = loadPage(path).querySelector('main .emergency-box')!;
       expect(squash(box.text), path).toBe(fixture('contact.json').emergencyNote[lang]);
     }
     const src = readFileSync('src/views/ContactView.astro', 'utf8');
-    expect(src).toMatch(/\.emergency-box\s*\{[^}]*border:\s*1px dashed var\(--line\)[^}]*background:\s*var\(--surface\)/);
+    expect(src).toMatch(/\.emergency-box\s*\{[^}]*background:\s*var\(--surface\)/);
     expect(src).not.toMatch(/#f3e3dc|#6b2f1f/i);
   });
 

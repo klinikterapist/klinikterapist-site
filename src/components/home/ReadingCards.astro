@@ -41,12 +41,14 @@ const line = [posts.length ? TEXT.counts(posts.length, topics) : '', blog?.subti
           <a class="btn" href={blog.href}>
             <Icon name="book" size={18} />
             {blog.title}
+            <span class="go" aria-hidden="true"><Icon name="arrow" size={16} /></span>
           </a>
         )}
         {popular.length > 0 && (
           <a class="btn btn-quiet" href={popularHref}>
             <Icon name="flame" size={18} />
             {t(lang, 'popularPosts')}
+            <span class="go" aria-hidden="true"><Icon name="arrow" size={16} /></span>
           </a>
         )}
       </div>
@@ -88,17 +90,6 @@ const line = [posts.length ? TEXT.counts(posts.length, topics) : '', blog?.subti
     align-items: center;
   }
 
-  .btn-quiet {
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--text);
-  }
-
-  .btn-quiet:hover {
-    border-color: var(--text);
-    background: var(--bg);
-    color: var(--text);
-  }
 
   @media (max-width: 900px) {
     .reading-band {

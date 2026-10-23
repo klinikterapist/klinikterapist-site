@@ -1,9 +1,12 @@
 ---
 /**
- * What the booking forms show once a request is sent (owner's texts, 2026-10-22): the request is
- * received, the address is checked with the button in the e-mail, the owner writes back within
- * working hours. Then a short note that everything goes by e-mail, in confidence and openly, and two
- * ways to stay on the site (the home page, the blog). booking-submit.ts shows it (`[data-done]`).
+ * What the booking forms show once a request is sent (owner's choice A, 2026-10-23): a check mark,
+ * "Talebiniz bana ulaştı", and what happens next in three steps. The first step, the one the person
+ * has to take, stands out: confirm the address with the button in the e-mail. The intro call and a
+ * session differ in steps two and three (owner's note: someone who books a session straight away gets
+ * the confirmation with the payment details, then pays and has the session). Under the steps, a short
+ * note that everything goes by e-mail and in confidence, and two short buttons to stay on the site.
+ * booking-submit.ts shows it (`[data-done]`).
  */
 import type { Lang } from '../../lib/settings';
 import { pathFor } from '../../i18n/routes';
@@ -17,82 +20,220 @@ interface Props {
 }
 const { lang, kind, id } = Astro.props;
 
+type Step = { title: string; text: string };
+
 const TEXT = {
   tr: {
+    verify: {
+      title: 'E-postanızı doğrulayın',
+      text: 'Size gönderdiğim e-postadaki “E-posta adresimi doğrula” düğmesine tıklayın. Gelen kutunuzda yoksa istenmeyen e-postalar klasörüne bakın.',
+    },
     intro: {
-      title: 'Ön Görüşme Randevu Talebiniz Alınmıştır 🌿',
-      body: [
-        'Ön görüşme talebiniz bana ulaştı. Talebinizi doğrulayabilmem için lütfen size gönderdiğim e-postadaki “E-posta adresimi doğrula” düğmesine tıklayın.',
-        'Onayınızın ardından, çalışma saatleri içerisinde ön görüşmemizin gün ve saatini netleştirmek üzere size e-posta yoluyla dönüş yapacağım.',
+      title: 'Talebiniz Bana Ulaştı',
+      lead: 'Teşekkür ederim. Şimdi tek bir adım kaldı.',
+      steps: [
+        { title: 'Size yazarım', text: 'Doğrulamanın ardından, çalışma saatleri içinde ön görüşmenin gün ve saatini netleştirmek için e-postayla dönerim.' },
+        { title: 'Ön görüşmede tanışırız', text: '25–30 dakikalık, ücretsiz bir online görüşme. Bağlantıyı önceden e-postayla gönderirim.' },
       ],
     },
     session: {
-      title: 'Seans Randevunuz Alınmıştır',
-      body: [
-        'Size kısa bir “randevu talebiniz alındı” e-postası gönderdim. E-posta adresinizi doğrulamak için o e-postadaki “E-posta adresimi doğrula” düğmesine tıklayın.',
-        'Çalışma saatleri içerisinde, seansın tarihini ve saatini onaylamak için en kısa sürede e-postanıza dönüş yapacağım.',
+      title: 'Randevu Talebiniz Bana Ulaştı',
+      lead: 'Teşekkür ederim. Şimdi tek bir adım kaldı.',
+      steps: [
+        { title: 'Randevunuzu onaylarım', text: 'Çalışma saatleri içinde seansın tarih ve saatini onaylayan bir e-posta gönderirim. Ücret ve ödeme bilgileri de bu e-postada olur.' },
+        { title: 'Ödeme ve seans', text: 'Ödemeyi seanstan önce yaparsınız. Görüşme bağlantısını seanstan önce e-postayla gönderirim.' },
       ],
     },
-    hello: 'Merhaba,',
-    privacyTitle: 'Bütün süreç e-postayla yürür',
-    privacy: [
-      'Randevu, ödeme ve görüşme bağlantısıyla ilgili her bilgiyi yalnızca e-postayla, klinikterapist.com adreslerinden gönderiyorum. Başka bir yoldan gelen böyle bir mesajı dikkate almayın.',
-      'Paylaştığınız bilgiler gizli tutulur ve yalnızca görüşmemizi hazırlamak için kullanılır. Her adımda ne olacağını size önceden yazarım.',
-    ],
-    spam: 'E-postam gelen kutunuzda yoksa istenmeyen e-postalar klasörüne bakın.',
-    meanwhile: 'Bu arada sitede gezinebilirsiniz:',
-    home: 'Ana sayfaya dön',
-    blog: 'Blog yazılarını oku',
-    signOff: 'Görüşmek üzere,',
-    sign: 'Psikolog Osman Güneş Özkurt',
+    stepsLabel: 'Bundan sonra ne olacak',
+    safeTitle: 'Bütün süreç e-postayla yürür.',
+    safe: 'Randevu, ödeme ve görüşme bağlantısıyla ilgili her bilgiyi yalnızca klinikterapist.com adreslerinden gönderirim; başka bir yoldan gelen böyle bir mesajı dikkate almayın. Paylaştıklarınız gizli tutulur.',
+    home: 'Ana Sayfa',
+    blog: 'Blog',
+    sign: 'Görüşmek üzere, Psikolog Osman Güneş Özkurt',
   },
   en: {
+    verify: {
+      title: 'Confirm your e-mail',
+      text: 'Click the “Confirm my e-mail address” button in the e-mail I have sent you. If it is not in your inbox, please check your spam folder.',
+    },
     intro: {
-      title: 'Your Intro Call Request Has Been Received 🌿',
-      body: [
-        'Your intro call request has reached me. So that I can confirm it, please click the “Confirm my e-mail address” button in the e-mail I have sent you.',
-        'Once you have confirmed, I will write to you within working hours to settle the day and time of our intro call.',
+      title: 'Your Request Has Reached Me',
+      lead: 'Thank you. There is just one step left.',
+      steps: [
+        { title: 'I write to you', text: 'Once you have confirmed, I will write within working hours to settle the day and time of the intro call.' },
+        { title: 'We meet in the intro call', text: 'A free 25–30 minute online call. I send the link by e-mail beforehand.' },
       ],
     },
     session: {
-      title: 'Your Session Request Has Been Received',
-      body: [
-        'I have sent you a short acknowledgement by e-mail. To confirm your address, please click the “Confirm my e-mail address” button in it.',
-        'Within working hours I will write back as soon as possible to confirm the date and time of the session.',
+      title: 'Your Booking Request Has Reached Me',
+      lead: 'Thank you. There is just one step left.',
+      steps: [
+        { title: 'I confirm your appointment', text: 'Within working hours I send an e-mail confirming the date and time of the session, with the fee and payment details.' },
+        { title: 'Payment and session', text: 'You pay before the session. I send the call link by e-mail before the session.' },
       ],
     },
-    hello: 'Hello,',
-    privacyTitle: 'Everything goes by e-mail',
-    privacy: [
-      'I send every detail about appointments, payment and the call link only by e-mail, from klinikterapist.com addresses. Please ignore such a message if it comes any other way.',
-      'What you share is kept confidential and used only to prepare our meeting. I always tell you beforehand what happens next.',
-    ],
-    spam: 'If my e-mail is not in your inbox, please check your spam folder.',
-    meanwhile: 'In the meantime, feel free to look around:',
-    home: 'Back to the home page',
-    blog: 'Read the blog',
-    signOff: 'Speak soon,',
-    sign: 'Psychologist Osman Güneş Özkurt',
+    stepsLabel: 'What happens next',
+    safeTitle: 'Everything goes by e-mail.',
+    safe: 'I send every detail about appointments, payment and the call link only from klinikterapist.com addresses; please ignore such a message if it comes any other way. What you share is kept confidential.',
+    home: 'Home',
+    blog: 'Blog',
+    sign: 'Speak soon, Psychologist Osman Güneş Özkurt',
   },
 }[lang];
 const K = TEXT[kind];
+const steps: Step[] = [TEXT.verify, ...K.steps];
 ---
 
 <section class="card done" data-done tabindex="-1" aria-labelledby={id} hidden>
-  <h2 id={id}><Icon name="send" size={22} /> {K.title}</h2>
-  <p>{TEXT.hello}</p>
-  {K.body.map((line) => <p>{line}</p>)}
-  <p class="done-spam">{TEXT.spam}</p>
-  <div class="done-privacy">
-    <p class="done-privacy-title"><Icon name="shield" size={16} /> {TEXT.privacyTitle}</p>
-    {TEXT.privacy.map((line) => <p>{line}</p>)}
-  </div>
-  <p class="done-sign">
-    {TEXT.signOff}<br /><em>{TEXT.sign}</em>
+  <span class="done-badge" aria-hidden="true"><Icon name="send" size={26} /></span>
+  <h2 id={id}>{K.title}</h2>
+  <p class="done-lead">{K.lead}</p>
+  <ol class="done-steps" aria-label={TEXT.stepsLabel}>
+    {
+      steps.map((s, i) => (
+        <li class:list={{ 'is-now': i === 0 }}>
+          <span class="n" aria-hidden="true">{i + 1}</span>
+          <span>
+            <b>{s.title}</b>
+            <small>{s.text}</small>
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+  <p class="done-safe">
+    <Icon name="shield" size={18} />
+    <span><b>{TEXT.safeTitle}</b> {TEXT.safe}</span>
   </p>
-  <p class="done-more">{TEXT.meanwhile}</p>
-  <div class="done-links">
-    <a class="done-btn" href={pathFor('home', lang)}><Icon name="home" size={18} />{TEXT.home}</a>
-    <a class="done-btn is-quiet" href={pathFor('blog', lang)}><Icon name="book" size={18} />{TEXT.blog}</a>
+  <div class="done-acts">
+    <a class="btn" href={pathFor('home', lang)}><Icon name="home" size={18} />{TEXT.home}</a>
+    <a class="btn btn-quiet" href={pathFor('blog', lang)}><Icon name="book" size={18} />{TEXT.blog}</a>
   </div>
+  <p class="done-sign">{TEXT.sign}</p>
 </section>
+
+<style>
+  .done {
+    max-width: 34rem;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .done[hidden] {
+    display: none;
+  }
+
+  .done-badge {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: var(--tone-adacayi-bg);
+    color: var(--tone-adacayi);
+  }
+
+  .done h2 {
+    justify-content: center;
+    margin: 0 0 6px;
+  }
+
+  .done-lead {
+    margin: 0 auto var(--space-5);
+    color: var(--muted);
+  }
+
+  .done-steps {
+    display: grid;
+    margin: 0 0 var(--space-5);
+    padding: 0;
+    list-style: none;
+    text-align: left;
+  }
+
+  .done-steps li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 12px;
+    padding-bottom: 16px;
+  }
+
+  /* The line joining the step numbers. */
+  .done-steps li:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    top: 34px;
+    bottom: 0;
+    left: 16px;
+    width: 2px;
+    background: var(--line);
+  }
+
+  .done-steps .n {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--bg);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .done-steps .is-now .n {
+    background: var(--sun-disc);
+    color: #1F2E4A;
+  }
+
+  .done-steps b {
+    display: block;
+    font-size: 0.95rem;
+  }
+
+  .done-steps small {
+    display: block;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .done-safe {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0 0 var(--space-5);
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    color: var(--muted);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    text-align: left;
+  }
+
+  .done-safe :global(.icon) {
+    flex: none;
+    margin-top: 2px;
+    color: var(--tone-deniz);
+  }
+
+  .done-safe b {
+    color: var(--text);
+  }
+
+  .done-acts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .done-sign {
+    margin: var(--space-4) 0 0;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-style: italic;
+  }
+</style>

@@ -40,6 +40,16 @@ const [consentBefore, consentAfter] = around('formConsent');
 const [failBefore, failAfter] = around('formFailure');
 const [noJsBefore, noJsAfter] = around('formNoScript');
 const id = (name: string) => `cf-${name}`;
+// The topics as cards with an icon and a tone (owner's choice B, 2026-10-23), instead of a dropdown.
+const TOPIC_LOOK: Record<string, { icon: string; tone: string }> = {
+  general: { icon: 'chat', tone: 'lavanta' },
+  request: { icon: 'note', tone: 'adacayi' },
+  complaint: { icon: 'alert', tone: 'kiremit' },
+  collaboration: { icon: 'users', tone: 'deniz' },
+  advertising: { icon: 'tag', tone: 'gunes' },
+  press: { icon: 'podcast', tone: 'lacivert' },
+  other: { icon: 'pen', tone: 'lavanta' },
+};
 ---
 
 <section class="contact-form" aria-labelledby="cf-title">
@@ -50,6 +60,25 @@ const id = (name: string) => `cf-${name}`;
   </p>
 
   <form method="post" data-contact-form data-endpoint={endpoint} data-lang={lang} data-messages={JSON.stringify(messages)}>
+    <fieldset class="field topics" data-group="topic" aria-describedby={id('topic-err')}>
+      <legend>{t(lang, 'formTopicAsk')}</legend>
+      <div class="topic-grid">
+        {
+          CONTACT_TOPICS.map((topic, i) => (
+            <label class={`topic tone-${TOPIC_LOOK[topic.id]?.tone ?? 'lavanta'}`}>
+              <input type="radio" name="topic" value={topic.id} required={i === 0} />
+              <span class="topic-tile" aria-hidden="true">
+                <Icon name={TOPIC_LOOK[topic.id]?.icon ?? 'chat'} size={18} />
+              </span>
+              <span class="topic-name">{topic[lang]}</span>
+            </label>
+          ))
+        }
+      </div>
+      <p class="error" id={id('topic-err')} data-error-for="topic" hidden></p>
+    </fieldset>
+
+    <div class="pair">
     <div class="field">
       <label for={id('name')}>{t(lang, 'formName')}</label>
       <input id={id('name')} name="name" type="text" autocomplete="name" required maxlength={CONTACT_LIMITS.nameMax} aria-describedby={id('name-err')} />
@@ -61,18 +90,8 @@ const id = (name: string) => `cf-${name}`;
       <input id={id('email')} name="email" type="email" autocomplete="email" inputmode="email" required maxlength={CONTACT_LIMITS.emailMax} aria-describedby={id('email-err')} />
       <p class="error" id={id('email-err')} data-error-for="email" hidden></p>
     </div>
-
-    <div class="field">
-      <label for={id('topic')}>{t(lang, 'formTopic')}</label>
-      <span class="select">
-        <select id={id('topic')} name="topic" required aria-describedby={id('topic-err')}>
-          <option value="" selected disabled>{t(lang, 'formTopicChoose')}</option>
-          {CONTACT_TOPICS.map((topic) => <option value={topic.id}>{topic[lang]}</option>)}
-        </select>
-        <Icon name="chevron" size={16} class="select-chv" />
-      </span>
-      <p class="error" id={id('topic-err')} data-error-for="topic" hidden></p>
     </div>
+
 
     <div class="field">
       <label for={id('message')}>{t(lang, 'formMessage')}</label>
@@ -173,7 +192,6 @@ const id = (name: string) => `cf-${name}`;
 
   input[type='text'],
   input[type='email'],
-  select,
   textarea {
     width: 100%;
     min-height: 48px;
@@ -193,34 +211,122 @@ const id = (name: string) => `cf-${name}`;
     line-height: 1.5;
   }
 
-  .select {
-    position: relative;
-    display: block;
+  /* "Ne hakkında yazıyorsunuz?": the topics as cards (owner's choice B, 2026-10-23). */
+  .topics {
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
 
-  select {
-    padding-right: 40px;
-    appearance: none;
+  .topics legend {
+    margin-bottom: 8px;
+    padding: 0;
+    font-family: var(--font-serif);
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+
+  .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  @media (min-width: 560px) {
+    .topic-grid {
+      grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    }
+  }
+
+  .tone-lavanta { --t: var(--tone-lavanta); --tb: var(--tone-lavanta-bg); }
+  .tone-adacayi { --t: var(--tone-adacayi); --tb: var(--tone-adacayi-bg); }
+  .tone-kiremit { --t: var(--tone-kiremit); --tb: var(--tone-kiremit-bg); }
+  .tone-deniz { --t: var(--tone-deniz); --tb: var(--tone-deniz-bg); }
+  .tone-gunes { --t: var(--tone-gunes); --tb: var(--tone-gunes-bg); }
+  .tone-lacivert { --t: var(--tone-lacivert); --tb: var(--tone-lacivert-bg); }
+
+  .topic {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-height: 88px;
+    padding: 12px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: 1.3;
     cursor: pointer;
   }
 
-  .select :global(.select-chv) {
+  /* Phones: icon beside the name, so the seven cards take less of the screen. */
+  @media (max-width: 559px) {
+    .topic {
+      flex-direction: row;
+      align-items: center;
+      min-height: 56px;
+      padding: 10px;
+    }
+  }
+
+  .topic:hover {
+    border-color: color-mix(in srgb, var(--text) 45%, transparent);
+  }
+
+  /* The radio stays in the page for keyboards and screen readers, drawn by the card. */
+  .topic input {
     position: absolute;
-    top: 50%;
-    right: 14px;
-    color: var(--muted);
-    transform: translateY(-50%) rotate(90deg);
+    opacity: 0;
     pointer-events: none;
   }
 
+  .topic:has(input:checked) {
+    border-color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--text);
+  }
+
+  .topic:has(input:focus-visible) {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .topic-tile {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: var(--tb);
+    color: var(--t);
+  }
+
+  .topics[aria-invalid='true'] .topic {
+    border-color: var(--text);
+  }
+
+  /* Name and e-mail side by side once there is room. */
+  .pair {
+    display: grid;
+    gap: 14px;
+  }
+
+  @media (min-width: 560px) {
+    .pair {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
   input:focus-visible,
-  select:focus-visible,
   textarea:focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 1px;
   }
 
-  [aria-invalid='true'] {
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
     border-color: var(--text);
     border-width: 2px;
   }
@@ -272,7 +378,7 @@ const id = (name: string) => `cf-${name}`;
     min-height: 52px;
     padding: 14px;
     border: 0;
-    border-radius: 16px;
+    border-radius: var(--radius-btn);
     background: var(--btn-bg);
     color: var(--btn-text);
     font: inherit;

@@ -70,12 +70,15 @@ const items = NAV.map(([href, label]) => {
 </header>
 
 <style>
+  /* Owner's choice C (2026-10-23): one floating row. Brand, menu and tools sit in a rounded strip that
+     stays at the top while the page scrolls, with the page faintly showing through behind it. */
   .site-header {
     display: none;
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 10;
-    border-bottom: 1px solid var(--line);
-    background: var(--bg);
+    padding-block: var(--space-3);
+    pointer-events: none;
   }
 
   @media (min-width: 768px) {
@@ -88,9 +91,22 @@ const items = NAV.map(([href, label]) => {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2) var(--space-5);
-    min-height: 72px;
-    padding-block: var(--space-3);
+    gap: var(--space-2) var(--space-3);
+    min-height: 64px;
+    padding: 8px 10px 8px 18px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px rgb(0 0 0 / 0.07);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    pointer-events: auto;
+  }
+
+  /* The strip keeps the page's column: the container's gutter becomes the space around it. */
+  .site-header > .bar {
+    width: calc(100% - 2 * var(--gutter));
+    max-width: var(--max-wide);
   }
 
   .brand {
@@ -122,6 +138,16 @@ const items = NAV.map(([href, label]) => {
     text-transform: uppercase;
   }
 
+  .nav {
+    --nav-pad: 14px;
+  }
+
+  @media (max-width: 1299px) {
+    .nav {
+      --nav-pad: 10px;
+    }
+  }
+
   .nav ul {
     display: flex;
     gap: var(--space-1);
@@ -131,24 +157,48 @@ const items = NAV.map(([href, label]) => {
   }
 
   .nav a {
+    position: relative;
     display: inline-flex;
     align-items: center;
     min-height: 44px;
-    padding: 0 var(--space-2);
+    padding: 0 var(--nav-pad, 14px);
     color: var(--muted);
     font-size: var(--text-sm);
+    font-weight: 600;
     text-decoration: none;
   }
 
+  /* The sun-yellow line under a name: on hover, and under the page you are on. */
+  .nav a::after {
+    content: '';
+    position: absolute;
+    right: var(--nav-pad, 14px);
+    bottom: 6px;
+    left: var(--nav-pad, 14px);
+    height: 2px;
+    border-radius: 2px;
+    background: var(--sun-disc);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+
   .nav a:hover {
-    color: var(--link);
+    color: var(--text);
+  }
+
+  .nav a:hover::after,
+  .nav a[aria-current]::after {
+    transform: scaleX(1);
   }
 
   .nav a[aria-current] {
-    color: var(--link);
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 0.45em;
+    color: var(--text);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav a::after {
+      transition: none;
+    }
   }
 
   .tools {
@@ -190,16 +240,21 @@ const items = NAV.map(([href, label]) => {
   }
 
   /* Tablets: the menu takes its own row under the brand and tools. */
-  @media (max-width: 1099px) {
+  @media (max-width: 1199px) {
     .nav {
       order: 3;
       width: 100%;
     }
   }
 
-  @media (min-width: 1100px) {
+  @media (min-width: 1200px) {
     .nav {
-      margin-left: auto;
+      margin-inline: auto;
+    }
+
+    /* Brand, menu and tools share one row; on narrower desktops the names sit a little closer. */
+    .nav ul {
+      gap: 0;
     }
 
     .tools {

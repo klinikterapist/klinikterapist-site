@@ -56,7 +56,20 @@ const facts = about.facts
 
 const areas = about.areas.map((a) => ({ title: a.label[lang].trim(), icon: a.icon })).filter((a) => a.title);
 const topics = about.topics.map((x) => x[lang].trim()).filter(Boolean);
-const approaches = about.approaches.map((x) => x[lang].trim()).filter(Boolean);
+// "Nasıl Çalışırım" as coloured cards (owner's choice A, 2026-10-23): each card takes the next of the
+// six tones; an approach shows its short name ("BDT", "ACT") in its tile, or a leaf when it has none.
+const TONES = ['lavanta', 'adacayi', 'kiremit', 'deniz', 'gunes', 'lacivert'] as const;
+const toneAt = (i: number) => TONES[i % TONES.length];
+const approaches = about.approaches
+  .map((x) => x[lang].trim())
+  .filter(Boolean)
+  .map((text) => {
+    const m = text.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+    const inner = m?.[2].trim() ?? text;
+    const abbr = /^[A-ZÇĞİÖŞÜ]{2,5}$/.test(inner) ? inner : '';
+    // "Bilinçli Farkındalık (Mindfulness)": the word in brackets becomes the small line.
+    return { title: m ? m[1] : text, sub: m && !abbr ? inner : '', abbr };
+  });
 const career = about.career;
 const certificates = about.certificates
   .map((c) => ({ title: c.title[lang].trim(), issuer: c.issuer.trim(), year: c.year.trim(), url: c.url?.trim() ?? '' }))
@@ -203,36 +216,42 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
         <section class="about-panel" id="panel-how" role="tabpanel" aria-labelledby="tab-how" data-panel="how">
           <h2 class="panel-title">{t(lang, 'tabHow')}</h2>
           {(areas.length > 0 || topics.length > 0 || approaches.length > 0) && (
-            <div class="boxes">
+            <div class="how-groups">
               {areas.length > 0 && (
-                <div class="box">
-                  <h3>{t(lang, 'areasOfWork')}</h3>
-                  <ul class="chips chips--areas">
-                    {areas.map((a) => (
-                      <li>
-                        <Icon name={a.icon} size={16} />
-                        {a.title}
+                <div>
+                  <h3 class="how-title">{t(lang, 'areasOfWork')}</h3>
+                  <ul class="area-cards">
+                    {areas.map((a, i) => (
+                      <li class={`tone-${toneAt(i)}`}>
+                        <span class="how-tile" aria-hidden="true"><Icon name={a.icon} size={22} /></span>
+                        <b>{a.title}</b>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {approaches.length > 0 && (
+                <div>
+                  <h3 class="how-title">{t(lang, 'approaches')}</h3>
+                  <ul class="appr-cards">
+                    {approaches.map((x, i) => (
+                      <li class={`tone-${toneAt(i)}`}>
+                        <span class="appr-abbr" aria-hidden="true">{x.abbr || <Icon name="leaf" size={24} />}</span>
+                        <span class="appr-text">
+                          <b>{x.title}</b>
+                          {x.abbr ? x.abbr !== x.title && <small>{x.abbr}</small> : x.sub && <small>{x.sub}</small>}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
               )}
               {topics.length > 0 && (
-                <div class="box">
-                  <h3>{t(lang, 'topics')}</h3>
-                  <ul class="chips">
-                    {topics.map((x) => (
-                      <li>{x}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {approaches.length > 0 && (
-                <div class="box">
-                  <h3>{t(lang, 'approaches')}</h3>
-                  <ul class="chips chips--green">
-                    {approaches.map((x) => (
-                      <li>{x}</li>
+                <div>
+                  <h3 class="how-title">{t(lang, 'topics')}</h3>
+                  <ul class="chips topic-chips">
+                    {topics.map((x, i) => (
+                      <li class={`tone-${toneAt(i)}`}>{x}</li>
                     ))}
                   </ul>
                 </div>
@@ -611,7 +630,7 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     margin-top: var(--space-2);
     padding: 8px 18px;
     border: 1.5px solid var(--link);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-btn);
     background: none;
     color: var(--link);
     font: inherit;
@@ -732,20 +751,103 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
   }
 
   /* How I work */
-  .boxes {
+  .how-groups {
     display: grid;
-    gap: var(--space-3);
+    gap: var(--space-6);
   }
 
-  .box {
-    padding: var(--space-4) var(--space-5);
+  .how-title {
+    margin: 0 0 var(--space-3);
+    font-size: 1.1875rem;
+  }
+
+  .tone-lavanta { --t: var(--tone-lavanta); --tb: var(--tone-lavanta-bg); }
+  .tone-adacayi { --t: var(--tone-adacayi); --tb: var(--tone-adacayi-bg); }
+  .tone-kiremit { --t: var(--tone-kiremit); --tb: var(--tone-kiremit-bg); }
+  .tone-deniz { --t: var(--tone-deniz); --tb: var(--tone-deniz-bg); }
+  .tone-gunes { --t: var(--tone-gunes); --tb: var(--tone-gunes-bg); }
+  .tone-lacivert { --t: var(--tone-lacivert); --tb: var(--tone-lacivert-bg); }
+
+  .area-cards,
+  .appr-cards {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .area-cards {
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  }
+
+  .area-cards li {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+  }
+
+  .area-cards b {
+    font-size: 0.98rem;
+    line-height: 1.3;
+  }
+
+  .how-tile {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--tb);
+    color: var(--t);
+  }
+
+  .appr-cards {
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  }
+
+  .appr-cards li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
   }
 
-  .box h3 {
-    margin: 0 0 var(--space-3);
-    font-size: 1.1875rem;
+  .appr-abbr {
+    display: grid;
+    flex: none;
+    place-items: center;
+    min-width: 56px;
+    height: 56px;
+    padding: 0 8px;
+    border-radius: var(--radius-md);
+    background: var(--tb);
+    color: var(--t);
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .appr-text b {
+    display: block;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+
+  .appr-text small {
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .topic-chips li {
+    background: var(--tb);
+    color: var(--t);
+    font-weight: 600;
   }
 
   .chips {
@@ -765,16 +867,6 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     border-radius: var(--radius-pill);
     background: var(--surface);
     font-size: var(--text-sm);
-  }
-
-  .chips--areas li {
-    background: var(--tone-lacivert-bg);
-    color: var(--tone-lacivert);
-  }
-
-  .chips--green li {
-    background: var(--tone-adacayi-bg);
-    color: var(--tone-adacayi);
   }
 
   .why-brand {
@@ -853,7 +945,7 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     gap: 8px;
     min-height: 44px;
     padding: 0 18px;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-btn);
     font-weight: 700;
     text-decoration: none;
   }
@@ -921,10 +1013,6 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     .story-side {
       position: sticky;
       top: 64px;
-    }
-
-    .boxes {
-      grid-template-columns: repeat(3, 1fr);
     }
 
     .why-brand,
