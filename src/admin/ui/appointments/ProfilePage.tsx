@@ -18,8 +18,8 @@ import { NotificationBell } from '../NotificationBell';
 import { WeekStrip } from './WeekStrip';
 import { Banner, Button, Spinner } from '../kit';
 import { AppointmentCalendar, SESSION_KIND_LABEL, labelOf } from './AppointmentCalendar';
-import { OccupancyCard, ToolsCard } from './ProfileTools';
-import { ClientsCard, SessionInsights } from './SessionInsights';
+import { ToolsCard } from './ProfileTools';
+import { SessionInsights } from './SessionInsights';
 import { NowClock, whenText } from './TrackingPage';
 
 const DAY = 24 * 3600e3;
@@ -110,6 +110,9 @@ export function ProfilePage() {
             ))}
           </ul>
           <WeekStrip items={next} now={now} />
+          {/* Owner's review 2026-10-23: the tools as one row under the week; "Haftalık doluluk" and
+              "Danışanlara göre" are gone. */}
+          <ToolsCard />
           {/* Owner's review 2026-10-21: one grid, so the blocks line up — the week's sessions and requests
               beside the calendar, then this month, occupancy and tools, then notifications, the chart and
               the e-mail addresses. */}
@@ -162,11 +165,6 @@ export function ProfilePage() {
             </article>
           </div>
           <SessionInsights clients={data.clients} now={now} />
-          <div className="pf-row3">
-            <OccupancyCard clients={data.clients} now={now} />
-            <ClientsCard clients={data.clients} now={now} />
-            <ToolsCard />
-          </div>
         </>
       )}
     </section>

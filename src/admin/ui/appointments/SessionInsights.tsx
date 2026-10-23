@@ -137,34 +137,6 @@ function StatusRing({ clients, now }: { clients: Client[]; now: number }) {
   );
 }
 
-function ByClient({ clients, now }: { clients: Client[]; now: number }) {
-  const rows = clients
-    .map((c) => {
-      const s = sessionStats(c, now);
-      const marked = s.attended + s.noshow;
-      return { id: c.id, number: c.number, held: s.held, rate: marked ? Math.round((s.attended / marked) * 100) : null, closing: c.status === 'closing' };
-    })
-    .sort((a, b) => b.held - a.held);
-  const most = Math.max(1, ...rows.map((r) => r.held));
-  if (!rows.length) return <p className="k-hint">Henüz danışan yok.</p>;
-  return (
-    <ul className="si-clients">
-      {rows.map((r) => (
-        <li key={r.id}>
-          <a href={`#/seans-takip/${r.id}`}>
-            <span className="tk-number">{r.number}</span>
-            <span className="si-client-bar">
-              <i style={{ width: `${(r.held / most) * 100}%` }} />
-            </span>
-            <span className="si-client-n">{`${r.held} seans`}</span>
-            <span className={`si-client-rate${r.rate !== null && r.rate < 75 ? ' is-low' : ''}`}>{r.rate === null ? '–' : `%${r.rate}`}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export function SessionInsights({ clients, now }: { clients: Client[]; now: number }) {
   return (
     <section className="pf-card si" aria-labelledby="si-title">
@@ -174,15 +146,5 @@ export function SessionInsights({ clients, now }: { clients: Client[]; now: numb
         <StatusRing clients={clients} now={now} />
       </div>
     </section>
-  );
-}
-
-export function ClientsCard({ clients, now }: { clients: Client[]; now: number }) {
-  return (
-    <article className="pf-card" aria-labelledby="si-clients">
-      <h3 id="si-clients">Danışanlara göre</h3>
-      <p className="pf-lead">Bugüne kadarki seanslar ve katılım oranı (katıldı / işaretli seanslar).</p>
-      <ByClient clients={clients} now={now} />
-    </article>
   );
 }
