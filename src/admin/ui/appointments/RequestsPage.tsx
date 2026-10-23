@@ -146,6 +146,7 @@ function RequestCard({ r, open, onToggle, children }: { r: BookingRequest; open:
         {r.kind === 'intro' && (
           <>
             {forWhom && <Row label="Kimin için">{forWhom.tr}</Row>}
+            <Row label="Görüşme şekli">{r.via === 'phone' ? 'Telefonla (siz arayacaksınız)' : r.via === 'video' ? 'Görüntülü görüşme' : 'Belirtilmedi (eski form)'}</Row>
             <Row label="Konular">{(r.topics ?? []).map((i) => INTRO_TOPICS.tr[i]).join(', ') || '—'}</Row>
             <Row label="Daha önce destek">{r.before === 'yes' ? 'Evet' : r.before === 'no' ? 'Hayır' : 'Belirtmedi'}</Row>
             <Row label="Yaş aralığı">{AGE_RANGES.tr[r.age ?? -1] ?? '—'}</Row>

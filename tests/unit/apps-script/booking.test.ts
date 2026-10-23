@@ -33,11 +33,11 @@ describe('booking.request', () => {
     const [owner, visitor] = gas.mails;
     expect(owner).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' });
     expect(owner.subject).toBe('Randevu talebi – Ayşe Yılmaz – 22 Ekim 2026, Perşembe, 15.00');
-    expect(owner.body).toContain('Görüşme türü: Aile ve çift terapisi');
+    expect(owner.body).toContain('Görüşme türü: Çift terapisi');
     expect(owner.body).toContain('Telefon: 0532 123 45 67');
     expect(owner.body).toContain('■ Danışanın notu\n\nAkşamları daha uygun.');
     expect(visitor).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Randevu talebiniz alındı – klinikterapist.com' });
-    expect(visitor.body).toContain('– Görüşme türü: Aile ve çift terapisi\n– Tarih ve saat: 22 Ekim 2026, Perşembe, 15.00 (Türkiye saati)\n– Süre ve biçim: 60 dakika, online');
+    expect(visitor.body).toContain('– Görüşme türü: Çift terapisi\n– Tarih ve saat: 22 Ekim 2026, Perşembe, 15.00 (Türkiye saati)\n– Süre ve biçim: 60 dakika, online');
     expect(visitor.body).toMatch(/Saygılarımla,\nOsman Güneş Özkurt\nKlinik Psikolog\nklinikterapist\.com$/);
     // Nothing the visitor typed reaches the acknowledgement.
     expect(visitor.body).not.toContain('Ayşe');
@@ -65,6 +65,20 @@ describe('booking.request', () => {
     expect(visitor.body).not.toContain('İlişki');
     // Asked since 2026-10-22: a form sent before then says "Belirtmedi".
     expect(owner.body).toContain('– Yaşadığı ülke: Belirtmedi');
+  });
+
+  it('an intro request says how the call is held, to the owner and in the acknowledgement (owner, 2026-10-23)', () => {
+    const { gas, send } = setup();
+    expect(send({ ...intro, via: 'phone', lang: 'tr' }).ok).toBe(true);
+    const [owner, visitor] = gas.mails;
+    expect(owner.body).toContain('– Görüşme şekli: Telefonla (danışanı siz arayacaksınız)');
+    expect(visitor.body).toContain('– Görüşme biçimi: Telefonla (sizi ben ararım)');
+    expect(visitor.body).toContain('telefon numarasından arayacağım');
+    expect(visitor.body).not.toContain('0532');
+    const other = setup();
+    expect(other.send({ ...intro, via: 'video' }).ok).toBe(true);
+    expect(other.gas.mails[0].body).toContain('– Görüşme şekli: Görüntülü görüşme');
+    expect(other.gas.mails[1].body).toContain('a video call');
   });
 
   it('a session note comes with its explicit consent; without it the request is refused (owner’s note 2026-10-22)', () => {

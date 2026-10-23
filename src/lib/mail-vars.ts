@@ -34,6 +34,19 @@ const sessionType = (type?: string) => SESSION_TYPES.find((t) => t.id === type) 
 export const typeVars = (type: string | undefined, intro = false) =>
   intro ? { tur: 'Ücretsiz ön görüşme', sure: '25–30 dakika' } : { tur: sessionType(type).tr, sure: `${sessionType(type).minutes} dakika` };
 
+/**
+ * {gorusme_bicimi}: how the intro call is held (owner's review 2026-10-23), and its [[telefonla]] /
+ * [[goruntulu]] parts. A request sent before it was asked is a video call.
+ */
+export const viaVars = (via: string | undefined) => {
+  const phone = via === 'phone';
+  return { gorusme_bicimi: phone ? 'Telefonla (sizi ben ararım)' : 'Görüntülü görüşme (online)', '#telefonla': phone ? '1' : '', '#goruntulu': phone ? '' : '1' };
+};
+
+/** How the intro call is held, as the owner's notice says it. */
+export const viaForOwner = (via: string | undefined) =>
+  via === 'phone' ? 'Telefonla (danışanı siz arayacaksınız)' : via === 'video' ? 'Görüntülü görüşme' : 'Belirtilmedi (eski form)';
+
 /** Who the intro call is for, said to the person ("kendiniz için") or about them ("Kendisi için"). */
 const FOR_WHOM: Record<(typeof INTRO_FOR)[number]['id'], { you: string; them: string }> = {
   individual: { you: 'kendiniz için', them: 'Kendisi için' },

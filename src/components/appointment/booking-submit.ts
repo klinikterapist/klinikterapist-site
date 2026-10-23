@@ -7,7 +7,7 @@
  *
  * Markup contract, besides wizard.ts's:
  *   data-kind="session|intro" data-config='{…}' data-endpoint="…" data-messages='{…}' on the root
- *   named inputs: type (session), forWhom, topics, before, age, country, note, name, email, phone
+ *   named inputs: type (session), forWhom, topics, before, age, country, via, note, name, email, phone
  *   (+ phoneCode, PhoneField.astro), consent, healthConsent (intro), hp_field (honeypot)
  *   [data-submit] the send button, [data-soon] the e-mail fallback line, [data-submit-error] the
  *   message under the button, [data-done] the thank-you panel (hidden), [data-hide-on-done] parts
@@ -16,7 +16,18 @@
  *   [data-closed] the "Haber et" section (WaitlistForm.astro): when the panel has closed booking
  *   (`closed` in `booking.busy`) it is all the page shows
  */
-import { closedOn, intakeOpen, previewClosedKey, minutesOf, slotsFor, validateBooking, type BookingConfig, type BookingInput, type BookingKind, type BusyInterval } from '../../lib/booking-form';
+import {
+  closedOn,
+  intakeOpen,
+  previewClosedKey,
+  minutesOf,
+  slotsFor,
+  validateBooking,
+  type BookingConfig,
+  type BookingInput,
+  type BookingKind,
+  type BusyInterval,
+} from '../../lib/booking-form';
 import { sameEmail } from '../../lib/email-check';
 import { mountEmailGuard } from './email-guard';
 import { mountCountry, readPhone } from './phone-field';
@@ -53,7 +64,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
   });
   // A couple session is longer: the taken times depend on the chosen type.
   root.querySelectorAll('input[name="type"]').forEach((r) => r.addEventListener('change', () => wizard.refresh()));
-  const details = root.querySelector<HTMLElement>('[data-step="3"]');
+  const details = root.querySelector<HTMLElement>('[data-details]');
   if (details) {
     mountEmailGuard(details, lang);
     // The details step's own phone code (the "Haber et" form has one too).
@@ -72,7 +83,6 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
     section.hidden = false;
     mountWaitlist(section, endpoint, lang, messages, deps);
   };
-
 
   // Closed when the site was built (booking.json `intake`); on the dev server the panel's trial mode
   // may say otherwise (previewClosedKey: '1' closed, '0' open).
@@ -136,6 +146,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
       age: age === '' ? -1 : Number(age),
       country: value('country'),
       healthConsent: checked('healthConsent').length > 0,
+      ...(checked('via')[0] ? { via: checked('via')[0] as BookingInput['via'] } : {}),
     };
   };
 

@@ -21,12 +21,10 @@ import { refOf, verifyLines, verifyLink } from './verify';
 import { initials, logEvent, shortWhen } from './events';
 import { assertMailDomain } from './mx';
 import { parseBooking } from '../../src/lib/schemas';
-import {
-  AGE_RANGES, SESSION_TYPES, formatDay, intakeOpen, validateBooking, type BookingConfig, type BookingInput, type BookingLang,
-} from '../../src/lib/booking-form';
+import { AGE_RANGES, SESSION_TYPES, formatDay, intakeOpen, validateBooking, type BookingConfig, type BookingInput, type BookingLang } from '../../src/lib/booking-form';
 import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { mailTr } from '../../src/lib/mail-texts';
-import { forWhom, stamp, topicList, typeVars, upFirst, whenVars } from '../../src/lib/mail-vars';
+import { forWhom, stamp, topicList, typeVars, upFirst, viaForOwner, viaVars, whenVars } from '../../src/lib/mail-vars';
 import { countryName } from '../../src/lib/phone';
 import { personName } from '../../src/lib/person-name';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
@@ -80,8 +78,15 @@ export function setOpen(gas: Gas, p: Record<string, unknown>): Record<string, ne
   const next = { ...raw, intake };
   commit(gas, {
     message: `${LANG_NAME[lang]} randevu alımı ${open ? 'açıldı' : 'kapatıldı'}`,
-    writes: [{ path: BOOKING_FILE, content: `${JSON.stringify(next, null, 2)}
-`, encoding: 'utf8', expectSha: file.sha }],
+    writes: [
+      {
+        path: BOOKING_FILE,
+        content: `${JSON.stringify(next, null, 2)}
+`,
+        encoding: 'utf8',
+        expectSha: file.sha,
+      },
+    ],
     deletes: [],
   });
   gas.cache.put(CONFIG_CACHE, JSON.stringify(parseBooking(next)), CONFIG_TTL);
@@ -110,6 +115,7 @@ function inputOf(p: Record<string, unknown>): BookingInput {
           before: p.before === 'yes' || p.before === 'no' ? p.before : '',
           age: typeof p.age === 'number' ? p.age : -1,
           healthConsent: p.healthConsent === true,
+          ...(p.via === 'phone' || p.via === 'video' ? { via: p.via } : {}),
         }
       : 'healthConsent' in p
         ? { healthConsent: p.healthConsent === true }
@@ -131,6 +137,7 @@ function ownerMail(i: BookingInput, lang: BookingLang, now: number): { subject: 
     not: note,
     '#not': note ? '1' : '',
     kimin_icin: forWhom(i.forWhom, 'them'),
+    gorusme_sekli: viaForOwner(i.via),
     konular: topicList(i.topics) || '– Seçilmedi',
     daha_once_destek: i.before === 'yes' ? 'Evet' : i.before === 'no' ? 'Hayır' : 'Belirtmedi',
     yas: i.age !== undefined ? (AGE_RANGES.tr[i.age] ?? '') : '',
@@ -152,6 +159,13 @@ function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subjec
         'Hello,',
         '',
         `Your request has been received: ${what}, ${when} (Turkey time, GMT+3).`,
+        ...(i.kind === 'intro'
+          ? [
+              i.via === 'phone'
+                ? 'The call is by phone: I will call you on the number you gave. Therapy sessions after it are held by video call.'
+                : 'The call is a video call; I will send you the link by e-mail.',
+            ]
+          : []),
         'It is not confirmed yet. I will reply by e-mail to confirm the time or suggest another one.',
         '',
         ...verifyLines(link, 'en'),
@@ -169,6 +183,7 @@ function visitorMail(i: BookingInput, lang: BookingLang, link: string): { subjec
     ...whenVars(i.day, i.time),
     ...typeVars(i.type, i.kind === 'intro'),
     kimin_icin: upFirst(forWhom(i.forWhom, 'you')),
+    ...viaVars(i.via),
     dogrulama_baglantisi: link,
   });
 }

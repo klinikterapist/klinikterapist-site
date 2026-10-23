@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { formatDay, holdOf, minutesOf, slotInstant, slotsFor, timesFor, validateBooking, type BookingConfig, type BookingInput } from '../../src/lib/booking-form';
+import { formatDay, holdOf, introVias, minutesOf, slotInstant, slotsFor, timesFor, validateBooking, type BookingConfig, type BookingInput } from '../../src/lib/booking-form';
 import { parseBooking } from '../../src/lib/schemas';
 
 const cfg: BookingConfig = parseBooking(JSON.parse(readFileSync('src/data/booking.json', 'utf8')));
@@ -8,10 +8,25 @@ const cfg: BookingConfig = parseBooking(JSON.parse(readFileSync('src/data/bookin
 const NOW = Date.parse('2026-10-20T10:00:00+03:00');
 
 const session = (over: Partial<BookingInput> = {}): BookingInput => ({
-  kind: 'session', type: 'individual', day: '2026-10-22', time: '10:00', name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, ...over,
+  kind: 'session',
+  type: 'individual',
+  day: '2026-10-22',
+  time: '10:00',
+  name: 'Ayşe Yılmaz',
+  email: 'ayse@example.com',
+  phone: '0532 123 45 67',
+  note: '',
+  consent: true,
+  ...over,
 });
 const intro = (over: Partial<BookingInput> = {}): BookingInput => ({
-  ...session({ kind: 'intro', type: undefined, day: '2026-10-24', time: '11:00' }), forWhom: 'individual', topics: [0, 3], before: 'no', age: 2, healthConsent: true, ...over,
+  ...session({ kind: 'intro', type: undefined, day: '2026-10-24', time: '11:00' }),
+  forWhom: 'individual',
+  topics: [0, 3],
+  before: 'no',
+  age: 2,
+  healthConsent: true,
+  ...over,
 });
 
 describe('booking.json', () => {
@@ -55,7 +70,10 @@ describe('timesFor', () => {
 describe('slotsFor: a booking holds its length plus 30 minutes', () => {
   // An individual session on Thursday 22 October at 19:20 holds 19:20–20:40.
   const busy = [holdOf('2026-10-22', '19:20', minutesOf('session', 'individual'), 30)];
-  const taken = (minutes: number) => slotsFor(cfg, 'session', '2026-10-22', NOW, busy, minutes).filter((s) => s.taken).map((s) => s.time);
+  const taken = (minutes: number) =>
+    slotsFor(cfg, 'session', '2026-10-22', NOW, busy, minutes)
+      .filter((s) => s.taken)
+      .map((s) => s.time);
 
   it('marks every time that would overlap it as taken, and keeps them in the list', () => {
     expect(taken(50)).toEqual(['19:00', '19:20', '19:50', '20:20']);
@@ -67,6 +85,24 @@ describe('slotsFor: a booking holds its length plus 30 minutes', () => {
   });
   it('another day is not affected', () => {
     expect(slotsFor(cfg, 'session', '2026-10-23', NOW, busy).some((s) => s.taken)).toBe(false);
+  });
+});
+
+describe('intro call by phone or video (owner, 2026-10-23)', () => {
+  it('takes a way that is offered, and forms without it', () => {
+    expect(validateBooking(intro({ via: 'phone' }), cfg, NOW)).toEqual({});
+    expect(validateBooking(intro({ via: 'video' }), cfg, NOW)).toEqual({});
+    expect(validateBooking(intro(), cfg, NOW)).toEqual({});
+  });
+
+  it('refuses a way switched off in the panel', () => {
+    expect(validateBooking(intro({ via: 'phone' }), { ...cfg, introVia: { phone: false, video: true } }, NOW).via).toBe('required');
+  });
+
+  it('offers both when none is on', () => {
+    expect(introVias({ introVia: { phone: false, video: false } })).toEqual(['phone', 'video']);
+    expect(introVias({})).toEqual(['phone', 'video']);
+    expect(introVias({ introVia: { phone: true, video: false } })).toEqual(['phone']);
   });
 });
 

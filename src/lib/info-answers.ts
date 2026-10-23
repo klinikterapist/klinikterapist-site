@@ -22,7 +22,7 @@ export const INFO_TOPICS: InfoTopic[] = [
         'Bütün görüşmeler online yapılır. Görüşme türleri ve kimin için uygun oldukları kısaca şöyledir:',
         [
           '– Bireysel terapi (50 dakika): Kendi yaşadıklarınız üzerine birebir çalışmak istediğinizde.',
-          '– Aile ve çift terapisi (60 dakika): İlişkileri üzerine birlikte çalışmak isteyen eşler, partnerler ve aileler için.',
+          '– Çift terapisi (60 dakika): İlişkileri üzerine birlikte çalışmak isteyen eşler ve partnerler için.',
           '– Erişilebilir terapi (50 dakika): Bireysel terapiyle aynı süredir; ücret, ekonomik durumunuza göre belirlenir. Ekonomik güçlük yaşayanlar ve üniversite öğrencileri başvurabilir.',
           '– Ücretsiz ön görüşme (25–30 dakika): Terapiye başlamadan önce tanışmak ve sorularınızı sormak için.',
           '– Sonlandırma seansı (ücretsiz): Terapi süreci planlı biçimde tamamlandığında yapılan son görüşmedir.',
@@ -34,7 +34,7 @@ export const INFO_TOPICS: InfoTopic[] = [
         'All sessions are held online. The kinds of sessions, and who they suit:',
         [
           '– Individual therapy (50 minutes): to work one to one on what you are going through.',
-          '– Family and couples therapy (60 minutes): for couples, partners and families who want to work on their relationship together.',
+          '– Couples therapy (60 minutes): for couples and partners who want to work on their relationship together.',
           '– Accessible therapy (50 minutes): the same length as individual therapy, with a fee set by your financial situation. Open to people in financial difficulty and to university students.',
           '– Free intro call (25–30 minutes): to meet and ask your questions before starting therapy.',
           '– Closing session (free): the last session when therapy ends as planned.',
@@ -65,7 +65,7 @@ export const INFO_TOPICS: InfoTopic[] = [
     q: { tr: 'Seanslar ne kadar sürer, ne sıklıkla olur?', en: 'How long are sessions, and how often?' },
     a: {
       tr: [
-        'Bireysel terapi ve erişilebilir terapi seansları 50 dakika, aile ve çift terapisi seansları 60 dakika sürer. Bu seanslar çoğunlukla haftada bir yapılır.',
+        'Bireysel terapi ve erişilebilir terapi seansları 50 dakika, çift terapisi seansları 60 dakika sürer. Bu seanslar çoğunlukla haftada bir yapılır.',
         'Grup terapisi ise 90 dakika sürer ve ayda bir yapılır (kayıtlar henüz açık değil). Ücretsiz ön görüşme 25–30 dakikadır.',
       ],
       en: [
@@ -158,7 +158,7 @@ export const INFO_TOPICS: InfoTopic[] = [
         'Seans ücretleri her yıl güncellenir ve görüşmenin türüne ve süresine göre değişir. Yurt dışında yaşıyorsanız ücret ve para birimi, yaşadığınız ülkeye göre ayrıca belirlenir.',
         [
           '– Bireysel terapi (50 dakika): Her yıl belirlenen standart seans ücreti uygulanır.',
-          '– Aile ve çift terapisi (60 dakika): Ücreti, bireysel seans ücretinin iki katıdır.',
+          '– Çift terapisi (60 dakika): Ücreti, bireysel seans ücretinin iki katıdır.',
           '– Erişilebilir terapi (50 dakika): Ücret, ekonomik durumunuza göre belirlenir.',
           '– Grup terapisi (90 dakika): Kişi başı katılım ücreti, bireysel seans ücretinin üçte biridir (kayıtlar henüz açık değil).',
           '– Ücretsiz ön görüşme ve sonlandırma seansı: Ücret alınmaz.',

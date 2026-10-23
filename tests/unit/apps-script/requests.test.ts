@@ -555,7 +555,7 @@ describe('E3: the owner hears of a hold running out', () => {
     s.gas.clock.now = NOW + 21 * 3600 * 1000;
     await runHourly(s.gas);
     expect(s.gas.mails).toEqual([expect.objectContaining({ to: 'merhaba@klinikterapist.com', subject: 'Bir talebin tutma süresi doluyor' })]);
-    expect(s.gas.mails[0].body).toContain('– Ayşe Yılmaz · Seans randevusu (Aile ve çift terapisi) · 22 Ekim 2026, Perşembe, 19.20 · tutma 3 sa 0 dk sonra bitiyor');
+    expect(s.gas.mails[0].body).toContain('– Ayşe Yılmaz · Seans randevusu (Çift terapisi) · 22 Ekim 2026, Perşembe, 19.20 · tutma 3 sa 0 dk sonra bitiyor');
     expect(s.gas.mails[0].body).not.toContain('ön görüşme');
     await runHourly(s.gas);
     expect(s.gas.mails).toHaveLength(1);
@@ -686,7 +686,7 @@ describe('Faz 1: fees, payments and reminders', () => {
     expect(t.gas.mails).toHaveLength(1);
     const r72 = t.gas.mails[0];
     expect(r72).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Seans hatırlatması: 29 Ekim 2026, Perşembe – klinikterapist.com' });
-    for (const part of ['– Seans türü: Aile ve çift terapisi\n– Tarih: 29 Ekim 2026, Perşembe\n– Saat: 19.20 (Türkiye saati)\n– Seans ücreti: 2.000 TL', 'en geç 24 saat önce', 'TR00 0000', 'tamamı ödenir', '→ Randevu sayfama git: https://klinikterapist.com/randevum/#k=']) expect(r72.body).toContain(part);
+    for (const part of ['– Seans türü: Çift terapisi\n– Tarih: 29 Ekim 2026, Perşembe\n– Saat: 19.20 (Türkiye saati)\n– Seans ücreti: 2.000 TL', 'en geç 24 saat önce', 'TR00 0000', 'tamamı ödenir', '→ Randevu sayfama git: https://klinikterapist.com/randevum/#k=']) expect(r72.body).toContain(part);
     await runHourly(t.gas);
     expect(t.gas.mails).toHaveLength(1);
     t.gas.clock.now = at('2026-10-27T19:30:00'); // 47 h 50 min

@@ -11,23 +11,44 @@ export type Lang = 'tr' | 'en';
 export type Localized = { tr: string; en: string };
 
 export const ROUTE_KEYS = [
-  'home', 'about', 'blog', 'category', 'post', 'resources',
-  'contact', 'appointment', 'preConsult', 'privacyNotice', 'privacyPolicy', 'faq', 'popular', 'topics',
+  'home',
+  'about',
+  'blog',
+  'category',
+  'post',
+  'resources',
+  'contact',
+  'appointment',
+  'preConsult',
+  'privacyNotice',
+  'privacyPolicy',
+  'faq',
+  'popular',
+  'topics',
 ] as const;
 export type RouteKey = (typeof ROUTE_KEYS)[number];
 
 /** Route keys with one fixed page (no slug): the only pages a home card may target. */
 export const PAGE_KEYS = [
-  'home', 'about', 'blog', 'resources', 'contact', 'appointment', 'preConsult', 'privacyNotice', 'privacyPolicy', 'faq', 'popular', 'topics',
+  'home',
+  'about',
+  'blog',
+  'resources',
+  'contact',
+  'appointment',
+  'preConsult',
+  'privacyNotice',
+  'privacyPolicy',
+  'faq',
+  'popular',
+  'topics',
 ] as const satisfies readonly RouteKey[];
 
 const localized = z.object({ tr: z.string(), en: z.string() });
 
 /** URL slug: lowercase a-z, digits and single dashes (`kaygi-ile-yasamak`). Shared by posts and categories. */
 export const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-export const slugSchema = z
-  .string()
-  .regex(SLUG_RE, 'URL kısa adı (slug) boş olamaz; yalnızca küçük harf (a-z), rakam ve tek tire içerebilir (ör. "kaygi-ile-yasamak")');
+export const slugSchema = z.string().regex(SLUG_RE, 'URL kısa adı (slug) boş olamaz; yalnızca küçük harf (a-z), rakam ve tek tire içerebilir (ör. "kaygi-ile-yasamak")');
 
 /** Post slugs that would collide with a blog sub-page: the category base path, the popular posts and the topics pages. */
 export const RESERVED_SLUGS: Record<Lang, readonly string[]> = { tr: ['kategori', 'populer', 'konular'], en: ['category', 'popular', 'topics'] };
@@ -47,9 +68,7 @@ export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Site-relative page path: lowercase segments, leading and trailing slash (`/`, `/blog/eski-adres/`). */
 export const SITE_PATH_RE = /^\/([a-z0-9-]+\/)*$/;
-const sitePath = z
-  .string()
-  .regex(SITE_PATH_RE, 'site içi bir yol olmalı: "/" ile başlayıp "/" ile biten, küçük harf, rakam ve tire (ör. "/blog/eski-adres/")');
+const sitePath = z.string().regex(SITE_PATH_RE, 'site içi bir yol olmalı: "/" ile başlayıp "/" ile biten, küçük harf, rakam ve tire (ör. "/blog/eski-adres/")');
 
 const httpsUrl = z.string().regex(/^https:\/\/[^\s/]+\S*$/, 'adres "https://" ile başlamalı (ör. "https://instagram.com/kullanici")');
 const mailtoUrl = z.string().regex(/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/, 'e-posta bağlantısı "mailto:" ile başlamalı (ör. "mailto:ad@alanadi.com")');
@@ -90,10 +109,7 @@ const homeSchema = z.object({
   cards: z.array(
     z.object({
       id: z.string().min(1),
-      target: z.union([
-        z.object({ page: z.enum(PAGE_KEYS) }),
-        z.object({ url: httpsUrl }),
-      ]),
+      target: z.union([z.object({ page: z.enum(PAGE_KEYS) }), z.object({ url: httpsUrl })]),
       title: localized,
       subtitle: localized,
       icon: z.string(),
@@ -101,7 +117,10 @@ const homeSchema = z.object({
     }),
   ),
   /** Up to three "how it works" steps for the desktop home page. */
-  process: z.array(z.object({ title: localized, text: localized })).max(3).optional(),
+  process: z
+    .array(z.object({ title: localized, text: localized }))
+    .max(3)
+    .optional(),
 });
 
 const aboutSchema = z.object({
@@ -214,13 +233,7 @@ const resourcesSchema = z.object({
 });
 
 /** Adds an issue at `<index>.<field...>` for every value already used by an earlier entry. */
-function rejectDuplicates<T>(
-  list: T[],
-  value: (item: T) => string,
-  field: (string | number)[],
-  ctx: z.RefinementCtx,
-  what: string,
-): void {
+function rejectDuplicates<T>(list: T[], value: (item: T) => string, field: (string | number)[], ctx: z.RefinementCtx, what: string): void {
   const seen = new Map<string, number>();
   list.forEach((item, i) => {
     const v = value(item);
@@ -269,7 +282,10 @@ const faqSchema = z
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Saat SS:DD biçiminde olmalı, örneğin 09:30.');
 const availabilitySchema = z.object({
   weekdays: z.record(z.string().regex(/^[0-6]$/, 'Gün 0 (pazar) ile 6 (cumartesi) arasında bir sayı olmalı.'), z.array(hhmm)),
-  minNoticeHours: z.number().min(0).max(24 * 14),
+  minNoticeHours: z
+    .number()
+    .min(0)
+    .max(24 * 14),
   weeksAhead: z.number().int().min(1).max(26),
 });
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Tarih YYYY-AA-GG biçiminde olmalı.');
@@ -283,7 +299,21 @@ export const bookingSchema = z.object({
   types: z.record(z.string(), z.boolean()).optional(),
   /** How a closed type shows on the forms (booking-form `closedAs`). */
   closedAs: z.record(z.string(), z.enum(['full', 'off', 'hidden'])).optional(),
+  /** How the intro call can be held (booking-form `introVia`). */
+  introVia: z.object({ phone: z.boolean(), video: z.boolean() }).optional(),
 });
+
+/**
+ * session-info.json (owner's review 2026-10-23): the session form's "Bilgilendirme" step, edited in
+ * Ayarlar › Randevu Ayarları › Bilgilendirme. Per session type its name on the form and its text;
+ * `online` is shown under every online type. Texts: blank lines part paragraphs, "- " lines make a
+ * list, "### " a heading (booking-info textBlocks).
+ */
+export const sessionInfoSchema = z.object({
+  online: localized,
+  types: z.record(z.string(), z.object({ name: localized, info: localized })),
+});
+export type SessionInfo = z.infer<typeof sessionInfoSchema>;
 
 const seoSchema = z.object({
   siteName: localized,
@@ -294,7 +324,10 @@ const seoSchema = z.object({
    * Google Analytics 4 measurement ID (`G-…`). Set only together with the privacy texts that
    * describe it: Analytics loads only after the visitor accepts the cookie notice (Analytics.astro).
    */
-  gaId: z.string().regex(/^G-[A-Z0-9]{4,20}$/, 'Google Analytics kimliği "G-" ile başlamalı (ör. G-ABC123XYZ)').optional(),
+  gaId: z
+    .string()
+    .regex(/^G-[A-Z0-9]{4,20}$/, 'Google Analytics kimliği "G-" ile başlamalı (ör. G-ABC123XYZ)')
+    .optional(),
   /** Owner's review 2026-10-21 (Gizlilik ve Analitik): keep the whole site out of search results. */
   noindex: z.boolean().optional(),
   /** Pages kept out of search results while the rest is shown. */
@@ -403,9 +436,7 @@ export type Redirect = z.infer<typeof redirectsSchema>[number];
 function parse<T extends z.ZodTypeAny>(schema: T, raw: unknown, file: string): z.infer<T> {
   const result = schema.safeParse(raw);
   if (result.success) return result.data;
-  const issues = result.error.issues
-    .map((i) => `${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`)
-    .join('; ');
+  const issues = result.error.issues.map((i) => `${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`).join('; ');
   throw new Error(`${file} geçersiz — ${issues}`);
 }
 
@@ -420,6 +451,7 @@ export const parseFaq = (raw: unknown): Faq => parse(faqSchema, raw, 'faq.json')
 export const parseSeo = (raw: unknown): Seo => parse(seoSchema, raw, 'seo.json');
 export const parseRedirects = (raw: unknown): Redirect[] => parse(redirectsSchema, raw, 'redirects.json');
 export const parseBooking = (raw: unknown): BookingConfig => parse(bookingSchema, raw, 'booking.json') as BookingConfig;
+export const parseSessionInfo = (raw: unknown): SessionInfo => parse(sessionInfoSchema, raw, 'session-info.json');
 
 /** Text of a timeline period in the page language. */
 export function periodText(period: Period, lang: Lang): string {

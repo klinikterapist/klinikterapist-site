@@ -9,7 +9,7 @@ import { INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, formatDay } from '../../lib/boo
 import { pathFor } from '../../i18n/routes';
 import { EMPTY_PAYMENT, payVars, paymentLines, ruleLine, type PaymentSettings } from '../../lib/payment';
 import { mailTr, withTexts } from '../../lib/mail-texts';
-import { LINKS_TR, RULE_TR, forWhom, topicList, typeVars, whenVars } from '../../lib/mail-vars';
+import { LINKS_TR, RULE_TR, forWhom, topicList, typeVars, viaVars, whenVars } from '../../lib/mail-vars';
 
 export const SITE = 'https://klinikterapist.com';
 const SIGN_EN = ['Kind regards,', 'Osman Güneş Özkurt', 'Clinical Psychologist', 'klinikterapist.com'];
@@ -58,7 +58,13 @@ function builtDecisionMailEn(r: BookingRequest, decision: RequestDecision, pay?:
   if (decision === 'approve') {
     const lines =
       r.kind === 'intro'
-        ? [`Your request for a free intro call on ${when} (Turkey time) is confirmed.`, ...(introNote(r, 'en') ? [introNote(r, 'en')] : []), 'The call takes 25–30 minutes and is held online. I will send you the link by e-mail before the call.']
+        ? [
+            `Your request for a free intro call on ${when} (Turkey time) is confirmed.`,
+            ...(introNote(r, 'en') ? [introNote(r, 'en')] : []),
+            r.via === 'phone'
+              ? `The call takes 25–30 minutes. I will call you on ${r.phone.trim()}; if the number has changed, please reply to this e-mail. The phone is for this first call only: therapy sessions are held by video call.`
+              : 'The call takes 25–30 minutes and is held by video call. I will send you the link by e-mail before the call.',
+          ]
         : [
             `Your ${what(r, 'en')} appointment on ${when} (Turkey time) is confirmed.`,
             'The session is held online. I will send you the link by e-mail before the session.',
@@ -67,12 +73,22 @@ function builtDecisionMailEn(r: BookingRequest, decision: RequestDecision, pay?:
             ruleLine('en'),
             'Three days before the session I will send you a reminder.',
           ];
-    return { subject: r.kind === 'intro' ? 'Your intro call is confirmed – klinikterapist.com' : 'Your appointment is confirmed – klinikterapist.com', body: [hello, '', ...lines, '', ...SIGN_EN].join('\n') };
+    return {
+      subject: r.kind === 'intro' ? 'Your intro call is confirmed – klinikterapist.com' : 'Your appointment is confirmed – klinikterapist.com',
+      body: [hello, '', ...lines, '', ...SIGN_EN].join('\n'),
+    };
   }
   if (decision === 'unavailable') {
     return {
       subject: 'About your request – klinikterapist.com',
-      body: [hello, '', `Thank you for your ${what(r, 'en')} request for ${when}. Unfortunately I am not available at that time.`, `You can choose another time that suits you in the calendar on my site: ${again}`, '', ...SIGN_EN].join('\n'),
+      body: [
+        hello,
+        '',
+        `Thank you for your ${what(r, 'en')} request for ${when}. Unfortunately I am not available at that time.`,
+        `You can choose another time that suits you in the calendar on my site: ${again}`,
+        '',
+        ...SIGN_EN,
+      ].join('\n'),
     };
   }
   return {
@@ -175,7 +191,15 @@ function builtWaitlistMailEn(c: Contact, mode: 'offer' | 'open' | 'remove', when
   if (mode === 'open') {
     return {
       subject: 'Booking is open again – klinikterapist.com',
-      body: [hello, '', 'You asked me to let you know when I could take new clients again. Booking is open now.', `You can choose a time that suits you here: ${book}`, 'Times fill up fast, so I wanted you to hear first.', '', ...SIGN_EN].join('\n'),
+      body: [
+        hello,
+        '',
+        'You asked me to let you know when I could take new clients again. Booking is open now.',
+        `You can choose a time that suits you here: ${book}`,
+        'Times fill up fast, so I wanted you to hear first.',
+        '',
+        ...SIGN_EN,
+      ].join('\n'),
     };
   }
   return {
@@ -297,6 +321,7 @@ export function decisionVarsTr(r: BookingRequest, pay?: PaymentSettings): Record
     kimin_icin: kimin,
     konular,
     '#basvuru': kimin && konular ? '1' : '',
+    ...(intro ? { ...viaVars(r.via), telefon: r.phone.trim() } : {}),
   };
 }
 
@@ -351,7 +376,15 @@ export function linkMail(c: Contact, link: string): Mail {
  * client heard nothing of these; only their own changes on their page sent an e-mail). `by`: who
  * asked for it; `to`: the new day and time of a postponed session, when already set.
  */
-export type SessionChange = { mode: 'cancel' | 'postpone' | 'add'; day: string; time: string; type: string; closing?: boolean; by?: 'client' | 'owner'; to?: { day: string; time: string } };
+export type SessionChange = {
+  mode: 'cancel' | 'postpone' | 'add';
+  day: string;
+  time: string;
+  type: string;
+  closing?: boolean;
+  by?: 'client' | 'owner';
+  to?: { day: string; time: string };
+};
 
 const CHANGE_ID = { cancel: 'danisan.iptal', postpone: 'danisan.erteleme', add: 'danisan.ek-seans' } as const;
 
@@ -361,13 +394,23 @@ function builtSessionChangeMailEn(c: Contact, ch: SessionChange): Mail {
   const asked = ch.by === 'client';
   const lines =
     ch.mode === 'cancel'
-      ? [asked ? `As you asked, ${kind} on ${at(ch)} (Turkey time) has been cancelled.` : `I am sorry to let you know that I have had to cancel ${kind} on ${at(ch)} (Turkey time). Thank you for your understanding.`, 'Your other sessions go ahead as planned.']
+      ? [
+          asked
+            ? `As you asked, ${kind} on ${at(ch)} (Turkey time) has been cancelled.`
+            : `I am sorry to let you know that I have had to cancel ${kind} on ${at(ch)} (Turkey time). Thank you for your understanding.`,
+          'Your other sessions go ahead as planned.',
+        ]
       : ch.mode === 'postpone'
         ? [
-            asked ? `As you asked, ${kind} on ${at(ch)} has been moved.` : `I am sorry to let you know that I have had to move ${kind} on ${at(ch)}. Thank you for your understanding.`,
+            asked
+              ? `As you asked, ${kind} on ${at(ch)} has been moved.`
+              : `I am sorry to let you know that I have had to move ${kind} on ${at(ch)}. Thank you for your understanding.`,
             ch.to ? `The new time is ${at(ch.to)} (Turkey time).` : 'We will settle the new day and time together soon.',
           ]
-        : [`I have planned ${ch.closing ? 'our free closing session' : 'an extra session'} for you on ${at(ch)} (Turkey time). It is held online; I will send you the link before it.`, 'If the time does not suit you, please reply to this e-mail.'];
+        : [
+            `I have planned ${ch.closing ? 'our free closing session' : 'an extra session'} for you on ${at(ch)} (Turkey time). It is held online; I will send you the link before it.`,
+            'If the time does not suit you, please reply to this e-mail.',
+          ];
   const subject = { cancel: 'Your session has been cancelled', postpone: 'Your session has been moved', add: 'A new session has been planned' }[ch.mode];
   return { subject: `${subject} – klinikterapist.com`, body: [`Dear ${c.name.trim()},`, '', ...lines, '', ...SIGN_EN].join('\n') };
 }
@@ -390,5 +433,10 @@ export function sessionChangeMail(c: Contact, ch: SessionChange): Mail {
   const id = CHANGE_ID[ch.mode];
   if (c.lang === 'tr') return mailTr(id, sessionChangeVarsTr(c, ch));
   const at = (s: { day: string; time: string }) => `${formatDay(s.day, 'en')}, at ${s.time.replace(':', '.')}`;
-  return withTexts(id, 'en', { ad: c.name.trim(), zaman: at(ch), ...(ch.to ? { yeni_tarih: formatDay(ch.to.day, 'en'), yeni_saat: ch.to.time.replace(':', '.') } : {}) }, builtSessionChangeMailEn(c, ch));
+  return withTexts(
+    id,
+    'en',
+    { ad: c.name.trim(), zaman: at(ch), ...(ch.to ? { yeni_tarih: formatDay(ch.to.day, 'en'), yeni_saat: ch.to.time.replace(':', '.') } : {}) },
+    builtSessionChangeMailEn(c, ch),
+  );
 }

@@ -40,7 +40,7 @@ const TR: Texts = {
       id: 'cift-terapisi',
       type: 'couple',
       icon: 'users',
-      q: 'Aile ve çift terapisi seansı',
+      q: 'Çift terapisi seansı',
       body: [
         'Çift terapisi, partnerlerin birlikte katıldığı görüşmelerdir. Burada odak tek bir kişi değil, ilişkinin kendisidir: iletişim, tekrar eden tartışmalar, güven, yakınlık ve birlikte alınması gereken kararlar.',
         'Seanslar online yapılır ve 60 dakika sürer; iki partnerin de görüşmeye katılması gerekir. Her iki tarafın da kendini güvende hissettiği, yargılanmadan dinlendiği bir alan kurmaya özen gösteririm.',
@@ -152,7 +152,7 @@ const EN: Texts = {
       id: 'cift-terapisi',
       type: 'couple',
       icon: 'users',
-      q: 'Family and couples therapy session',
+      q: 'Couples therapy session',
       body: [
         'Couple therapy means sessions both partners attend together. The focus is not one person but the relationship itself: communication, recurring arguments, trust, closeness and decisions you need to make together.',
         'Sessions are online and last 60 minutes; both partners need to attend. I take care to build a space where both of you feel safe and heard without judgement.',

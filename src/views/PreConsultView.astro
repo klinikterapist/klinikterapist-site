@@ -14,7 +14,8 @@ import Icon from '../components/Icon.astro';
 import PreConsultDesign from '../components/appointment/PreConsultDesign.astro';
 import VerifyCard from '../components/appointment/VerifyCard.astro';
 import type { Lang } from '../lib/settings';
-import { contactEmail } from '../lib/settings';
+import { contactEmail, getBooking } from '../lib/settings';
+import { introVias } from '../lib/booking-form';
 import { pageMeta } from '../lib/seo';
 import { bookingLive } from '../lib/booking-entry';
 import { faqLd } from '../lib/jsonld';
@@ -25,15 +26,22 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
+// By phone or video call, as switched on in Ayarlar › Randevu Ayarları (owner's review 2026-10-23).
+const vias = introVias(getBooking());
+const VIA = {
+  tr: vias.length === 2 ? 'telefonla ya da görüntülü' : vias[0] === 'phone' ? 'telefonla' : 'görüntülü',
+  en: vias.length === 2 ? 'by phone or video' : vias[0] === 'phone' ? 'by phone' : 'by video',
+};
+const viaChip = { tr: vias.length === 2 ? 'Telefon ya da görüntülü' : vias[0] === 'phone' ? 'Telefonla' : 'Görüntülü', en: vias.length === 2 ? 'Phone or video' : vias[0] === 'phone' ? 'By phone' : 'Video call' };
 
 const T = {
   tr: {
     title: 'Ücretsiz Ön Görüşme',
-    lead: 'Terapiye başlamadan önce 25–30 dakikalık, ücretsiz bir online görüşmeyle tanışalım. Ön görüşmeler cumartesi ve pazar günleri yapılır.',
+    lead: `Terapiye başlamadan önce 25–30 dakikalık, ücretsiz bir görüşmede tanışalım; görüşmeyi ${VIA.tr} yapabiliriz. Ön görüşmeler cumartesi ve pazar günleri yapılır.`,
     facts: [
       ['clock', '25–30 dakika'],
       ['calendar', 'Cumartesi ve Pazar'],
-      ['laptop', 'Online'],
+      ['laptop', viaChip.tr],
       ['heart', 'Ücretsiz, bağlayıcı değil'],
     ],
     liveLead: 'Talep formu çok yakında burada. Şimdilik ön görüşme talebinizi e-postayla iletebilirsiniz.',
@@ -44,19 +52,21 @@ const T = {
       'Görüşmenin sonunda bu çalışmanın ihtiyacınıza uygun olup olmadığına birlikte karar veririz. Gerekirse sizi daha uygun bir uzmana ya da kuruma yönlendiririm. Devam etme zorunluluğunuz yoktur.',
     ],
     introTitle: 'Terapide ön görüşme nedir?',
-    introText: 'Ön görüşme, terapiye başlamadan önce yaptığımız 25–30 dakikalık, ücretsiz ve online bir tanışma görüşmesidir. Bir terapi seansı değildir; amacı birbirimizi tanımak ve size nasıl yardımcı olabileceğimi birlikte değerlendirmektir.',
+    introText: `Ön görüşme, terapiye başlamadan önce ${VIA.tr} yaptığımız 25–30 dakikalık, ücretsiz bir tanışma görüşmesidir.`
+      + ' Bir terapi seansı değildir; amacı birbirimizi tanımak ve size nasıl yardımcı olabileceğimi birlikte değerlendirmektir.',
     whatTitle: 'Bu görüşmede',
     what: [
       'Sizi başvurmaya yönelten konuyu ve beklentilerinizi kısaca dinlerim.',
       'Nasıl çalıştığımı, seansların sıklığını ve süresini, gizlilik ilkelerini anlatırım.',
       'Sorularınızı yanıtlarım; ardından sizin için doğru adıma birlikte karar veririz.',
     ],
-    needTitle: 'Online görüşme için neye ihtiyacınız var?',
+    needTitle: 'Görüşme için neye ihtiyacınız var?',
     need: [
       ['home', 'Rahatça konuşabileceğiniz, sessiz ve kimsenin sizi duymayacağı bir ortam'],
-      ['laptop', 'İnternete bağlı, kameralı bir telefon, tablet ya da bilgisayar'],
+      ...(vias.includes('video') ? [['laptop', 'Görüntülü görüşmede: internete bağlı, kameralı bir telefon, tablet ya da bilgisayar']] : []),
+      ...(vias.includes('phone') ? [['talk', 'Telefonla görüşmede: formda yazdığınız numaradan sizi saatinde ararım']] : []),
       ['podcast', 'Kulaklık (zorunlu değil ama önerilir)'],
-      ['mail', 'Görüşme bağlantısını önceden e-postayla gönderirim'],
+      ...(vias.includes('video') ? [['mail', 'Görüntülü görüşmenin bağlantısını önceden e-postayla gönderirim']] : []),
     ],
     moreA: 'Ücretsiz olmasının nedeni, yaş sınırı, psikolog ile psikiyatrist farkı gibi diğer soruların cevapları ',
     moreLink: 'sayfanın devamında',
@@ -105,11 +115,11 @@ const T = {
   },
   en: {
     title: 'Free Intro Call',
-    lead: 'Before starting therapy, let’s get to know each other in a free 25–30 minute online call. Intro calls are held on Saturdays and Sundays.',
+    lead: `Before starting therapy, let’s get to know each other in a free 25–30 minute call, ${VIA.en}. Intro calls are held on Saturdays and Sundays.`,
     facts: [
       ['clock', '25–30 minutes'],
       ['calendar', 'Saturday and Sunday'],
-      ['laptop', 'Online'],
+      ['laptop', viaChip.en],
       ['heart', 'Free, no obligation'],
     ],
     liveLead: 'The request form is coming here soon. For now, you can ask for an intro call by e-mail.',
@@ -120,19 +130,21 @@ const T = {
       'At the end we decide together whether this work suits your needs. If needed, I refer you to a better-suited specialist or service. You are under no obligation to continue.',
     ],
     introTitle: 'What is an intro call in therapy?',
-    introText: 'The intro call is a free, 25–30 minute online conversation before therapy starts. It is not a therapy session; its aim is to get to know each other and assess together how I can help you.',
+    introText: `The intro call is a free, 25–30 minute conversation, ${VIA.en}, before therapy starts.`
+      + ' It is not a therapy session; its aim is to get to know each other and assess together how I can help you.',
     whatTitle: 'In this call',
     what: [
       'I briefly listen to what brings you here and what you hope for.',
       'I explain how I work, how often and how long sessions are, and the principles of confidentiality.',
       'I answer your questions; then we decide together on the right next step for you.',
     ],
-    needTitle: 'What do you need for an online call?',
+    needTitle: 'What do you need for the call?',
     need: [
       ['home', 'A quiet, private place where you can talk freely'],
-      ['laptop', 'A phone, tablet or computer with a camera and internet'],
+      ...(vias.includes('video') ? [['laptop', 'For a video call: a phone, tablet or computer with a camera and internet']] : []),
+      ...(vias.includes('phone') ? [['talk', 'For a phone call: I call you on time on the number you gave']] : []),
       ['podcast', 'Headphones (not required, but recommended)'],
-      ['mail', 'I send the call link by e-mail beforehand'],
+      ...(vias.includes('video') ? [['mail', 'I send the video call link by e-mail beforehand']] : []),
     ],
     moreA: 'Why it is free, whether there is an age limit, the difference between a psychologist and a psychiatrist and other questions are answered ',
     moreLink: 'further down this page',

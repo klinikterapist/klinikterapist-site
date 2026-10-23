@@ -17,7 +17,7 @@ function markup(endpoint: string | null) {
       <button data-cal-prev></button><span data-cal-title></span><button data-cal-next></button>
       <div data-cal-days></div><ul data-cal-note hidden></ul><p data-slots-title></p><div data-slots></div>
       <p data-step-error hidden></p></section>
-    <section data-step="3" hidden><h2>Bilgiler</h2>
+    <section data-step="3" data-details hidden><h2>Bilgiler</h2>
       <input name="name" required /><input name="email" type="email" required data-email /><small data-email-hint hidden></small>
       <input name="email2" type="email" required data-email-again /><small data-email-mismatch hidden></small><input name="phone" required />
       <textarea name="note"></textarea><input name="hp_field" /><input type="checkbox" name="consent" value="1" required />

@@ -43,6 +43,8 @@ export const PLACEHOLDERS: { key: string; label: string }[] = [
   { key: 'kural', label: '24 saat kuralı' },
   { key: 'kimin_icin', label: 'Kimin için (ön görüşme)' },
   { key: 'konular', label: 'Seçtiği konular (ön görüşme)' },
+  { key: 'gorusme_bicimi', label: 'Telefonla ya da görüntülü (ön görüşme)' },
+  { key: 'telefon', label: 'Telefon numarası' },
   { key: 'sayfa_baglantisi', label: 'Kişisel randevu sayfası' },
   { key: 'randevu_baglantisi', label: 'Randevu sayfası' },
   { key: 'son_tarih', label: 'Sonlandırma görüşmesi için son gün' },

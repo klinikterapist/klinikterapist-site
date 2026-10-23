@@ -1,10 +1,14 @@
 /**
  * Ayarlar › Randevu Ayarları (owner's requests 2026-10-23): everything about appointments in one place,
- * written to booking.json, laid out as a short summary and four tabs, each with its own Kaydet that
+ * written to booking.json, laid out as a short summary and five tabs, each with its own Kaydet that
  * saves only that part (the other tabs' unsaved changes stay on the screen; a dot on a tab marks them).
  * - Görüşme Türleri: a card per session type, on or off together with its intro-call choice (the two are
  *   one setting); supervision has no intro call. A closed type shows on the forms as "Kontenjan Doldu",
  *   "Şu an uygun değil" or not at all, as chosen on its card; types with places say "Kontenjanlı".
+ *   Below them, how the intro call can be held: by phone, by video call or both.
+ * - Bilgilendirme: per type its name on the session form and the text of the form's "Bilgilendirme"
+ *   step, Turkish and English, and the online-session text shown under every online type
+ *   (session-info.json, owner's review 2026-10-23).
  * - Çalışma Saatleri: the weekly start times of sessions and of intro calls, a day per row; a day's times
  *   can be copied to the other weekdays.
  * - Kurallar: notice before booking, how far ahead, the rest between appointments.
@@ -15,9 +19,9 @@
  * stays in Önemli Ayarlar.
  */
 import { useState, type ReactNode } from 'react';
-import { INTRO_FOR, SESSION_TYPES, closedAs, typeOn, type Availability, type BookingConfig, type ClosedAs, type ClosedDay } from '../../../../lib/booking-form';
-import { parseBooking } from '../../../../lib/schemas';
-import { CalendarClock, CalendarX, Icon, ListChecks, Tags, type LucideIcon } from '../../icons';
+import { INTRO_FOR, SESSION_TYPES, closedAs, introVias, typeOn, type Availability, type BookingConfig, type ClosedAs, type ClosedDay } from '../../../../lib/booking-form';
+import { parseBooking, parseSessionInfo, type SessionInfo } from '../../../../lib/schemas';
+import { CalendarClock, CalendarX, Icon, Info, ListChecks, Tags, type LucideIcon } from '../../icons';
 import { Banner, Button, Field, Spinner, Toggle } from '../../kit';
 import { ListEditor } from '../fields';
 import { SiteIcon } from '../rows';
@@ -25,12 +29,13 @@ import { SETTINGS_SCREENS } from '../screens';
 import { useSettingsFile, type SettingsFile } from '../useSettingsFile';
 import { CloseHoursDialog } from '../../appointments/CloseHoursDialog';
 
-type Tab = 'types' | 'hours' | 'rules' | 'closed';
+type Tab = 'types' | 'info' | 'hours' | 'rules' | 'closed';
 type Kind = 'session' | 'intro';
 
-/** Each tab, what its Kaydet writes (booking.json paths) and how the button reads. */
+/** Each tab, what its Kaydet writes (paths in booking.json, or in session-info.json for `info`) and how the button reads. */
 const TABS: { id: Tab; label: string; icon: LucideIcon; paths: string[]; save: string }[] = [
-  { id: 'types', label: 'Görüşme Türleri', icon: Tags, paths: ['types', 'closedAs'], save: 'Görüşme türlerini kaydet' },
+  { id: 'types', label: 'Görüşme Türleri', icon: Tags, paths: ['types', 'closedAs', 'introVia'], save: 'Görüşme türlerini kaydet' },
+  { id: 'info', label: 'Bilgilendirme', icon: Info, paths: ['types', 'online'], save: 'Bilgilendirmeyi kaydet' },
   { id: 'hours', label: 'Çalışma Saatleri', icon: CalendarClock, paths: ['session.weekdays', 'intro.weekdays'], save: 'Çalışma saatlerini kaydet' },
   {
     id: 'rules',
@@ -170,8 +175,39 @@ function RuleCard({ label, unit, hint, value, onChange, error }: { label: string
   );
 }
 
+/** How the intro call can be held (booking.json `introVia`). */
+const VIA_CHOICES = [
+  { id: 'phone', label: 'Telefonla arayın', hint: 'Formda yazdığı numaradan siz ararsınız.' },
+  { id: 'video', label: 'Görüntülü görüşme', hint: 'Bağlantıyı e-postayla gönderirsiniz.' },
+] as const;
+
+/** One type's name and text in the "Bilgilendirme" step, Turkish and English. */
+function InfoCard({ id, value, onChange }: { id: string; value: SessionInfo['types'][string]; onChange: (v: SessionInfo['types'][string]) => void }) {
+  const t = SESSION_TYPES.find((x) => x.id === id);
+  const look = TYPE_LOOK[id] ?? TYPE_LOOK.individual;
+  return (
+    <details className={`info-card tone-${look.tone}`}>
+      <summary>
+        <span className="tone-tile" aria-hidden="true">
+          <SiteIcon name={look.icon} size={18} />
+        </span>
+        <span className="tc-name">
+          <b>{value.name.tr || t?.tr}</b>
+          <span className="tc-meta">{t ? `${t.minutes} dakika · ${id === 'face' ? 'Yüz yüze' : 'Online'}` : ''}</span>
+        </span>
+      </summary>
+      <div className="info-fields">
+        <Field label="Formdaki adı (Türkçe)" value={value.name.tr} onChange={(tr) => onChange({ ...value, name: { ...value.name, tr } })} />
+        <Field label="Formdaki adı (İngilizce)" value={value.name.en} onChange={(en) => onChange({ ...value, name: { ...value.name, en } })} />
+        <Field label="Bilgilendirme (Türkçe)" multiline rows={12} value={value.info.tr} onChange={(tr) => onChange({ ...value, info: { ...value.info, tr } })} />
+        <Field label="Bilgilendirme (İngilizce)" multiline rows={12} value={value.info.en} onChange={(en) => onChange({ ...value, info: { ...value.info, en } })} />
+      </div>
+    </details>
+  );
+}
+
 /** A tab's panel: its title and what it is for, the content, and its own Kaydet at the foot. */
-function Part({ tab, hint, file, extra, children }: { tab: (typeof TABS)[number]; hint: ReactNode; file: SettingsFile<BookingConfig>; extra?: ReactNode; children: ReactNode }) {
+function Part<V>({ tab, hint, file, extra, children }: { tab: (typeof TABS)[number]; hint: ReactNode; file: SettingsFile<V>; extra?: ReactNode; children: ReactNode }) {
   const dirty = file.partDirty(tab.paths);
   return (
     <form
@@ -206,6 +242,9 @@ function Part({ tab, hint, file, extra, children }: { tab: (typeof TABS)[number]
 export function RandevuScreen() {
   const meta = SETTINGS_SCREENS.find((s) => s.id === 'randevu')!;
   const file = useSettingsFile<BookingConfig>('src/data/booking.json', parseBooking, 'Randevu Ayarları');
+  const infoFile = useSettingsFile<SessionInfo>('src/data/session-info.json', parseSessionInfo, 'Bilgilendirme metinleri');
+  const info = infoFile.value;
+  const fileOf = (t: Tab) => (t === 'info' ? infoFile : file);
   const [tab, setTab] = useState<Tab>('types');
   const [kind, setKind] = useState<Kind>('session');
   const [closing, setClosing] = useState(false);
@@ -271,7 +310,7 @@ export function RandevuScreen() {
               <button key={t.id} id={`bs-tab-${t.id}`} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
                 <Icon as={t.icon} size={16} />
                 <span>{t.label}</span>
-                {file.partDirty(t.paths) && <i className="bs-dot" title="Kaydedilmemiş değişiklik var" aria-label="kaydedilmemiş değişiklik var" />}
+                {fileOf(t.id).partDirty(t.paths) && <i className="bs-dot" title="Kaydedilmemiş değişiklik var" aria-label="kaydedilmemiş değişiklik var" />}
               </button>
             ))}
           </div>
@@ -324,7 +363,70 @@ export function RandevuScreen() {
                   );
                 })}
               </ul>
+              <fieldset className="via-box">
+                <legend>Ön görüşme şekli</legend>
+                <p className="k-hint">Ön görüşme formunda kişiye “Ön görüşmeyi nasıl gerçekleştirmek istersiniz?” diye sorulur. Seanslar her durumda görüntülü yapılır.</p>
+                {VIA_CHOICES.map((v) => {
+                  const on = introVias(b).includes(v.id);
+                  const last = on && introVias(b).length === 1;
+                  return (
+                    <div key={v.id} className="via-row">
+                      <span>
+                        <b>{v.label}</b>
+                        <span className="k-hint">{last ? 'En az bir seçenek açık kalmalı.' : v.hint}</span>
+                      </span>
+                      <Toggle
+                        label={on ? 'Açık' : 'Kapalı'}
+                        checked={on}
+                        disabled={last}
+                        onChange={(x) => set({ introVia: { phone: introVias(b).includes('phone'), video: introVias(b).includes('video'), [v.id]: x } })}
+                      />
+                    </div>
+                  );
+                })}
+              </fieldset>
             </Part>
+          )}
+
+          {tab === 'info' && (
+            <>
+              {infoFile.loadError && (
+                <Banner tone="error" action={<Button onClick={infoFile.retry}>Tekrar dene</Button>}>
+                  {infoFile.loadError}
+                </Banner>
+              )}
+              {!info && !infoFile.loadError && <Spinner />}
+              {info && (
+                <Part
+                  tab={current}
+                  file={infoFile}
+                  hint="Seans formunda tür seçildikten sonra, tarih ve saatten önce gösterilen metinler. Boş satır paragrafı ayırır; “- ” ile başlayan satırlar liste, “### ” ile başlayan satır ara başlık olur. Türün adı yalnızca sitedeki formu değiştirir; e-postalar kendi adlarını kullanır."
+                >
+                  <div className="info-cards">
+                    {SESSION_TYPES.map((t) =>
+                      info.types[t.id] ? (
+                        <InfoCard key={t.id} id={t.id} value={info.types[t.id]} onChange={(v) => infoFile.setValue((x) => ({ ...x, types: { ...x.types, [t.id]: v } }))} />
+                      ) : null,
+                    )}
+                    <details className="info-card tone-deniz">
+                      <summary>
+                        <span className="tone-tile" aria-hidden="true">
+                          <SiteIcon name="laptop" size={18} />
+                        </span>
+                        <span className="tc-name">
+                          <b>Online görüşme için gerekenler</b>
+                          <span className="tc-meta">Bütün online türlerin altında görünür</span>
+                        </span>
+                      </summary>
+                      <div className="info-fields">
+                        <Field label="Türkçe" multiline rows={12} value={info.online.tr} onChange={(tr) => infoFile.setValue((x) => ({ ...x, online: { ...x.online, tr } }))} />
+                        <Field label="İngilizce" multiline rows={12} value={info.online.en} onChange={(en) => infoFile.setValue((x) => ({ ...x, online: { ...x.online, en } }))} />
+                      </div>
+                    </details>
+                  </div>
+                </Part>
+              )}
+            </>
           )}
 
           {tab === 'hours' && (

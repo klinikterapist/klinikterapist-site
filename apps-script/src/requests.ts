@@ -15,7 +15,21 @@ import { ApiError, badRequest } from './respond';
 import { activeEntries, addConfirmed, addHold, busyOf, removeEntry } from './calendar';
 import { readItems, writeItems } from './store';
 import { verifyLines, verifyLink } from './verify';
-import { BOOKING_LIMITS, INTRO_MINUTES, REQUEST_KEEP_DAYS, requestKeepUntil, SESSION_TYPES, clientNumber, formatDay, holdOf, minutesOf, overlaps, type BookingConfig, type BookingInput, type BusyInterval } from '../../src/lib/booking-form';
+import {
+  BOOKING_LIMITS,
+  INTRO_MINUTES,
+  REQUEST_KEEP_DAYS,
+  requestKeepUntil,
+  SESSION_TYPES,
+  clientNumber,
+  formatDay,
+  holdOf,
+  minutesOf,
+  overlaps,
+  type BookingConfig,
+  type BookingInput,
+  type BusyInterval,
+} from '../../src/lib/booking-form';
 import { SessionError, applyChange, clientsBusy, type SessionChangeInput, type SessionRecord } from '../../src/lib/sessions';
 import { DAY_RE, EMAIL_RE, TIME_RE } from '../../src/lib/field-rules';
 import { PANEL_URL, SENDER_NAME, oneLine } from './text';
@@ -67,11 +81,28 @@ export function assertFree(gas: Gas, cfg: BookingConfig, holds: BusyInterval[], 
   const now = gas.now();
   const hits = (busy: BusyInterval[]) => busy.some((b) => holds.some((h) => overlaps(h, b)));
   for (const c of read<StoredClient>(gas, CLIENTS)) {
-    if (hits(clientsBusy([c], cfg.restMinutes, now, now + WEEKS8))) throw new ApiError('conflict', `Bu saat ${c.number} numaralı danışanın seansıyla çakışıyor. Başka bir saat seçin.`);
+    if (hits(clientsBusy([c], cfg.restMinutes, now, now + WEEKS8)))
+      throw new ApiError('conflict', `Bu saat ${c.number} numaralı danışanın seansıyla çakışıyor. Başka bir saat seçin.`);
   }
   const entries = activeEntries(gas, now).filter((e) => e.id !== skipEntry);
-  if (hits(busyOf(entries.filter((e) => e.status === 'closed'), cfg.restMinutes))) throw new ApiError('conflict', 'Bu saat, takvimde kapattığınız bir aralığa denk geliyor. Önce o aralığı açın ya da başka bir saat seçin.');
-  if (hits(busyOf(entries.filter((e) => e.status === 'confirmed'), cfg.restMinutes))) throw new ApiError('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
+  if (
+    hits(
+      busyOf(
+        entries.filter((e) => e.status === 'closed'),
+        cfg.restMinutes,
+      ),
+    )
+  )
+    throw new ApiError('conflict', 'Bu saat, takvimde kapattığınız bir aralığa denk geliyor. Önce o aralığı açın ya da başka bir saat seçin.');
+  if (
+    hits(
+      busyOf(
+        entries.filter((e) => e.status === 'confirmed'),
+        cfg.restMinutes,
+      ),
+    )
+  )
+    throw new ApiError('conflict', 'Bu saat onaylı başka bir randevuyla çakışıyor. Önce o randevuyu silin ya da başka bir saat seçin.');
 }
 
 /** The stretch a one-off booking takes, when its day and time are well formed. */
@@ -92,7 +123,7 @@ export function saveRequest(gas: Gas, input: BookingInput, lang: 'tr' | 'en', ho
     phone: input.phone.trim(),
     note: input.note.trim(),
     lang,
-    ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age } : {}),
+    ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age, ...(input.via ? { via: input.via } : {}) } : {}),
     ...(input.country ? { country: input.country } : {}),
     status: 'pending',
     holdId,
@@ -106,10 +137,19 @@ export function saveRequest(gas: Gas, input: BookingInput, lang: 'tr' | 'en', ho
 export function markVerified(gas: Gas, id: string): void {
   gas.withLock(() => {
     const requests = liveRequests(gas);
-    if (requests.some((r) => r.id === id && !r.verified)) write(gas, REQUESTS, requests.map((r) => (r.id === id ? { ...r, verified: true } : r)));
+    if (requests.some((r) => r.id === id && !r.verified))
+      write(
+        gas,
+        REQUESTS,
+        requests.map((r) => (r.id === id ? { ...r, verified: true } : r)),
+      );
     const clients = read<StoredClient>(gas, CLIENTS);
     if (clients.some((c) => c.requestId === id && !c.contact.verified)) {
-      write(gas, CLIENTS, clients.map((c) => (c.requestId === id ? { ...c, contact: { ...c.contact, verified: true } } : c)));
+      write(
+        gas,
+        CLIENTS,
+        clients.map((c) => (c.requestId === id ? { ...c, contact: { ...c.contact, verified: true } } : c)),
+      );
     }
   });
 }
@@ -175,7 +215,12 @@ export function warnExpiringHolds(gas: Gas): number {
     const now = gas.now();
     const requests = liveRequests(gas);
     const list = requests.filter((r) => r.status === 'pending' && r.holdId && !r.holdWarned && now - r.createdAt >= WARN_AFTER_MS);
-    if (list.length) write(gas, REQUESTS, requests.map((r) => (list.includes(r) ? { ...r, holdWarned: true } : r)));
+    if (list.length)
+      write(
+        gas,
+        REQUESTS,
+        requests.map((r) => (list.includes(r) ? { ...r, holdWarned: true } : r)),
+      );
     return list;
   });
   if (!due.length) return 0;
@@ -193,7 +238,8 @@ export function warnExpiringHolds(gas: Gas): number {
   // The text speaks of one request; several make it plural.
   const many = due.length > 1;
   gas.mail.send({
-    ...noticeFrom(gas), to: notifyTo(gas, owner),
+    ...noticeFrom(gas),
+    to: notifyTo(gas, owner),
     replyTo: owner,
     subject: many ? `${due.length} talebin tutma süresi doluyor` : m.subject,
     body: many ? m.body.replace('Aşağıdaki talep için', `Aşağıdaki ${due.length} talep için`) : m.body,
@@ -288,7 +334,11 @@ export function revertRequest(gas: Gas, cfg: BookingConfig, p: Record<string, un
     sendMail(gas, r.email, p);
     if (r.calendarId) removeEntry(gas, { id: r.calendarId });
     const holdId = holdAgain(gas, cfg, r);
-    write(gas, REQUESTS, requests.map((x) => (x.id === r.id ? { ...x, status: 'pending' as const, holdId, calendarId: undefined } : x)));
+    write(
+      gas,
+      REQUESTS,
+      requests.map((x) => (x.id === r.id ? { ...x, status: 'pending' as const, holdId, calendarId: undefined } : x)),
+    );
     return {};
   });
 }
@@ -322,7 +372,15 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
       since = r.day;
       type = r.type ?? 'individual';
     } else {
-      if (typeof p.weekday !== 'number' || p.weekday < 0 || p.weekday > 6 || typeof p.time !== 'string' || !TIME_RE.test(p.time) || typeof p.since !== 'string' || !DAY_RE.test(p.since)) {
+      if (
+        typeof p.weekday !== 'number' ||
+        p.weekday < 0 ||
+        p.weekday > 6 ||
+        typeof p.time !== 'string' ||
+        !TIME_RE.test(p.time) ||
+        typeof p.since !== 'string' ||
+        !DAY_RE.test(p.since)
+      ) {
         throw badRequest('Haftalık seans günü, saati ve başlangıç tarihi gerekli.');
       }
       weekday = p.weekday;
@@ -356,7 +414,11 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
     // The weekly slot now holds this time; a one-off session entry at the same start would double it.
     if (r.kind === 'session' && r.calendarId) removeEntry(gas, { id: r.calendarId });
     write(gas, CLIENTS, [...read<StoredClient>(gas, CLIENTS), client]);
-    write(gas, REQUESTS, requests.filter((x) => x.id !== r.id));
+    write(
+      gas,
+      REQUESTS,
+      requests.filter((x) => x.id !== r.id),
+    );
     logEvent(gas, 'client', `${client.number} Seans takibe alındı`, `#/seans-takip/${client.id}`);
     return { client: publicClient(client) };
   });
@@ -366,7 +428,11 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
 export const publicClient = ({ origin: _o, requestId: _r, linkGen: _l, ...c }: StoredClient): Client => ({ ...c, status: c.status ?? 'active' });
 
 export function listClients(gas: Gas): { clients: Client[] } {
-  return { clients: read<StoredClient>(gas, CLIENTS).map(publicClient).sort((a, b) => a.number.localeCompare(b.number)) };
+  return {
+    clients: read<StoredClient>(gas, CLIENTS)
+      .map(publicClient)
+      .sort((a, b) => a.number.localeCompare(b.number)),
+  };
 }
 
 /**
@@ -386,7 +452,12 @@ export function endClient(gas: Gas, p: Record<string, unknown>): Record<string, 
     const now = gas.now();
     const closing = (x: StoredClient): StoredClient => ({ ...x, status: 'closing', closingAsk: { at: now, until: closingDeadline(now).until } });
     write(gas, CLIENTS, mode === 'closing' ? clients.map((x) => (x.id === c.id ? closing(x) : x)) : clients.filter((x) => x.id !== c.id));
-    logEvent(gas, 'client', `${c.number}: ${{ complete: 'terapi tamamlandı', closing: 'sonlandırma görüşmesi daveti gitti', delete: 'Seans takipten silindi' }[mode]}`, mode === 'closing' ? `#/seans-takip/${c.id}` : '#/seans-takip');
+    logEvent(
+      gas,
+      'client',
+      `${c.number}: ${{ complete: 'terapi tamamlandı', closing: 'sonlandırma görüşmesi daveti gitti', delete: 'Seans takipten silindi' }[mode]}`,
+      mode === 'closing' ? `#/seans-takip/${c.id}` : '#/seans-takip',
+    );
     return {};
   });
 }
@@ -402,7 +473,11 @@ export function revertClient(gas: Gas, cfg: BookingConfig, p: Record<string, unk
     const c = clients.find((x) => x.id === p.id);
     if (!c) throw new ApiError('not_found', NO_CLIENT);
     sendMail(gas, c.contact.email, p);
-    write(gas, CLIENTS, clients.filter((x) => x.id !== c.id));
+    write(
+      gas,
+      CLIENTS,
+      clients.filter((x) => x.id !== c.id),
+    );
     const holdId = holdAgain(gas, cfg, c.origin);
     const back: BookingRequest = { ...c.origin, id: gas.uuid().slice(0, 12), createdAt: gas.now(), status: 'pending', holdId };
     write(gas, REQUESTS, [...liveRequests(gas), back]);
@@ -441,7 +516,11 @@ export function changeSession(gas: Gas, cfg: BookingConfig, p: Record<string, un
       const others = clients.map((x) => (x.id === c.id ? { ...updated, sessions: result.sessions.filter((s) => s !== added) } : x));
       if (mine.start > now && allBusy(gas, cfg, now, others).some((b) => overlaps(mine, b))) throw new ApiError('conflict', CLASH);
     }
-    write(gas, CLIENTS, clients.map((x) => (x.id === c.id ? updated : x)));
+    write(
+      gas,
+      CLIENTS,
+      clients.map((x) => (x.id === c.id ? updated : x)),
+    );
     return { client: publicClient(updated) };
   });
 }

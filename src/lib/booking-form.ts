@@ -39,6 +39,21 @@ export type BookingConfig = {
    * the others "Şu an uygun değil".
    */
   closedAs?: Partial<Record<string, ClosedAs>>;
+  /**
+   * How the intro call can be held (owner's review 2026-10-23): a phone call from the owner, or a
+   * video call. The person chooses on the intro form; both are offered without the field. Sessions are
+   * always video calls.
+   */
+  introVia?: { phone: boolean; video: boolean };
+};
+
+export const INTRO_VIA = ['phone', 'video'] as const;
+export type IntroVia = (typeof INTRO_VIA)[number];
+
+/** The ways the intro call is offered now (booking.json `introVia`; both when none is on). */
+export const introVias = (cfg: Pick<BookingConfig, 'introVia'>): IntroVia[] => {
+  const on = INTRO_VIA.filter((v) => cfg.introVia?.[v] ?? true);
+  return on.length ? on : [...INTRO_VIA];
 };
 
 export type ClosedAs = 'full' | 'off' | 'hidden';
@@ -55,7 +70,7 @@ export const intakeOpen = (cfg: Pick<BookingConfig, 'intake'>, lang: BookingLang
  */
 export const SESSION_TYPES = [
   { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50, on: true, quota: false },
-  { id: 'couple', tr: 'Aile ve çift terapisi', en: 'Family and couples therapy', minutes: 60, on: true, quota: false },
+  { id: 'couple', tr: 'Çift terapisi', en: 'Couples therapy', minutes: 60, on: true, quota: false },
   { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session', minutes: 50, on: true, quota: true },
   { id: 'group', tr: 'Grup terapisi', en: 'Group therapy', minutes: 90, on: false, quota: false },
   { id: 'face', tr: 'Yüz yüze terapi', en: 'Face-to-face therapy', minutes: 50, on: false, quota: false },
@@ -113,7 +128,7 @@ export type BusyInterval = { start: number; end: number };
  */
 export const INTRO_FOR = [
   { id: 'individual', tr: 'Kendim için (bireysel terapi)', en: 'For myself (individual therapy)' },
-  { id: 'couple', tr: 'Eş veya partnerimle birlikte (aile ve çift terapisi)', en: 'With my spouse or partner (family and couples therapy)' },
+  { id: 'couple', tr: 'Eş veya partnerimle birlikte (çift terapisi)', en: 'With my spouse or partner (couples therapy)' },
   { id: 'accessible', tr: 'Kendim için, uygun ücretle (erişilebilir terapi)', en: 'For myself, at a reduced fee (accessible therapy)' },
   { id: 'group', tr: 'Bir gruba katılmak istiyorum (grup terapisi)', en: 'I would like to join a group (group therapy)' },
   { id: 'face', tr: 'Yüz yüze görüşmek istiyorum (yüz yüze terapi)', en: 'I would like to meet face to face (face-to-face therapy)' },
@@ -180,6 +195,8 @@ export type BookingInput = {
   before?: 'yes' | 'no' | '';
   /** Intro: index into AGE_RANGES. */
   age?: number;
+  /** Intro: by phone or video call (INTRO_VIA); left out by forms sent before it was asked (2026-10-23). */
+  via?: IntroVia;
   /**
    * Explicit consent for health-related data. Intro: the topic choices (required when a topic is
    * picked). Session: the note (owner's note 2026-10-22), required when a note is written; left out
@@ -193,7 +210,7 @@ export type BookingInput = {
   country?: string;
 };
 
-export type BookingField = 'type' | 'slot' | 'name' | 'email' | 'phone' | 'note' | 'consent' | 'forWhom' | 'topics' | 'age' | 'healthConsent' | 'country';
+export type BookingField = 'type' | 'slot' | 'name' | 'email' | 'phone' | 'note' | 'consent' | 'forWhom' | 'topics' | 'age' | 'healthConsent' | 'country' | 'via';
 export type BookingErrors = Partial<Record<BookingField, 'required' | 'invalid' | 'tooLong' | 'taken'>>;
 
 const HOUR = 3600 * 1000;
@@ -303,6 +320,7 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
     else if (topics.some((i) => !Number.isInteger(i) || i < 0 || i >= INTRO_TOPICS.tr.length) || new Set(topics).size !== topics.length) errors.topics = 'invalid';
     if (!Number.isInteger(input.age) || input.age! < 0 || input.age! >= AGE_RANGES.tr.length) errors.age = 'required';
     if (topics.length && !input.healthConsent) errors.healthConsent = 'required';
+    if (input.via !== undefined && !introVias(cfg).includes(input.via)) errors.via = 'required';
   }
   if (input.country && !isCountry(input.country)) errors.country = 'invalid';
   return errors;

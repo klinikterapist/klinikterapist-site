@@ -75,7 +75,7 @@ describe('ready e-mails', () => {
     expect(a.subject).toBe('Randevunuz onaylandı – klinikterapist.com');
     expect(a.body).toContain('Sayın Ayşe Yılmaz,');
     expect(a.body).toContain('22 Ekim 2026, Perşembe, saat 19.20 için gönderdiğiniz randevu talebiniz onaylandı.');
-    expect(a.body).toContain('– Seans türü: Aile ve çift terapisi');
+    expect(a.body).toContain('– Seans türü: Çift terapisi');
     expect(a.body).toContain('→ Aydınlatma metnini oku: https://klinikterapist.com/aydinlatma-metni/');
     expect(a.body).toMatch(/Saygılarımla,\nOsman Güneş Özkurt\nKlinik Psikolog\nklinikterapist\.com$/);
     expect(decisionMail(intro, 'approve').body).toContain('konuları konuşmak istediğinizi belirttiniz:\n\n– Kaygı ve stres\n– Uyku');
@@ -83,6 +83,21 @@ describe('ready e-mails', () => {
     expect(u.body).toContain('Ne yazık ki bu tarih ve saatte uygun olmadığım için talebinizi onaylayamıyorum.');
     expect(u.body).toContain('https://klinikterapist.com/seans-randevusu/');
     expect(decisionMail({ ...intro, lang: 'en' }, 'cancel').body).toContain('https://klinikterapist.com/en/intro-call/');
+  });
+
+  it('intro approval follows how the call is held: phone or video call (owner, 2026-10-23)', () => {
+    const phone = decisionMail({ ...intro, via: 'phone', phone: '0532 111 22 33' }, 'approve').body;
+    expect(phone).toContain('– Görüşme biçimi: Telefonla (sizi ben ararım)');
+    expect(phone).toContain('■ Telefon görüşmesine hazırlık');
+    expect(phone).toContain('sizi 0532 111 22 33 numarasından arayacağım');
+    expect(phone).not.toContain('■ Online görüşmeye hazırlık');
+    const video = decisionMail({ ...intro, via: 'video' }, 'approve').body;
+    expect(video).toContain('– Görüşme biçimi: Görüntülü görüşme (online)');
+    expect(video).toContain('■ Online görüşmeye hazırlık');
+    expect(video).not.toContain('Telefon görüşmesine');
+    // A request from before it was asked is a video call.
+    expect(decisionMail(intro, 'approve').body).toContain('■ Online görüşmeye hazırlık');
+    expect(decisionMail({ ...intro, via: 'phone', phone: '+44 7700 900000', lang: 'en' }, 'approve').body).toContain('I will call you on +44 7700 900000');
   });
 
   it('ending therapy, the closing session and the apology', () => {
@@ -120,7 +135,7 @@ describe('Randevu talepleri', () => {
     const c = await card('Ayşe Yılmaz');
     // The kind in its own box beside the date; the session type under the name, no e-mail there.
     expect(c.querySelector('.rq-kindbox')!.textContent).toBe('SeansRandevusu');
-    expect(c.querySelector('.rq-who')!.textContent).toBe('Ayşe YılmazAile ve çift terapisi · 60 dakika');
+    expect(c.querySelector('.rq-who')!.textContent).toBe('Ayşe YılmazÇift terapisi · 60 dakika');
     expect(c.textContent).toContain('Konuşma dili');
     expect(c.textContent).toContain('E-posta henüz doğrulanmadı');
     expect((await card('Ali Kaya')).querySelector('.rq-kindbox')!.textContent).toBe('Ön görüşmeÜcretsiz');
@@ -163,7 +178,7 @@ describe('Randevu talepleri', () => {
     // The weekly plan goes by e-mail, open for editing (owner's note 2026-10-23).
     const body = (within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value;
     expect(body).toContain('– Seans günü ve saati: Her perşembe, 19.20 (Türkiye saati)');
-    expect(body).toContain('– Seans türü: Aile ve çift terapisi');
+    expect(body).toContain('– Seans türü: Çift terapisi');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Takibe geçir ve gönder' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(1));
     expect(api.state.clients[0]).toMatchObject({ number: 'KT001AY', weekday: 4, time: '19:20', status: 'active', contact: { email: 'ayse@example.com' } });

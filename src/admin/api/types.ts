@@ -23,9 +23,7 @@ export type ErrorCode =
   /** Panel side only: the request never reached the backend. */
   | 'network';
 
-export type ApiResponse<T = unknown> =
-  | { ok: true; data: T }
-  | { ok: false; error: { code: ErrorCode; message: string }; data?: unknown };
+export type ApiResponse<T = unknown> = { ok: true; data: T } | { ok: false; error: { code: ErrorCode; message: string }; data?: unknown };
 
 export type Encoding = 'utf8' | 'base64';
 
@@ -144,6 +142,8 @@ export type BookingRequest = {
   topics?: number[];
   before?: 'yes' | 'no' | '';
   age?: number;
+  /** Intro: a phone call or a video call (booking-form INTRO_VIA); left out by requests from before it was asked. */
+  via?: 'phone' | 'video';
   /** Intro: where the person lives (lib/phone.ts COUNTRIES). */
   country?: string;
   status: 'pending' | 'approved';

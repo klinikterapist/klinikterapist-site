@@ -80,7 +80,13 @@ describe('settings screens: Plan E fields', () => {
   it('Sık sorulan sorular: lists five questions; add, reorder and delete', async () => {
     // A fixed FAQ, so the test does not depend on the owner's real questions.
     const q = (id: string, tr: string) => ({ id, q: { tr, en: tr }, a: { tr: '', en: '' } });
-    const faq = [q('ilk-gorusme', 'İlk görüşme nasıl geçer?'), q('ucret', 'Ücret ne kadar, nasıl ödenir?'), q('online-gorusme', 'Online görüşme nasıl yapılır?'), q('gizlilik', 'Konuştuklarım gizli kalır mı?'), q('iptal', 'Randevuyu iptal edebilir miyim?')];
+    const faq = [
+      q('ilk-gorusme', 'İlk görüşme nasıl geçer?'),
+      q('ucret', 'Ücret ne kadar, nasıl ödenir?'),
+      q('online-gorusme', 'Online görüşme nasıl yapılır?'),
+      q('gizlilik', 'Konuştuklarım gizli kalır mı?'),
+      q('iptal', 'Randevuyu iptal edebilir miyim?'),
+    ];
     const api = setup('sss', (a) => {
       const f = a.state.files.get('src/data/faq.json')!;
       a.state.files.set('src/data/faq.json', { ...f, content: JSON.stringify(faq) });
@@ -103,7 +109,11 @@ describe('settings screens: Plan E fields', () => {
     await waitFor(() => expect(api.state.commits).toHaveLength(1));
     const saved = json(api, 'src/data/faq.json') as { id: string; q: { tr: string } }[];
     expect(saved.map((f) => f.q.tr)).toEqual([
-      'Ücret ne kadar, nasıl ödenir?', 'Online görüşme nasıl yapılır?', 'Konuştuklarım gizli kalır mı?', 'Yeni soru?', 'Randevuyu iptal edebilir miyim?',
+      'Ücret ne kadar, nasıl ödenir?',
+      'Online görüşme nasıl yapılır?',
+      'Konuştuklarım gizli kalır mı?',
+      'Yeni soru?',
+      'Randevuyu iptal edebilir miyim?',
     ]);
     expect(new Set(saved.map((f) => f.id)).size).toBe(5);
   });
@@ -188,7 +198,10 @@ describe('settings screens', () => {
     fireEvent.change(email, { target: { value: 'yok' } });
     save();
     await waitFor(() => expect(email.getAttribute('aria-invalid')).toBe('true'));
-    const errorId = email.getAttribute('aria-describedby')!.split(' ').find((id) => id.endsWith('-err'))!;
+    const errorId = email
+      .getAttribute('aria-describedby')!
+      .split(' ')
+      .find((id) => id.endsWith('-err'))!;
     expect(document.getElementById(errorId)?.textContent).toMatch(/geçerli bir e-posta adresi yazın/);
     expect(api.state.commits).toHaveLength(0);
   });
@@ -311,5 +324,23 @@ describe('Randevu Ayarları: a Kaydet per tab (owner, 2026-10-23)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kuralları kaydet' }));
     await waitFor(() => expect(api.state.commits).toHaveLength(2));
     expect(json(api, 'src/data/booking.json')).toMatchObject({ restMinutes: before.restMinutes + 5, closedAs: { supervision: 'hidden' } });
+  });
+
+  it('Ön görüşme şekli: phone or video, one stays on; Bilgilendirme writes session-info.json', async () => {
+    const api = setup('randevu');
+    const tab = (name: string) => fireEvent.click(screen.getByRole('tab', { name: new RegExp(name) }));
+    const box = (await screen.findByText('Ön görüşme şekli')).closest('fieldset')!;
+    const [phone, video] = within(box).getAllByRole('switch') as HTMLInputElement[];
+    fireEvent.click(phone);
+    expect(video.disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Görüşme türlerini kaydet' }));
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    expect(json(api, 'src/data/booking.json').introVia).toEqual({ phone: false, video: true });
+    tab('Bilgilendirme');
+    fireEvent.click(await screen.findByText('Çift Terapisi Seansı'));
+    fireEvent.change(screen.getAllByLabelText('Formdaki adı (Türkçe)')[1], { target: { value: 'Çift ve Aile Terapisi' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Bilgilendirmeyi kaydet' }));
+    await waitFor(() => expect(api.state.commits).toHaveLength(2));
+    expect(json(api, 'src/data/session-info.json').types.couple.name.tr).toBe('Çift ve Aile Terapisi');
   });
 });

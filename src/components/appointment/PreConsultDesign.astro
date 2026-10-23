@@ -4,7 +4,7 @@
  * as the booking design (wizard.ts), for the intro call only. Steps: what brings you (who it is for,
  * the topics, earlier support, a short note), a weekend day and time (intro calls are on Saturdays
  * and Sundays only, 25–30 minutes), your details (name, e-mail, phone and age range are required),
- * confirm. The calendar shows the free times of booking.json and the last button sends the request
+ * how the call is held (a phone call or a video call, owner's review 2026-10-23), confirm. The calendar shows the free times of booking.json and the last button sends the request
  * (booking-submit.ts, `booking.request`). Picked topics are health-related, so an explicit consent box
  * is required (wording waits for the owner's approval). Shown on the dev server (or with
  * `BOOKING_DESIGN=1`) only (PreConsultView).
@@ -12,7 +12,7 @@
 import type { Lang } from '../../lib/settings';
 import { getBooking, getProfile } from '../../lib/settings';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
-import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, TYPE_BADGES, typeState } from '../../lib/booking-form';
+import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, TYPE_BADGES, introVias, typeState } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
@@ -42,14 +42,14 @@ const T = {
     invalid: 'Bazı bilgiler eksik ya da hatalı. Lütfen önceki adımlara dönüp kontrol edin.',
     taken: 'Seçtiğiniz saat artık uygun değil. Lütfen takvimden başka bir saat seçin.',
     failed: 'Talep gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da e-posta ile yazın.',
-    steps: ['Sizi tanıyalım', 'Gün ve saat', 'Bilgileriniz', 'Onay'],
+    steps: ['Sizi tanıyalım', 'Gün ve saat', 'Bilgileriniz', 'Görüşme şekli', 'Onay'],
     s1: 'Sizi tanıyalım',
     s1Hint: 'Birkaç kısa soru. Ayrıntıları görüşmede konuşacağız; burada yalnızca genel bir fikir edinmek istiyorum.',
     forWhom: 'Görüşme kimin için?',
     me: 'Kendim için',
     meText: 'Bireysel terapiyi düşünüyorum.',
     couple: 'Eş veya partnerimle birlikte',
-    coupleText: 'Aile ve çift terapisini düşünüyoruz.',
+    coupleText: 'Çift terapisini düşünüyoruz.',
     access: 'Kendim için, uygun ücretle',
     accessText: 'Öğrenciyim ya da ekonomik durumum şu an elverişli değil; erişilebilir terapiyi düşünüyorum.',
     group: 'Bir gruba katılmak istiyorum',
@@ -82,19 +82,26 @@ const T = {
     country: 'Nerede yaşıyorsunuz?',
     consentA: 'Aydınlatma metnini',
     consentB: ' okudum.',
+    via: 'Ön görüşmeyi nasıl gerçekleştirmek istersiniz?',
+    viaHint: 'Yalnızca bu ilk görüşme için seçiyorsunuz. Terapi seansları görüntülü görüşmeyle yapılır.',
+    viaPhone: 'Telefonla arayın',
+    viaPhoneText: 'Belirttiğiniz telefon numarasından sizi ararım.',
+    viaPhoneLabel: 'Telefonla (sizi ararım)',
+    viaVideo: 'Görüntülü görüşme',
+    viaVideoText: 'Görüşme bağlantısını e-postayla gönderirim; kamerası ve mikrofonu olan bir cihaz yeterli.',
+    viaVideoLabel: 'Görüntülü görüşme (bağlantı e-postayla gönderilir)',
     s4: 'Özet ve onay',
     s4Hint: 'Bilgilerinizi kontrol edin; talebiniz bana e-postayla ulaşır, size dönüş yaparım.',
     summary: 'Ön görüşme özeti',
     type: 'Görüşme',
     intro: 'Ücretsiz ön görüşme',
-    introMeta: '25–30 dakika · Online',
+    introMeta: '25–30 dakika · Telefonla ya da görüntülü',
     forLabel: 'Kimin için',
     topicLabel: 'Konu',
     when: 'Tarih',
     time: 'Saat',
     you: 'İletişim',
     place: 'Yer',
-    placeValue: 'Online (bağlantı e-postayla gönderilir)',
     price: 'Ücret',
     free: 'Ücretsiz',
     back: 'Geri',
@@ -112,14 +119,14 @@ const T = {
     invalid: 'Some details are missing or wrong. Please go back and check the earlier steps.',
     taken: 'The time you chose is no longer free. Please pick another time in the calendar.',
     failed: 'The request could not be sent. Please try again a little later or write by e-mail.',
-    steps: ['About you', 'Day and time', 'Your details', 'Confirm'],
+    steps: ['About you', 'Day and time', 'Your details', 'How we talk', 'Confirm'],
     s1: 'About you',
     s1Hint: 'A few short questions. We will talk about the details in the call; here I only want a general picture.',
     forWhom: 'Who is the call for?',
     me: 'For myself',
     meText: 'I am thinking of individual therapy.',
     couple: 'With my spouse or partner',
-    coupleText: 'We are thinking of family and couples therapy.',
+    coupleText: 'We are thinking of couples therapy.',
     access: 'For myself, at a reduced fee',
     accessText: 'I am a student or money is tight for me right now; I am thinking of accessible therapy.',
     group: 'I would like to join a group',
@@ -152,19 +159,26 @@ const T = {
     country: 'Where do you live?',
     consentA: 'I have read the ',
     consentB: 'privacy notice.',
+    via: 'How would you like to have the intro call?',
+    viaHint: 'This choice is for this first call only. Therapy sessions are held by video call.',
+    viaPhone: 'Call me by phone',
+    viaPhoneText: 'I call you on the phone number you gave.',
+    viaPhoneLabel: 'By phone (I call you)',
+    viaVideo: 'Video call',
+    viaVideoText: 'I send the link by e-mail; any device with a camera and microphone will do.',
+    viaVideoLabel: 'Video call (link sent by e-mail)',
     s4: 'Summary and confirm',
     s4Hint: 'Check your details; your request reaches me by e-mail and I get back to you.',
     summary: 'Intro call summary',
     type: 'Session',
     intro: 'Free intro call',
-    introMeta: '25–30 minutes · Online',
+    introMeta: '25–30 minutes · By phone or video',
     forLabel: 'For',
     topicLabel: 'Topic',
     when: 'Date',
     time: 'Time',
     you: 'Contact',
     place: 'Where',
-    placeValue: 'Online (link sent by e-mail)',
     price: 'Fee',
     free: 'Free',
     back: 'Back',
@@ -198,6 +212,8 @@ const forWhom = INTRO_FOR.map((f) => {
   return { id: f.id, on, state, quota, label: look.label, text: on ? (look.onText ?? look.text) : look.text };
 }).filter((x) => x.state !== 'hidden');
 const firstOn = forWhom.findIndex((x) => x.on);
+// How the intro call is held: only the ways switched on in Ayarlar › Randevu Ayarları (introVia).
+const vias = introVias(booking);
 ---
 
 <div class="wz preconsult" data-preconsult data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="intro" data-config={config} data-endpoint={endpoint} data-messages={messages}>
@@ -304,7 +320,7 @@ const firstOn = forWhom.findIndex((x) => x.on);
         <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
       </section>
 
-      <section class="card" data-step="3" aria-labelledby="pc-s3" hidden>
+      <section class="card" data-step="3" data-details aria-labelledby="pc-s3" hidden>
         <h2 id="pc-s3">{T.s3}</h2>
         <p class="card-hint">{T.s3Hint}</p>
         <div class="fields">
@@ -356,7 +372,29 @@ const firstOn = forWhom.findIndex((x) => x.on);
         <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
       </section>
 
-      <section class="card" data-step="4" aria-labelledby="pc-s4" data-hide-on-done hidden>
+      <section class="card" data-step="4" aria-labelledby="pc-via" hidden>
+        <h2 id="pc-via">{T.via}</h2>
+        <p class="card-hint">{T.viaHint}</p>
+        <div class="types" role="radiogroup" aria-labelledby="pc-via">
+          {
+            vias.map((v) => (
+              <label class="type">
+                <input type="radio" name="via" value={v} required data-sum-src="via" data-label={v === 'phone' ? T.viaPhoneLabel : T.viaVideoLabel} checked={vias.length === 1} />
+                <span class="type-body">
+                  <span class="type-top">
+                    <Icon name={v === 'phone' ? 'talk' : 'video'} size={18} />
+                    <b>{v === 'phone' ? T.viaPhone : T.viaVideo}</b>
+                  </span>
+                  <span class="type-text">{v === 'phone' ? T.viaPhoneText : T.viaVideoText}</span>
+                </span>
+              </label>
+            ))
+          }
+        </div>
+        <p class="step-error" data-step-error role="alert" tabindex="-1" hidden></p>
+      </section>
+
+      <section class="card" data-step="5" aria-labelledby="pc-s4" data-hide-on-done hidden>
         <h2 id="pc-s4">{T.s4}</h2>
         <p class="card-hint">{T.s4Hint}</p>
         <div class="summary-card">
@@ -375,7 +413,7 @@ const firstOn = forWhom.findIndex((x) => x.on);
             <div><dt><Icon name="clock" size={16} />{T.time}</dt><dd data-sum="time"></dd></div>
             <div><dt><Icon name="user" size={16} />{T.name}</dt><dd data-sum="name"></dd></div>
             <div><dt><Icon name="mail" size={16} />{T.you}</dt><dd data-sum="contact"></dd></div>
-            <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
+            <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd data-sum="via"></dd></div>
             <div class="total"><dt>{T.price}</dt><dd>{T.free}</dd></div>
           </dl>
           <button type="button" class="submit" disabled aria-describedby="pc-soon" data-submit>
@@ -414,7 +452,7 @@ const firstOn = forWhom.findIndex((x) => x.on);
           <div><dt><Icon name="talk" size={16} />{T.type}</dt><dd>{T.intro}<small>{T.introMeta}</small></dd></div>
           <div><dt><Icon name="calendar" size={16} />{T.when}</dt><dd data-sum="day"></dd></div>
           <div><dt><Icon name="clock" size={16} />{T.time}</dt><dd data-sum="time"></dd></div>
-          <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd>{T.placeValue}</dd></div>
+          <div><dt><Icon name="laptop" size={16} />{T.place}</dt><dd data-sum="via"></dd></div>
           <div class="total"><dt>{T.price}</dt><dd>{T.free}</dd></div>
         </dl>
         <ul class="assure">

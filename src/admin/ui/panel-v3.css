@@ -842,7 +842,9 @@
   border: 1px solid color-mix(in srgb, var(--p-border) 70%, transparent);
   border-radius: 12px;
   background: var(--p-surface);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08), 0 16px 40px rgb(0 0 0 / 0.14);
+  box-shadow:
+    0 4px 12px rgb(0 0 0 / 0.08),
+    0 16px 40px rgb(0 0 0 / 0.14);
 }
 
 .act-menu-right {
@@ -1655,12 +1657,24 @@
   --si-planned: color-mix(in srgb, var(--p-tone-adacayi) 30%, transparent);
 }
 
-.si-attended { background: var(--si-attended); }
-.si-noshow { background: var(--si-noshow); }
-.si-cancelled { background: var(--si-cancelled); }
-.si-postponed { background: var(--si-postponed); }
-.si-unmarked { background: var(--si-unmarked); }
-.si-planned { background: var(--si-planned); }
+.si-attended {
+  background: var(--si-attended);
+}
+.si-noshow {
+  background: var(--si-noshow);
+}
+.si-cancelled {
+  background: var(--si-cancelled);
+}
+.si-postponed {
+  background: var(--si-postponed);
+}
+.si-unmarked {
+  background: var(--si-unmarked);
+}
+.si-planned {
+  background: var(--si-planned);
+}
 
 .si {
   margin-bottom: var(--space-4);
@@ -2271,7 +2285,9 @@ a.intake:hover {
   font-weight: 600;
   text-decoration: none !important;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .tool-btn .lucide,
@@ -2560,7 +2576,9 @@ a.intake:hover {
   color: var(--p-muted);
   font-size: var(--text-sm);
   text-align: center;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .cm-drop > span {
@@ -2832,6 +2850,96 @@ a.intake:hover {
 
 @media (min-width: 1000px) {
   .type-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Görüşme Türleri › Ön görüşme şekli (owner's review 2026-10-23). */
+.via-box {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+}
+
+.via-box legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.via-box > .k-hint {
+  margin: 0;
+}
+
+.via-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--p-border);
+}
+
+.via-row > span {
+  display: grid;
+  gap: 2px;
+}
+
+.via-row .k-toggle {
+  flex: none;
+  min-height: 0;
+}
+
+/* Bilgilendirme: a card per type that opens to its texts. */
+.info-cards {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.info-card {
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tone-bg) 18%, var(--p-surface));
+}
+
+.info-card > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  cursor: pointer;
+  list-style: none;
+}
+
+.info-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.info-card > summary::after {
+  content: '▾';
+  color: var(--p-muted);
+  transition: transform 0.15s ease;
+}
+
+.info-card[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.info-fields {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+.info-fields textarea {
+  line-height: 1.55;
+  resize: vertical;
+}
+
+@media (min-width: 1000px) {
+  .info-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

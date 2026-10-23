@@ -7,10 +7,25 @@ import { ADMIN_CONFIG } from '../../src/admin/config';
 import { CONTACT_TOPICS } from '../../src/lib/contact-form';
 
 const STATIC_PAGES = [
-  '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/seans-randevusu/', '/aydinlatma-metni/', '/gizlilik/',
-  '/en/', '/en/about/', '/en/resources/', '/en/contact/', '/en/appointment/',
-  '/en/privacy-notice/', '/en/privacy-policy/', '/sik-sorulan-sorular/', '/en/faq/', '/404.html',
-  '/blog/populer/', '/en/blog/popular/',
+  '/',
+  '/hakkimda/',
+  '/kaynaklar/',
+  '/iletisim/',
+  '/seans-randevusu/',
+  '/aydinlatma-metni/',
+  '/gizlilik/',
+  '/en/',
+  '/en/about/',
+  '/en/resources/',
+  '/en/contact/',
+  '/en/appointment/',
+  '/en/privacy-notice/',
+  '/en/privacy-policy/',
+  '/sik-sorulan-sorular/',
+  '/en/faq/',
+  '/404.html',
+  '/blog/populer/',
+  '/en/blog/popular/',
 ];
 
 describe('static pages', () => {
@@ -78,7 +93,10 @@ describe('static pages', () => {
 
   it.each(['/on-gorusme/', '/en/intro-call/'])('%s marks its questions as FAQPage, the same ones the page shows', (p) => {
     const d = loadPage(p);
-    const ld = d.querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text)).find((x) => x['@type'] === 'FAQPage');
+    const ld = d
+      .querySelectorAll('script[type="application/ld+json"]')
+      .map((s) => JSON.parse(s.text))
+      .find((x) => x['@type'] === 'FAQPage');
     const shown = d.querySelectorAll('.pc-faq summary').map((s) => s.text.trim());
     expect(shown.length).toBeGreaterThan(0);
     expect(ld.mainEntity.map((q: { name: string }) => q.name)).toEqual(shown);
@@ -89,9 +107,7 @@ describe('static pages', () => {
     const home = loadPage('/');
     expect(home.querySelector('link[hreflang=en]')?.getAttribute('href')).toBe('https://example.com/en/');
     expect(home.querySelector('link[hreflang=x-default]')).not.toBeNull();
-    const types = home
-      .querySelectorAll('script[type="application/ld+json"]')
-      .map((s) => JSON.parse(s.text)['@type']);
+    const types = home.querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text)['@type']);
     expect(types).toEqual(expect.arrayContaining(['Person', 'ProfessionalService']));
   });
 
@@ -115,6 +131,34 @@ describe('static pages', () => {
     expect(en.querySelector('main [data-closed]')).not.toBeNull();
   });
 
+  it('session form: a "Bilgilendirme" step after the type, per offered type, with the online text and "okudum" (owner, 2026-10-23)', () => {
+    const d = loadPage('/seans-randevusu/');
+    const steps = d.querySelectorAll('main [data-booking] [data-step]').map((s) => s.getAttribute('data-step'));
+    expect(steps).toEqual(['1', '2', '3', '4', '5']);
+    expect(d.querySelectorAll('main [data-booking] [data-step-dot]').map((s) => s.text.trim())).toEqual(['1Görüşme', '2Bilgilendirme', '3Tarih ve saat', '4Bilgileriniz', '5Onay']);
+    const info = d.querySelector('main [data-step="2"]')!;
+    const offered = d.querySelectorAll('main [data-step="1"] input[name="type"]:not([disabled])').map((i) => i.getAttribute('value'));
+    expect(info.querySelectorAll('[data-info-for]').map((a) => a.getAttribute('data-info-for'))).toEqual(offered);
+    const couple = info.querySelector('[data-info-for="couple"]');
+    if (couple) expect(couple.text).toMatch(/birlikte katıl/);
+    expect(info.querySelector('[data-info-for="individual"] .session-online')?.text).toContain('Online Görüşme İçin Gerekenler');
+    expect(info.querySelector('input[name="infoRead"][required]')).not.toBeNull();
+    expect(d.querySelector('main [data-step="3"]')?.getAttribute('data-need')).toBe('slot');
+    expect(d.querySelector('main [data-step="4"][data-details]')).not.toBeNull();
+    expect(d.querySelector('main .edit-link')?.getAttribute('data-goto')).toBe('4');
+    expect(d.textContent).not.toMatch(/Aile ve [çÇ]ift/);
+  });
+
+  it('intro form asks how the call is held: by phone or video call, before the summary (owner, 2026-10-23)', () => {
+    const d = loadPage('/on-gorusme/');
+    const step = d.querySelector('main [data-step="4"]')!;
+    expect(step.querySelector('h2')?.text).toBe('Ön Görüşmeyi Nasıl Gerçekleştirmek İstersiniz?');
+    expect(step.querySelectorAll('input[name="via"][required]').map((i) => i.getAttribute('value'))).toEqual(['phone', 'video']);
+    expect(step.text).toContain('Telefonla arayın');
+    expect(step.text).toContain('Görüntülü görüşme');
+    expect(d.querySelectorAll('main [data-step="5"] [data-sum="via"]')).toHaveLength(1);
+  });
+
   it('contact page has the form, the channels and the emergency note', () => {
     const d = loadPage('/iletisim/');
     expect(d.querySelectorAll('main form')).toHaveLength(1);
@@ -124,7 +168,10 @@ describe('static pages', () => {
 
   it('contact form: fields, fixed topics, consent linking the privacy notice, honeypot, appointment note', () => {
     const squash = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
-    for (const [path, lang] of [['/iletisim/', 'tr'], ['/en/contact/', 'en']] as const) {
+    for (const [path, lang] of [
+      ['/iletisim/', 'tr'],
+      ['/en/contact/', 'en'],
+    ] as const) {
       const d = loadPage(path);
       const form = d.querySelector('main form[data-contact-form]')!;
       expect(form, path).toBeTruthy();
@@ -169,18 +216,12 @@ describe('static pages', () => {
       expect(form.querySelector('.result')?.hasAttribute('role')).toBe(false);
       expect(d.querySelector('main .contact-form .note a')?.getAttribute('href')).toBe(lang === 'tr' ? '/randevu-al/' : '/en/appointment/');
     }
-    expect(squash(loadPage('/iletisim/').querySelector('main .contact-form .note')?.text)).toBe(
-      'Randevu ve seanslarla ilgili sorularınız için Randevu sayfasını kullanın.',
-    );
+    expect(squash(loadPage('/iletisim/').querySelector('main .contact-form .note')?.text)).toBe('Randevu ve seanslarla ilgili sorularınız için Randevu sayfasını kullanın.');
     expect(squash(loadPage('/en/contact/').querySelector('main .contact-form .note')?.text)).toBe(
       'For questions about appointments and sessions, please use the Appointment page.',
     );
-    expect(squash(loadPage('/iletisim/').querySelector('main .consent label')?.text)).toBe(
-      'Aydınlatma metnini okudum.',
-    );
-    expect(squash(loadPage('/en/contact/').querySelector('main .consent label')?.text)).toBe(
-      'I have read the privacy notice.',
-    );
+    expect(squash(loadPage('/iletisim/').querySelector('main .consent label')?.text)).toBe('Aydınlatma metnini okudum.');
+    expect(squash(loadPage('/en/contact/').querySelector('main .consent label')?.text)).toBe('I have read the privacy notice.');
     // The direct e-mail row and the emergency box stay, below the form.
     const html = loadPage('/iletisim/').querySelector('main')!.innerHTML;
     expect(html.indexOf('data-contact-form')).toBeLessThan(html.lastIndexOf('href="mailto:iletisim@example.com"'));
@@ -190,7 +231,9 @@ describe('static pages', () => {
 
   it('contact page: one row of ways to reach me lists every social link in file order', () => {
     const links = JSON.parse(readFileSync('tests/fixtures/data/links.json', 'utf8')) as { label: string; icon: string }[];
-    const names = loadPage('/iletisim/').querySelectorAll('main .reach a.soc').map((n) => n.getAttribute('aria-label'));
+    const names = loadPage('/iletisim/')
+      .querySelectorAll('main .reach a.soc')
+      .map((n) => n.getAttribute('aria-label'));
     const social = links.filter((l) => l.icon !== 'email').map((l) => l.label);
     expect(names).toEqual(social);
     expect(social).toEqual(expect.arrayContaining(['TikTok', 'X (Twitter)', 'Threads']));
@@ -232,7 +275,11 @@ describe('final-review fixes', () => {
     const en = loadPage('/en/about/');
     expect(en.textContent).not.toContain('Devam ediyor');
     expect(en.querySelectorAll('.period').map((p) => p.text)).toContain('Ongoing');
-    expect(loadPage('/hakkimda/').querySelectorAll('.period').map((p) => p.text)).toContain('Devam ediyor');
+    expect(
+      loadPage('/hakkimda/')
+        .querySelectorAll('.period')
+        .map((p) => p.text),
+    ).toContain('Devam ediyor');
   });
 
   it('footer e-mail link is labelled in the page language (M1)', () => {
@@ -248,7 +295,9 @@ describe('final-review fixes', () => {
 
   it('Blog nav item is aria-current="page" only on the blog page itself (M6)', () => {
     const navBlog = (path: string, href: string) =>
-      loadPage(path).querySelectorAll(`.site-header a[href="${href}"]`).map((a) => a.getAttribute('aria-current'));
+      loadPage(path)
+        .querySelectorAll(`.site-header a[href="${href}"]`)
+        .map((a) => a.getAttribute('aria-current'));
     expect(navBlog('/blog/', '/blog/')).toEqual(['page']);
     expect(navBlog('/blog/daha-iyi-bir-yasam-icin-kucuk-adimlar/', '/blog/')).toEqual(['true']);
     expect(navBlog('/en/blog/category/mental-health/', '/en/blog/')).toEqual(['true']);
@@ -265,9 +314,7 @@ describe('page shell (every page but home)', () => {
   /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
   const pageCss = (p: string) => {
     const d = loadPage(p);
-    const linked = d
-      .querySelectorAll('link[rel=stylesheet]')
-      .map((l) => readFileSync(join(DIST, l.getAttribute('href')!.replace(/^\//, '')), 'utf8'));
+    const linked = d.querySelectorAll('link[rel=stylesheet]').map((l) => readFileSync(join(DIST, l.getAttribute('href')!.replace(/^\//, '')), 'utf8'));
     return [...linked, ...d.querySelectorAll('style').map((s) => s.text)].join('\n');
   };
 
@@ -348,11 +395,9 @@ describe('inner pages redesign (spec §5.9)', () => {
     expect(squash(intro.querySelector('.tpd')?.text)).toBe('Türk Psikologlar Derneği üyesi');
     expect(squash(intro.querySelector('.lead')?.text)).toBe(fixture('about.json').lead.tr);
     // "{hours}" shows the theory total of the education cards (96), rounded down with a "+".
-    expect(intro.querySelectorAll('.facts li').map((li) => squash(li.text))).toEqual(['2023\'ten beri online terapi', '96+ saat eğitim']);
+    expect(intro.querySelectorAll('.facts li').map((li) => squash(li.text))).toEqual(["2023'ten beri online terapi", '96+ saat eğitim']);
     expect(intro.querySelector('a.intro-cta')?.getAttribute('href')).toBe('/randevu-al/');
-    expect(squash(loadPage('/en/about/').querySelector('.about-intro .tpd')?.text)).toBe(
-      'Member of the Turkish Psychological Association',
-    );
+    expect(squash(loadPage('/en/about/').querySelector('.about-intro .tpd')?.text)).toBe('Member of the Turkish Psychological Association');
     // Phones book from the sticky bar: the card's own button shows from 768 px only.
     const src = readFileSync('src/views/AboutView.astro', 'utf8');
     expect(src.slice(0, src.indexOf('@media (min-width: 768px)'))).toMatch(/\.intro-cta\s*\{\s*display:\s*none/);
@@ -367,7 +412,10 @@ describe('inner pages redesign (spec §5.9)', () => {
       const bar = d.querySelector('main .about-tabs')!;
       expect(bar.hasAttribute('hidden'), path).toBe(true);
       const tabs = bar.querySelectorAll('[role="tab"]');
-      expect(tabs.map((x) => x.text.trim()), path).toEqual([...labels]);
+      expect(
+        tabs.map((x) => x.text.trim()),
+        path,
+      ).toEqual([...labels]);
       expect(tabs.map((x) => x.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
       const panels = d.querySelectorAll('main .about-panel[role="tabpanel"]');
       expect(panels.map((p) => p.id)).toEqual(['panel-story', 'panel-how', 'panel-education']);
@@ -399,9 +447,7 @@ describe('inner pages redesign (spec §5.9)', () => {
   it('about: work areas and approaches as coloured cards, topics as chips, and links to booking and contact', () => {
     const d = loadPage('/hakkimda/');
     const how = d.querySelector('#panel-how')!;
-    expect(how.querySelectorAll('.area-cards li b').map((t) => t.text.trim())).toEqual(
-      fixture('about.json').areas.map((a: { label: { tr: string } }) => a.label.tr),
-    );
+    expect(how.querySelectorAll('.area-cards li b').map((t) => t.text.trim())).toEqual(fixture('about.json').areas.map((a: { label: { tr: string } }) => a.label.tr));
     expect(how.querySelectorAll('.how-title').map((h) => h.text)).toEqual(['Çalışma Alanlarım', 'Yaklaşımlar', 'Konular']);
     // An approach that is only a short name shows it in its tile, once.
     expect(how.querySelectorAll('.appr-cards .appr-abbr').map((t) => t.text.trim())).toEqual(['BDT']);
@@ -428,9 +474,11 @@ describe('inner pages redesign (spec §5.9)', () => {
     const d = loadPage('/kaynaklar/');
     const all = d.querySelectorAll('main .type-tiles > li');
     expect(all.map((li) => li.text.trim())).toEqual(['Kitaplar', 'Makaleler', 'Ölçekler', 'Videolar', 'Podcastler', 'Rehberler']);
-    expect(loadPage('/en/resources/').querySelectorAll('main .type-tiles > li').map((li) => li.text.trim())).toEqual([
-      'Books', 'Articles', 'Scales', 'Videos', 'Podcasts', 'Guides',
-    ]);
+    expect(
+      loadPage('/en/resources/')
+        .querySelectorAll('main .type-tiles > li')
+        .map((li) => li.text.trim()),
+    ).toEqual(['Books', 'Articles', 'Scales', 'Videos', 'Podcasts', 'Guides']);
     // A type without resources is a muted tile, not a link (no dead anchor, no count).
     const empty = all.filter((li) => !li.querySelector('a'));
     expect(empty.map((li) => li.text.trim())).toEqual(['Videolar', 'Podcastler']);
@@ -473,7 +521,10 @@ describe('inner pages redesign (spec §5.9)', () => {
   });
 
   it('contact: emergency note in a short, token-coloured box', () => {
-    for (const [path, lang] of [['/iletisim/', 'tr'], ['/en/contact/', 'en']] as const) {
+    for (const [path, lang] of [
+      ['/iletisim/', 'tr'],
+      ['/en/contact/', 'en'],
+    ] as const) {
       const box = loadPage(path).querySelector('main .emergency-box')!;
       expect(squash(box.text), path).toBe(fixture('contact.json').emergencyNote[lang]);
     }
@@ -498,7 +549,10 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it("the client's own page: both languages, noindex, out of the sitemap, no page counter, no booking bar, no personal data", () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, title] of [['/randevum/', 'Randevularım'], ['/en/my-appointment/', 'My Appointments']] as const) {
+    for (const [path, title] of [
+      ['/randevum/', 'Randevularım'],
+      ['/en/my-appointment/', 'My Appointments'],
+    ] as const) {
       const d = loadPage(path);
       expect(d.querySelector('h1')?.text).toBe(title);
       expect(d.querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
@@ -513,7 +567,10 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it('the booking start page: three ways (intro call recommended), each a link to its own page, in search now that booking is live', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, intro, appt, info] of [['/randevu-al/', '/on-gorusme/', '/seans-randevusu/', '/bilgi-al/'], ['/en/book/', '/en/intro-call/', '/en/appointment/', '/en/information/']] as const) {
+    for (const [path, intro, appt, info] of [
+      ['/randevu-al/', '/on-gorusme/', '/seans-randevusu/', '/bilgi-al/'],
+      ['/en/book/', '/en/intro-call/', '/en/appointment/', '/en/information/'],
+    ] as const) {
       const d = loadPage(path);
       expect(d.querySelectorAll('main .way').length, path).toBe(3);
       expect(d.querySelector('main .way.is-recommended a')?.getAttribute('href'), path).toBe(intro);
@@ -533,7 +590,10 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it('the information page: the topic form with its e-mail check and consent, a way back, no booking bar', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, start] of [['/bilgi-al/', '/randevu-al/'], ['/en/information/', '/en/book/']] as const) {
+    for (const [path, start] of [
+      ['/bilgi-al/', '/randevu-al/'],
+      ['/en/information/', '/en/book/'],
+    ] as const) {
       const d = loadPage(path);
       expect(d.querySelectorAll('h1'), path).toHaveLength(1);
       expect(d.querySelector(`main a[href="${start}"]`), path).not.toBeNull();
@@ -552,7 +612,18 @@ describe('inner pages redesign (spec §5.9)', () => {
   it('the client’s own page and the booking pages load no Google Analytics, even where the site has it (real data build)', () => {
     const home = loadPage('/', DIST_SAMPLES).toString();
     expect(home).toContain('googletagmanager');
-    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/seans-randevusu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
+    for (const path of [
+      '/randevum/',
+      '/en/my-appointment/',
+      '/randevu-al/',
+      '/en/book/',
+      '/bilgi-al/',
+      '/en/information/',
+      '/seans-randevusu/',
+      '/en/appointment/',
+      '/on-gorusme/',
+      '/en/intro-call/',
+    ]) {
       const d = loadPage(path, DIST_SAMPLES);
       expect(d.toString(), path).not.toContain('googletagmanager');
       expect(d.querySelector('[data-consent-bar]'), path).toBeNull();
@@ -584,10 +655,20 @@ describe('sample content (real posts and data)', () => {
       });
   const prefix = { tr: '/blog/', en: '/en/blog/' } as const;
   const hrefs = (lang: 'tr' | 'en', pick: (m: Meta) => boolean = () => true) =>
-    metas(lang).filter(pick).map((m) => `${prefix[lang]}${m.slug}/`).sort();
+    metas(lang)
+      .filter(pick)
+      .map((m) => `${prefix[lang]}${m.slug}/`)
+      .sort();
   const postLinks = (path: string, lang: 'tr' | 'en') => {
     const re = new RegExp(`^${prefix[lang]}[a-z0-9-]+/$`);
-    return [...new Set(sample(path).querySelectorAll('main a').map((a) => a.getAttribute('href') ?? '').filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h) && !/^\/(en\/)?blog\/(populer|popular|konular|topics)\/$/.test(h)))].sort();
+    return [
+      ...new Set(
+        sample(path)
+          .querySelectorAll('main a')
+          .map((a) => a.getAttribute('href') ?? '')
+          .filter((h) => re.test(h) && !/\/(kategori|category)\//.test(h) && !/^\/(en\/)?blog\/(populer|popular|konular|topics)\/$/.test(h)),
+      ),
+    ].sort();
   };
 
   it('the blog list links every post that exists, in each language', () => {
@@ -598,21 +679,39 @@ describe('sample content (real posts and data)', () => {
   // pickPopular: featured posts, newest first, at most four on the blog page and twelve on the popular
   // page (read counts are stubbed to none).
   const popular = (lang: 'tr' | 'en', n = 4) =>
-    metas(lang).filter((m) => m.featured).sort((x, y) => y.at - x.at).slice(0, n).map((m) => `${prefix[lang]}${m.slug}/`).sort();
+    metas(lang)
+      .filter((m) => m.featured)
+      .sort((x, y) => y.at - x.at)
+      .slice(0, n)
+      .map((m) => `${prefix[lang]}${m.slug}/`)
+      .sort();
   const popularPage = { tr: '/blog/populer/', en: '/en/blog/popular/' } as const;
 
   it('the popular tiles open the popular page, #popular follows the featured posts, all absent when none is featured', () => {
-    for (const [path, lang] of [['/', 'tr'], ['/en/', 'en']] as const) {
-      const tile = sample(path).querySelectorAll('.home-phone .tile-pair a.tile').filter((a) => a.getAttribute('href') === popularPage[lang]);
+    for (const [path, lang] of [
+      ['/', 'tr'],
+      ['/en/', 'en'],
+    ] as const) {
+      const tile = sample(path)
+        .querySelectorAll('.home-phone .tile-pair a.tile')
+        .filter((a) => a.getAttribute('href') === popularPage[lang]);
       expect(tile.length > 0, path).toBe(popular(lang).length > 0);
     }
-    for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
-      const listed = sample(path).querySelectorAll('section#popular a.list-item').map((a) => a.getAttribute('href') ?? '').sort();
+    for (const [path, lang] of [
+      ['/blog/', 'tr'],
+      ['/en/blog/', 'en'],
+    ] as const) {
+      const listed = sample(path)
+        .querySelectorAll('section#popular a.list-item')
+        .map((a) => a.getAttribute('href') ?? '')
+        .sort();
       expect(listed, path).toEqual(popular(lang));
       const more = sample(path).querySelector('section#popular a.more');
       if (listed.length > 0) expect(more?.getAttribute('href'), path).toBe(popularPage[lang]);
       expect(sample(path).querySelectorAll('.blog-phone .topic-pair a.tile').length > 0, path).toBe(listed.length > 0);
-      const chips = sample(path).querySelectorAll('.blog-filters nav.category-nav a').map((a) => a.getAttribute('href'));
+      const chips = sample(path)
+        .querySelectorAll('.blog-filters nav.category-nav a')
+        .map((a) => a.getAttribute('href'));
       expect(chips.includes(popularPage[lang]), path).toBe(listed.length > 0);
       expect(chips, path).not.toContain('#popular');
     }
@@ -622,7 +721,10 @@ describe('sample content (real posts and data)', () => {
     for (const lang of ['tr', 'en'] as const) {
       const d = sample(popularPage[lang]);
       const expected = popular(lang, 12);
-      const rows = d.querySelectorAll('main .post-rows a.list-item').map((a) => a.getAttribute('href') ?? '').sort();
+      const rows = d
+        .querySelectorAll('main .post-rows a.list-item')
+        .map((a) => a.getAttribute('href') ?? '')
+        .sort();
       expect(rows, lang).toEqual(expected);
       if (expected.length === 0) {
         expect(d.querySelector('main .popular-empty a')?.getAttribute('href')).toBe(prefix[lang]);
@@ -634,7 +736,10 @@ describe('sample content (real posts and data)', () => {
   });
 
   it('a post with a cover renders it (optimised) and a post without one renders none', () => {
-    for (const [path, lang] of [['/blog/', 'tr'], ['/en/blog/', 'en']] as const) {
+    for (const [path, lang] of [
+      ['/blog/', 'tr'],
+      ['/en/blog/', 'en'],
+    ] as const) {
       const d = sample(path);
       const imgs = d.querySelectorAll('img.cover, img.featured-cover, img.newest-cover, img.thumb').filter((i) => /^\/_astro\/.+\.webp/.test(i.getAttribute('src') ?? ''));
       // Each post's own page carries its cover when it has one, and no optimised image when not.
@@ -650,11 +755,17 @@ describe('sample content (real posts and data)', () => {
   });
 
   it('every FAQ item shown has an answer, and the pages agree with the home accordion', () => {
-    for (const [faq, home] of [['/sik-sorulan-sorular/', '/'], ['/en/faq/', '/en/']] as const) {
+    for (const [faq, home] of [
+      ['/sik-sorulan-sorular/', '/'],
+      ['/en/faq/', '/en/'],
+    ] as const) {
       const items = sample(faq).querySelectorAll('main details');
       for (const it of items) expect(it.text.trim().length).toBeGreaterThan(0);
       expect(sample(home).querySelectorAll('.home-phone details.faq details.faq-item')).toHaveLength(items.length);
-      const ld = sample(faq).querySelectorAll('script[type="application/ld+json"]').map((s) => JSON.parse(s.text)).find((d) => d['@type'] === 'FAQPage');
+      const ld = sample(faq)
+        .querySelectorAll('script[type="application/ld+json"]')
+        .map((s) => JSON.parse(s.text))
+        .find((d) => d['@type'] === 'FAQPage');
       if (items.length > 0) expect(ld.mainEntity).toHaveLength(items.length);
     }
   });

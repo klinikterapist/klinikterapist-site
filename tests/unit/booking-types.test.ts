@@ -16,7 +16,7 @@ describe('session types switched off (owner, 2026-10-23)', () => {
     const items = typeInfo('tr', { types: { group: false, face: false, supervision: false, accessible: true }, closedAs: { face: 'hidden' } });
     expect(items.map((i) => i.q)).toEqual([
       'Bireysel terapi seansı',
-      'Aile ve çift terapisi seansı',
+      'Çift terapisi seansı',
       'Erişilebilir terapi seansı',
       'Grup terapisi seansı (şu an uygun değil)',
       'Süpervizyon terapi seansı (kontenjan doldu)',
