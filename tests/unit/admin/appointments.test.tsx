@@ -380,11 +380,13 @@ describe('a client’s page in Seans takip', () => {
     const { api } = setup('client:c1', [], [client({ weekday, time: '10:00', since: day(-13), sessions: [{ day: day(-20), time: '11:00', kind: 'intro', minutes: 30, status: 'attended' }] })]);
     expect(await screen.findByText('KT007OGO')).toBeTruthy();
     expect(screen.getByText('Ücretsiz ön görüşme').className).toContain('is-free');
-    // Only the weekly time, the type and when therapy began; no name, e-mail or language.
+    // The weekly time, the type, when therapy began and the e-mail address (owner's review 2026-10-23,
+    // item 21); no name or language.
     const page = document.body.textContent!;
     expect(page).toContain('Terapiye başlangıç');
     expect(page).toContain('Görüşme türü');
-    expect(page).not.toMatch(/Osman|osman@example|Konuşma dili/);
+    expect(page).toContain('osman@example.com');
+    expect(page).not.toMatch(/Osman|Konuşma dili/);
     expect(screen.getByRole('img', { name: /İşaretlenmedi %100/ })).toBeTruthy();
     expect(screen.getAllByText(/1\. seans/).length).toBeGreaterThan(0);
     const past = screen.getByRole('heading', { name: /Geçmiş seanslar/ }).parentElement!;

@@ -28,6 +28,7 @@ import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { mailTr } from '../../src/lib/mail-texts';
 import { forWhom, stamp, topicList, typeVars, upFirst, whenVars } from '../../src/lib/mail-vars';
 import { countryName } from '../../src/lib/phone';
+import { personName } from '../../src/lib/person-name';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
 
 const INVALID = 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.';
@@ -109,11 +110,11 @@ function inputOf(p: Record<string, unknown>): BookingInput {
           before: p.before === 'yes' || p.before === 'no' ? p.before : '',
           age: typeof p.age === 'number' ? p.age : -1,
           healthConsent: p.healthConsent === true,
-          ...(str(p.country) ? { country: str(p.country) } : {}),
         }
       : 'healthConsent' in p
         ? { healthConsent: p.healthConsent === true }
         : {}),
+    ...(str(p.country) ? { country: str(p.country) } : {}),
   };
 }
 
@@ -202,7 +203,9 @@ export function sendBooking(gas: Gas, p: Record<string, unknown>): { sent: true 
   // `reason: 'closed'`: the page open since before booking closed shows "Haber et" instead.
   if (isClosed(gas, lang)) throw new ApiError('bad_request', CLOSED, { reason: 'closed' });
 
-  const input = inputOf(p);
+  const raw = inputOf(p);
+  // Names typed in lower case are saved and mailed with capitals (owner's review 2026-10-23).
+  const input = { ...raw, name: personName(raw.name, lang) };
   const now = gas.now();
   const cfg = config(gas);
   const plain = validateBooking(input, cfg, now);

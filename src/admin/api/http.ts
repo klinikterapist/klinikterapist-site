@@ -1,6 +1,7 @@
 /** The real backend: one POST endpoint on the Apps Script web app. */
-import { ACTIONS, ApiFailure, type Api, type ApiResponse, type Session } from './types';
+import { ACTIONS, ApiFailure, type Api, type ApiResponse, type BookingRequest, type Client, type Session } from './types';
 import type { SessionStore } from './session';
+import { personName } from '../../lib/person-name';
 
 const NETWORK_MESSAGE = 'İnternet bağlantısı yok gibi görünüyor. Değişiklikleriniz bu cihazda saklandı.';
 
@@ -78,10 +79,12 @@ export function createHttpApi(
     calendarList: () => call(ACTIONS.calendarList),
     calendarAdd: (input) => call(ACTIONS.calendarAdd, input),
     calendarRemove: (id) => call(ACTIONS.calendarRemove, { id }).then(() => undefined),
-    requestsList: () => call(ACTIONS.requestsList),
+    // Names saved before the capitals rule (2026-10-23) are shown with capitals too.
+    requestsList: () => call<{ requests: BookingRequest[] }>(ACTIONS.requestsList).then((r) => ({ ...r, requests: r.requests.map((q) => ({ ...q, name: personName(q.name, q.lang) })) })),
     requestDecide: (input) => call(ACTIONS.requestDecide, input).then(() => undefined),
     requestToClient: (input) => call(ACTIONS.requestToClient, input),
-    clientsList: () => call(ACTIONS.clientsList),
+    clientsList: () =>
+      call<{ clients: Client[] }>(ACTIONS.clientsList).then((r) => ({ ...r, clients: r.clients.map((c) => ({ ...c, contact: { ...c.contact, name: personName(c.contact.name, c.contact.lang) } })) })),
     requestRevert: (input) => call(ACTIONS.requestRevert, input).then(() => undefined),
     clientEnd: (input) => call(ACTIONS.clientEnd, input).then(() => undefined),
     clientRevert: (input) => call(ACTIONS.clientRevert, input).then(() => undefined),

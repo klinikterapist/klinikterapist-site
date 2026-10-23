@@ -147,9 +147,9 @@ function RequestCard({ r, open, onToggle, children }: { r: BookingRequest; open:
             <Row label="Konular">{(r.topics ?? []).map((i) => INTRO_TOPICS.tr[i]).join(', ') || '—'}</Row>
             <Row label="Daha önce destek">{r.before === 'yes' ? 'Evet' : r.before === 'no' ? 'Hayır' : 'Belirtmedi'}</Row>
             <Row label="Yaş aralığı">{AGE_RANGES.tr[r.age ?? -1] ?? '—'}</Row>
-            {r.country && <Row label="Yaşadığı ülke">{countryName(r.country, 'tr')}</Row>}
           </>
         )}
+        {r.country && <Row label="Yaşadığı ülke">{countryName(r.country, 'tr')}</Row>}
         {r.note && (
           <Row label="Not" wide>
             {r.note}

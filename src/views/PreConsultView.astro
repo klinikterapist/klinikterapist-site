@@ -280,7 +280,8 @@ const faqJsonLd = faqLd(T.faq.map((f) => ({ q: f.q, a: f.a.join(' ') })));
       e.preventDefault();
       open(true);
     });
-    // From the booking start page ("Önce tanışalım"): the person has read about it there already.
+    // "Önce tanışalım" on the booking start page opens this page at the explanation, which comes
+    // first (owner's review 2026-10-23, item 13); old links with #pc-form still open the form.
     if (location.hash === '#pc-form') open(false);
   }
 </script>

@@ -84,6 +84,17 @@ describe('booking.request', () => {
     expect(other.send({ ...intro, country: 'XX' })).toMatchObject({ ok: false, error: { message: 'Formdaki bilgiler eksik ya da hatalı. Lütfen kontrol edip tekrar deneyin.' } });
   });
 
+  it('the session form asks where the person lives too, and a name typed in lower case gets capitals (owner’s review 2026-10-23)', () => {
+    const { gas, send } = setup();
+    expect(send({ ...session, name: 'ayşe ilkay yılmaz', country: 'NL', healthConsent: true }).ok).toBe(true);
+    const [owner] = gas.mails;
+    expect(owner.subject).toBe('Randevu talebi – Ayşe İlkay Yılmaz – 22 Ekim 2026, Perşembe, 15.00');
+    expect(owner.body).toContain('– Ad soyad: Ayşe İlkay Yılmaz');
+    expect(owner.body).toContain('– Yaşadığı ülke: Hollanda');
+    const other = setup();
+    expect(other.send({ ...session, country: 'XX', healthConsent: true }).ok).toBe(false);
+  });
+
   it('a time that is not free says so; other bad input is refused as a whole', () => {
     const { gas, send } = setup();
     const taken = send({ ...session, time: '09:00' });

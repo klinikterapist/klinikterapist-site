@@ -22,6 +22,7 @@ import { PANEL_URL, SENDER_NAME, oneLine, str } from './text';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { isClosed } from './booking';
 import { mailTr } from '../../src/lib/mail-texts';
+import { personName } from '../../src/lib/person-name';
 
 const FILE = 'bekleme.json';
 const KEEP_MS = WAITLIST_KEEP_DAYS * 24 * 3600 * 1000;
@@ -80,7 +81,7 @@ export function joinWaitlist(gas: Gas, p: Record<string, unknown>): { sent: true
   const entry: WaitlistEntry = {
     id: gas.uuid().slice(0, 12),
     createdAt: gas.now(),
-    name: oneLine(input.name),
+    name: personName(oneLine(input.name), lang),
     email,
     phone: oneLine(input.phone),
     kinds: [...new Set(input.kinds)],

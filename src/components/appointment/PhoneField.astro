@@ -14,8 +14,10 @@ interface Props {
   label: string;
   /** The `data-sum-src` of the number (the summary's contact line). */
   sum?: string;
+  /** Across both columns of the form (when it would sit alone in a row with a narrow number box). */
+  wide?: boolean;
 }
-const { lang, name, label, sum } = Astro.props;
+const { lang, name, label, sum, wide } = Astro.props;
 const id = `${name}-input`;
 const T = {
   tr: { code: 'Ülke kodu', other: 'Diğer (numarayı + ile yazın)', hint: 'Yurt dışındaysanız ülke kodunu seçin.' },
@@ -23,7 +25,7 @@ const T = {
 }[lang];
 ---
 
-<div class="field phone-field">
+<div class:list={['field phone-field', { 'field-wide': wide }]}>
   <label for={id}>{label} <span class="req" aria-hidden="true">*</span></label>
   <div class="phone-row">
     <select name={`${name}Code`} aria-label={T.code} data-phone-code>

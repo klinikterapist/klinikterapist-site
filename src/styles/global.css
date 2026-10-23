@@ -95,6 +95,17 @@ a:hover {
   background: var(--surface-2);
 }
 
+/* A select's open list (owner's review 2026-10-23: dark and the "choose" line unreadable). The list
+   takes the raised surface of the theme, and the disabled prompt line stays readable in both. */
+select option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+select option:disabled {
+  color: var(--muted);
+}
+
 /* Layout helpers */
 .container {
   width: 100%;

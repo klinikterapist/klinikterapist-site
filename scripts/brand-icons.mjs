@@ -147,26 +147,27 @@ async function traceWordmark() {
  * The link card image (owner's review 2026-10-19): the sun and the klinikterapist wordmark on the
  * night navy. Everything sits inside the central 630×630 square, because WhatsApp and others crop the
  * card to a square thumbnail.
+ * Owner's review 2026-10-23 (blurry, blocky in WhatsApp): flat navy without the glow (its soft rings
+ * turned into bands), bigger marks, and full-resolution colour (4:4:4) so the yellow and cream edges
+ * on navy stay sharp when the apps shrink the image again.
  */
 async function writeOg() {
   const W = 1200;
   const H = 630;
   const wordmark = readFileSync('src/components/brand/Wordmark.astro', 'utf8');
   const d = wordmark.match(/ d="([^"]+)"/)[1];
-  const wmW = 520;
+  const wmW = 560;
   const wmH = Math.round((wmW * 198) / 1131);
   const wmSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1131 198" width="${wmW}" height="${wmH}"><path d="${d}" fill="#F4EBDD" fill-rule="evenodd"/></svg>`;
-  const sun = 300;
-  const top = 92;
-  const gap = 46;
-  const glow = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><defs><radialGradient id="g" cx="50%" cy="${(top + sun / 2) / H}" r="0.42"><stop offset="0" stop-color="#FCD873" stop-opacity=".14"/><stop offset="1" stop-color="#FCD873" stop-opacity="0"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`;
+  const sun = 330;
+  const gap = 44;
+  const top = Math.round((H - sun - gap - wmH) / 2);
   const jpg = await sharp({ create: { width: W, height: H, channels: 3, background: NAVY } })
     .composite([
-      { input: Buffer.from(glow), left: 0, top: 0 },
       { input: await renderSun(sun, FACE_NIGHT), left: Math.round((W - sun) / 2), top },
       { input: await sharp(Buffer.from(wmSvg)).png().toBuffer(), left: Math.round((W - wmW) / 2), top: top + sun + gap },
     ])
-    .jpeg({ quality: 88, mozjpeg: true })
+    .jpeg({ quality: 95, chromaSubsampling: '4:4:4' })
     .toBuffer();
   writeFileSync('public/og-default.jpg', jpg);
   console.log('public/og-default.jpg');

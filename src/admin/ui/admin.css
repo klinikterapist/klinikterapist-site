@@ -4871,6 +4871,35 @@ html[data-theme='dark'] {
   font-size: var(--text-sm);
 }
 
+.cl-hero-text .cl-mail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.cl-mail a {
+  color: var(--p-text);
+  overflow-wrap: anywhere;
+}
+
+.cl-copy {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--p-muted);
+  cursor: pointer;
+}
+
+.cl-copy:hover {
+  background: var(--p-highlight);
+  color: var(--p-text);
+}
+
 .cl-side {
   display: grid;
   gap: var(--k-space-4);

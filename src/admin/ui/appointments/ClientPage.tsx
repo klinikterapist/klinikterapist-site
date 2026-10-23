@@ -26,7 +26,7 @@ import { formatDay } from '../../../lib/booking-form';
 import { FREE_KINDS, pastAndNext, sessionKey, sessionNumbers, sessionStats, type SessionRecord, type SessionStatus } from '../../../lib/sessions';
 import { usePanel } from '../context';
 import { useFreshData } from '../fresh-data';
-import { ArrowLeft, CalendarCheck, CalendarPlus, CircleCheck, Flag, Icon, Mail as MailIcon, Trash2, Undo2 } from '../icons';
+import { ArrowLeft, CalendarCheck, CalendarPlus, CircleCheck, Copy, Flag, Icon, Mail as MailIcon, Trash2, Undo2 } from '../icons';
 import { ActionMenu } from '../ActionMenu';
 import { Banner, Button, Dialog, EmptyState, Field, Select, Spinner } from '../kit';
 import { endMail, linkMail, revertMail, sessionChangeMail, type Mail } from '../../lib/booking-mail';
@@ -36,6 +36,7 @@ import { MailDialog } from './MailDialog';
 import { hasFee } from '../../lib/attention';
 import { SESSION_KIND_LABEL, WEEKDAYS, labelOf, templateTimes } from './AppointmentCalendar';
 import { SessionChart } from './SessionChart';
+import { VerifiedMark } from './WaitlistTab';
 
 const STATUS_LABEL: Record<SessionStatus, string> = { planned: 'Planlandı', attended: 'Katıldı', noshow: 'Gelmedi', cancelled: 'İptal edildi', postponed: 'Ertelendi' };
 const short = (day: string) => {
@@ -409,6 +410,21 @@ export function ClientPage({ id }: { id: string }) {
             {client.status === 'closing' && <span className="tk-badge">{closing.step === 'wait' ? 'Sonlandırma görüşmesi bekleniyor' : closing.step === 'none' ? 'Sonlandırma aşamasında' : 'Sonlandırma görüşmesi planlandı'}</span>}
           </h2>
           <p>{`${labelOf({ kind: 'session', type: client.type })} · bugüne kadar ${stats.held} seans`}</p>
+          {/* Owner's review 2026-10-23, item 21: the address, to write from Gmail too. */}
+          <p className="cl-mail">
+            <Icon as={MailIcon} size={14} />
+            <a href={`mailto:${client.contact.email}`}>{client.contact.email}</a>
+            <button
+              type="button"
+              className="cl-copy"
+              aria-label="E-posta adresini kopyala"
+              title="Kopyala"
+              onClick={() => navigator.clipboard.writeText(client.contact.email).then(() => setNotice('E-posta adresi kopyalandı.'), () => undefined)}
+            >
+              <Icon as={Copy} size={14} />
+            </button>
+            <VerifiedMark ok={!!client.contact.verified} />
+          </p>
         </div>
         {/* Owner's review 2026-10-21: every step about this client in one place, grouped by what it does. */}
         <div className="head-actions cl-actions">

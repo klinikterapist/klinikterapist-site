@@ -133,7 +133,10 @@ export type BookingInput = {
    * by forms sent before it was asked.
    */
   healthConsent?: boolean;
-  /** Intro: where the person lives, one of COUNTRIES (lib/phone.ts); optional for forms sent before it was asked. */
+  /**
+   * Where the person lives, one of COUNTRIES (lib/phone.ts). Intro since 2026-10-22, session since
+   * 2026-10-23; optional for forms sent before it was asked.
+   */
   country?: string;
 };
 
@@ -247,8 +250,8 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
     else if (topics.some((i) => !Number.isInteger(i) || i < 0 || i >= INTRO_TOPICS.tr.length) || new Set(topics).size !== topics.length) errors.topics = 'invalid';
     if (!Number.isInteger(input.age) || input.age! < 0 || input.age! >= AGE_RANGES.tr.length) errors.age = 'required';
     if (topics.length && !input.healthConsent) errors.healthConsent = 'required';
-    if (input.country && !isCountry(input.country)) errors.country = 'invalid';
   }
+  if (input.country && !isCountry(input.country)) errors.country = 'invalid';
   return errors;
 }
 

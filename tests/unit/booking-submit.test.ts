@@ -124,7 +124,7 @@ describe('mountBookingForm', () => {
     expect(init.credentials).toBe('omit');
     expect(JSON.parse(String(init.body))).toEqual({
       action: 'booking.request', kind: 'session', type: 'individual', day: '2026-10-22', time: '15:00',
-      name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, healthConsent: false, hp_field: '', lang: 'tr',
+      name: 'Ayşe Yılmaz', email: 'ayse@example.com', phone: '0532 123 45 67', note: '', consent: true, country: '', healthConsent: false, hp_field: '', lang: 'tr',
     });
     expect($('[data-step="4"]').hidden).toBe(true);
     expect($('.stepper').hidden).toBe(true);

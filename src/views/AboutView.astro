@@ -159,7 +159,8 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
                     </p>
                     <p class="side-text">{summary}</p>
                     <a class="side-link" href="#panel-education" data-go="education">
-                      {t(lang, 'tabEducation')} →
+                      {t(lang, 'tabEducation')}
+                      <Icon name="arrow" size={16} />
                     </a>
                   </div>
                 )}
@@ -185,7 +186,8 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
                       ))}
                     </ul>
                     <a class="side-link" href="#panel-how" data-go="how">
-                      {t(lang, 'tabHow')} →
+                      {t(lang, 'tabHow')}
+                      <Icon name="arrow" size={16} />
                     </a>
                   </div>
                 )}
@@ -656,9 +658,42 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
     font-size: var(--text-sm);
   }
 
+  /* Owner's review 2026-10-23, item 8: the way to the next tab sits on a line of its own at the foot
+     of the card, as a small button, not glued to the text above it. */
   .side-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: var(--space-3);
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    color: var(--text);
     font-size: var(--text-sm);
     font-weight: 600;
+    text-decoration: none;
+  }
+
+  .side-link :global(svg) {
+    flex: none;
+    color: var(--link);
+    transition: transform 0.15s ease;
+  }
+
+  .side-link:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--sun-halo) 22%, var(--bg));
+  }
+
+  .side-link:hover :global(svg) {
+    transform: translateX(3px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .side-link :global(svg) {
+      transition: none;
+    }
   }
 
   .story-side {
@@ -687,7 +722,7 @@ const jsonLd = [profilePageLd(lang, areas.map((a) => a.title))];
   }
 
   .chips--side {
-    margin: var(--space-2) 0 var(--space-3);
+    margin: var(--space-2) 0 0;
   }
 
   .side-card .chips--side li {

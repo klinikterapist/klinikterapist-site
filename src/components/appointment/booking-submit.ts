@@ -126,7 +126,7 @@ export function mountBookingForm(root: HTMLElement, deps: Deps = { fetch: window
       consent: checked('consent').length > 0,
       hp_field: value('hp_field'),
     };
-    if (kind === 'session') return { ...base, type: checked('type')[0] ?? '', healthConsent: checked('healthConsent').length > 0 };
+    if (kind === 'session') return { ...base, type: checked('type')[0] ?? '', country: value('country'), healthConsent: checked('healthConsent').length > 0 };
     const age = value('age');
     return {
       ...base,

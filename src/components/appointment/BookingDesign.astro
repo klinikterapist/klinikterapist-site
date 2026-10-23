@@ -18,6 +18,7 @@ import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
 import WaitlistForm from './WaitlistForm.astro';
 import PhoneField from './PhoneField.astro';
+import { COUNTRIES } from '../../lib/phone';
 import DoneCard from './DoneCard.astro';
 import { FORM_TEXT } from './form-text';
 import './wizard.css';
@@ -76,6 +77,8 @@ const T = {
     name: 'Ad soyad',
     mail: 'E-posta',
     phone: 'Telefon',
+    country: 'Nerede yaşıyorsunuz?',
+    countryPick: 'Seçin',
     note: 'Eklemek istediğiniz bir not (isteğe bağlı)',
     noteHint: 'Sağlık durumunuza ilişkin ayrıntıları burada paylaşmayın; bunları görüşmede konuşuruz.',
     consentA: 'Aydınlatma metnini',
@@ -143,6 +146,8 @@ const T = {
     name: 'Full name',
     mail: 'E-mail',
     phone: 'Phone',
+    country: 'Where do you live?',
+    countryPick: 'Choose',
     note: 'Anything you would like to add (optional)',
     noteHint: 'Please do not share health details here; we will talk about them in the session.',
     consentA: 'I have read the ',
@@ -310,6 +315,14 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             <span>{T.name} <span class="req" aria-hidden="true">*</span></span>
             <input type="text" name="name" autocomplete="name" required maxlength="100" data-sum-src="name" />
           </label>
+          {/* Asked on the session form too (owner's review 2026-10-23, item 16), as on the intro call. */}
+          <label class="field">
+            <span>{T.country} <span class="req" aria-hidden="true">*</span></span>
+            <select name="country" required data-country>
+              <option value="">{T.countryPick}</option>
+              {COUNTRIES.map((c) => <option value={c.id}>{c[lang]}</option>)}
+            </select>
+          </label>
           <label class="field">
             <span>{T.mail} <span class="req" aria-hidden="true">*</span></span>
             <input type="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" data-sum-src="contact" data-email />
@@ -320,7 +333,7 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
             <input type="email" name="email2" autocomplete="off" inputmode="email" required maxlength="254" data-email-again />
             <small class="email-hint is-error" data-email-mismatch hidden></small>
           </label>
-          <PhoneField lang={lang} name="phone" label={T.phone} sum="contact" />
+          <PhoneField lang={lang} name="phone" label={T.phone} sum="contact" wide />
           <label class="field field-wide">
             <span>{T.note}</span>
             <textarea name="note" rows="3" maxlength="500"></textarea>
@@ -416,20 +429,10 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
 
 <script>
   import { mountBookingForm } from './booking-submit';
-  import { ENTRY_PATH } from '../../lib/booking-entry';
 
-  // The way to the intro call can be closed; it comes back when the page is opened again. Coming
-  // from the start page ("Başlamaya hazırım"), the person has already passed the intro call by.
-  const fromStart = (() => {
-    try {
-      const r = new URL(document.referrer);
-      return r.origin === location.origin && Object.values(ENTRY_PATH).includes(r.pathname as never);
-    } catch {
-      return false;
-    }
-  })();
+  // The way to the intro call can be closed; it comes back when the page is opened again. It shows
+  // when coming from the start page ("Başlamaya hazırım") too (owner's review 2026-10-23, item 13).
   document.querySelectorAll<HTMLElement>('[data-first-time]').forEach((box) => {
-    if (fromStart) return box.remove();
     box.querySelector('[data-first-time-close]')?.addEventListener('click', () => box.remove());
   });
 

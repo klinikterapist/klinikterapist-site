@@ -107,10 +107,17 @@ describe('contact.send', () => {
     expect(gas.mails).toHaveLength(1);
   });
 
+  it('a name typed in lower case reaches the owner with capitals', () => {
+    const gas = fakeGas({ props });
+    send(gas, { name: 'ayşe ilkay yılmaz' });
+    expect(gas.mails[0].subject).toBe('İş birliği – Ayşe İlkay Yılmaz');
+  });
+
   it('newlines in the name never reach the subject line', () => {
     const gas = fakeGas({ props });
     send(gas, { name: 'Ayşe\r\nBcc: x@y.com' });
-    expect(gas.mails[0].subject).toBe('İş birliği – Ayşe Bcc: x@y.com');
+    // The name gets capitals (owner's review 2026-10-23); the line break still goes.
+    expect(gas.mails[0].subject).toBe('İş birliği – Ayşe Bcc: X@Y.Com');
     expect(gas.mails[0].subject).not.toMatch(/[\r\n]/);
   });
 

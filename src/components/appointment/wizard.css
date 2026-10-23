@@ -485,6 +485,8 @@
 
 .wz .field {
   display: grid;
+  /* Two fields side by side share a row height; the extra goes below, not into the box (item 16). */
+  align-content: start;
   gap: 6px;
   font-size: var(--text-sm);
   font-weight: 600;

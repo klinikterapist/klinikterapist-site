@@ -11,6 +11,7 @@ import { isContactTopic, topicLabel, validateContact, type ContactInput } from '
 import { oneLine, str } from './text';
 import { mailTr } from '../../src/lib/mail-texts';
 import { stamp } from '../../src/lib/mail-vars';
+import { personName } from '../../src/lib/person-name';
 
 /**
  * Fixed windows: per visitor address and for the whole site per clock hour, and for the whole site per
@@ -104,10 +105,10 @@ export function sendContact(gas: Gas, p: Record<string, unknown>): { sent: true 
   const owner = gas.props.get('OWNER_EMAIL')?.trim();
   if (!owner) throw new ApiError('internal', NOT_READY);
 
-  const name = oneLine(input.name);
+  const lang = p.lang === 'en' ? 'en' : 'tr';
+  const name = personName(oneLine(input.name), lang);
   const email = input.email.trim().toLowerCase();
   const topic = topicLabel(input.topic, 'tr');
-  const lang = p.lang === 'en' ? 'en' : 'tr';
 
   if (!allowSend(gas, email)) throw badRequest(TOO_MANY);
 

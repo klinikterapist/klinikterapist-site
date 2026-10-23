@@ -22,6 +22,7 @@ import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { mailTr } from '../../src/lib/mail-texts';
+import { personName } from '../../src/lib/person-name';
 import { closingDeadline } from '../../src/lib/closing';
 
 export const REQUEST_KEEP_MS = REQUEST_KEEP_DAYS * 24 * 3600 * 1000;
@@ -90,7 +91,8 @@ export function saveRequest(gas: Gas, input: BookingInput, lang: 'tr' | 'en', ho
     phone: input.phone.trim(),
     note: input.note.trim(),
     lang,
-    ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age, ...(input.country ? { country: input.country } : {}) } : {}),
+    ...(input.kind === 'intro' ? { forWhom: input.forWhom, topics: input.topics, before: input.before, age: input.age } : {}),
+    ...(input.country ? { country: input.country } : {}),
     status: 'pending',
     holdId,
     source: 'site',
@@ -121,7 +123,7 @@ export function addManual(gas: Gas, cfg: BookingConfig, p: Record<string, unknow
   const i = p as Partial<ManualAppointment>;
   const kind = i.kind === 'intro' ? 'intro' : 'session';
   const type = kind === 'session' ? SESSION_TYPES.find((t) => t.id === i.type)?.id : undefined;
-  const name = typeof i.name === 'string' ? i.name.trim() : '';
+  const name = typeof i.name === 'string' ? personName(i.name, i.lang === 'en' ? 'en' : 'tr') : '';
   const email = typeof i.email === 'string' ? i.email.trim().toLowerCase() : '';
   if (kind === 'session' && !type) throw badRequest('Görüşme türünü seçin.');
   if (name.length < 2 || name.length > BOOKING_LIMITS.nameMax) throw badRequest('Ad soyad eksik.');

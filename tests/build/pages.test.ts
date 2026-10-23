@@ -50,8 +50,8 @@ describe('static pages', () => {
   });
 
   it('the free intro call is offered on the start page and exists in both languages', () => {
-    expect(loadPage('/randevu-al/').querySelector('a[href="/on-gorusme/#pc-form"]')).not.toBeNull();
-    expect(loadPage('/en/book/').querySelector('a[href="/en/intro-call/#pc-form"]')).not.toBeNull();
+    expect(loadPage('/randevu-al/').querySelector('a[href="/on-gorusme/"]')).not.toBeNull();
+    expect(loadPage('/en/book/').querySelector('a[href="/en/intro-call/"]')).not.toBeNull();
     expect(loadPage('/on-gorusme/').querySelector('h1')?.text).toBe('Ücretsiz Ön Görüşme');
     expect(loadPage('/en/intro-call/').querySelector('h1')?.text).toBe('Free Intro Call');
   });
@@ -508,7 +508,7 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it('the booking start page: three ways (intro call recommended), each a link to its own page, in search now that booking is live', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, intro, appt, info] of [['/randevu-al/', '/on-gorusme/#pc-form', '/randevu/', '/bilgi-al/'], ['/en/book/', '/en/intro-call/#pc-form', '/en/appointment/', '/en/information/']] as const) {
+    for (const [path, intro, appt, info] of [['/randevu-al/', '/on-gorusme/', '/randevu/', '/bilgi-al/'], ['/en/book/', '/en/intro-call/', '/en/appointment/', '/en/information/']] as const) {
       const d = loadPage(path);
       expect(d.querySelectorAll('main .way').length, path).toBe(3);
       expect(d.querySelector('main .way.is-recommended a')?.getAttribute('href'), path).toBe(intro);
