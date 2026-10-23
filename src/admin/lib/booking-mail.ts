@@ -29,6 +29,7 @@ export type PanelMailId =
   | 'danisan.iptal'
   | 'danisan.erteleme'
   | 'danisan.ek-seans'
+  | 'danisan.takip-basladi'
   | 'bekleme.yer-acildi'
   | 'bekleme.alim-acik'
   | 'bekleme.cikarma';
@@ -214,6 +215,52 @@ function builtLinkMailEn(c: Contact, link: string): Mail {
       ...SIGN_EN,
     ].join('\n'),
   };
+}
+
+/** The weekly plan when someone moves to Seans takip (owner's note 2026-10-23): day and time, first session. */
+export type TrackingStart = { day: string; time: string; type: string };
+
+const WEEKDAY_TR = ['pazar', 'pazartesi', 'salı', 'çarşamba', 'perşembe', 'cuma', 'cumartesi'];
+const WEEKDAY_EN = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const weekdayOf = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
+
+function builtTrackingStartMailEn(c: Contact, s: TrackingStart): Mail {
+  const t = SESSION_TYPES.find((x) => x.id === s.type) ?? SESSION_TYPES[0];
+  return {
+    subject: 'Our weekly sessions are planned – klinikterapist.com',
+    body: [
+      `Dear ${c.name.trim()},`,
+      '',
+      'Here is the plan for our weekly sessions.',
+      '',
+      `– Session type: ${t.en}`,
+      `– Day and time: every ${WEEKDAY_EN[weekdayOf(s.day)]}, ${s.time.replace(':', '.')} (Turkey time)`,
+      `– First session: ${formatDay(s.day, 'en')}`,
+      `– Length: ${t.minutes} minutes`,
+      '– Format: online',
+      '',
+      'I will send you the link to the online session by e-mail before each session. You will also get a reminder three days before each session.',
+      '',
+      'If this plan does not suit you, just reply to this e-mail.',
+      '',
+      ...SIGN_EN,
+    ].join('\n'),
+  };
+}
+
+export function trackingStartVarsTr(c: Contact, s: TrackingStart): Record<string, string> {
+  return { ad: c.name.trim(), ...whenVars(s.day, s.time), gun: WEEKDAY_TR[weekdayOf(s.day)], ...typeVars(s.type) };
+}
+
+export function trackingStartMail(c: Contact, s: TrackingStart): Mail {
+  if (c.lang === 'tr') return mailTr('danisan.takip-basladi', trackingStartVarsTr(c, s));
+  const t = SESSION_TYPES.find((x) => x.id === s.type) ?? SESSION_TYPES[0];
+  return withTexts(
+    'danisan.takip-basladi',
+    'en',
+    { ad: c.name.trim(), gun: WEEKDAY_EN[weekdayOf(s.day)], saat: s.time.replace(':', '.'), tarih: formatDay(s.day, 'en'), tur: t.en, sure: `${t.minutes} minutes` },
+    builtTrackingStartMailEn(c, s),
+  );
 }
 
 /*

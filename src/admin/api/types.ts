@@ -286,7 +286,8 @@ export interface Api {
   /** Sends the owner's (edited) e-mail to the person and applies the decision. */
   requestDecide(input: { id: string; decision: RequestDecision; subject: string; body: string }): Promise<void>;
   /** Moves an approved request to Randevu takibi: its personal data is deleted, a client number is made. */
-  requestToClient(input: { id: string; weekday?: number; time?: string; since?: string }): Promise<{ client: Client }>;
+  /** With `subject` and `body`, the weekly plan goes to the person by e-mail (owner's note 2026-10-23). */
+  requestToClient(input: { id: string; weekday?: number; time?: string; since?: string; subject?: string; body?: string }): Promise<{ client: Client }>;
   /**
    * Geri al: an approval sent by mistake. The apology e-mail goes, the confirmed time is freed and
    * the request is pending again.

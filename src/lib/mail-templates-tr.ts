@@ -117,6 +117,11 @@ export const MAIL_TR = {
     subject: "Seansınız ertelendi – klinikterapist.com",
     body: "Sayın {ad},\n\n[[ben]]\nAşağıdaki seansımızı ertelemek durumunda kaldığımı bildirmek isterim. Anlayışınız için teşekkür ederim.\n[[/ben]]\n[[siz]]\nİsteğiniz üzerine aşağıdaki seansınız ertelendi.\n[[/siz]]\n\n– Seans türü: {tur}\n– Önceki tarih ve saat: {tarih}, {saat}\n[[yeni]]\n– Yeni tarih ve saat: {yeni_tarih}, {yeni_saat} (Türkiye saati)\n[[/yeni]]\n[[yenisiz]]\n\nYeni tarihi ve saati en kısa sürede sizinle birlikte belirleyeceğiz.\n[[/yenisiz]]\n\nOnline görüşme bağlantısını seanstan önce size e-postayla göndereceğim. Bir sorunuz olursa bu e-postayı yanıtlayarak bana yazabilirsiniz.\n\nSaygılarımla,\n{imza}",
   },
+  // Seans takibe geçirince: haftalık seans günü ve saati (sahibin notu 2026-10-23)
+  "danisan.takip-basladi": {
+    subject: "Haftalık seanslarımız planlandı – klinikterapist.com",
+    body: "Sayın {ad},\n\nHaftalık seanslarımızın planını aşağıda bulabilirsiniz.\n\n– Seans türü: {tur}\n– Seans günü ve saati: Her {gun}, {saat} (Türkiye saati)\n– İlk seans: {tarih}\n– Seans süresi: {sure}\n– Biçim: Online\n\nOnline görüşme bağlantısını seanstan önce size e-postayla göndereceğim. Her seanstan 3 gün önce de bir hatırlatma e-postası gelir.\n\nBu plan size uymuyorsa bu e-postayı yanıtlayarak bana yazabilirsiniz.\n\nSaygılarımla,\n{imza}",
+  },
   // Panelden ek seans ya da sonlandırma görüşmesi ekleme
   "danisan.ek-seans": {
     subject: "Yeni seansınız planlandı – klinikterapist.com",

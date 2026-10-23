@@ -295,7 +295,9 @@ function nextNumber(gas: Gas, name: string): string {
 /**
  * Moves an approved request to Seans takip. A booking keeps the weekday and time the person chose;
  * an intro call needs the weekday and time the owner sets (`weekday`, `time`, `since`). The request
- * leaves Randevu talepleri; the client is a number and a weekly slot, with the contact sealed.
+ * leaves Randevu talepleri; the client is a number and a weekly slot, with the contact sealed. With
+ * `subject` and `body` the weekly plan (as the owner edited it) goes to the person first (owner's note
+ * 2026-10-23); if it cannot go, nothing changes.
  */
 export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, unknown>): { client: Client } {
   return gas.withLock(() => {
@@ -326,6 +328,7 @@ export function requestToClient(gas: Gas, cfg: BookingConfig, p: Record<string, 
     const now = gas.now();
     const minutes = minutesOf('session', type);
     assertFree(gas, cfg, clientsBusy([{ weekday, time, minutes, since, sessions: [] }], cfg.restMinutes, now, now + WEEKS8), r.calendarId);
+    if (p.subject !== undefined || p.body !== undefined) sendMail(gas, r.email, p);
     const { id: _id, createdAt: _c, status: _s, holdId: _h, calendarId: _cal, ...origin } = r;
     // An intro call is where it began: it shows in the client's sessions, free and attended.
     const sessions: SessionRecord[] = r.kind === 'intro' ? [{ day: r.day, time: r.time, kind: 'intro', minutes: INTRO_MINUTES, status: 'attended' }] : [];

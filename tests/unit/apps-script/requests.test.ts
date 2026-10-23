@@ -95,6 +95,19 @@ describe('Talepler (backend)', () => {
     expect(send({ ...session, day: '2026-11-05', time: '19:50', email: 'baska@example.com' })).toMatchObject({ ok: false });
   });
 
+  it('moving to Seans takip can send the weekly plan first; an empty e-mail changes nothing (owner’s note 2026-10-23)', () => {
+    const { gas, call, send, requests } = setup();
+    send(session);
+    const id = requests()[0].id;
+    call('requests.decide', { id, decision: 'approve', ...mail });
+    gas.mails.length = 0;
+    expect(call('requests.toClient', { id, subject: 'Plan', body: ' ' }).ok).toBe(false);
+    expect(requests()).toHaveLength(1);
+    expect(call('requests.toClient', { id, subject: 'Haftalık seanslarımız planlandı', body: 'Her perşembe 19.20' }).ok).toBe(true);
+    expect(gas.mails).toEqual([expect.objectContaining({ to: 'ayse@example.com', subject: 'Haftalık seanslarımız planlandı', body: 'Her perşembe 19.20' })]);
+    expect(requests()).toEqual([]);
+  });
+
   it('an intro call needs the weekly day, time and start date', () => {
     const { call, send, requests } = setup();
     send(intro);

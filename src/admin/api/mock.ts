@@ -389,7 +389,7 @@ export function createMockApi(
           state.requests = state.requests.filter((x) => x.id !== id);
         }
       }),
-    requestToClient: ({ id, weekday, time, since }) =>
+    requestToClient: ({ id, weekday, time, since, subject, body }) =>
       wait(() => {
         const r = state.requests.find((x) => x.id === id);
         if (!r) throw new ApiFailure('not_found', 'Bu talep bulunamadı.');
@@ -417,6 +417,7 @@ export function createMockApi(
           status: 'active',
           contact: { name: r.name, email: r.email, lang: r.lang },
         };
+        if (subject !== undefined || body !== undefined) mail(r.email, subject ?? '', body ?? '');
         if (session) state.calendar = state.calendar.filter((e) => e.id !== r.calendarId);
         state.clients.push({ ...client, origin: r });
         state.requests = state.requests.filter((x) => x.id !== id);

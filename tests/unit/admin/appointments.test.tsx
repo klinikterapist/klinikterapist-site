@@ -160,26 +160,40 @@ describe('Randevu talepleri', () => {
     const dialog = screen.getByRole('dialog', { name: 'Seans takibe geçir' });
     expect(dialog.textContent).toContain('her perşembe 19.20');
     expect(dialog.textContent).toContain('KT001AY gibi');
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Takibe geçir' }));
+    // The weekly plan goes by e-mail, open for editing (owner's note 2026-10-23).
+    const body = (within(dialog).getByLabelText('E-posta metni') as HTMLTextAreaElement).value;
+    expect(body).toContain('– Seans günü ve saati: Her perşembe, 19.20 (Türkiye saati)');
+    expect(body).toContain('– Seans türü: Aile ve çift terapisi');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Takibe geçir ve gönder' }));
     await waitFor(() => expect(api.state.clients).toHaveLength(1));
     expect(api.state.clients[0]).toMatchObject({ number: 'KT001AY', weekday: 4, time: '19:20', status: 'active', contact: { email: 'ayse@example.com' } });
     expect(api.state.requests).toHaveLength(0);
+    expect(api.state.sent).toEqual([expect.objectContaining({ to: 'ayse@example.com', subject: 'Haftalık seanslarımız planlandı – klinikterapist.com' })]);
     expect(await screen.findByText(/KT001AY numarasıyla Seans takibe alındı/)).toBeTruthy();
   });
 
-  it('an intro call asks for the weekly day and time before moving', async () => {
+  it('an intro call asks for the first session’s date and time; the weekday follows the date, the calendar shows what is taken', async () => {
     const { api } = setup('requests', [{ ...intro, status: 'approved', calendarId: 'c2' }]);
     fireEvent.click(screen.getByRole('button', { name: /Onaylanan/ }));
     fireEvent.click(within(await card('Ali Kaya')).getByRole('button', { name: 'Seans takibe geçir' }));
-    const dialog = screen.getByRole('dialog', { name: 'Seans takibe geçir' });
+    let dialog = screen.getByRole('dialog', { name: 'Seans takibe geçir' });
+    expect(within(dialog).queryByLabelText('Gün')).toBeNull();
+    expect(within(dialog).getByText('Ortak takvim: dolu gün ve saatler')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Yalnızca takibe geçir' }));
+    dialog = screen.getByRole('dialog', { name: 'Seans takibe geçir' });
     const go = within(dialog).getByRole('button', { name: 'Takibe geçir' }) as HTMLButtonElement;
+    // The next Wednesday from tomorrow on; 11:00 is open even on a bayram eve (closed from 13:00).
+    const d = new Date(Date.now() + 3 * 3600e3 + 864e5);
+    while (d.getUTCDay() !== 3) d.setUTCDate(d.getUTCDate() + 1);
+    const wednesday = d.toISOString().slice(0, 10);
+    fireEvent.change(within(dialog).getByLabelText('İlk seans tarihi'), { target: { value: wednesday } });
     expect(go.disabled).toBe(true);
-    fireEvent.change(within(dialog).getByLabelText('Gün'), { target: { value: '3' } });
-    // 11:00, open even on a bayram eve (closed from 13:00), whichever Wednesday comes next.
+    expect(dialog.textContent).toContain('Haftalık seans günü: Çarşamba');
     fireEvent.change(within(dialog).getByLabelText('Saat'), { target: { value: '11:00' } });
     fireEvent.click(go);
     await waitFor(() => expect(api.state.clients).toHaveLength(1));
-    expect(api.state.clients[0]).toMatchObject({ number: 'KT001AK', weekday: 3, time: '11:00', type: 'individual' });
+    expect(api.state.clients[0]).toMatchObject({ number: 'KT001AK', weekday: 3, time: '11:00', since: wednesday, type: 'individual' });
+    expect(api.state.sent).toHaveLength(0);
   });
 
   it('Geri al on an approved request sends the apology and makes it pending again', async () => {

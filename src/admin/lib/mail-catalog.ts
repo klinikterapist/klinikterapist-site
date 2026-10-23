@@ -11,7 +11,7 @@ import { payVars, paymentLines, ruleLine, sessionReminderMail, thanksMail, payme
 import { mailTexts, setMailTexts, toTemplate, type Mail } from '../../lib/mail-texts';
 import { MAIL_TR } from '../../lib/mail-templates-tr';
 import { LINKS_TR, RULE_TR, typeVars, whenVars } from '../../lib/mail-vars';
-import { SITE, decisionMail, decisionVarsTr, endMail, introNote, linkMail, revertMail, sessionChangeMail, sessionChangeVarsTr, waitlistMail, what, type PanelMailId, type SessionChange } from './booking-mail';
+import { SITE, decisionMail, decisionVarsTr, endMail, introNote, linkMail, revertMail, sessionChangeMail, sessionChangeVarsTr, trackingStartMail, trackingStartVarsTr, waitlistMail, what, type PanelMailId, type SessionChange } from './booking-mail';
 
 type Lang = 'tr' | 'en';
 export type MailGroup = 'Randevu talepleri' | 'Danışanlar' | 'Ödemeler' | 'Bekleme listesi' | 'Otomatik';
@@ -128,6 +128,17 @@ export const MAIL_CATALOG: CatalogEntry[] = [
           : { ad: person(lang).name, zaman: when(lang), ...('to' in facts ? { yeni_tarih: formatDay(facts.to.day, 'en'), yeni_saat: facts.to.time.replace(':', '.') } : {}) },
     };
   }),
+  {
+    id: 'danisan.takip-basladi',
+    group: 'Danışanlar',
+    label: 'Haftalık seans planı',
+    when: 'Onaylanan bir talebi "Seans takibe geçir" ile danışan yaptığınızda',
+    sample: (lang) => builtIn(() => trackingStartMail(person(lang), { day: DAY, time: TIME, type: 'individual' })),
+    vars: (lang): Record<string, string> =>
+      lang === 'tr'
+        ? trackingStartVarsTr(person(lang), { day: DAY, time: TIME, type: 'individual' })
+        : { ad: person(lang).name, gun: 'Thursday', saat: TIME.replace(':', '.'), tarih: formatDay(DAY, 'en'), tur: 'Individual therapy', sure: '50 minutes' },
+  },
   {
     id: 'danisan.geri-al',
     group: 'Danışanlar',

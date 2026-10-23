@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react';
 import { ApiFailure, type BookingRequest, type Client, type RequestDecision, type WaitlistEntry } from '../../api/types';
 import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, REQUEST_KEEP_DAYS, SESSION_TYPES, clientNumber, formatDay, requestKeepUntil } from '../../../lib/booking-form';
-import { decisionMail, revertMail, type Mail } from '../../lib/booking-mail';
+import { decisionMail, revertMail, trackingStartMail, type Mail } from '../../lib/booking-mail';
 import { countryName } from '../../../lib/phone';
 import type { PaymentSettings } from '../../../lib/payment';
 import { go, usePanel } from '../context';
@@ -49,6 +49,8 @@ export const elapsed = (ms: number) => {
   return h ? `${h} sa ${m % 60} dk` : `${m} dk`;
 };
 const weekly = (weekday: number, time: string) => `her ${WEEKDAYS[weekday].toLocaleLowerCase('tr-TR')} ${time.replace(':', '.')}`;
+
+const weekdayOf = (day: string) => new Date(`${day}T12:00:00Z`).getUTCDay();
 
 /** The next date on or after today that falls on `weekday` (`YYYY-MM-DD`, Istanbul). */
 function nextWeekday(weekday: number): string {
@@ -177,7 +179,9 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
   /** Cards whose details are open (closed by default). */
   const [openCards, setOpenCards] = useState<Set<string>>(() => new Set());
   const [sending, setSending] = useState<Sending | null>(null);
-  const [moving, setMoving] = useState<{ r: BookingRequest; weekday: number; time: string; since: string } | null>(null);
+  // "Seans takibe geçir" (owner's note 2026-10-23): no weekday question, it follows the first session's date;
+  // the shared calendar is in the window; the weekly plan can go to the person by e-mail.
+  const [moving, setMoving] = useState<{ r: BookingRequest; since: string; time: string; send: boolean; mail: Mail } | null>(null);
   const [adding, setAdding] = useState<{ initial: AddInitial; from?: WaitlistEntry } | null>(add ? { initial: { day: add.day, time: add.time, kind: add.type } } : null);
   const [booking, setBooking] = useState<{ open: { tr: boolean; en: boolean }; waiting: number } | null>(null);
   // The fee and payment details go into a session's approval e-mail (Faz 1).
@@ -260,15 +264,20 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
     }
   };
 
+  /** The window's state for a date and time; the e-mail follows them unless the owner has just edited it. */
+  const planMove = (r: BookingRequest, since: string, time: string, send = true, mail?: Mail) => {
+    const type = r.kind === 'session' ? (r.type ?? 'individual') : (r.forWhom ?? 'individual');
+    setMoving({ r, since, time, send, mail: mail ?? trackingStartMail({ name: r.name, lang: r.lang }, { day: since, time: time || '00:00', type }) });
+  };
+
   const move = async () => {
     if (!moving) return;
     setBusy(true);
     setError(null);
     try {
-      const { client }: { client: Client } = await api.requestToClient(
-        moving.r.kind === 'intro' ? { id: moving.r.id, weekday: moving.weekday, time: moving.time, since: moving.since } : { id: moving.r.id },
-      );
-      setNotice({ text: `${moving.r.name}, ${client.number} numarasıyla Seans takibe alındı: ${weekly(client.weekday, client.time)}.`, link: true });
+      const plan = moving.r.kind === 'intro' ? { weekday: weekdayOf(moving.since), time: moving.time, since: moving.since } : {};
+      const { client }: { client: Client } = await api.requestToClient({ id: moving.r.id, ...plan, ...(moving.send ? moving.mail : {}) });
+      setNotice({ text: `${moving.r.name}, ${client.number} numarasıyla Seans takibe alındı: ${weekly(client.weekday, client.time)}.${moving.send ? ' Haftalık seans planı e-postayla gönderildi.' : ''}`, link: true });
       setMoving(null);
       reload();
     } catch (e) {
@@ -281,7 +290,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
   const pending = newestFirst((requests ?? []).filter((r) => r.status === 'pending'));
   const approved = byAppointment((requests ?? []).filter((r) => r.status === 'approved'));
   const shown = view === 'pending' ? pending : approved;
-  const weekdayTimes = moving ? templateTimes(nextWeekday(moving.weekday), 'session') : [];
+  const dayTimes = moving?.since ? templateTimes(moving.since, 'session') : [];
 
   return (
     <section className="appt-page" aria-labelledby="req-title">
@@ -397,10 +406,7 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
                           <span className="row">
                             <Button
                               variant="primary"
-                              onClick={() => {
-                                const weekday = r.kind === 'session' ? new Date(`${r.day}T12:00:00Z`).getUTCDay() : 1;
-                                setMoving({ r, weekday, time: '', since: nextWeekday(weekday) });
-                              }}
+                              onClick={() => (r.kind === 'session' ? planMove(r, r.day, r.time) : planMove(r, nextWeekday(1), ''))}
                             >
                               Seans takibe geçir
                             </Button>
@@ -463,46 +469,107 @@ export function RequestsPage({ add, list = false }: { add: { day: string; time: 
       )}
 
       {moving && (
-        <Dialog
-          title="Seans takibe geçir"
-          history
-          onClose={() => !busy && setMoving(null)}
-          actions={
-            <>
-              <Button onClick={() => setMoving(null)} disabled={busy}>
-                Vazgeç
-              </Button>
-              <Button variant="primary" busy={busy} disabled={moving.r.kind === 'intro' && !moving.time} onClick={move}>
-                Takibe geçir
-              </Button>
-            </>
-          }
-        >
-          {moving.r.kind === 'session' ? (
-            <p>{`${moving.r.name}, ${weekly(moving.weekday, moving.r.time)}'de haftalık ${labelOf(moving.r).replace(/ \(.*\)$/, '').toLocaleLowerCase('tr-TR')} seansına alınacak (ilk seans ${whenOf(moving.r)}).`}</p>
-          ) : (
-            <>
-              <p>{`${moving.r.name} için haftalık seans günü ve saatini seçin.`}</p>
-              <div className="stack">
-                <Select
-                  label="Gün"
-                  value={String(moving.weekday)}
-                  options={[1, 2, 3, 4, 5, 6, 0].map((d) => ({ value: String(d), label: WEEKDAYS[d] }))}
-                  onChange={(v) => setMoving({ ...moving, weekday: Number(v), time: '', since: nextWeekday(Number(v)) })}
-                />
-                <Select
-                  label="Saat"
-                  value={moving.time}
-                  options={[{ value: '', label: weekdayTimes.length ? 'Saat seçin…' : 'Bu gün seans saati yok' }, ...weekdayTimes.map((t) => ({ value: t, label: t.replace(':', '.') }))]}
-                  onChange={(time) => setMoving({ ...moving, time })}
-                />
-                <Field label="İlk seans tarihi" type="date" value={moving.since} onChange={(since) => setMoving({ ...moving, since })} />
-              </div>
-            </>
-          )}
-          <p className="k-hint">{`Kişi bir danışan numarasıyla takip edilir (${clientNumber(1, moving.r.name)} gibi). Ad ve e-posta yalnızca ona e-posta gönderebilmeniz için şifreli saklanır ve terapi sonlandırılınca silinir.`}</p>
-        </Dialog>
+        <MovingDialog
+          moving={moving}
+          dayTimes={dayTimes}
+          busy={busy}
+          version={attempt}
+          onChange={(next) => planMove(moving.r, next.since ?? moving.since, next.time ?? moving.time, next.send ?? moving.send, next.mail ?? (next.since !== undefined || next.time !== undefined ? undefined : moving.mail))}
+          onClose={() => setMoving(null)}
+          onMove={move}
+        />
       )}
     </section>
+  );
+}
+
+type Moving = { r: BookingRequest; since: string; time: string; send: boolean; mail: Mail };
+
+/**
+ * "Seans takibe geçir" (owner's note 2026-10-23). A booked session keeps its day and time. After an
+ * intro call the owner picks the first session's date and time; the weekly day follows the date (no
+ * weekday question). The shared calendar shows what is taken. The weekly plan goes by e-mail, open for
+ * editing, or the move is only saved.
+ */
+function MovingDialog(props: {
+  moving: Moving;
+  dayTimes: string[];
+  busy: boolean;
+  version: number;
+  onChange: (next: Partial<Moving>) => void;
+  onClose: () => void;
+  onMove: () => void;
+}) {
+  const { moving, dayTimes, busy, onChange } = props;
+  const r = moving.r;
+  const ready = r.kind === 'session' || (!!moving.since && !!moving.time);
+  const fields = (
+    <>
+      {r.kind === 'session' ? (
+        <p>{`${r.name}, ${weekly(weekdayOf(r.day), r.time)}'de haftalık ${labelOf(r).replace(/ \(.*\)$/, '').toLocaleLowerCase('tr-TR')} seansına alınacak (ilk seans ${whenOf(r)}).`}</p>
+      ) : (
+        <>
+          <p>{`${r.name} için ilk seansın tarihini ve saatini seçin; seanslar her hafta aynı gün ve saatte devam eder.`}</p>
+          <div className="add-grid">
+            <Field label="İlk seans tarihi" type="date" value={moving.since} onChange={(since) => onChange({ since, time: '' })} />
+            <Select
+              label="Saat"
+              value={moving.time}
+              options={[{ value: '', label: dayTimes.length ? 'Saat seçin…' : 'Bu gün seans saati yok' }, ...dayTimes.map((t) => ({ value: t, label: t.replace(':', '.') }))]}
+              onChange={(time) => onChange({ time })}
+            />
+          </div>
+          {moving.since && <p className="k-hint">{`Haftalık seans günü: ${WEEKDAYS[weekdayOf(moving.since)]}.`}</p>}
+          <details className="move-cal" open>
+            <summary>Ortak takvim: dolu gün ve saatler</summary>
+            <AppointmentCalendar version={props.version} />
+          </details>
+        </>
+      )}
+      <div className="segmented end-choice" role="group" aria-label="Haftalık seans planı e-postası">
+        <button type="button" aria-pressed={moving.send} onClick={() => onChange({ send: true })}>
+          Planı e-postayla gönder
+        </button>
+        <button type="button" aria-pressed={!moving.send} onClick={() => onChange({ send: false })}>
+          Yalnızca takibe geçir
+        </button>
+      </div>
+      <p className="k-hint">{`Kişi bir danışan numarasıyla takip edilir (${clientNumber(1, r.name)} gibi). Ad ve e-posta yalnızca ona e-posta gönderebilmeniz için şifreli saklanır ve terapi sonlandırılınca silinir.`}</p>
+    </>
+  );
+  if (moving.send) {
+    return (
+      <MailDialog
+        title="Seans takibe geçir"
+        to={{ name: r.name, email: r.email }}
+        mail={moving.mail}
+        onMail={(mail) => onChange({ mail })}
+        send={ready ? 'Takibe geçir ve gönder' : 'Önce tarih ve saati seçin'}
+        busy={busy}
+        onClose={props.onClose}
+        onSend={() => ready && props.onMove()}
+      >
+        {fields}
+      </MailDialog>
+    );
+  }
+  return (
+    <Dialog
+      title="Seans takibe geçir"
+      history
+      onClose={() => !busy && props.onClose()}
+      actions={
+        <>
+          <Button onClick={props.onClose} disabled={busy}>
+            Vazgeç
+          </Button>
+          <Button variant="primary" busy={busy} disabled={!ready} onClick={props.onMove}>
+            Takibe geçir
+          </Button>
+        </>
+      }
+    >
+      {fields}
+    </Dialog>
   );
 }
