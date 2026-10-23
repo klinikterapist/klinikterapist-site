@@ -6,17 +6,15 @@ focusKeyword: "kaygı ile yaşamak"
 category: "zihinsel-saglik"
 cover: "./cover.webp"
 coverAlt: "Krem ve bal tonlarında bir gökyüzünde yükselen yumuşak güneş diski ve önünde lacivert tepeler"
-publishedAt: "2026-10-14T10:00:00+03:00"
+publishedAt: 2026-10-14
+updatedAt: 2026-10-23
+references: [{"id":"lenharo2025","type":"article","authors":[{"family":"Lenharo","given":"Mariana"}],"year":2025,"title":"Alzheimer’s decline slows with just a few thousand steps a day","container":"Nature","doi":"10.1038/d41586-025-03596-2"}]
 featured: true
 ---
 
 _Bu bir örnek yazıdır; panelden düzenleyebilir ya da silebilirsiniz._
 
 Kaygı ile yaşamak, çoğumuzun hayatın bir döneminde tanıdığı bir deneyimdir. Kaygı, kendi başına kötü bir duygu değildir; çoğu zaman bedenimizin bizi korumaya çalışma biçimidir. Bu yazıda kaygıyı biraz daha yakından, genel bilgiler eşliğinde tanımaya çalışacağız.
-
-## Kaygı nedir, ne işe yarar?
-
-Kaygı, belirsiz ya da tehlikeli görünen durumlarda devreye giren doğal bir tepkidir. Kalp hızlanır, kaslar gerilir, zihin olası sorunları sıralamaya başlar. Kısa süreli ve ölçülü olduğunda hazırlanmamıza yardımcı olur. Zorluk, bu alarmın gereğinden sık ya da uzun çalmaya başlamasıyla ortaya çıkar.
 
 ## Kaygı ile yaşamak için küçük adımlar
 

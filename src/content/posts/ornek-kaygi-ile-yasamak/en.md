@@ -6,7 +6,8 @@ focusKeyword: "living with anxiety"
 category: "zihinsel-saglik"
 cover: "./cover.webp"
 coverAlt: "A soft sun disc rising in a cream and honey sky, with navy hills in front"
-publishedAt: "2026-10-14T10:00:00+03:00"
+publishedAt: 2026-10-14
+updatedAt: 2026-10-23
 featured: true
 ---
 
