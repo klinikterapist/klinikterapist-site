@@ -12,8 +12,9 @@ import { getCategories, type Lang } from '../../src/lib/settings';
  * fixtures, so this unit test is where the real content is held to the copy rules and the publish checklist.
  * The owner edits and deletes these samples in the panel, and deploy.yml runs this suite before every deploy, so
  * a test here must hold for ANY valid panel state. The copy rules only apply to an untouched sample (an `ornek-*`
- * post whose body still starts with the sample note); a post whose note was removed is the owner's own and is not
- * checked. Nothing pins a count, a text or a FAQ/process state.
+ * post whose body still starts with the sample note and that has no `updatedAt`, which the panel writes on every
+ * save); a post the owner has edited or whose note was removed is the owner's own and is not checked. Nothing pins a
+ * count, a text or a FAQ/process state.
  */
 const POSTS = 'src/content/posts';
 const NOTE: Record<Lang, string> = {
@@ -36,7 +37,7 @@ function load(): Post[] {
 }
 const posts = load();
 /** Untouched samples: the copy rules below hold only for these. */
-const samples = posts.filter((p) => p.body.split(/\n/)[0] === NOTE[p.lang]);
+const samples = posts.filter((p) => p.body.split(/\n/)[0] === NOTE[p.lang] && p.data.updatedAt == null);
 const words = (s: string) => s.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 const firstParagraph = (body: string) =>
   body.split(/\n\s*\n/).map((p) => p.trim()).find((p) => p && !p.startsWith('_') && !p.startsWith('#'))!;
