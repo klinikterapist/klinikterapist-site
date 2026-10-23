@@ -116,7 +116,7 @@ export function liveToDraft(p: LoadedPost): Draft {
 
 const triggered = new WeakSet<Api>();
 
-/** Asks the backend once per session for its hourly trigger, which publishes planned posts. Errors are ignored. */
+/** Asks the backend once per session for its hourly trigger (planned posts, reminders, warnings, counters). Errors are ignored. */
 export function ensureTriggersOnce(api: Api): void {
   if (triggered.has(api)) return;
   triggered.add(api);

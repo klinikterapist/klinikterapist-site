@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { Home } from '../../../src/admin/ui/Home';
 import { Panel } from '../../../src/admin/ui/context';
 import { DeployProvider } from '../../../src/admin/ui/DeployStatus';
@@ -48,6 +48,18 @@ describe('Home', () => {
     expect(screen.getByText(/İngilizcesi yok/)).toBeTruthy();
     expect(screen.getByText('Bu ay')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Tümü' }).getAttribute('href')).toBe('#/yazilar/taslaklar');
+  });
+
+  it('sets up the hourly run on open, with no planned post (reminders and warnings need it too)', async () => {
+    const api = createMockApi();
+    render(
+      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
+        <DeployProvider api={api}>
+          <Home />
+        </DeployProvider>
+      </Panel.Provider>,
+    );
+    await waitFor(() => expect(api.state.triggerCalls).toBe(1));
   });
 
   it('has no "Yeni yazı" button (the sidebar has it)', async () => {

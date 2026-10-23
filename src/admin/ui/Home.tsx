@@ -63,11 +63,12 @@ export function Home() {
   useEffect(() => {
     let alive = true;
     setError(null);
+    // The hourly run does more than planned posts (reminders, the 20-hour warning, counters), so opening the panel sets it up.
+    ensureTriggersOnce(api);
     const draftsBefore = cachedDrafts(api);
     Promise.all([loadSiteState(api, { onCached: (site) => draftsBefore && alive && setData({ site, drafts: draftsBefore }) }), loadDrafts(api)])
       .then(([site, drafts]) => {
         if (alive) setData({ site, drafts });
-        if (drafts.some((x) => x.scheduledAt)) ensureTriggersOnce(api);
       })
       .catch((e) => alive && setError(e instanceof ApiFailure ? e.message : 'Özet yüklenemedi. Tekrar deneyin.'));
     return () => {
