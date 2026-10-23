@@ -33,11 +33,11 @@ describe('booking.request', () => {
     const [owner, visitor] = gas.mails;
     expect(owner).toMatchObject({ to: 'merhaba@klinikterapist.com', replyTo: 'ayse@example.com' });
     expect(owner.subject).toBe('Randevu talebi – Ayşe Yılmaz – 22 Ekim 2026, Perşembe, 15.00');
-    expect(owner.body).toContain('Görüşme türü: Çift terapisi');
+    expect(owner.body).toContain('Görüşme türü: Aile ve çift terapisi');
     expect(owner.body).toContain('Telefon: 0532 123 45 67');
     expect(owner.body).toContain('■ Danışanın notu\n\nAkşamları daha uygun.');
     expect(visitor).toMatchObject({ to: 'ayse@example.com', replyTo: 'merhaba@klinikterapist.com', subject: 'Randevu talebiniz alındı – klinikterapist.com' });
-    expect(visitor.body).toContain('– Görüşme türü: Çift terapisi\n– Tarih ve saat: 22 Ekim 2026, Perşembe, 15.00 (Türkiye saati)\n– Süre ve biçim: 60 dakika, online');
+    expect(visitor.body).toContain('– Görüşme türü: Aile ve çift terapisi\n– Tarih ve saat: 22 Ekim 2026, Perşembe, 15.00 (Türkiye saati)\n– Süre ve biçim: 60 dakika, online');
     expect(visitor.body).toMatch(/Saygılarımla,\nOsman Güneş Özkurt\nKlinik Psikolog\nklinikterapist\.com$/);
     // Nothing the visitor typed reaches the acknowledgement.
     expect(visitor.body).not.toContain('Ayşe');
@@ -58,7 +58,7 @@ describe('booking.request', () => {
     const [owner, visitor] = gas.mails;
     expect(owner.body).toContain('Belirttiği konular:\n\n– İlişki sorunları\n– Görüşmede konuşmayı tercih ederim');
     expect(owner.body).toContain('– Yaş aralığı: 35–44');
-    expect(owner.body).toContain('– Başvuru: Partneriyle birlikte');
+    expect(owner.body).toContain('– Başvuru: Eşi veya partneriyle birlikte');
     expect(owner.body).toContain('Konuşma dili: İngilizce');
     expect(visitor.subject).toBe('Your request has been received – klinikterapist.com');
     expect(visitor.body).toContain('Free intro call, Saturday 24 October 2026, 12:00');

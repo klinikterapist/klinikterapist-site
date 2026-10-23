@@ -19,6 +19,7 @@ import RoundPortrait from '../ui/RoundPortrait.astro';
 import WaitlistForm from './WaitlistForm.astro';
 import PhoneField from './PhoneField.astro';
 import { COUNTRIES } from '../../lib/phone';
+import { SESSION_TYPES, typeOn, type SessionTypeId } from '../../lib/booking-form';
 import DoneCard from './DoneCard.astro';
 import { FORM_TEXT } from './form-text';
 import './wizard.css';
@@ -31,7 +32,8 @@ const { lang, email } = Astro.props;
 const profile = getProfile();
 const role = profile.title[lang].trim();
 const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
-const config = JSON.stringify(getBooking());
+const booking = getBooking();
+const config = JSON.stringify(booking);
 
 const T = {
   tr: {
@@ -47,17 +49,15 @@ const T = {
     s1: 'Görüşme türünü seçin',
     s1Hint: 'Seanslar online yapılır. Ücretler ve ayrıntılı bilgiler e-postayla iletilir.',
     online: 'Online',
+    faceBadge: 'Yüz yüze',
     soon: 'Yakında',
     off: 'Şu an uygun değil',
     close: 'Kapat',
     individual: 'Bireysel Terapi Seansı',
-    individualMeta: '50 dakika',
     individualText: 'Kendi gündeminizle, birebir ve düzenli görüşmeler.',
-    couple: 'Çift Terapisi Seansı',
-    coupleMeta: '60 dakika',
-    coupleText: 'Partnerinizle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
+    couple: 'Aile ve Çift Terapisi Seansı',
+    coupleText: 'Eşiniz, partneriniz ya da ailenizle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
     access: 'Erişilebilir Terapi Seansı',
-    accessMeta: '50 dakika',
     accessBadge: 'Kontenjanlı',
     accessText: 'Ekonomik durumu elverişli olmayanlar ve üniversite öğrencileri için uygun ücretli bireysel seans. Kontenjan sınırlıdır.',
     accessMore: 'Ayrıntılar',
@@ -65,6 +65,10 @@ const T = {
     groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışma.',
     face: 'Yüz Yüze Terapi',
     faceText: 'Şu an yalnızca online görüşme yapıyorum.',
+    faceOnText: 'Yüz yüze, birebir görüşme.',
+    supervision: 'Süpervizyon Terapi Seansı',
+    supervisionText: 'Eğitim süpervizyonu kapsamında, sembolik ücretli seans. Görüşmeler, ayrıca onay verdiğiniz bilgilendirilmiş onamla süpervizörümle paylaşılabilir.',
+    minutes: 'dakika',
     s2: 'Gün ve saat seçin',
     s2Hint: 'Boş saati olan günler renkli görünür.',
     tz: 'Saatler Türkiye saatiyle (GMT+3) gösterilir.',
@@ -116,17 +120,15 @@ const T = {
     s1: 'Choose a session type',
     s1Hint: 'Sessions are held online. Fees and full details are sent by e-mail.',
     online: 'Online',
+    faceBadge: 'In person',
     soon: 'Coming soon',
     off: 'Not available now',
     close: 'Close',
     individual: 'Individual Therapy Session',
-    individualMeta: '50 minutes',
     individualText: 'One-to-one, regular sessions around what you bring.',
-    couple: 'Couple Therapy Session',
-    coupleMeta: '60 minutes',
-    coupleText: 'Together with your partner: communication, conflict and the relationship itself.',
+    couple: 'Family and Couples Therapy Session',
+    coupleText: 'Together with your spouse, partner or family: communication, conflict and the relationship itself.',
     access: 'Accessible Therapy Session',
-    accessMeta: '50 minutes',
     accessBadge: 'Limited places',
     accessText: 'A lower-fee individual session for people whose finances do not allow the regular fee, and for university students. Places are limited.',
     accessMore: 'Details',
@@ -134,6 +136,10 @@ const T = {
     groupText: 'Working together with a small group around similar themes.',
     face: 'Face-to-Face Therapy',
     faceText: 'For now I only work online.',
+    faceOnText: 'One-to-one sessions in person.',
+    supervision: 'Supervision Therapy Session',
+    supervisionText: 'A session at a symbolic fee as part of training supervision. With your separate informed consent, sessions may be discussed with my supervisor.',
+    minutes: 'minutes',
     s2: 'Choose a day and time',
     s2Hint: 'Days with free times are coloured.',
     tz: 'Times are shown in Turkey time (GMT+3).',
@@ -176,6 +182,24 @@ const T = {
 const notice = pathFor('privacyNotice', lang);
 const F = FORM_TEXT[lang];
 const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain });
+
+// The session types from the catalogue, offered or not as set in Ayarlar › Randevu Ayarları (owner's
+// request 2026-10-23). An offered type can be chosen (the first one is preselected); group and face to
+// face stay in the list, faded, while off ("Yakında" / "Şu an uygun değil"); other types switched off
+// are left out.
+const TYPE_TEXT: Record<SessionTypeId, { label: string; text: string; anchor?: string }> = {
+  individual: { label: T.individual, text: T.individualText, anchor: 'bireysel-terapi' },
+  couple: { label: T.couple, text: T.coupleText, anchor: 'cift-terapisi' },
+  accessible: { label: T.access, text: T.accessText, anchor: 'erisilebilir-terapi' },
+  group: { label: T.group, text: T.groupText, anchor: 'grup-terapisi' },
+  face: { label: T.face, text: T.faceText, anchor: 'yuz-yuze-terapi' },
+  supervision: { label: T.supervision, text: T.supervisionText },
+};
+const types = SESSION_TYPES.map((t) => {
+  const on = typeOn(booking, t.id);
+  const look = TYPE_TEXT[t.id];
+  return { id: t.id, on, label: look.label, text: on && t.id === 'face' ? T.faceOnText : look.text, anchor: look.anchor, meta: `${t.minutes} ${T.minutes}` };
+}).filter((x) => x.on || x.id === 'group' || x.id === 'face');
 ---
 
 <div class="wz booking" data-booking data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="session" data-config={config} data-endpoint={endpoint} data-messages={messages}>
@@ -223,60 +247,26 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
         <h2 id="bk-s1">{T.s1}</h2>
         <p class="card-hint">{T.s1Hint}</p>
         <div class="types" role="radiogroup" aria-labelledby="bk-s1">
-          <label class="type">
-            <input type="radio" name="type" value="individual" data-sum-src="type" data-label={T.individual} data-meta={T.individualMeta} checked />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.individual}</b>
-                <span class="badge badge-online">{T.online}</span>
-              </span>
-              <span class="type-meta"><Icon name="clock" size={15} />{T.individualMeta}</span>
-              <span class="type-text">{T.individualText} <a class="type-more" href="#bireysel-terapi">{T.accessMore}</a></span>
-            </span>
-          </label>
-          <label class="type">
-            <input type="radio" name="type" value="couple" data-sum-src="type" data-label={T.couple} data-meta={T.coupleMeta} />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.couple}</b>
-                <span class="badge badge-online">{T.online}</span>
-              </span>
-              <span class="type-meta"><Icon name="clock" size={15} />{T.coupleMeta}</span>
-              <span class="type-text">{T.coupleText} <a class="type-more" href="#cift-terapisi">{T.accessMore}</a></span>
-            </span>
-          </label>
-          <label class="type">
-            <input type="radio" name="type" value="accessible" data-sum-src="type" data-label={T.access} data-meta={T.accessMeta} />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.access}</b>
-                <span class="badge badge-online">{T.online}</span>
-                <span class="badge badge-quota">{T.accessBadge}</span>
-              </span>
-              <span class="type-meta"><Icon name="clock" size={15} />{T.accessMeta}</span>
-              <span class="type-text">{T.accessText} <a class="type-more" href="#erisilebilir-terapi">{T.accessMore}</a></span>
-            </span>
-          </label>
-          <label class="type is-off">
-            <input type="radio" name="type" value="group" disabled />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.group}</b>
-                <span class="badge badge-soon">{T.soon}</span>
-              </span>
-              <span class="type-text">{T.groupText} <a class="type-more" href="#grup-terapisi">{T.accessMore}</a></span>
-            </span>
-          </label>
-          <label class="type is-off">
-            <input type="radio" name="type" value="face" disabled />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.face}</b>
-                <span class="badge badge-soon">{T.off}</span>
-              </span>
-              <span class="type-text">{T.faceText} <a class="type-more" href="#yuz-yuze-terapi">{T.accessMore}</a></span>
-            </span>
-          </label>
+          {
+            types.map((x, i) => (
+              <label class:list={['type', { 'is-off': !x.on }]}>
+                {x.on ? (
+                  <input type="radio" name="type" value={x.id} data-sum-src="type" data-label={x.label} data-meta={x.meta} checked={i === 0} />
+                ) : (
+                  <input type="radio" name="type" value={x.id} disabled />
+                )}
+                <span class="type-body">
+                  <span class="type-top">
+                    <b>{x.label}</b>
+                    {x.on ? <span class="badge badge-online">{x.id === 'face' ? T.faceBadge : T.online}</span> : <span class="badge badge-soon">{x.id === 'group' ? T.soon : T.off}</span>}
+                    {x.on && x.id === 'accessible' && <span class="badge badge-quota">{T.accessBadge}</span>}
+                  </span>
+                  {x.on && <span class="type-meta"><Icon name="clock" size={15} />{x.meta}</span>}
+                  <span class="type-text">{x.text} {x.anchor && <a class="type-more" href={`#${x.anchor}`}>{T.accessMore}</a>}</span>
+                </span>
+              </label>
+            ))
+          }
         </div>
       </section>
 

@@ -15,7 +15,7 @@ import { useFreshData } from '../fresh-data';
 import { CalendarCheck, CalendarRange, ChevronRight, Clock, HandHeart, Icon, UsersRound } from '../icons';
 import { Banner, Button, EmptyState, Spinner } from '../kit';
 import { feesOutdated, type PaymentSettings } from '../../../lib/payment';
-import { PaymentDialog } from './PaymentDialog';
+import { CLIENT_TOOLS, ToolsCard } from './ProfileTools';
 import { AppointmentCalendar, WEEKDAYS, labelOf } from './AppointmentCalendar';
 import { NotificationBell } from '../NotificationBell';
 
@@ -61,7 +61,6 @@ export function TrackingPage() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [payment, setPayment] = useState<PaymentSettings | null>(null);
-  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -121,7 +120,6 @@ export function TrackingPage() {
         <div className="head-actions">
           <NowClock />
           <NotificationBell />
-          <Button onClick={() => setPaying(true)}>Ücret ve ödeme</Button>
         </div>
       </div>
       <p className="settings-intro">
@@ -160,11 +158,13 @@ export function TrackingPage() {
           </li>
         </ul>
       )}
+      {/* Owner's review 2026-10-23: this page's own tools as one row. */}
+      <ToolsCard tools={CLIENT_TOOLS} id="tk-tools" />
 
       <div className="appt-layout">
         <div className="appt-main">
           {payment && feesOutdated(payment, now) && (
-            <Banner tone="warning" action={<Button onClick={() => setPaying(true)}>Ücretleri girin</Button>}>
+            <Banner tone="warning" action={<a className="k-btn k-btn-secondary" href="#/ayarlar/ucretler">Ücretleri girin</a>}>
               {payment.year
                 ? `Ücretler ${payment.year} yılı için girilmiş. Yeni yılın ücretlerini girin; hatırlatma ve onay e-postaları bunları kullanır.`
                 : 'Ücret ve ödeme bilgileri henüz girilmedi. Onay ve hatırlatma e-postaları ücret yerine "ödeme bilgilerini ayrıca ileteceğim" der.'}
@@ -203,7 +203,6 @@ export function TrackingPage() {
           <AppointmentCalendar version={attempt} />
         </aside>
       </div>
-      {paying && <PaymentDialog onClose={() => setPaying(false)} onSaved={setPayment} />}
     </section>
   );
 }

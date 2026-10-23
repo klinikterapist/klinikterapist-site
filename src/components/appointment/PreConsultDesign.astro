@@ -12,7 +12,7 @@
 import type { Lang } from '../../lib/settings';
 import { getBooking, getProfile } from '../../lib/settings';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
-import { AGE_RANGES, INTRO_TOPICS } from '../../lib/booking-form';
+import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, typeOn } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
@@ -31,7 +31,8 @@ const { lang, email } = Astro.props;
 const profile = getProfile();
 const role = profile.title[lang].trim();
 const endpoint = ADMIN_CONFIG.apiUrl && ADMIN_CONFIG.apiUrl !== MOCK_API_URL ? ADMIN_CONFIG.apiUrl : undefined;
-const config = JSON.stringify(getBooking());
+const booking = getBooking();
+const config = JSON.stringify(booking);
 
 const T = {
   tr: {
@@ -47,8 +48,8 @@ const T = {
     forWhom: 'Görüşme kimin için?',
     me: 'Kendim için',
     meText: 'Bireysel terapiyi düşünüyorum.',
-    couple: 'Partnerimle birlikte',
-    coupleText: 'Çift terapisini düşünüyoruz.',
+    couple: 'Eş veya partnerimle birlikte',
+    coupleText: 'Aile ve çift terapisini düşünüyoruz.',
     access: 'Kendim için, uygun ücretle',
     accessBadge: 'Kontenjanlı',
     accessText: 'Öğrenciyim ya da ekonomik durumum şu an elverişli değil; erişilebilir terapiyi düşünüyorum.',
@@ -56,6 +57,8 @@ const T = {
     groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışmayı düşünüyorum.',
     face: 'Yüz yüze görüşmek istiyorum',
     faceText: 'Şu an yalnızca online görüşme yapıyorum.',
+    faceOnText: 'Yüz yüze terapiyi düşünüyorum.',
+    groupOnText: 'Grup terapisini düşünüyorum.',
     soon: 'Yakında',
     off: 'Şu an uygun değil',
     reasons: 'Terapide üzerinde çalışmak istediğiniz konular neler?',
@@ -118,8 +121,8 @@ const T = {
     forWhom: 'Who is the call for?',
     me: 'For myself',
     meText: 'I am thinking of individual therapy.',
-    couple: 'With my partner',
-    coupleText: 'We are thinking of couple therapy.',
+    couple: 'With my spouse or partner',
+    coupleText: 'We are thinking of family and couples therapy.',
     access: 'For myself, at a reduced fee',
     accessBadge: 'Limited places',
     accessText: 'I am a student or money is tight for me right now; I am thinking of accessible therapy.',
@@ -127,6 +130,8 @@ const T = {
     groupText: 'I am thinking of working together with a small group who come with similar topics.',
     face: 'I would like to meet face to face',
     faceText: 'For now I only work online.',
+    faceOnText: 'I am thinking of face-to-face therapy.',
+    groupOnText: 'I am thinking of group therapy.',
     soon: 'Coming soon',
     off: 'Not available now',
     reasons: 'What would you like to work on in therapy?',
@@ -180,6 +185,22 @@ const T = {
 const notice = pathFor('privacyNotice', lang);
 const F = FORM_TEXT[lang];
 const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain });
+
+// "Görüşme kimin için?": one choice per session type that has an intro call, offered while that type
+// is (Ayarlar › Randevu Ayarları, owner's request 2026-10-23). Group and face to face stay, faded,
+// while off; other choices switched off are left out.
+const FOR_TEXT: Record<(typeof INTRO_FOR)[number]['id'], { label: string; text: string; onText?: string }> = {
+  individual: { label: T.me, text: T.meText },
+  couple: { label: T.couple, text: T.coupleText },
+  accessible: { label: T.access, text: T.accessText },
+  group: { label: T.group, text: T.groupText, onText: T.groupOnText },
+  face: { label: T.face, text: T.faceText, onText: T.faceOnText },
+};
+const forWhom = INTRO_FOR.map((f) => {
+  const on = typeOn(booking, f.id);
+  const look = FOR_TEXT[f.id];
+  return { id: f.id, on, label: look.label, text: on ? (look.onText ?? look.text) : look.text };
+}).filter((x) => x.on || x.id === 'group' || x.id === 'face');
 ---
 
 <div class="wz preconsult" data-preconsult data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="intro" data-config={config} data-endpoint={endpoint} data-messages={messages}>
@@ -215,50 +236,21 @@ const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken:
 
         <p class="q" id="pc-for">{T.forWhom} <span class="req" aria-hidden="true">*</span></p>
         <div class="types" role="radiogroup" aria-labelledby="pc-for">
-          <label class="type">
-            <input type="radio" name="forWhom" value="individual" data-sum-src="for" data-label={T.me} checked />
-            <span class="type-body">
-              <b>{T.me}</b>
-              <span class="type-text">{T.meText}</span>
-            </span>
-          </label>
-          <label class="type">
-            <input type="radio" name="forWhom" value="couple" data-sum-src="for" data-label={T.couple} />
-            <span class="type-body">
-              <b>{T.couple}</b>
-              <span class="type-text">{T.coupleText}</span>
-            </span>
-          </label>
-          <label class="type">
-            <input type="radio" name="forWhom" value="accessible" data-sum-src="for" data-label={T.access} />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.access}</b>
-                <span class="badge badge-quota">{T.accessBadge}</span>
-              </span>
-              <span class="type-text">{T.accessText}</span>
-            </span>
-          </label>
-          <label class="type is-off">
-            <input type="radio" name="forWhom" value="group" disabled />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.group}</b>
-                <span class="badge badge-soon">{T.soon}</span>
-              </span>
-              <span class="type-text">{T.groupText}</span>
-            </span>
-          </label>
-          <label class="type is-off">
-            <input type="radio" name="forWhom" value="face" disabled />
-            <span class="type-body">
-              <span class="type-top">
-                <b>{T.face}</b>
-                <span class="badge badge-soon">{T.off}</span>
-              </span>
-              <span class="type-text">{T.faceText}</span>
-            </span>
-          </label>
+          {
+            forWhom.map((x, i) => (
+              <label class:list={['type', { 'is-off': !x.on }]}>
+                {x.on ? <input type="radio" name="forWhom" value={x.id} data-sum-src="for" data-label={x.label} checked={i === 0} /> : <input type="radio" name="forWhom" value={x.id} disabled />}
+                <span class="type-body">
+                  <span class="type-top">
+                    <b>{x.label}</b>
+                    {!x.on && <span class="badge badge-soon">{x.id === 'group' ? T.soon : T.off}</span>}
+                    {x.on && x.id === 'accessible' && <span class="badge badge-quota">{T.accessBadge}</span>}
+                  </span>
+                  <span class="type-text">{x.text}</span>
+                </span>
+              </label>
+            ))
+          }
         </div>
 
         <p class="q" id="pc-topics">{T.reasons} <span class="req" aria-hidden="true">*</span></p>

@@ -1,5 +1,5 @@
 /** The settings screens: menu label (each word capitalised, "ve"/"ile" small), icon and the one-line intro under the title. */
-import { AtSign, BookOpen, IdCard, KeyRound, LayoutTemplate, Mail, MessageCircleQuestion, Palette, Scale, Search, Share2, ShieldCheck, Tags, TriangleAlert, UserRound, type LucideIcon } from '../icons';
+import { AtSign, BookOpen, CalendarCog, IdCard, KeyRound, LayoutTemplate, Mail, MessageCircleQuestion, Palette, Scale, Search, Share2, ShieldCheck, Tags, TriangleAlert, UserRound, Wallet, type LucideIcon } from '../icons';
 
 export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; intro: string }[] = [
   { id: 'profil', label: 'Profil ve Kimlik', icon: UserRound, intro: 'Adınız, unvanınız ve fotoğrafınız; ana sayfada ve yazıların altındaki yazar kutusunda görünür.' },
@@ -10,6 +10,8 @@ export const SETTINGS_SCREENS: { id: string; label: string; icon: LucideIcon; in
   { id: 'kaynaklar', label: 'Kaynaklar', icon: BookOpen, intro: 'Kaynaklar sayfasında önerdiğiniz kitap, yazı ve bağlantılar.' },
   { id: 'iletisim', label: 'İletişim', icon: Mail, intro: 'Ziyaretçilerin size ulaşacağı bilgiler.' },
   { id: 'kategoriler', label: 'Kategoriler', icon: Tags, intro: 'Blog yazılarınızın gruplandığı başlıklar.' },
+  { id: 'randevu', label: 'Randevu Ayarları', icon: CalendarCog, intro: 'Görüşme türleri, seans ve ön görüşme saatleri, randevu kuralları ve kapalı günler.' },
+  { id: 'ucretler', label: 'Ücretlendirmeler', icon: Wallet, intro: 'Görüşme türlerine göre TL, euro ve dolar ücretleri, ödeme bilgileri ve ödeme zamanı.' },
   { id: 'eposta', label: 'E-posta Ayarları', icon: AtSign, intro: 'Adresler, imza ve danışanlara giden hazır e-postalar.' },
   { id: 'seo', label: 'Arama Motoru (SEO)', icon: Search, intro: "Google'da ve paylaşımlarda sitenin geneli için kullanılan bilgiler." },
   { id: 'gizlilik', label: 'Gizlilik ve Analitik', icon: ShieldCheck, intro: 'Google Analytics, Search Console, arama motorları, çerez bildirimi, sitenin sayacı ve sayfalara eklenen kodlar.' },

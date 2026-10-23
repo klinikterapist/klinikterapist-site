@@ -1977,3 +1977,144 @@ a.intake:hover {
     flex-wrap: wrap;
   }
 }
+
+/* ---------- Ayarlar › Randevu Ayarları and Ücretlendirmeler (2026-10-23) ---------- */
+
+.type-switches {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.type-switches li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--p-border);
+}
+
+.type-switches li:last-child {
+  border-bottom: 0;
+}
+
+.ts-text {
+  display: grid;
+  gap: 2px;
+}
+
+.week-times {
+  display: grid;
+  gap: 0;
+}
+
+.wt-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--p-border);
+}
+
+.wt-row:last-child {
+  border-bottom: 0;
+}
+
+.wt-day {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.wt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wt-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 10px;
+  border-radius: 999px;
+  background: var(--p-selected);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.wt-chips li.wt-off {
+  padding: 2px 10px;
+  background: transparent;
+  color: var(--p-muted);
+}
+
+.wt-chips button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--p-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.wt-chips button:hover {
+  background: var(--p-highlight);
+  color: var(--p-text);
+}
+
+.wt-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wt-add .k-input {
+  width: 7.5rem;
+}
+
+@media (max-width: 720px) {
+  .wt-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+.fee-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.fee-table th,
+.fee-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--p-border);
+  text-align: left;
+}
+
+.fee-table thead th {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fee-table tbody th {
+  font-weight: 600;
+}
+
+.fee-table .k-input {
+  width: 100%;
+  min-width: 5rem;
+}

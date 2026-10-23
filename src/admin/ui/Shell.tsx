@@ -59,7 +59,7 @@ const screen = (id: string): NavItem => {
 };
 
 export const SITE_PAGES = ['ana-sayfa', 'hakkimda', 'sss', 'kaynaklar', 'iletisim', 'yasal'];
-export const SETTINGS = ['profil', 'linkler', 'eposta', 'seo', 'gizlilik', 'gorunum', 'onemli'];
+export const SETTINGS = ['profil', 'linkler', 'randevu', 'ucretler', 'eposta', 'seo', 'gizlilik', 'gorunum', 'onemli'];
 
 export function navGroups(badges: { requests: number; notifications: number }): NavGroup[] {
   return [

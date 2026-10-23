@@ -6,8 +6,8 @@
  * small type and the picked day's appointments (the free intro and closing sessions marked as such).
  * The bar under a day is its occupancy; full, it turns red. Adding one is "Randevu ekle" at the top
  * of the page (AddAppointmentDialog).
- * Faz 2 (owner's decision 2026-10-20): "Saat kapat" closes a whole day or a stretch of it (leave,
- * a conference): taken on the site, grey here, "Aç" opens it again. Appointments in it stay.
+ * Closed stretches ("Saat kapat", now in Ayarlar › Randevu Ayarları since the owner's review
+ * 2026-10-23) are grey here, and "Aç" opens one again. Appointments in them stay.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { ApiFailure, type CalendarEntry, type Client } from '../../api/types';
@@ -17,7 +17,7 @@ import { FREE_KINDS, clientsBusy, sessionsOf, type SessionKind } from '../../../
 import { istanbulParts } from '../../lib/draft';
 import { usePanel } from '../context';
 import { useFreshData } from '../fresh-data';
-import { Banner, Button, Dialog, Field, Spinner } from '../kit';
+import { Banner, Button, Dialog, Spinner } from '../kit';
 
 export const cfg = booking as BookingConfig;
 
@@ -88,7 +88,6 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
   const today = partsOf(Date.now()).day;
   const [month, setMonth] = useState(today.slice(0, 7));
   const [picked, setPicked] = useState<string | null>(null);
-  const [closing, setClosing] = useState<{ day: string; whole: boolean; from: string; to: string; note: string } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -160,23 +159,6 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
     }
   };
 
-  const close = async () => {
-    if (!closing) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.calendarClose({ day: closing.day, from: closing.whole ? '00:00' : closing.from, to: closing.whole ? '24:00' : closing.to, note: closing.note });
-      setNotice(`${formatDay(closing.day, 'tr')}${closing.whole ? ' bütün gün' : `, ${closing.from.replace(':', '.')}–${closing.to.replace(':', '.')}`} kapatıldı. Bu aralık sitede dolu görünür.`);
-      setPicked(closing.day);
-      setClosing(null);
-      reload();
-    } catch (err) {
-      setError(err instanceof ApiFailure ? err.message : 'Kapatılamadı. Tekrar deneyin.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const shift = (n: number) => {
     const d = new Date(Date.UTC(y, m - 1 + n, 1));
     setMonth(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`);
@@ -214,9 +196,6 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
               </Button>
             </span>
           </div>
-          <Button className="occ-close" onClick={() => setClosing({ day: picked && picked >= today ? picked : today, whole: true, from: '09:00', to: '13:00', note: '' })}>
-            Saat kapat
-          </Button>
           <div className="occ-grid" role="grid">
             {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((d) => (
               <span key={d} className="occ-wd" aria-hidden="true">
@@ -329,42 +308,6 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
           )}
 
         </>
-      )}
-
-      {closing && (
-        <Dialog
-          title="Saat kapat"
-          history
-          onClose={() => !busy && setClosing(null)}
-          actions={
-            <>
-              <Button onClick={() => setClosing(null)} disabled={busy}>
-                Vazgeç
-              </Button>
-              <Button variant="primary" busy={busy} disabled={!closing.day || (!closing.whole && closing.to <= closing.from)} onClick={close}>
-                Kapat
-              </Button>
-            </>
-          }
-        >
-          <Field label="Gün" type="date" value={closing.day} onChange={(day) => setClosing({ ...closing, day })} />
-          <div className="segmented end-choice" role="group" aria-label="Kapatılacak süre">
-            <button type="button" aria-pressed={closing.whole} onClick={() => setClosing({ ...closing, whole: true })}>
-              Bütün gün
-            </button>
-            <button type="button" aria-pressed={!closing.whole} onClick={() => setClosing({ ...closing, whole: false })}>
-              Saat aralığı
-            </button>
-          </div>
-          {!closing.whole && (
-            <div className="add-grid">
-              <Field label="Başlangıç" type="time" value={closing.from} onChange={(from) => setClosing({ ...closing, from })} />
-              <Field label="Bitiş" type="time" value={closing.to} onChange={(to) => setClosing({ ...closing, to })} />
-            </div>
-          )}
-          <Field label="Not (isteğe bağlı, yalnızca siz görürsünüz)" value={closing.note} maxLength={80} onChange={(note) => setClosing({ ...closing, note })} />
-          <p className="k-hint">Bu aralık sitede dolu görünür; danışanlar da kendi sayfalarından buraya erteleyemez. İçindeki mevcut randevular değişmez.</p>
-        </Dialog>
       )}
 
       {removing && (

@@ -21,8 +21,15 @@ const typeOf = (type?: string) => SESSION_TYPES.find((t) => t.id === type) ?? SE
 export type PaymentSettings = {
   /** The year the fees are for. */
   year: number;
-  /** Fee per session type (`individual`, `couple`, `accessible`), Turkish lira; 0 = not set. */
+  /** Fee per session type (SESSION_TYPES ids), Turkish lira; 0 = not set. */
   fees: Record<string, number>;
+  /**
+   * Fee per session type in euro and US dollar for people abroad (owner's request 2026-10-23,
+   * Ayarlar › Ücretlendirmeler); the owner sets each, there is no exchange rate. 0 = not set.
+   */
+  feesFx?: Record<string, { EUR: number; USD: number }>;
+  /** How to pay from abroad (account, service), as the owner writes it. */
+  fxInfo?: string;
   /** Bank details as the owner wrote them before the separate fields (kept when those are empty). */
   bank: string;
   /** Account holder, bank name and IBAN (owner's request 2026-10-22: one line each in the e-mails). */
@@ -37,7 +44,7 @@ export type PaymentSettings = {
   qr?: string;
 };
 
-export const EMPTY_PAYMENT: PaymentSettings = { year: 0, fees: {}, bank: '', holder: '', bankName: '', iban: '', link: '', dueHours: 24 };
+export const EMPTY_PAYMENT: PaymentSettings = { year: 0, fees: {}, feesFx: {}, fxInfo: '', bank: '', holder: '', bankName: '', iban: '', link: '', dueHours: 24 };
 
 const LINK_RE = /^https:\/\/[^\s<>"]{4,300}$/;
 
@@ -48,14 +55,23 @@ export function parsePayment(v: unknown): PaymentSettings {
   const o = v && typeof v === 'object' ? (v as Record<string, unknown>) : {};
   const fees: Record<string, number> = {};
   const raw = o.fees && typeof o.fees === 'object' ? (o.fees as Record<string, unknown>) : {};
+  const amount = (v: unknown) => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 && n < 1e6 ? Math.round(n) : 0;
+  };
+  const rawFx = o.feesFx && typeof o.feesFx === 'object' ? (o.feesFx as Record<string, unknown>) : {};
+  const feesFx: NonNullable<PaymentSettings['feesFx']> = {};
   for (const t of SESSION_TYPES) {
-    const n = Number(raw[t.id]);
-    fees[t.id] = Number.isFinite(n) && n > 0 && n < 1e6 ? Math.round(n) : 0;
+    fees[t.id] = amount(raw[t.id]);
+    const fx = rawFx[t.id] && typeof rawFx[t.id] === 'object' ? (rawFx[t.id] as Record<string, unknown>) : {};
+    feesFx[t.id] = { EUR: amount(fx.EUR), USD: amount(fx.USD) };
   }
   const year = Number(o.year);
   return {
     year: Number.isInteger(year) && year >= 2020 && year <= 2100 ? year : 0,
     fees,
+    feesFx,
+    fxInfo: typeof o.fxInfo === 'string' ? o.fxInfo.trim().slice(0, 600) : '',
     bank: typeof o.bank === 'string' ? o.bank.trim().slice(0, 600) : '',
     holder: field(o.holder, 120),
     bankName: field(o.bankName, 120),

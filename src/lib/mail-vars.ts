@@ -37,8 +37,10 @@ export const typeVars = (type: string | undefined, intro = false) =>
 /** Who the intro call is for, said to the person ("kendiniz için") or about them ("Kendisi için"). */
 const FOR_WHOM: Record<(typeof INTRO_FOR)[number]['id'], { you: string; them: string }> = {
   individual: { you: 'kendiniz için', them: 'Kendisi için' },
-  couple: { you: 'partnerinizle birlikte', them: 'Partneriyle birlikte' },
+  couple: { you: 'eşiniz veya partnerinizle birlikte', them: 'Eşi veya partneriyle birlikte' },
   accessible: { you: 'kendiniz için, uygun ücretle', them: 'Kendisi için, uygun ücretle' },
+  group: { you: 'bir gruba katılmak için', them: 'Bir gruba katılmak için' },
+  face: { you: 'yüz yüze görüşmek için', them: 'Yüz yüze görüşmek için' },
 };
 
 export function forWhom(id: string | undefined, to: 'you' | 'them'): string {

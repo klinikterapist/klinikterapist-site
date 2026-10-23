@@ -8,6 +8,7 @@ import { ProfilePage } from '../../../src/admin/ui/appointments/ProfilePage';
 import { NotificationsPage } from '../../../src/admin/ui/appointments/NotificationsPage';
 import { MailboxesCard } from '../../../src/admin/ui/appointments/MailboxesCard';
 import { OnemliScreen } from '../../../src/admin/ui/settings/screens/important';
+import { CloseHours } from '../../../src/admin/ui/settings/screens/booking';
 import { templateTimes } from '../../../src/admin/ui/appointments/AppointmentCalendar';
 import { Panel, parseRoute } from '../../../src/admin/ui/context';
 import { createMockApi } from '../../../src/admin/api/mock';
@@ -34,7 +35,7 @@ const client = (c: Partial<Client> = {}): Client => ({
   contact: { name: 'Osman Güneş Özkurt', email: 'osman@example.com', lang: 'tr' }, ...c,
 });
 
-function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'mailboxes' | 'important' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
+function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'mailboxes' | 'important' | 'close' | `client:${string}`, requests: BookingRequest[] = [session, intro], clients: (Client & { origin?: BookingRequest })[] = []) {
   const api = createMockApi({ seed: {} });
   api.state.requests.push(...requests.map((r) => ({ ...r })));
   api.state.calendar.push(
@@ -43,7 +44,7 @@ function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'ma
   api.state.clients.push(...clients);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
-      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : page === 'important' ? <OnemliScreen /> : <ClientPage id={page.slice(7)} />}
+      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : page === 'important' ? <OnemliScreen /> : page === 'close' ? <CloseHours /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );
   return { api };
@@ -74,7 +75,7 @@ describe('ready e-mails', () => {
     expect(a.subject).toBe('Randevunuz onaylandı – klinikterapist.com');
     expect(a.body).toContain('Sayın Ayşe Yılmaz,');
     expect(a.body).toContain('22 Ekim 2026, Perşembe, saat 19.20 için gönderdiğiniz randevu talebiniz onaylandı.');
-    expect(a.body).toContain('– Seans türü: Çift terapisi');
+    expect(a.body).toContain('– Seans türü: Aile ve çift terapisi');
     expect(a.body).toContain('→ Aydınlatma metnini oku: https://klinikterapist.com/aydinlatma-metni/');
     expect(a.body).toMatch(/Saygılarımla,\nOsman Güneş Özkurt\nKlinik Psikolog\nklinikterapist\.com$/);
     expect(decisionMail(intro, 'approve').body).toContain('konuları konuşmak istediğinizi belirttiniz:\n\n– Kaygı ve stres\n– Uyku');
@@ -119,7 +120,7 @@ describe('Randevu talepleri', () => {
     const c = await card('Ayşe Yılmaz');
     // The kind in its own box beside the date; the session type under the name, no e-mail there.
     expect(c.querySelector('.rq-kindbox')!.textContent).toBe('SeansRandevusu');
-    expect(c.querySelector('.rq-who')!.textContent).toBe('Ayşe YılmazÇift terapisi · 60 dakika');
+    expect(c.querySelector('.rq-who')!.textContent).toBe('Ayşe YılmazAile ve çift terapisi · 60 dakika');
     expect(c.textContent).toContain('Konuşma dili');
     expect(c.textContent).toContain('E-posta henüz doğrulanmadı');
     expect((await card('Ali Kaya')).querySelector('.rq-kindbox')!.textContent).toBe('Ön görüşmeÜcretsiz');
@@ -553,8 +554,8 @@ describe('Faz 2: Terapist profili, Bildirimler, Saat kapat', () => {
     expect(screen.queryByText('KT007OGO seansını iptal etti')).toBeNull();
   });
 
-  it('Saat kapat closes a whole day in the calendar', async () => {
-    const { api } = setup('tracking', [], []);
+  it('Saat kapat (Ayarlar › Randevu Ayarları since 2026-10-23) closes a whole day in the calendar', async () => {
+    const { api } = setup('close', [], []);
     fireEvent.click(await screen.findByRole('button', { name: 'Saat kapat' }));
     const dialog = screen.getByRole('dialog', { name: 'Saat kapat' });
     fireEvent.change(within(dialog).getByLabelText('Gün'), { target: { value: day(3) } });

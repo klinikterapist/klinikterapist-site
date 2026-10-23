@@ -92,6 +92,17 @@ describe('validateBooking', () => {
     expect(validateBooking(session({ consent: false }), cfg, NOW).consent).toBe('required');
     expect(validateBooking(session({ name: '   ' }), cfg, NOW).name).toBe('required');
   });
+  it('only the session types switched on in Randevu Ayarları can be booked, with their intro-call choice (owner, 2026-10-23)', () => {
+    // Defaults: individual, couple and accessible on; group, face to face and supervision off.
+    expect(validateBooking(session({ type: 'supervision' }), cfg, NOW).type).toBe('required');
+    expect(validateBooking(intro({ forWhom: 'group' }), cfg, NOW).forWhom).toBe('required');
+    const on = { ...cfg, types: { group: true, supervision: true, couple: false } };
+    expect(validateBooking(session({ type: 'supervision' }), on, NOW).type).toBeUndefined();
+    expect(validateBooking(intro({ forWhom: 'group' }), on, NOW).forWhom).toBeUndefined();
+    expect(validateBooking(session({ type: 'couple' }), on, NOW).type).toBe('required');
+    expect(validateBooking(intro({ forWhom: 'couple' }), on, NOW).forWhom).toBe('required');
+    expect(parseBooking({ ...cfg, types: { group: true } }).types).toEqual({ group: true });
+  });
   it('an intro request needs who it is for, topics, an age range and explicit consent for the topics', () => {
     expect(validateBooking(intro(), cfg, NOW)).toEqual({});
     expect(validateBooking(intro({ forWhom: 'family' }), cfg, NOW).forWhom).toBe('required');

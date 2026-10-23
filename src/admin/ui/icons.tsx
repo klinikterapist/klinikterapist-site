@@ -2,6 +2,7 @@
 import type { LucideIcon } from 'lucide-react';
 
 export {
+  CalendarCog,
   Copy,
   KeyRound,
   AtSign,

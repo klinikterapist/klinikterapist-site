@@ -27,16 +27,39 @@ export type BookingConfig = {
    * field Turkish is open and English closed.
    */
   intake?: { tr: boolean; en: boolean };
+  /**
+   * Which session types are offered (owner's request 2026-10-23, Ayarlar › Randevu Ayarları): a type
+   * switched off leaves the session form, and its intro-call choice leaves the intro form. Without an
+   * entry a type follows its `on` in SESSION_TYPES.
+   */
+  types?: Partial<Record<string, boolean>>;
 };
 
 /** Whether booking is open in this language (booking.json `intake`). */
 export const intakeOpen = (cfg: Pick<BookingConfig, 'intake'>, lang: BookingLang): boolean => cfg.intake?.[lang] ?? lang === 'tr';
 
+/**
+ * The session types (owner's list 2026-10-23). Each but supervision is paired with a choice on the
+ * intro-call form (INTRO_FOR, same id): the two are one setting, switched on and off together in
+ * Ayarlar › Randevu Ayarları (booking.json `types`). `on`: offered when booking.json says nothing.
+ * Supervision has no intro call (the owner refers people to it) and a symbolic fee.
+ */
 export const SESSION_TYPES = [
-  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50 },
-  { id: 'couple', tr: 'Çift terapisi', en: 'Couples therapy', minutes: 60 },
-  { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session', minutes: 50 },
+  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50, on: true },
+  { id: 'couple', tr: 'Aile ve çift terapisi', en: 'Family and couples therapy', minutes: 60, on: true },
+  { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session', minutes: 50, on: true },
+  { id: 'group', tr: 'Grup terapisi', en: 'Group therapy', minutes: 90, on: false },
+  { id: 'face', tr: 'Yüz yüze terapi', en: 'Face-to-face therapy', minutes: 50, on: false },
+  { id: 'supervision', tr: 'Süpervizyon seansı', en: 'Supervision session', minutes: 50, on: false },
 ] as const;
+
+export type SessionTypeId = (typeof SESSION_TYPES)[number]['id'];
+
+/** Whether this session type is offered now (booking.json `types`, else its default). */
+export const typeOn = (cfg: Pick<BookingConfig, 'types'>, id: string | undefined): boolean => {
+  const t = SESSION_TYPES.find((x) => x.id === id);
+  return !!t && (cfg.types?.[t.id] ?? t.on);
+};
 
 export const INTRO_MINUTES = 30;
 
@@ -59,11 +82,16 @@ export function minutesOf(kind: BookingKind, type?: string): number {
 /** A taken stretch of time, epoch ms, the rest included: `[start, end)`. */
 export type BusyInterval = { start: number; end: number };
 
-/** Who the intro call is for (the owner's own wording); the owner's e-mail names the therapy it points to. */
+/**
+ * Who the intro call is for (the owner's own wording), one per session type of the same id; the owner's
+ * e-mail names the therapy it points to. Offered while its session type is (typeOn).
+ */
 export const INTRO_FOR = [
   { id: 'individual', tr: 'Kendim için (bireysel terapi)', en: 'For myself (individual therapy)' },
-  { id: 'couple', tr: 'Partnerimle birlikte (çift terapisi)', en: 'With my partner (couple therapy)' },
+  { id: 'couple', tr: 'Eş veya partnerimle birlikte (aile ve çift terapisi)', en: 'With my spouse or partner (family and couples therapy)' },
   { id: 'accessible', tr: 'Kendim için, uygun ücretle (erişilebilir terapi)', en: 'For myself, at a reduced fee (accessible therapy)' },
+  { id: 'group', tr: 'Bir gruba katılmak istiyorum (grup terapisi)', en: 'I would like to join a group (group therapy)' },
+  { id: 'face', tr: 'Yüz yüze görüşmek istiyorum (yüz yüze terapi)', en: 'I would like to meet face to face (face-to-face therapy)' },
 ] as const;
 
 export const INTRO_TOPICS = {
@@ -229,7 +257,7 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
   const name = input.name.trim();
   const email = input.email.trim();
   const phone = input.phone.trim();
-  if (input.kind === 'session' && !SESSION_TYPES.some((t) => t.id === input.type)) errors.type = 'required';
+  if (input.kind === 'session' && !typeOn(cfg, input.type)) errors.type = 'required';
   if (!timesFor(cfg, input.kind, input.day, now).includes(input.time)) errors.slot = 'invalid';
   else if (busy.some((b) => overlaps(holdOf(input.day, input.time, minutesOf(input.kind, input.type), cfg.restMinutes), b))) errors.slot = 'taken';
   if (!name) errors.name = 'required';
@@ -244,7 +272,7 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
   if (!input.consent) errors.consent = 'required';
   if (input.kind === 'session' && input.healthConsent === false && input.note.trim()) errors.healthConsent = 'required';
   if (input.kind === 'intro') {
-    if (!INTRO_FOR.some((f) => f.id === input.forWhom)) errors.forWhom = 'required';
+    if (!INTRO_FOR.some((f) => f.id === input.forWhom) || !typeOn(cfg, input.forWhom)) errors.forWhom = 'required';
     const topics = input.topics ?? [];
     if (!topics.length) errors.topics = 'required';
     else if (topics.some((i) => !Number.isInteger(i) || i < 0 || i >= INTRO_TOPICS.tr.length) || new Set(topics).size !== topics.length) errors.topics = 'invalid';

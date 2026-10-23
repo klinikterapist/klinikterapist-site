@@ -36,8 +36,10 @@ export type PanelMailId =
 /** Who the intro call is for, as the owner says it back to the person (the form's own options are in the first person). */
 const FOR_YOU_EN: Record<(typeof INTRO_FOR)[number]['id'], string> = {
   individual: 'for yourself',
-  couple: 'with your partner',
+  couple: 'with your spouse or partner',
   accessible: 'for yourself, at a reduced fee',
+  group: 'to join a group',
+  face: 'to meet face to face',
 };
 
 /** "individual therapy" / "free intro call", as it reads inside an English sentence. */
