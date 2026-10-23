@@ -125,6 +125,9 @@ export type CalendarEntry = {
  * owner decides (owner's decision 2026-10-20): declined or cancelled ones are deleted when the
  * e-mail goes; approved ones when the person moves to Randevu takibi; any of them after 30 days.
  */
+export type { Attachment as MailAttachment } from '../../lib/attachments';
+import type { Attachment as MailAttachment } from '../../lib/attachments';
+
 export type BookingRequest = {
   id: string;
   createdAt: number;
@@ -320,7 +323,8 @@ export interface Api {
   /** Sets the client's own fee; `null` goes back to the fee of their session type. */
   clientFee(input: { id: string; fee: number | null }): Promise<{ client: Client }>;
   /** The owner's (edited) e-mail to the client, e.g. a payment reminder. */
-  clientMail(input: { id: string; subject: string; body: string }): Promise<void>;
+  /** `attachments`: files for the client (Danışana e-posta, 2026-10-23), checked again by the backend. */
+  clientMail(input: { id: string; subject: string; body: string; attachments?: MailAttachment[] }): Promise<void>;
   /** The client's secret page link; `renew` makes a new one (the old one stops working). */
   clientLink(input: { id: string; renew?: boolean }): Promise<{ link: string }>;
   /** Sends the owner's (edited) e-mail with the link to the client's address. */

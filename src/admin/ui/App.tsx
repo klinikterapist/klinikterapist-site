@@ -12,6 +12,7 @@ import { Home } from './Home';
 import { TrashPage } from './TrashPage';
 import { RequestsPage } from './appointments/RequestsPage';
 import { TrackingPage } from './appointments/TrackingPage';
+import { FeesPage } from './appointments/FeesPage';
 import { ClientPage } from './appointments/ClientPage';
 import { ProfilePage } from './appointments/ProfilePage';
 import { NotificationsPage } from './appointments/NotificationsPage';
@@ -70,6 +71,8 @@ export function App({ api, store, config }: { api: Api; store: SessionStore; con
               <NotificationsPage />
             ) : route.name === 'tracking' ? (
               <TrackingPage />
+            ) : route.name === 'fees' ? (
+              <FeesPage />
             ) : route.name === 'client' ? (
               <ClientPage key={route.id} id={route.id} />
             ) : (

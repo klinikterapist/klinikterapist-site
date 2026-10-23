@@ -38,6 +38,7 @@ import {
   Sun,
   Trash2,
   UsersRound,
+  Wallet,
   type LucideIcon,
 } from './icons';
 import { SETTINGS_SCREENS } from './settings/screens';
@@ -59,7 +60,7 @@ const screen = (id: string): NavItem => {
 };
 
 export const SITE_PAGES = ['ana-sayfa', 'hakkimda', 'sss', 'kaynaklar', 'iletisim', 'yasal'];
-export const SETTINGS = ['profil', 'linkler', 'randevu', 'ucretler', 'eposta', 'seo', 'gizlilik', 'gorunum', 'onemli'];
+export const SETTINGS = ['profil', 'linkler', 'randevu', 'eposta', 'seo', 'gizlilik', 'gorunum', 'onemli'];
 
 export function navGroups(badges: { requests: number; notifications: number }): NavGroup[] {
   return [
@@ -72,6 +73,7 @@ export function navGroups(badges: { requests: number; notifications: number }): 
         { href: '#/profil', label: 'Randevu Özeti', icon: CalendarClock },
         { href: '#/randevular', label: 'Randevu Talepleri', icon: Inbox, badge: badges.requests },
         { href: '#/seans-takip', label: 'Danışanlar', icon: UsersRound },
+        { href: '#/ucretlendirme', label: 'Ücretlendirme', icon: Wallet },
         { href: '#/bildirimler', label: 'Bildirimler', icon: BellRing, badge: badges.notifications },
       ],
     },
@@ -113,6 +115,8 @@ export function currentHref(route: Route): string {
     case 'tracking':
     case 'client':
       return '#/seans-takip';
+    case 'fees':
+      return '#/ucretlendirme';
   }
 }
 

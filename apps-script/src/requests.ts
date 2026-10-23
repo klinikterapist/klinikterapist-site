@@ -22,6 +22,7 @@ import { PANEL_URL, SENDER_NAME, oneLine } from './text';
 import { initials, logEvent, shortWhen } from './events';
 import { asSender, notifyTo, noticeFrom } from './mailboxes';
 import { mailTr } from '../../src/lib/mail-texts';
+import { parseAttachments, type Attachment } from '../../src/lib/attachments';
 import { personName } from '../../src/lib/person-name';
 import { closingDeadline } from '../../src/lib/closing';
 
@@ -208,13 +209,19 @@ export function listRequests(gas: Gas): { requests: BookingRequest[] } {
 
 const str = (v: unknown, max: number) => (typeof v === 'string' && v.trim() && v.length <= max ? v : null);
 
-/** The owner's (edited) e-mail, to the person's address only. */
+/** The owner's (edited) e-mail, to the person's address only, with the files the owner attached (2026-10-23). */
 export function sendMail(gas: Gas, to: string, p: Record<string, unknown>): void {
   const subject = str(p.subject, 200);
   const body = str(p.body, 5000);
   if (!subject || !body) throw badRequest(EMPTY_MAIL);
+  let attachments: Attachment[] | null;
+  try {
+    attachments = parseAttachments(p.attachments);
+  } catch (e) {
+    throw badRequest(e instanceof Error ? e.message : 'Ekler okunamadı.');
+  }
   const owner = gas.props.get('OWNER_EMAIL')?.trim() ?? '';
-  gas.mail.send({ to, ...asSender(gas, 'booking', owner), subject: subject.replace(/[\r\n]+/g, ' '), body, name: SENDER_NAME });
+  gas.mail.send({ to, ...asSender(gas, 'booking', owner), subject: subject.replace(/[\r\n]+/g, ' '), body, name: SENDER_NAME, ...(attachments ? { attachments } : {}) });
 }
 
 /** A 24-hour hold for a request put back, when its time is still ahead and free. */

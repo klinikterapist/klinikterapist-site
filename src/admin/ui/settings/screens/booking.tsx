@@ -1,21 +1,47 @@
 /**
- * Ayarlar › Randevu Ayarları (owner's request 2026-10-23): everything about appointments in one place,
- * written to booking.json. Görüşme türleri: each session type on or off, together with its intro-call
- * choice (the two are one setting); supervision has no intro call. Then the weekly times of sessions
- * and of intro calls, the booking rules (notice, how far ahead, rest between appointments) and the
- * closed days (public holidays, leave). "Saat kapat" (a whole day or a stretch of it, at once, without
- * publishing) moved here from the calendar. Opening or closing booking itself stays in Önemli Ayarlar.
- * Saved like the other settings: the site is published again, and the request forms follow within
- * about ten minutes (the backend reads booking.json from the repository).
+ * Ayarlar › Randevu Ayarları (owner's requests 2026-10-23): everything about appointments in one place,
+ * written to booking.json, laid out as a short summary and four tabs.
+ * - Görüşme Türleri: a card per session type, on or off together with its intro-call choice (the two are
+ *   one setting); supervision has no intro call.
+ * - Çalışma Saatleri: the weekly start times of sessions and of intro calls, a day per row; a day's times
+ *   can be copied to the other weekdays.
+ * - Kurallar: notice before booking, how far ahead, the rest between appointments.
+ * - Kapalı Günler: public holidays and leave, and "Takvim kapatma" for a day or hours at once, without
+ *   publishing.
+ * Saved like the other settings: the site is published again, and the request forms follow within about
+ * ten minutes (the backend reads booking.json from the repository). Opening or closing booking itself
+ * stays in Önemli Ayarlar.
  */
 import { useState } from 'react';
-import { ApiFailure } from '../../../api/types';
-import { INTRO_FOR, SESSION_TYPES, formatDay, typeOn, type Availability, type BookingConfig, type ClosedDay } from '../../../../lib/booking-form';
+import { INTRO_FOR, SESSION_TYPES, typeOn, type Availability, type BookingConfig, type ClosedDay } from '../../../../lib/booking-form';
 import { parseBooking } from '../../../../lib/schemas';
-import { usePanel } from '../../context';
-import { Banner, Button, Dialog, Field, Toggle } from '../../kit';
-import { ListEditor, SettingsForm } from '../fields';
+import { CalendarClock, CalendarX, Icon, ListChecks, Tags, type LucideIcon } from '../../icons';
+import { Banner, Button, Field, Spinner, Toggle } from '../../kit';
+import { ListEditor } from '../fields';
+import { SiteIcon } from '../rows';
+import { SETTINGS_SCREENS } from '../screens';
 import { useSettingsFile } from '../useSettingsFile';
+import { CloseHoursDialog } from '../../appointments/CloseHoursDialog';
+
+type Tab = 'types' | 'hours' | 'rules' | 'closed';
+type Kind = 'session' | 'intro';
+
+const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
+  { id: 'types', label: 'Görüşme Türleri', icon: Tags },
+  { id: 'hours', label: 'Çalışma Saatleri', icon: CalendarClock },
+  { id: 'rules', label: 'Kurallar', icon: ListChecks },
+  { id: 'closed', label: 'Kapalı Günler', icon: CalendarX },
+];
+
+/** The look of each session type's card. */
+const TYPE_LOOK: Record<string, { icon: string; tone: string }> = {
+  individual: { icon: 'user', tone: 'lavanta' },
+  couple: { icon: 'heart', tone: 'kiremit' },
+  accessible: { icon: 'leaf', tone: 'adacayi' },
+  group: { icon: 'users', tone: 'deniz' },
+  face: { icon: 'home', tone: 'gunes' },
+  supervision: { icon: 'grad', tone: 'lacivert' },
+};
 
 /** Monday first, as the owner's week runs. */
 const DAYS: { key: keyof Availability['weekdays']; name: string }[] = [
@@ -27,60 +53,64 @@ const DAYS: { key: keyof Availability['weekdays']; name: string }[] = [
   { key: '6', name: 'Cumartesi' },
   { key: '0', name: 'Pazar' },
 ];
+const WEEKDAYS = ['1', '2', '3', '4', '5'] as const;
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+const today = () => new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+const dotted = (day: string) => day.split('-').reverse().join('.');
+const countTimes = (w: Availability['weekdays']) => Object.values(w).reduce((n, t) => n + (t?.length ?? 0), 0);
 
-/** One kind's weekly start times: a row per day, each time a chip with ×, and a time field to add one. */
+/** One kind's weekly start times: a row per day, each time a chip with ×, a time field to add one. */
 function WeekTimes({ value, onChange, label }: { value: Availability['weekdays']; onChange: (v: Availability['weekdays']) => void; label: string }) {
   const [adding, setAdding] = useState<Record<string, string>>({});
-  const setDay = (key: string, times: string[]) => {
-    const next = { ...value };
+  const setDay = (key: string, times: string[], base = value) => {
+    const next = { ...base };
     if (times.length) next[key as keyof typeof next] = [...new Set(times)].sort();
     else delete next[key as keyof typeof next];
-    onChange(next);
+    return next;
   };
   return (
     <div className="week-times" aria-label={label}>
       {DAYS.map((d) => {
         const times = value[d.key] ?? [];
         const draft = adding[d.key] ?? '';
+        const weekday = (WEEKDAYS as readonly string[]).includes(d.key);
         return (
-          <div key={d.key} className="wt-row">
-            <span className="wt-day">{d.name}</span>
+          <div key={d.key} className={`wt-row${times.length ? '' : ' is-off'}`}>
+            <span className="wt-day">
+              {d.name}
+              <small>{times.length ? `${times.length} saat` : 'Kapalı'}</small>
+            </span>
             <ul className="wt-chips">
-              {times.length ? (
-                times.map((t) => (
-                  <li key={t}>
-                    <span>{t.replace(':', '.')}</span>
-                    <button
-                      type="button"
-                      aria-label={`${d.name} ${t} saatini kaldır`}
-                      onClick={() =>
-                        setDay(
-                          d.key,
-                          times.filter((x) => x !== t),
-                        )
-                      }
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <li className="wt-off">Kapalı</li>
-              )}
+              {times.map((t) => (
+                <li key={t}>
+                  <span>{t.replace(':', '.')}</span>
+                  <button type="button" aria-label={`${d.name} ${t} saatini kaldır`} onClick={() => onChange(setDay(d.key, times.filter((x) => x !== t)))}>
+                    ×
+                  </button>
+                </li>
+              ))}
             </ul>
             <span className="wt-add">
               <input className="k-input" type="time" aria-label={`${d.name} için saat`} value={draft} onChange={(e) => setAdding({ ...adding, [d.key]: e.target.value })} />
               <Button
                 disabled={!TIME_RE.test(draft)}
                 onClick={() => {
-                  setDay(d.key, [...times, draft]);
+                  onChange(setDay(d.key, [...times, draft]));
                   setAdding({ ...adding, [d.key]: '' });
                 }}
               >
                 Ekle
               </Button>
+              {weekday && times.length > 0 && (
+                <Button
+                  variant="ghost"
+                  title="Bu günün saatlerini diğer hafta içi günlerine de uygula"
+                  onClick={() => onChange(WEEKDAYS.reduce((acc, k) => (k === d.key ? acc : setDay(k, times, acc)), value))}
+                >
+                  Hafta içine uygula
+                </Button>
+              )}
             </span>
           </div>
         );
@@ -89,235 +119,241 @@ function WeekTimes({ value, onChange, label }: { value: Availability['weekdays']
   );
 }
 
-const num = (v: string, fallback: number) => {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-};
-
-/**
- * "Saat kapat" (owner's decision 2026-10-20; on the calendar until 2026-10-23): closes a whole day or a
- * stretch of it at once, in the backend: taken on the site, grey in the calendar, where "Aç" opens it.
- */
-export function CloseHours() {
-  const { api } = usePanel();
-  const today = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
-  const [closing, setClosing] = useState<{
-    day: string;
-    whole: boolean;
-    from: string;
-    to: string;
-    note: string;
-  } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const close = async () => {
-    if (!closing) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await api.calendarClose({
-        day: closing.day,
-        from: closing.whole ? '00:00' : closing.from,
-        to: closing.whole ? '24:00' : closing.to,
-        note: closing.note,
-      });
-      setNotice(
-        `${formatDay(closing.day, 'tr')}${closing.whole ? ' bütün gün' : `, ${closing.from.replace(':', '.')}–${closing.to.replace(':', '.')}`} kapatıldı. Bu aralık sitede dolu görünür; takvimde gri görünür, oradan "Aç" ile açabilirsiniz.`,
-      );
-      setClosing(null);
-    } catch (err) {
-      setError(err instanceof ApiFailure ? err.message : 'Kapatılamadı. Tekrar deneyin.');
-    } finally {
-      setBusy(false);
-    }
-  };
+/** A rule as a small card: the number, its unit and what it means. */
+function RuleCard({ label, unit, hint, value, onChange, error }: { label: string; unit: string; hint: string; value: number; onChange: (n: number) => void; error?: string }) {
   return (
-    <div className="k-group">
-      <h3 className="k-group-title">Saat Kapat</h3>
-      <div className="k-group-card">
-        <p className="k-hint">İzin, kongre ya da kişisel bir iş için bir günü ya da bir saat aralığını hemen kapatın. Kaydet'e gerek yoktur; site yayını beklenmez.</p>
-        {notice && <Banner tone="success">{notice}</Banner>}
-        {error && <Banner tone="error">{error}</Banner>}
-        <div>
-          <Button
-            onClick={() =>
-              setClosing({
-                day: today,
-                whole: true,
-                from: '09:00',
-                to: '13:00',
-                note: '',
-              })
-            }
-          >
-            Saat kapat
-          </Button>
-        </div>
-      </div>
-      {closing && (
-        <Dialog
-          title="Saat kapat"
-          history
-          onClose={() => !busy && setClosing(null)}
-          actions={
-            <>
-              <Button onClick={() => setClosing(null)} disabled={busy}>
-                Vazgeç
-              </Button>
-              <Button variant="primary" busy={busy} disabled={!closing.day || (!closing.whole && closing.to <= closing.from)} onClick={close}>
-                Kapat
-              </Button>
-            </>
-          }
-        >
-          <Field label="Gün" type="date" value={closing.day} onChange={(day) => setClosing({ ...closing, day })} />
-          <div className="segmented end-choice" role="group" aria-label="Kapatılacak süre">
-            <button type="button" aria-pressed={closing.whole} onClick={() => setClosing({ ...closing, whole: true })}>
-              Bütün gün
-            </button>
-            <button type="button" aria-pressed={!closing.whole} onClick={() => setClosing({ ...closing, whole: false })}>
-              Saat aralığı
-            </button>
-          </div>
-          {!closing.whole && (
-            <div className="add-grid">
-              <Field label="Başlangıç" type="time" value={closing.from} onChange={(from) => setClosing({ ...closing, from })} />
-              <Field label="Bitiş" type="time" value={closing.to} onChange={(to) => setClosing({ ...closing, to })} />
-            </div>
-          )}
-          <Field label="Not (isteğe bağlı, yalnızca siz görürsünüz)" value={closing.note} maxLength={80} onChange={(note) => setClosing({ ...closing, note })} />
-          <p className="k-hint">Bu aralık sitede dolu görünür; danışanlar da kendi sayfalarından buraya erteleyemez. İçindeki mevcut randevular değişmez.</p>
-        </Dialog>
-      )}
+    <div className="rule-card">
+      <span className="rule-label">{label}</span>
+      <span className="rule-value">
+        <input className="k-input" type="number" min={0} aria-label={`${label} (${unit})`} value={String(value)} onChange={(e) => onChange(Number.isFinite(Number(e.target.value)) ? Number(e.target.value) : value)} />
+        <span>{unit}</span>
+      </span>
+      <span className="k-hint">{hint}</span>
+      {error && <span className="k-error">{error}</span>}
     </div>
   );
 }
 
 export function RandevuScreen() {
+  const meta = SETTINGS_SCREENS.find((s) => s.id === 'randevu')!;
   const file = useSettingsFile<BookingConfig>('src/data/booking.json', parseBooking, 'Randevu Ayarları');
+  const [tab, setTab] = useState<Tab>('types');
+  const [kind, setKind] = useState<Kind>('session');
+  const [closing, setClosing] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const b = file.value;
+  const set = (patch: Partial<BookingConfig>) => file.setValue((x) => ({ ...x, ...patch }));
+  const setKindOf = (k: Kind, patch: Partial<Availability>) => b && set({ [k]: { ...b[k], ...patch } });
+  const upcoming = b ? b.closed.filter((c) => c.date >= today()).sort((x, y) => x.date.localeCompare(y.date)) : [];
+
   return (
-    <>
-      <SettingsForm title="Randevu Ayarları" screen="randevu" file={file}>
-        {(b) => {
-          const set = (patch: Partial<BookingConfig>) => file.setValue((x) => ({ ...x, ...patch }));
-          const setKind = (kind: 'session' | 'intro', patch: Partial<Availability>) => set({ [kind]: { ...b[kind], ...patch } });
-          return (
-            <>
-              <h3>Görüşme Türleri</h3>
-              <p className="k-hint">
-                Açık türler seans formunda seçilebilir. Ön görüşme formundaki eşi de türle birlikte açılır ve kapanır. Grup ve yüz yüze terapi kapalıyken formlarda soluk olarak
-                "Yakında" / "Şu an uygun değil" yazısıyla görünür; diğer kapalı türler hiç görünmez.
-              </p>
-              <ul className="type-switches">
-                {SESSION_TYPES.map((t) => {
-                  const intro = INTRO_FOR.find((f) => f.id === t.id);
-                  return (
-                    <li key={t.id}>
-                      <span className="ts-text">
-                        <b>{t.tr}</b>
-                        <span className="k-hint">{`${t.minutes} dakika · Ön görüşmede: ${intro ? `“${intro.tr.replace(/\s*\(.*\)$/, '')}”` : 'yok (siz yönlendirirsiniz)'}`}</span>
-                        {t.id === 'supervision' && (
-                          <span className="k-hint">Sembolik ücretli; görüşmeler süpervizörünüzle paylaşılabileceği için danışandan ayrı bir bilgilendirilmiş onam alınır.</span>
-                        )}
-                      </span>
-                      <Toggle label={typeOn(b, t.id) ? 'Açık' : 'Kapalı'} checked={typeOn(b, t.id)} onChange={(on) => set({ types: { ...b.types, [t.id]: on } })} />
-                    </li>
-                  );
-                })}
-              </ul>
+    <section className="settings booking-settings" aria-labelledby="settings-screen-title">
+      <div className="screen-head">
+        <h2 id="settings-screen-title">
+          <Icon as={meta.icon} size={22} />
+          {meta.label}
+        </h2>
+      </div>
+      <p className="settings-intro">
+        {meta.intro} Randevu alımını tamamen açıp kapatmak <a href="#/ayarlar/onemli">Önemli Ayarlar</a> ekranındadır.
+      </p>
+      {file.loadError && (
+        <Banner tone="error" action={<Button onClick={file.retry}>Tekrar dene</Button>}>
+          {file.loadError}
+        </Banner>
+      )}
+      {!b && !file.loadError && <Spinner />}
+      {b && (
+        <>
+          <ul className="v2-tiles bs-tiles" aria-label="Özet">
+            <li className="v2-tile tone-lavanta">
+              <span className="tone-tile" aria-hidden="true">
+                <Icon as={Tags} size={18} />
+              </span>
+              <b>{`${SESSION_TYPES.filter((t) => typeOn(b, t.id)).length}/${SESSION_TYPES.length}`}</b>
+              <span>Açık görüşme türü</span>
+            </li>
+            <li className="v2-tile tone-adacayi">
+              <span className="tone-tile" aria-hidden="true">
+                <Icon as={CalendarClock} size={18} />
+              </span>
+              <b>{countTimes(b.session.weekdays)}</b>
+              <span>Haftalık seans saati</span>
+            </li>
+            <li className="v2-tile tone-kiremit">
+              <span className="tone-tile" aria-hidden="true">
+                <Icon as={CalendarClock} size={18} />
+              </span>
+              <b>{countTimes(b.intro.weekdays)}</b>
+              <span>Haftalık ön görüşme saati</span>
+            </li>
+            <li className="v2-tile tone-gunes">
+              <span className="tone-tile" aria-hidden="true">
+                <Icon as={CalendarX} size={18} />
+              </span>
+              <b>{upcoming[0] ? dotted(upcoming[0].date) : '–'}</b>
+              <span>{upcoming[0] ? `Sıradaki kapalı gün · ${upcoming[0].name}` : 'Yaklaşan kapalı gün yok'}</span>
+            </li>
+          </ul>
 
-              <h3>Seans Saatleri</h3>
-              <p className="k-hint">Her gün için seansların başlayabileceği saatler. Saati olmayan gün kapalıdır.</p>
-              <WeekTimes label="Seans saatleri" value={b.session.weekdays} onChange={(weekdays) => setKind('session', { weekdays })} />
+          <div className="segmented bs-tabs" role="tablist" aria-label="Randevu ayarlarının bölümleri">
+            {TABS.map((t) => (
+              <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
+                <Icon as={t.icon} size={16} />
+                {t.label}
+              </button>
+            ))}
+          </div>
 
-              <h3>Ön Görüşme Saatleri</h3>
-              <p className="k-hint">Ücretsiz ön görüşmelerin başlayabileceği saatler.</p>
-              <WeekTimes label="Ön görüşme saatleri" value={b.intro.weekdays} onChange={(weekdays) => setKind('intro', { weekdays })} />
+          <form
+            className="bs-panel"
+            noValidate
+            onSubmit={(e) => {
+              e.preventDefault();
+              file.save();
+            }}
+          >
+            {tab === 'types' && (
+              <>
+                <p className="k-hint">
+                  Açık türler seans formunda seçilebilir; ön görüşme formundaki eşi de türle birlikte açılır ve kapanır. Grup ve yüz yüze terapi kapalıyken formlarda soluk
+                  olarak "Yakında" / "Şu an uygun değil" yazısıyla görünür; diğer kapalı türler hiç görünmez.
+                </p>
+                <ul className="type-cards">
+                  {SESSION_TYPES.map((t) => {
+                    const on = typeOn(b, t.id);
+                    const intro = INTRO_FOR.find((f) => f.id === t.id);
+                    const look = TYPE_LOOK[t.id];
+                    return (
+                      <li key={t.id} className={`type-card tone-${look.tone}${on ? '' : ' is-off'}`}>
+                        <span className="tone-tile" aria-hidden="true">
+                          <SiteIcon name={look.icon} size={18} />
+                        </span>
+                        <span className="tc-text">
+                          <b>{t.tr}</b>
+                          <span className="tc-meta">{`${t.minutes} dakika`}</span>
+                          <span className="k-hint">{intro ? `Ön görüşmede: “${intro.tr.replace(/\s*\(.*\)$/, '')}”` : 'Ön görüşmede yok; siz yönlendirirsiniz.'}</span>
+                          {t.id === 'supervision' && <span className="k-hint">Sembolik ücretli; görüşmeler süpervizörünüzle paylaşılabileceği için danışandan ayrı bir bilgilendirilmiş onam alınır.</span>}
+                        </span>
+                        <Toggle label={on ? 'Açık' : 'Kapalı'} checked={on} onChange={(v) => set({ types: { ...b.types, [t.id]: v } })} />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
 
-              <h3>Kurallar</h3>
-              <div className="add-grid">
-                <Field
-                  label="Seans: en az kaç saat önceden"
-                  type="number"
-                  value={String(b.session.minNoticeHours)}
-                  onChange={(v) =>
-                    setKind('session', {
-                      minNoticeHours: num(v, b.session.minNoticeHours),
-                    })
-                  }
+            {tab === 'hours' && (
+              <>
+                <div className="bs-subhead">
+                  <div className="segmented end-choice" role="group" aria-label="Hangi saatler">
+                    <button type="button" aria-pressed={kind === 'session'} onClick={() => setKind('session')}>
+                      Seans saatleri
+                    </button>
+                    <button type="button" aria-pressed={kind === 'intro'} onClick={() => setKind('intro')}>
+                      Ön görüşme saatleri
+                    </button>
+                  </div>
+                  <span className="k-hint">{kind === 'session' ? 'Seansların başlayabileceği saatler. Saati olmayan gün kapalıdır.' : 'Ücretsiz ön görüşmelerin başlayabileceği saatler.'}</span>
+                </div>
+                <WeekTimes key={kind} label={kind === 'session' ? 'Seans saatleri' : 'Ön görüşme saatleri'} value={b[kind].weekdays} onChange={(weekdays) => setKindOf(kind, { weekdays })} />
+              </>
+            )}
+
+            {tab === 'rules' && (
+              <div className="rule-grid">
+                <RuleCard
+                  label="Seans: en az"
+                  unit="saat önceden"
+                  hint="Bu süreden yakın saatler formda görünmez."
+                  value={b.session.minNoticeHours}
+                  onChange={(minNoticeHours) => setKindOf('session', { minNoticeHours })}
                   error={file.issues['session.minNoticeHours']}
                 />
-                <Field
-                  label="Seans: kaç hafta ileriye"
-                  type="number"
-                  value={String(b.session.weeksAhead)}
-                  onChange={(v) =>
-                    setKind('session', {
-                      weeksAhead: num(v, b.session.weeksAhead),
-                    })
-                  }
+                <RuleCard
+                  label="Seans: en çok"
+                  unit="hafta ileriye"
+                  hint="Takvim bu kadar hafta ileriyi gösterir."
+                  value={b.session.weeksAhead}
+                  onChange={(weeksAhead) => setKindOf('session', { weeksAhead })}
                   error={file.issues['session.weeksAhead']}
                 />
-                <Field
-                  label="Ön görüşme: en az kaç saat önceden"
-                  type="number"
-                  value={String(b.intro.minNoticeHours)}
-                  onChange={(v) =>
-                    setKind('intro', {
-                      minNoticeHours: num(v, b.intro.minNoticeHours),
-                    })
-                  }
+                <RuleCard
+                  label="Ön görüşme: en az"
+                  unit="saat önceden"
+                  hint="Bu süreden yakın saatler formda görünmez."
+                  value={b.intro.minNoticeHours}
+                  onChange={(minNoticeHours) => setKindOf('intro', { minNoticeHours })}
                   error={file.issues['intro.minNoticeHours']}
                 />
-                <Field
-                  label="Ön görüşme: kaç hafta ileriye"
-                  type="number"
-                  value={String(b.intro.weeksAhead)}
-                  onChange={(v) => setKind('intro', { weeksAhead: num(v, b.intro.weeksAhead) })}
+                <RuleCard
+                  label="Ön görüşme: en çok"
+                  unit="hafta ileriye"
+                  hint="Takvim bu kadar hafta ileriyi gösterir."
+                  value={b.intro.weeksAhead}
+                  onChange={(weeksAhead) => setKindOf('intro', { weeksAhead })}
                   error={file.issues['intro.weeksAhead']}
                 />
+                <RuleCard
+                  label="Görüşmeler arası"
+                  unit="dakika dinlenme"
+                  hint="Bir randevu kendi süresi ve bu süre kadar takvimi doldurur."
+                  value={b.restMinutes}
+                  onChange={(restMinutes) => set({ restMinutes })}
+                  error={file.issues.restMinutes}
+                />
               </div>
-              <Field
-                label="Her görüşmeden sonra dinlenme (dakika)"
-                type="number"
-                value={String(b.restMinutes)}
-                onChange={(v) => set({ restMinutes: num(v, b.restMinutes) })}
-                hint="Bir randevu, kendi süresi ve bu dinlenme süresi kadar takvimi doldurur."
-                error={file.issues.restMinutes}
-              />
+            )}
 
-              <h3>Kapalı Günler</h3>
-              <p className="k-hint">
-                Resmi tatiller, izin ve kongre günleri. Bu günlerde formlarda saat görünmez. "Şu saatten itibaren" doluysa gün o saatten sonra kapanır (örneğin bayram arifesi
-                13.00).
-              </p>
-              <ListEditor<ClosedDay>
-                items={b.closed}
-                onChange={(closed) => set({ closed })}
-                itemLabel={(c) => (c.date ? `${c.date.split('-').reverse().join('.')} · ${c.name || 'Adsız'}` : 'Yeni kapalı gün')}
-                newItem={() => ({ date: '', name: '' })}
-                addLabel="Kapalı gün ekle"
-                render={(c, update, i) => (
-                  <div className="add-grid">
-                    <Field label="Tarih" type="date" value={c.date} onChange={(date) => update({ date })} error={file.issues[`closed.${i}.date`]} />
-                    <Field label="Açıklama" value={c.name} placeholder="Örneğin: İzin" onChange={(name) => update({ name })} error={file.issues[`closed.${i}.name`]} />
-                    <Field label="Şu saatten itibaren (isteğe bağlı)" type="time" value={c.from ?? ''} onChange={(from) => update({ from: from || undefined })} />
-                  </div>
-                )}
-              />
+            {tab === 'closed' && (
+              <>
+                <div className="bs-subhead">
+                  <Button onClick={() => setClosing(true)}>
+                    <Icon as={CalendarX} size={16} />
+                    Takvim kapatma
+                  </Button>
+                  <span className="k-hint">Bir günü ya da saat aralığını hemen kapatır; Kaydet'e ve site yayınına gerek yoktur.</span>
+                </div>
+                {notice && <Banner tone="success">{notice}</Banner>}
+                <p className="k-hint">
+                  Resmi tatiller ve izin günleri. Bu günlerde formlarda saat görünmez. "Şu saatten itibaren" doluysa gün o saatten sonra kapanır (örneğin bayram arifesi 13.00).
+                </p>
+                <ListEditor<ClosedDay>
+                  items={b.closed}
+                  onChange={(closed) => set({ closed })}
+                  itemLabel={(c) => (c.date ? `${dotted(c.date)} · ${c.name || 'Adsız'}${c.from ? ` (${c.from.replace(':', '.')}'den sonra)` : ''}${c.date < today() ? ' · geçti' : ''}` : 'Yeni kapalı gün')}
+                  newItem={() => ({ date: '', name: '' })}
+                  addLabel="Kapalı gün ekle"
+                  render={(c, update, i) => (
+                    <div className="add-grid closed-fields">
+                      <Field label="Tarih" type="date" value={c.date} onChange={(date) => update({ date })} error={file.issues[`closed.${i}.date`]} />
+                      <Field label="Açıklama" value={c.name} placeholder="Örneğin: İzin" onChange={(name) => update({ name })} error={file.issues[`closed.${i}.name`]} />
+                      <Field label="Şu saatten itibaren (isteğe bağlı)" type="time" value={c.from ?? ''} onChange={(from) => update({ from: from || undefined })} />
+                    </div>
+                  )}
+                />
+              </>
+            )}
 
-              <h3>Randevu Alımı</h3>
-              <p className="k-hint">
-                Formları tamamen açıp kapatmak (Türkçe ve İngilizce ayrı) <a href="#/ayarlar/onemli">Önemli Ayarlar</a> ekranındadır.
-              </p>
-            </>
-          );
-        }}
-      </SettingsForm>
-      <section className="settings settings-extra" aria-label="Saat kapat">
-        <CloseHours />
-      </section>
-    </>
+            <div className="save-bar">
+              {file.message && <Banner tone={file.message.tone}>{file.message.text}</Banner>}
+              <Button type="submit" variant="primary" busy={file.saving}>
+                Kaydet
+              </Button>
+              {file.dirty && !file.saving && <span className="k-hint">Kaydedilmemiş değişiklikler var.</span>}
+            </div>
+          </form>
+        </>
+      )}
+      {closing && (
+        <CloseHoursDialog
+          onClose={() => setClosing(false)}
+          onDone={(m) => {
+            setClosing(false);
+            setNotice(m);
+          }}
+        />
+      )}
+    </section>
   );
 }

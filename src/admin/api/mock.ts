@@ -54,7 +54,7 @@ export type MockState = {
   requests: BookingRequest[];
   clients: (Client & { origin?: BookingRequest })[];
   /** E-mails the owner sent from Randevu talepleri and Seans takip. */
-  sent: { to: string; subject: string; body: string }[];
+  sent: { to: string; subject: string; body: string; attachments?: string[] }[];
   /** Randevu alımı açık mı. */
   open: { tr: boolean; en: boolean };
   /** "Haber et" list. */
@@ -154,9 +154,9 @@ export function createMockApi(
       }
     }
   };
-  const mail = (to: string, subject: string, body: string) => {
+  const mail = (to: string, subject: string, body: string, attachments?: string[]) => {
     if (!subject.trim() || !body.trim()) throw new ApiFailure('bad_request', 'E-postanın konusu ve metni boş olamaz.');
-    state.sent.push({ to, subject, body });
+    state.sent.push({ to, subject, body, ...(attachments?.length ? { attachments } : {}) });
   };
   /** A request put back holds its time again for 24 hours when that time is still ahead. */
   const holdAgain = (r: BookingRequest): string => {
@@ -506,11 +506,11 @@ export function createMockApi(
         const { origin: _o, ...pub } = c;
         return { client: structuredClone(pub) };
       }),
-    clientMail: ({ id, subject, body }) =>
+    clientMail: ({ id, subject, body, attachments }) =>
       wait(() => {
         const c = state.clients.find((x) => x.id === id);
         if (!c) throw new ApiFailure('not_found', 'Bu danışan bulunamadı.');
-        mail(c.contact.email, subject, body);
+        mail(c.contact.email, subject, body, attachments?.map((a) => a.name));
       }),
     clientLinkMail: ({ id, subject, body }) =>
       wait(() => {

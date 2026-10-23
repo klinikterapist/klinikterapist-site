@@ -8,7 +8,7 @@ import { ProfilePage } from '../../../src/admin/ui/appointments/ProfilePage';
 import { NotificationsPage } from '../../../src/admin/ui/appointments/NotificationsPage';
 import { MailboxesCard } from '../../../src/admin/ui/appointments/MailboxesCard';
 import { OnemliScreen } from '../../../src/admin/ui/settings/screens/important';
-import { CloseHours } from '../../../src/admin/ui/settings/screens/booking';
+import { ClientTools } from '../../../src/admin/ui/appointments/ClientTools';
 import { templateTimes } from '../../../src/admin/ui/appointments/AppointmentCalendar';
 import { Panel, parseRoute } from '../../../src/admin/ui/context';
 import { createMockApi } from '../../../src/admin/api/mock';
@@ -44,7 +44,7 @@ function setup(page: 'requests' | 'tracking' | 'profile' | 'notifications' | 'ma
   api.state.clients.push(...clients);
   render(
     <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
-      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : page === 'important' ? <OnemliScreen /> : page === 'close' ? <CloseHours /> : <ClientPage id={page.slice(7)} />}
+      {page === 'requests' ? <RequestsPage add={null} /> : page === 'tracking' ? <TrackingPage /> : page === 'profile' ? <ProfilePage /> : page === 'notifications' ? <NotificationsPage /> : page === 'mailboxes' ? <MailboxesCard /> : page === 'important' ? <OnemliScreen /> : page === 'close' ? <ClientTools clients={[]} /> : <ClientPage id={page.slice(7)} />}
     </Panel.Provider>,
   );
   return { api };
@@ -568,15 +568,40 @@ describe('Faz 2: Terapist profili, Bildirimler, Saat kapat', () => {
     expect(screen.queryByText('KT007OGO seansını iptal etti')).toBeNull();
   });
 
-  it('Saat kapat (Ayarlar › Randevu Ayarları since 2026-10-23) closes a whole day in the calendar', async () => {
+  it('Takvim kapatma (Danışanlar tools and Randevu Ayarları since 2026-10-23) closes a whole day in the calendar', async () => {
     const { api } = setup('close', [], []);
-    fireEvent.click(await screen.findByRole('button', { name: 'Saat kapat' }));
-    const dialog = screen.getByRole('dialog', { name: 'Saat kapat' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Takvim kapatma' }));
+    const dialog = screen.getByRole('dialog', { name: 'Takvim kapatma' });
     fireEvent.change(within(dialog).getByLabelText('Gün'), { target: { value: day(3) } });
     fireEvent.change(within(dialog).getByLabelText('Not (isteğe bağlı, yalnızca siz görürsünüz)'), { target: { value: 'İzin' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Kapat' }));
     await waitFor(() => expect(api.state.calendar).toEqual([expect.objectContaining({ status: 'closed', minutes: 1440, note: 'İzin' })]));
     expect(await screen.findByText(/bütün gün kapatıldı/)).toBeTruthy();
+  });
+
+  it('Danışana e-posta: pick the client and the kind, write, attach a file; it goes to that client only (owner, 2026-10-23)', async () => {
+    const { api } = setup('close', [], []);
+    cleanup();
+    const clients = [client({ id: 'c1', number: 'KT001OGO' }), client({ id: 'c2', number: 'KT002AY', contact: { name: 'Ayşe Yılmaz', email: 'ayse@example.com', lang: 'tr' } })];
+    api.state.clients.push(...clients);
+    render(
+      <Panel.Provider value={{ api, config: { apiUrl: 'mock', googleClientId: 'x' }, store: createSessionStore(localStorage) }}>
+        <ClientTools clients={clients} />
+      </Panel.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Danışana e-posta' }));
+    const dialog = screen.getByRole('dialog', { name: 'Danışana e-posta' });
+    fireEvent.change(within(dialog).getByLabelText('Danışan'), { target: { value: 'c2' } });
+    fireEvent.change(within(dialog).getByLabelText('Konu türü'), { target: { value: 'odev' } });
+    expect((within(dialog).getByLabelText('Konu') as HTMLInputElement).value).toBe('Ödeviniz – klinikterapist.com');
+    expect((within(dialog).getByLabelText('Mesaj') as HTMLTextAreaElement).value).toMatch(/^Sayın Ayşe Yılmaz,/);
+    const file = new File(['ödev'], 'odev.pdf', { type: 'application/pdf' });
+    fireEvent.change(dialog.querySelector('input[type=file]')!, { target: { files: [file] } });
+    expect(await within(dialog).findByText('odev.pdf')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Gönder' }));
+    await waitFor(() => expect(api.state.sent).toHaveLength(1));
+    expect(api.state.sent[0]).toMatchObject({ to: 'ayse@example.com', subject: 'Ödeviniz – klinikterapist.com', attachments: ['odev.pdf'] });
+    expect(await screen.findByText(/KT002AY numaralı danışana e-posta gönderildi \(1 ek ile\)/)).toBeTruthy();
   });
 });
 

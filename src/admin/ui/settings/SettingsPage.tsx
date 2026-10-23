@@ -12,7 +12,6 @@ import { GirisScreen } from './screens/login';
 import { EpostaScreen } from './screens/mail';
 import { OnemliScreen } from './screens/important';
 import { RandevuScreen } from './screens/booking';
-import { UcretlerScreen } from './screens/fees';
 
 const SCREENS: Record<string, ComponentType> = {
   profil: ProfilScreen,
@@ -26,7 +25,6 @@ const SCREENS: Record<string, ComponentType> = {
   seo: SeoScreen,
   gizlilik: GizlilikScreen,
   randevu: RandevuScreen,
-  ucretler: UcretlerScreen,
   eposta: EpostaScreen,
   giris: GirisScreen,
   gorunum: GorunumScreen,

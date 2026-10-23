@@ -95,6 +95,20 @@ describe('Talepler (backend)', () => {
     expect(send({ ...session, day: '2026-11-05', time: '19:50', email: 'baska@example.com' })).toMatchObject({ ok: false });
   });
 
+  it('an e-mail to a client carries the attached files; a file type that is not allowed is refused (Danışana e-posta, 2026-10-23)', () => {
+    const { gas, call, send, requests } = setup();
+    send(session);
+    const id = requests()[0].id;
+    call('requests.decide', { id, decision: 'approve', ...mail });
+    const cid = call<{ client: { id: string } }>('requests.toClient', { id }).data.client.id;
+    gas.mails.length = 0;
+    const pdf = { name: 'odev.pdf', type: 'application/pdf', data: 'JVBERi0xLjQK' };
+    expect(call('clients.mail', { id: cid, subject: 'Ödeviniz', body: 'Ekte.', attachments: [{ ...pdf, type: 'application/x-msdownload', name: 'x.exe' }] }).ok).toBe(false);
+    expect(gas.mails).toHaveLength(0);
+    expect(call('clients.mail', { id: cid, subject: 'Ödeviniz', body: 'Ekte.', attachments: [pdf] }).ok).toBe(true);
+    expect(gas.mails).toEqual([expect.objectContaining({ to: 'ayse@example.com', subject: 'Ödeviniz', attachments: [pdf] })]);
+  });
+
   it('moving to Seans takip can send the weekly plan first; an empty e-mail changes nothing (owner’s note 2026-10-23)', () => {
     const { gas, call, send, requests } = setup();
     send(session);

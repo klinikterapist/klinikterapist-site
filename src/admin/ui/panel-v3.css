@@ -1980,32 +1980,6 @@ a.intake:hover {
 
 /* ---------- Ayarlar › Randevu Ayarları and Ücretlendirmeler (2026-10-23) ---------- */
 
-.type-switches {
-  display: grid;
-  gap: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.type-switches li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--p-border);
-}
-
-.type-switches li:last-child {
-  border-bottom: 0;
-}
-
-.ts-text {
-  display: grid;
-  gap: 2px;
-}
-
 .week-times {
   display: grid;
   gap: 0;
@@ -2013,7 +1987,7 @@ a.intake:hover {
 
 .wt-row {
   display: grid;
-  grid-template-columns: 7rem 1fr auto;
+  grid-template-columns: 8rem 1fr;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) 0;
@@ -2025,8 +1999,19 @@ a.intake:hover {
 }
 
 .wt-day {
+  display: grid;
   font-weight: 600;
   font-size: var(--text-sm);
+}
+
+.wt-day small {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.wt-row.is-off .wt-day {
+  color: var(--p-muted);
 }
 
 .wt-chips {
@@ -2075,6 +2060,8 @@ a.intake:hover {
 
 .wt-add {
   display: flex;
+  flex-wrap: wrap;
+  grid-column: 2;
   align-items: center;
   gap: 6px;
 }
@@ -2087,6 +2074,10 @@ a.intake:hover {
   .wt-row {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .wt-add {
+    grid-column: 1;
   }
 }
 
@@ -2155,4 +2146,312 @@ a.intake:hover {
 
 .edu-group-head .row {
   margin-left: auto;
+}
+
+/* ---------- Ücretlendirme (2026-10-23) ---------- */
+
+.fee-tiles b {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fees-grid {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+  margin-bottom: var(--space-4);
+}
+
+@media (min-width: 1100px) {
+  .fees-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  }
+}
+
+.fees-col {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.fees-page .pf-card {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.fees-page .pf-card h3 {
+  margin: 0;
+}
+
+.fees-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.fees-year {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--p-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.fees-year .k-input {
+  width: 5.5rem;
+  min-height: 36px;
+  text-align: center;
+}
+
+.fees-page .fee-table .k-input {
+  min-height: 38px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fees-qr {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--p-border);
+  border-radius: 12px;
+}
+
+.fees-qr img,
+.fees-qr .image-empty {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: var(--p-field);
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.fees-qr .stack {
+  gap: 4px;
+}
+
+.fees-page .fee-table th {
+  white-space: nowrap;
+}
+
+/* Danışanlar: one quiet row of tools (2026-10-23). */
+.client-tools {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: var(--p-surface);
+  color: var(--p-text) !important;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tool-btn .lucide,
+.tool-btn svg {
+  color: var(--tone, var(--p-muted));
+}
+
+.tool-btn:hover {
+  border-color: color-mix(in srgb, var(--p-text) 30%, transparent);
+  background: color-mix(in srgb, var(--tone-bg, var(--p-selected)) 55%, var(--p-surface));
+}
+
+/* Danışana e-posta: the attached files. */
+.compose-files {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.compose-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compose-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--p-selected);
+  font-size: var(--text-sm);
+}
+
+.compose-list li span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compose-list small {
+  color: var(--p-muted);
+}
+
+.compose-list button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--p-muted);
+  cursor: pointer;
+}
+
+.compose-list button:hover {
+  background: var(--p-highlight);
+  color: var(--p-text);
+}
+
+/* Randevu Ayarları: summary, tabs and their panels (2026-10-23). */
+.bs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.bs-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bs-tabs button[aria-selected='true'] {
+  background: var(--p-surface);
+  color: var(--p-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.bs-panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--p-border);
+  border-radius: 16px;
+  background: var(--p-surface);
+}
+
+.bs-subhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.type-cards {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 900px) {
+  .type-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.type-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tone-bg) 22%, var(--p-surface));
+  transition: opacity 0.15s ease;
+}
+
+.type-card.is-off {
+  background: transparent;
+  opacity: 0.72;
+}
+
+.tc-text {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.tc-meta {
+  color: var(--tone);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--space-3);
+}
+
+.rule-card {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+}
+
+.rule-label {
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rule-value {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.rule-value .k-input {
+  width: 5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.closed-fields {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }

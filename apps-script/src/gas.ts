@@ -3,6 +3,7 @@
  * The only file that touches Apps Script globals. Everything else takes a `Gas`, so the backend
  * runs under Vitest with an in-memory fake.
  */
+import type { Attachment } from '../../src/lib/attachments';
 import { logEvent } from './events';
 import { mailHtml, plainBody } from './mail-html';
 import { readQr } from './qr';
@@ -67,7 +68,7 @@ export interface Gas {
   triggers: { ensureHourly(handler: 'hourly'): void };
 }
 
-export type MailMessage = { to: string; replyTo: string; subject: string; body: string; name?: string; from?: string };
+export type MailMessage = { to: string; replyTo: string; subject: string; body: string; name?: string; from?: string; attachments?: Attachment[] };
 
 const ROOT_NAME = 'Klinikterapist Panel';
 const JSON_MIME = 'application/json';
@@ -227,8 +228,9 @@ export function realGas(): Gas {
         const qr = m.body.split('\n').some((l) => l.trim() === QR_LINE) ? readQr(gas) : '';
         const qrBlob = qr ? Utilities.newBlob(Utilities.base64Decode(qr.split(',')[1]), qr.slice(5, qr.indexOf(';')), 'karekod') : null;
         const htmlBody = mailHtml(m.body, { qr: !!qrBlob });
-        const extra = { ...(htmlBody ? { htmlBody } : {}), ...(qrBlob ? { inlineImages: { karekod: qrBlob } } : {}) };
-        m = { ...m, body: plainBody(m.body) };
+        const files = (m.attachments ?? []).map((a) => Utilities.newBlob(Utilities.base64Decode(a.data), a.type, a.name));
+        const extra = { ...(htmlBody ? { htmlBody } : {}), ...(qrBlob ? { inlineImages: { karekod: qrBlob } } : {}), ...(files.length ? { attachments: files } : {}) };
+        m = { ...m, body: plainBody(m.body), attachments: undefined };
         if (m.from) {
           try {
             GmailApp.sendEmail(m.to, m.subject, m.body, { from: m.from, replyTo: m.replyTo, name: m.name, ...extra });

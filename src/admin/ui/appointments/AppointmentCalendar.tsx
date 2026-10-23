@@ -6,7 +6,7 @@
  * small type and the picked day's appointments (the free intro and closing sessions marked as such).
  * The bar under a day is its occupancy; full, it turns red. Adding one is "Randevu ekle" at the top
  * of the page (AddAppointmentDialog).
- * Closed stretches ("Saat kapat", now in Ayarlar › Randevu Ayarları since the owner's review
+ * Closed stretches ("Takvim kapatma", on Danışanlar and in Ayarlar › Randevu Ayarları since the owner's review
  * 2026-10-23) are grey here, and "Aç" opens one again. Appointments in them stay.
  */
 import { useEffect, useMemo, useState } from 'react';
@@ -124,7 +124,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
       .filter((e) => e.start >= from && e.start < to)
       .map((e) =>
         e.status === 'closed'
-          ? { start: e.start, minutes: e.minutes, label: 'Kapalı', note: e.note ?? 'Saat kapat', tone: 'closed', entry: e }
+          ? { start: e.start, minutes: e.minutes, label: 'Kapalı', note: e.note ?? 'Takvim kapatma', tone: 'closed', entry: e }
           : e.status === 'confirmed'
             ? { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onaylı randevu', tone: 'ok', entry: e }
             : { start: e.start, minutes: e.minutes, label: labelOf(e), note: 'Onay bekleyen talep', tone: 'wait', entry: e },
@@ -253,7 +253,7 @@ export function AppointmentCalendar({ version = 0 }: { version?: number }) {
               <span className="mk-row mk-closed" aria-hidden="true">
                 <i className="mk" />
               </span>
-              Kapattığınız saat (Saat kapat); sitede dolu görünür
+              Kapattığınız saat (Takvim kapatma); sitede dolu görünür
             </li>
             <li>
               <span className="occ-legend-bar" aria-hidden="true" />
