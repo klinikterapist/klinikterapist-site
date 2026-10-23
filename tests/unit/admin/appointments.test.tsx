@@ -81,7 +81,7 @@ describe('ready e-mails', () => {
     expect(decisionMail(intro, 'approve').body).toContain('konuları konuşmak istediğinizi belirttiniz:\n\n– Kaygı ve stres\n– Uyku');
     const u = decisionMail(session, 'unavailable');
     expect(u.body).toContain('Ne yazık ki bu tarih ve saatte uygun olmadığım için talebinizi onaylayamıyorum.');
-    expect(u.body).toContain('https://klinikterapist.com/randevu/');
+    expect(u.body).toContain('https://klinikterapist.com/seans-randevusu/');
     expect(decisionMail({ ...intro, lang: 'en' }, 'cancel').body).toContain('https://klinikterapist.com/en/intro-call/');
   });
 
@@ -591,10 +591,26 @@ describe('Faz 2: Terapist profili, Bildirimler, Saat kapat', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Danışana e-posta' }));
     const dialog = screen.getByRole('dialog', { name: 'Danışana e-posta' });
-    fireEvent.change(within(dialog).getByLabelText('Danışan'), { target: { value: 'c2' } });
-    fireEvent.change(within(dialog).getByLabelText('Konu türü'), { target: { value: 'odev' } });
+    // Nobody is picked at first, so nothing can go to the first client by mistake.
+    expect((within(dialog).getByRole('button', { name: 'Gönder' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(within(dialog).getByLabelText('Danışan ara'), { target: { value: 'ayse@' } });
+    expect(within(dialog).queryByRole('option', { name: /KT001OGO/ })).toBeNull();
+    fireEvent.click(within(dialog).getByRole('option', { name: /KT002AY/ }));
+    expect(within(dialog).getByText('Ayşe Yılmaz')).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Ödev' }));
     expect((within(dialog).getByLabelText('Konu') as HTMLInputElement).value).toBe('Ödeviniz – klinikterapist.com');
     expect((within(dialog).getByLabelText('Mesaj') as HTMLTextAreaElement).value).toMatch(/^Sayın Ayşe Yılmaz,/);
+    // The owner's own text stays when the kind changes; "Hazır metni uygula" brings the ready text back.
+    fireEvent.change(within(dialog).getByLabelText('Mesaj'), { target: { value: 'Kendi metnim' } });
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Kaynak önerisi' }));
+    expect((within(dialog).getByLabelText('Mesaj') as HTMLTextAreaElement).value).toBe('Kendi metnim');
+    expect((within(dialog).getByLabelText('Konu') as HTMLInputElement).value).toBe('Size bir kaynak önerim var – klinikterapist.com');
+    fireEvent.click(within(dialog).getByRole('radio', { name: 'Ödev' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Hazır metni uygula' }));
+    expect((within(dialog).getByLabelText('Mesaj') as HTMLTextAreaElement).value).toMatch(/ödevinizi aşağıda bulabilirsiniz/);
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Önizle' }));
+    expect(within(dialog).getByLabelText('Önizleme').textContent).toContain('ayse@example.com');
+    fireEvent.click(within(dialog).getByRole('tab', { name: 'Yaz' }));
     const file = new File(['ödev'], 'odev.pdf', { type: 'application/pdf' });
     fireEvent.change(dialog.querySelector('input[type=file]')!, { target: { files: [file] } });
     expect(await within(dialog).findByText('odev.pdf')).toBeTruthy();

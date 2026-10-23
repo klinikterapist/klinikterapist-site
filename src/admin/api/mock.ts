@@ -621,7 +621,7 @@ export function demoStats(files: Map<string, { content: string }>, now: number):
       slugs.push(slug);
     }
   }
-  const pages = ['/', '/hakkimda/', '/blog/', '/iletisim/', '/randevu/', '/sik-sorulan-sorular/', '/en/', '/kaynaklar/'];
+  const pages = ['/', '/hakkimda/', '/blog/', '/iletisim/', '/seans-randevusu/', '/sik-sorulan-sorular/', '/en/', '/kaynaklar/'];
   const refs = ['direct', 'instagram.com', 'l.instagram.com', 'google.com', 'google.com.tr', 't.co', 'linkedin.com', 'bing.com'];
   let seed = 7;
   const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);

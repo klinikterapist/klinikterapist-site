@@ -16,6 +16,8 @@ export const STRINGS = {
   socialLinks: { tr: 'Sosyal bağlantılar', en: 'Social links' },
   skipToContent: { tr: 'İçeriğe geç', en: 'Skip to content' },
   bookSession: { tr: 'Randevu Al', en: 'Book a Session' },
+  /** The session booking page's own title (owner's review 2026-10-23); "Randevu Al" stays on the buttons. */
+  sessionBookingTitle: { tr: 'Seans Randevusu Al', en: 'Book a Session' },
   bookingClosed: { tr: 'Randevu alımına kapalı', en: 'Bookings closed' },
   switchLangLabel: { tr: 'ENG, English version', en: 'TR, Türkçe sürüm' },
   minRead: { tr: 'dk okuma', en: 'min read' },

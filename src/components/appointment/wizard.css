@@ -290,10 +290,18 @@
   background: #3fa66b;
 }
 
-/* "Kontenjanlı": a quiet outlined badge in the accent colour (booking and intro call). */
+/* "Kontenjanlı" (owner's review 2026-10-23): green while the places are open; "Kontenjan Doldu" once
+   the type is closed, in the warm tone. */
 .wz .badge-quota {
-  border: 1px solid color-mix(in srgb, var(--sun-disc) 70%, transparent);
-  color: var(--link);
+  border: 1px solid color-mix(in srgb, #3fa66b 55%, transparent);
+  background: color-mix(in srgb, #3fa66b 12%, transparent);
+  color: var(--text);
+}
+
+.wz .badge-full {
+  border: 1px solid color-mix(in srgb, var(--tone-kiremit) 55%, transparent);
+  background: color-mix(in srgb, var(--tone-kiremit) 12%, transparent);
+  color: var(--text);
 }
 
 .wz .badge-soon {

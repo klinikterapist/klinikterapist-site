@@ -7,7 +7,7 @@ import { ADMIN_CONFIG } from '../../src/admin/config';
 import { CONTACT_TOPICS } from '../../src/lib/contact-form';
 
 const STATIC_PAGES = [
-  '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/randevu/', '/aydinlatma-metni/', '/gizlilik/',
+  '/', '/hakkimda/', '/kaynaklar/', '/iletisim/', '/seans-randevusu/', '/aydinlatma-metni/', '/gizlilik/',
   '/en/', '/en/about/', '/en/resources/', '/en/contact/', '/en/appointment/',
   '/en/privacy-notice/', '/en/privacy-policy/', '/sik-sorulan-sorular/', '/en/faq/', '/404.html',
   '/blog/populer/', '/en/blog/popular/',
@@ -30,7 +30,7 @@ describe('static pages', () => {
       expect(d.querySelectorAll('img').filter((i) => !i.hasAttribute('alt')).length, p).toBe(0);
       expect(d.textContent, p).not.toMatch(/Lefkoşa|İstanbul|NFC/i);
       // The booking forms name face-to-face therapy only as "not available now" (owner's design); no other page mentions it.
-      if (!['/randevu/', '/on-gorusme/'].includes(p)) expect(d.textContent, p).not.toMatch(/yüz yüze/i);
+      if (!['/seans-randevusu/', '/on-gorusme/'].includes(p)) expect(d.textContent, p).not.toMatch(/yüz yüze/i);
     }
   });
 
@@ -105,8 +105,8 @@ describe('static pages', () => {
   });
 
   it('booking pages hold the live form, with e-mail as the fallback and "Haber et" for a closed language', () => {
-    const tr = loadPage('/randevu/');
-    expect(tr.querySelector('h1')?.text).toBe('Randevu Al');
+    const tr = loadPage('/seans-randevusu/');
+    expect(tr.querySelector('h1')?.text).toBe('Seans Randevusu Al');
     expect(tr.querySelector('main [data-booking][data-lang="tr"]')).not.toBeNull();
     expect(tr.querySelector('main a[href="mailto:iletisim@example.com"]')).not.toBeNull();
     const en = loadPage('/en/appointment/');
@@ -260,7 +260,7 @@ describe('page shell (every page but home)', () => {
   const isPost = (p: string) => /^\/(en\/)?blog\/[^/]+\/$/.test(p);
   const langOf = (p: string) => (p.startsWith('/en/') ? 'en' : 'tr');
   // No bottom bar on the client's page, the start page and the forms themselves.
-  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/randevu/', '/on-gorusme/'];
+  const NO_CTA = ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/seans-randevusu/', '/on-gorusme/'];
 
   /** All CSS a built page loads: its stylesheet links and inline <style> blocks. */
   const pageCss = (p: string) => {
@@ -483,8 +483,8 @@ describe('inner pages redesign (spec §5.9)', () => {
   });
 
   it('appointment, legal and 404 keep their content in the new look', () => {
-    const appt = loadPage('/randevu/');
-    expect(appt.querySelector('main .page-head h1')?.text).toBe('Randevu Al');
+    const appt = loadPage('/seans-randevusu/');
+    expect(appt.querySelector('main .page-head h1')?.text).toBe('Seans Randevusu Al');
     // The live booking form, without the dev server's preview note.
     expect(appt.querySelector('main [data-booking][data-endpoint]')).toBeTruthy();
     expect(appt.querySelector('main .preview-note')).toBeNull();
@@ -513,7 +513,7 @@ describe('inner pages redesign (spec §5.9)', () => {
 
   it('the booking start page: three ways (intro call recommended), each a link to its own page, in search now that booking is live', () => {
     const sm = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
-    for (const [path, intro, appt, info] of [['/randevu-al/', '/on-gorusme/', '/randevu/', '/bilgi-al/'], ['/en/book/', '/en/intro-call/', '/en/appointment/', '/en/information/']] as const) {
+    for (const [path, intro, appt, info] of [['/randevu-al/', '/on-gorusme/', '/seans-randevusu/', '/bilgi-al/'], ['/en/book/', '/en/intro-call/', '/en/appointment/', '/en/information/']] as const) {
       const d = loadPage(path);
       expect(d.querySelectorAll('main .way').length, path).toBe(3);
       expect(d.querySelector('main .way.is-recommended a')?.getAttribute('href'), path).toBe(intro);
@@ -552,13 +552,13 @@ describe('inner pages redesign (spec §5.9)', () => {
   it('the client’s own page and the booking pages load no Google Analytics, even where the site has it (real data build)', () => {
     const home = loadPage('/', DIST_SAMPLES).toString();
     expect(home).toContain('googletagmanager');
-    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/randevu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
+    for (const path of ['/randevum/', '/en/my-appointment/', '/randevu-al/', '/en/book/', '/bilgi-al/', '/en/information/', '/seans-randevusu/', '/en/appointment/', '/on-gorusme/', '/en/intro-call/']) {
       const d = loadPage(path, DIST_SAMPLES);
       expect(d.toString(), path).not.toContain('googletagmanager');
       expect(d.querySelector('[data-consent-bar]'), path).toBeNull();
     }
     // The site's own cookieless counter stays on the booking pages, as on the home page.
-    expect(loadPage('/randevu/', DIST_SAMPLES).toString().includes('stats.hit')).toBe(home.includes('stats.hit'));
+    expect(loadPage('/seans-randevusu/', DIST_SAMPLES).toString().includes('stats.hit')).toBe(home.includes('stats.hit'));
   });
 });
 
@@ -666,5 +666,13 @@ describe('sample content (real posts and data)', () => {
       // Rendered artefacts only: an attribute or a whole text node that is literally undefined/null, never prose.
       expect(d.toString(), path).not.toMatch(/="(undefined|null)"|>\s*(undefined|null)\s*</);
     }
+  });
+});
+
+describe('moved pages (owner, 2026-10-23)', () => {
+  it('the old /randevu/ address leads on to "Seans Randevusu Al", with its query and anchor', () => {
+    const html = loadPage('/randevu/').toString();
+    expect(html).toContain('location.replace(to + location.search + location.hash)');
+    expect(html).toContain('url=/seans-randevusu/');
   });
 });

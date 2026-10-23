@@ -3,6 +3,9 @@ import type { LucideIcon } from 'lucide-react';
 
 export {
   Paperclip,
+  Send,
+  Info,
+  Upload,
   X,
   CalendarCog,
   Copy,

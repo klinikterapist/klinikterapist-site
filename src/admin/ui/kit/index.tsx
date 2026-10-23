@@ -168,6 +168,8 @@ type DialogProps = {
   onClose: () => void;
   /** Join the browser history, so the phone's "back" closes the dialog (via `onClose`) instead of leaving the page. */
   history?: boolean;
+  /** `wide`: a larger window for writing (Danışana e-posta). */
+  size?: 'wide';
 };
 
 /** Modal dialog with focus moved inside and Escape to cancel. */
@@ -181,7 +183,7 @@ function HistoryDialog(props: DialogProps) {
   return <DialogFrame {...props} />;
 }
 
-function DialogFrame({ title, children, actions, onClose }: DialogProps) {
+function DialogFrame({ title, children, actions, onClose, size }: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -198,7 +200,7 @@ function DialogFrame({ title, children, actions, onClose }: DialogProps) {
   // editor's sticky toolbar and footer (owner's review 2026-10-20).
   return createPortal(
     <div className="k-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="k-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
+      <div className={`k-dialog${size ? ` k-dialog-${size}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={ref}>
         <h2 id={titleId}>{title}</h2>
         <div className="k-dialog-body">{children}</div>
         <div className="k-dialog-actions">{actions}</div>

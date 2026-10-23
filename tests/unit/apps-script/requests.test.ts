@@ -278,7 +278,7 @@ describe('Randevu ekle, e-mail check, sessions, closing booking and "Haber et" (
     expect(s.call<{ entries: { status: string }[] }>('calendar.list').data.entries.map((e) => e.status)).toEqual(['confirmed']);
     const sent = s.gas.mails.at(-1)!;
     expect(sent).toMatchObject({ to: 'osman@example.com', subject: 'Konu' });
-    expect(sent.body).toContain('https://klinikterapist.com/randevu/?dogrula=');
+    expect(sent.body).toContain('https://klinikterapist.com/seans-randevusu/?dogrula=');
     expect(handle(s.gas, JSON.stringify({ action: 'booking.verify', code: codeIn(sent.body) }))).toMatchObject({ ok: true });
     expect(s.requests()[0]).toMatchObject({ verified: true });
     // A forged code does nothing.

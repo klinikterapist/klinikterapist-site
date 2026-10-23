@@ -84,7 +84,7 @@ describe('jsonld', () => {
     const ld = professionalServiceLd('tr');
     expect(JSON.stringify(professionalServiceLd('tr'))).not.toContain('address');
     expect(ld).toMatchObject({ '@type': 'ProfessionalService', areaServed: 'Online' });
-    expect(ld.availableChannel).toMatchObject({ '@type': 'ServiceChannel', serviceUrl: 'https://example.com/randevu/' });
+    expect(ld.availableChannel).toMatchObject({ '@type': 'ServiceChannel', serviceUrl: 'https://example.com/seans-randevusu/' });
   });
 
   it('person uses the profile title and public links', () => {

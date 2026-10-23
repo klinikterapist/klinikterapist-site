@@ -106,13 +106,6 @@ select option:disabled {
   color: var(--muted);
 }
 
-/* The desktop header floats over the page (owner's choice C, 2026-10-23): jumps to an anchor stop below it. */
-@media (min-width: 768px) {
-  html {
-    scroll-padding-top: 104px;
-  }
-}
-
 /* Layout helpers */
 .container {
   width: 100%;

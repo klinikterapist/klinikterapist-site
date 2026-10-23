@@ -12,7 +12,7 @@
 import type { Lang } from '../../lib/settings';
 import { getBooking, getProfile } from '../../lib/settings';
 import { ADMIN_CONFIG, MOCK_API_URL } from '../../admin/config';
-import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, typeOn } from '../../lib/booking-form';
+import { AGE_RANGES, INTRO_FOR, INTRO_TOPICS, SESSION_TYPES, TYPE_BADGES, typeState } from '../../lib/booking-form';
 import { pathFor } from '../../i18n/routes';
 import Icon from '../Icon.astro';
 import RoundPortrait from '../ui/RoundPortrait.astro';
@@ -51,7 +51,6 @@ const T = {
     couple: 'Eş veya partnerimle birlikte',
     coupleText: 'Aile ve çift terapisini düşünüyoruz.',
     access: 'Kendim için, uygun ücretle',
-    accessBadge: 'Kontenjanlı',
     accessText: 'Öğrenciyim ya da ekonomik durumum şu an elverişli değil; erişilebilir terapiyi düşünüyorum.',
     group: 'Bir gruba katılmak istiyorum',
     groupText: 'Benzer konularla gelen küçük bir grupla birlikte çalışmayı düşünüyorum.',
@@ -59,8 +58,6 @@ const T = {
     faceText: 'Şu an yalnızca online görüşme yapıyorum.',
     faceOnText: 'Yüz yüze terapiyi düşünüyorum.',
     groupOnText: 'Grup terapisini düşünüyorum.',
-    soon: 'Yakında',
-    off: 'Şu an uygun değil',
     reasons: 'Terapide üzerinde çalışmak istediğiniz konular neler?',
     reasonsHint: 'Birden fazla seçebilirsiniz. Emin değilseniz son seçeneği işaretlemeniz yeterli.',
     before: 'Daha önce psikolojik destek aldınız mı?',
@@ -124,7 +121,6 @@ const T = {
     couple: 'With my spouse or partner',
     coupleText: 'We are thinking of family and couples therapy.',
     access: 'For myself, at a reduced fee',
-    accessBadge: 'Limited places',
     accessText: 'I am a student or money is tight for me right now; I am thinking of accessible therapy.',
     group: 'I would like to join a group',
     groupText: 'I am thinking of working together with a small group who come with similar topics.',
@@ -132,8 +128,6 @@ const T = {
     faceText: 'For now I only work online.',
     faceOnText: 'I am thinking of face-to-face therapy.',
     groupOnText: 'I am thinking of group therapy.',
-    soon: 'Coming soon',
-    off: 'Not available now',
     reasons: 'What would you like to work on in therapy?',
     reasonsHint: 'You can choose more than one. If you are not sure, the last option is enough.',
     before: 'Have you had psychological support before?',
@@ -187,8 +181,8 @@ const F = FORM_TEXT[lang];
 const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain });
 
 // "Görüşme kimin için?": one choice per session type that has an intro call, offered while that type
-// is (Ayarlar › Randevu Ayarları, owner's request 2026-10-23). Group and face to face stay, faded,
-// while off; other choices switched off are left out.
+// is (Ayarlar › Randevu Ayarları, owner's reviews 2026-10-23). A closed one stays, faded, with
+// "Kontenjan Doldu" or "Şu an uygun değil", unless the owner chose to hide it.
 const FOR_TEXT: Record<(typeof INTRO_FOR)[number]['id'], { label: string; text: string; onText?: string }> = {
   individual: { label: T.me, text: T.meText },
   couple: { label: T.couple, text: T.coupleText },
@@ -197,10 +191,13 @@ const FOR_TEXT: Record<(typeof INTRO_FOR)[number]['id'], { label: string; text: 
   face: { label: T.face, text: T.faceText, onText: T.faceOnText },
 };
 const forWhom = INTRO_FOR.map((f) => {
-  const on = typeOn(booking, f.id);
+  const state = typeState(booking, f.id);
+  const on = state === 'on';
   const look = FOR_TEXT[f.id];
-  return { id: f.id, on, label: look.label, text: on ? (look.onText ?? look.text) : look.text };
-}).filter((x) => x.on || x.id === 'group' || x.id === 'face');
+  const quota = SESSION_TYPES.some((t) => t.id === f.id && t.quota);
+  return { id: f.id, on, state, quota, label: look.label, text: on ? (look.onText ?? look.text) : look.text };
+}).filter((x) => x.state !== 'hidden');
+const firstOn = forWhom.findIndex((x) => x.on);
 ---
 
 <div class="wz preconsult" data-preconsult data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="intro" data-config={config} data-endpoint={endpoint} data-messages={messages}>
@@ -239,12 +236,12 @@ const forWhom = INTRO_FOR.map((f) => {
           {
             forWhom.map((x, i) => (
               <label class:list={['type', { 'is-off': !x.on }]}>
-                {x.on ? <input type="radio" name="forWhom" value={x.id} data-sum-src="for" data-label={x.label} checked={i === 0} /> : <input type="radio" name="forWhom" value={x.id} disabled />}
+                {x.on ? <input type="radio" name="forWhom" value={x.id} data-sum-src="for" data-label={x.label} checked={i === firstOn} /> : <input type="radio" name="forWhom" value={x.id} disabled />}
                 <span class="type-body">
                   <span class="type-top">
                     <b>{x.label}</b>
-                    {!x.on && <span class="badge badge-soon">{x.id === 'group' ? T.soon : T.off}</span>}
-                    {x.on && x.id === 'accessible' && <span class="badge badge-quota">{T.accessBadge}</span>}
+                    {!x.on && <span class:list={['badge', x.state === 'full' ? 'badge-full' : 'badge-soon']}>{TYPE_BADGES[x.state === 'full' ? 'full' : 'off'][lang]}</span>}
+                    {x.on && x.quota && <span class="badge badge-quota">{TYPE_BADGES.quota[lang]}</span>}
                   </span>
                   <span class="type-text">{x.text}</span>
                 </span>

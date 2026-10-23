@@ -1,21 +1,26 @@
 /**
  * Texts under the booking form (owner's requests 2026-10-19): one explanation per session type. Each
  * is a list of blocks: a paragraph, a small heading or a bullet list. The ids are anchors ("Ayrıntılar"
- * links in the session type list). The common questions about appointments moved to faq.json
+ * links in the session type list). They follow Ayarlar › Randevu Ayarları (owner's review 2026-10-23):
+ * `on` blocks show while the type is offered, `off` blocks once it is closed, and the page adds
+ * "(kontenjan doldu)" or "(şu an uygun değil)" to the title of a closed type (`typeInfo`). The common questions about appointments moved to faq.json
  * (pages: booking) on 2026-10-21, so the owner edits them in the panel; textBlocks reads their answers.
  */
 import type { Lang } from '../../lib/settings';
+import { SESSION_TYPES, typeState, type BookingConfig, type SessionTypeId } from '../../lib/booking-form';
 
 export type Block = string | { h: string } | { ul: string[] };
 export type InfoItem = { id: string; icon: string; q: string; body: Block[] };
+type TypeItem = InfoItem & { type: SessionTypeId; on?: Block[]; off?: Block[] };
 
-type Texts = { typesTitle: string; types: InfoItem[]; faqTitle: string };
+type Texts = { typesTitle: string; types: TypeItem[]; faqTitle: string; full: string; closed: string };
 
 const TR: Texts = {
   typesTitle: 'Görüşme türleri',
   types: [
     {
       id: 'bireysel-terapi',
+      type: 'individual',
       icon: 'user',
       q: 'Bireysel terapi seansı',
       body: [
@@ -33,6 +38,7 @@ const TR: Texts = {
     },
     {
       id: 'cift-terapisi',
+      type: 'couple',
       icon: 'users',
       q: 'Aile ve çift terapisi seansı',
       body: [
@@ -51,26 +57,32 @@ const TR: Texts = {
     },
     {
       id: 'grup-terapisi',
+      type: 'group',
       icon: 'chat',
-      q: 'Grup terapisi seansı (yakında)',
+      q: 'Grup terapisi seansı',
       body: [
         'Grup terapisi, benzer konularla gelen küçük bir grubun bir terapist eşliğinde düzenli olarak bir araya geldiği görüşmelerdir. Başkalarının deneyimlerini duymak, yalnız olmadığınızı görmek ve yeni bakış açıları kazanmak bu çalışmanın en güçlü yanlarıdır.',
-        'Grup terapisi henüz başlamadı. Açıldığında bu sayfada duyuracağım; ilgileniyorsanız ön görüşmede bunu belirtebilirsiniz.',
       ],
+      on: ['Seanslar online yapılır ve 90 dakika sürer. Grubun konusunu ve size uygun olup olmadığını ön görüşmede birlikte konuşabiliriz.'],
+      off: ['Grup terapisi şu an açık değil. Açıldığında bu sayfada duyuracağım; ilgileniyorsanız ön görüşmede bunu belirtebilirsiniz.'],
     },
     {
       id: 'yuz-yuze-terapi',
+      type: 'face',
       icon: 'home',
-      q: 'Yüz yüze terapi (şu an uygun değil)',
-      body: [
+      q: 'Yüz yüze terapi',
+      body: [],
+      on: ['Yüz yüze terapi, aynı odada birebir yürüttüğümüz görüşmelerdir. Seanslar 50 dakika sürer; yer ve ayrıntıları e-postayla iletirim.'],
+      off: [
         'Şu an yalnızca online görüşme yapıyorum, bu yüzden yüz yüze seans seçeneği kapalı. Online terapi, pek çok konuda yüz yüze terapi kadar etkili bir yol olarak kullanılıyor ve size yolculuk zamanı kazandırıyor.',
         'Yüz yüze görüşmeler başladığında bu sayfada duyuracağım.',
       ],
     },
     {
       id: 'erisilebilir-terapi',
+      type: 'accessible',
       icon: 'heart',
-      q: 'Erişilebilir terapi seansı nedir, kimler yararlanabilir?',
+      q: 'Erişilebilir terapi seansı',
       body: [
         'Psikolojik desteğin yalnızca ödeme gücü olanlara açık olmaması gerektiğine inanıyorum. Erişilebilir terapi seansı, bu yüzden oluşturduğum uygun ücretli bir bireysel terapi seçeneğidir.',
         'Seanslar bireysel ve online yapılır, 50 dakika sürer. Özen, yöntem ve gizlilik açısından diğer seanslardan hiçbir farkı yoktur; değişen yalnızca ücrettir.',
@@ -84,12 +96,35 @@ const TR: Texts = {
         },
         { h: 'Kontenjan nasıl belirlenir?' },
         'Bu seanslar için ayırdığım yer sınırlıdır. Kontenjanı ve bu seçenekten kimlerin yararlanacağını, başvuruları değerlendirerek ben belirlerim. Kontenjan dolu olduğunda sizi bekleme listesine alabilir ya da uygun kurum ve kaynaklara yönlendirebilirim.',
+      ],
+      on: [
         { h: 'Nasıl başvurulur?' },
         'Randevu formunda "Erişilebilir Terapi Seansı" seçeneğini işaretlemeniz yeterli. Ücret ve ayrıntıları e-postayla iletirim. Bu konuyu konuşmak sizi zorlamasın; durumunuzu paylaşmanız, size en uygun yolu birlikte bulmamızı sağlar.',
       ],
+      off: ['Şu an erişilebilir terapi kontenjanı dolu. Yer açıldığında bu seçenek randevu formunda yeniden seçilebilir olacak.'],
+    },
+    {
+      id: 'supervizyon',
+      type: 'supervision',
+      icon: 'grad',
+      q: 'Süpervizyon terapi seansı',
+      body: [
+        'Süpervizyon seansı, eğitim süpervizyonu kapsamında yürüttüğüm, sembolik ücretli bir terapi seansıdır. Seanslar online yapılır ve 50 dakika sürer.',
+        { h: 'Bilmeniz gerekenler' },
+        {
+          ul: [
+            'Görüşmeler, ayrıca onay verdiğiniz bilgilendirilmiş onamla süpervizörümle paylaşılabilir.',
+            'Bu seanslar için ayırdığım yer sınırlıdır; kimlerin yararlanacağını başvuruları değerlendirerek belirlerim.',
+          ],
+        },
+      ],
+      on: ['Randevu formunda "Süpervizyon Terapi Seansı" seçeneğini işaretlemeniz yeterli. Ücret ve ayrıntıları e-postayla iletirim.'],
+      off: ['Şu an süpervizyon seansı kontenjanı dolu. Yer açıldığında bu seçenek randevu formunda yeniden seçilebilir olacak.'],
     },
   ],
   faqTitle: 'Randevuyla ilgili sık sorulan sorular',
+  full: 'kontenjan doldu',
+  closed: 'şu an uygun değil',
 };
 
 const EN: Texts = {
@@ -97,6 +132,7 @@ const EN: Texts = {
   types: [
     {
       id: 'bireysel-terapi',
+      type: 'individual',
       icon: 'user',
       q: 'Individual therapy session',
       body: [
@@ -114,6 +150,7 @@ const EN: Texts = {
     },
     {
       id: 'cift-terapisi',
+      type: 'couple',
       icon: 'users',
       q: 'Family and couples therapy session',
       body: [
@@ -132,26 +169,32 @@ const EN: Texts = {
     },
     {
       id: 'grup-terapisi',
+      type: 'group',
       icon: 'chat',
-      q: 'Group therapy session (coming soon)',
+      q: 'Group therapy session',
       body: [
         'In group therapy, a small group with similar concerns meets regularly with a therapist. Hearing others’ experiences, seeing you are not alone and gaining new perspectives are the strengths of this work.',
-        'Group therapy has not started yet. I will announce it on this page; if you are interested, you can mention it in the intro call.',
       ],
+      on: ['Sessions are online and last 90 minutes. We can talk in the intro call about the group’s theme and whether it suits you.'],
+      off: ['Group therapy is not open now. I will announce it on this page; if you are interested, you can mention it in the intro call.'],
     },
     {
       id: 'yuz-yuze-terapi',
+      type: 'face',
       icon: 'home',
-      q: 'Face-to-face therapy (not available now)',
-      body: [
+      q: 'Face-to-face therapy',
+      body: [],
+      on: ['Face-to-face therapy means one-to-one sessions in the same room. Sessions last 50 minutes; I send the place and details by e-mail.'],
+      off: [
         'For now I only work online, so face-to-face sessions are closed. Online therapy is used as an effective way of working for many concerns and saves you travel time.',
         'I will announce face-to-face sessions on this page when they start.',
       ],
     },
     {
       id: 'erisilebilir-terapi',
+      type: 'accessible',
       icon: 'heart',
-      q: 'What is an accessible therapy session, and who can use it?',
+      q: 'Accessible therapy session',
       body: [
         'I believe psychological support should not be open only to those who can afford it. The accessible therapy session is a lower-fee individual therapy option I created for that reason.',
         'Sessions are individual and online and last 50 minutes. In care, method and confidentiality they are no different from other sessions; only the fee changes.',
@@ -165,15 +208,55 @@ const EN: Texts = {
         },
         { h: 'How are places decided?' },
         'The number of places I set aside for these sessions is limited. I decide the number of places and who can use this option after reviewing the requests. When places are full, I may add you to a waiting list or refer you to suitable services and resources.',
+      ],
+      on: [
         { h: 'How do I ask for it?' },
         'Just choose "Accessible Therapy Session" in the booking form. I send the fee and details by e-mail. Please do not let this conversation hold you back; sharing your situation helps us find the best way forward together.',
       ],
+      off: ['The places for accessible therapy are full right now. When a place opens, you can choose it in the booking form again.'],
+    },
+    {
+      id: 'supervizyon',
+      type: 'supervision',
+      icon: 'grad',
+      q: 'Supervision therapy session',
+      body: [
+        'A supervision session is a therapy session at a symbolic fee that I hold as part of training supervision. Sessions are online and last 50 minutes.',
+        { h: 'Good to know' },
+        {
+          ul: [
+            'With your separate informed consent, sessions may be discussed with my supervisor.',
+            'The places for these sessions are limited; I decide who can use them after reviewing the requests.',
+          ],
+        },
+      ],
+      on: ['Just choose "Supervision Therapy Session" in the booking form. I send the fee and details by e-mail.'],
+      off: ['The places for supervision sessions are full right now. When a place opens, you can choose it in the booking form again.'],
     },
   ],
   faqTitle: 'Common questions about appointments',
+  full: 'places full',
+  closed: 'not available now',
 };
 
 export const bookingInfo = (lang: Lang): Texts => (lang === 'en' ? EN : TR);
+
+/**
+ * The session type explanations as the page shows them: in the order of the session type list, a type
+ * hidden on the form left out, a closed one with its state in the title and its `off` blocks.
+ */
+export function typeInfo(lang: Lang, cfg: Pick<BookingConfig, 'types' | 'closedAs'>): InfoItem[] {
+  const t = bookingInfo(lang);
+  const order: string[] = SESSION_TYPES.map((x) => x.id);
+  return [...t.types]
+    .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type))
+    .flatMap((item) => {
+      const state = typeState(cfg, item.type);
+      if (state === 'hidden') return [];
+      const on = state === 'on';
+      return [{ id: item.id, icon: item.icon, q: on ? item.q : `${item.q} (${state === 'full' ? t.full : t.closed})`, body: [...item.body, ...((on ? item.on : item.off) ?? [])] }];
+    });
+}
 
 /** An answer written in the panel as blocks: blank lines part paragraphs, "- " lines make a list, "### " a heading. */
 export function textBlocks(text: string): Block[] {

@@ -2284,48 +2284,349 @@ a.intake:hover {
   background: color-mix(in srgb, var(--tone-bg, var(--p-selected)) 55%, var(--p-surface));
 }
 
-/* Danışana e-posta: the attached files. */
-.compose-files {
+/* Danışana e-posta (2026-10-23): a wider window; Kime, Konu türü, the letter (write or preview), Ekler. */
+.k-dialog.k-dialog-wide {
+  width: min(48rem, 100%);
+}
+
+.cm {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.cm-block {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.cm .cm-label {
+  margin: 0;
+  color: var(--p-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cm-label .k-hint {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.cm-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--p-accent) 22%, var(--p-surface));
+  color: var(--p-text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.cm-who {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.cm-who > span {
+  overflow: hidden;
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cm-client {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--p-accent) 6%, var(--p-surface));
+}
+
+.cm-lang {
+  padding: 2px 8px;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  color: var(--p-muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.cm-pick {
+  display: grid;
   gap: var(--space-2);
 }
 
-.compose-list {
+.cm-search {
+  position: relative;
+  display: block;
+}
+
+.cm-search > svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: var(--p-muted);
+  transform: translateY(-50%);
+}
+
+.cm-search .k-input {
+  width: 100%;
+  padding-left: 36px;
+}
+
+.cm-results {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 6px;
+  max-height: 13rem;
+  margin: 0;
+  padding: 2px;
+  overflow: auto;
+  list-style: none;
+}
+
+.cm-results button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 10px;
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: var(--p-surface);
+  color: var(--p-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.cm-results button:hover,
+.cm-results button[aria-selected='true'] {
+  border-color: var(--p-accent);
+  background: color-mix(in srgb, var(--p-accent) 8%, var(--p-surface));
+}
+
+.cm-none {
+  padding: var(--space-2);
+}
+
+.cm-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cm-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  background: var(--p-surface);
+  color: var(--p-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cm-kind svg {
+  color: var(--tone);
+}
+
+.cm-kind:hover {
+  border-color: color-mix(in srgb, var(--tone) 50%, var(--p-border));
+}
+
+.cm-kind[aria-checked='true'] {
+  border-color: var(--tone);
+  background: color-mix(in srgb, var(--tone-bg) 70%, var(--p-surface));
+  box-shadow: inset 0 0 0 1px var(--tone);
+}
+
+.cm-letter {
+  padding: var(--space-3);
+  border: 1px solid var(--p-border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--p-text) 2%, var(--p-surface));
+}
+
+.cm-letter-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.cm-letter-head .segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cm-letter-head .segmented button[aria-selected='true'] {
+  background: var(--p-surface);
+  color: var(--p-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
+.cm-body {
+  min-height: 14rem;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.cm-preview {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--p-border);
+  border-radius: 12px;
+  background: var(--p-surface);
+}
+
+.cm-preview dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--space-3);
+  margin: 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--p-border);
+  font-size: var(--text-sm);
+}
+
+.cm-preview dt {
+  color: var(--p-muted);
+}
+
+.cm-preview dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cm-preview-body {
+  max-height: 20rem;
+  overflow: auto;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cm-preview-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: var(--space-2) 0 0;
+  border-top: 1px solid var(--p-border);
+  list-style: none;
+}
+
+.cm-preview-files li {
+  display: inline-flex;
+  align-items: center;
   gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--p-selected);
+  font-size: var(--text-xs);
+}
+
+.cm-drop {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: var(--space-4) var(--space-3);
+  border: 1.5px dashed var(--p-border);
+  border-radius: 14px;
+  color: var(--p-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cm-drop > span {
+  color: var(--p-text);
+}
+
+.cm-drop .linklike {
+  min-height: 0;
+}
+
+.cm-drop small {
+  font-size: var(--text-xs);
+}
+
+.cm-drop.is-over {
+  border-color: var(--p-accent);
+  background: color-mix(in srgb, var(--p-accent) 8%, transparent);
+}
+
+.cm-files {
+  display: grid;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.compose-list li {
+.cm-files li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 6px 6px 6px 8px;
+  border: 1px solid var(--p-border);
   border-radius: 10px;
-  background: var(--p-selected);
   font-size: var(--text-sm);
 }
 
-.compose-list li span {
+.cm-file-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--p-selected);
+  color: var(--p-muted);
+}
+
+.cm-file-name {
   flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.compose-list small {
+.cm-files small {
   color: var(--p-muted);
 }
 
-.compose-list button {
+.cm-files button {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: 0;
   border-radius: 50%;
   background: transparent;
@@ -2333,22 +2634,94 @@ a.intake:hover {
   cursor: pointer;
 }
 
-.compose-list button:hover {
+.cm-files button:hover {
   background: var(--p-highlight);
   color: var(--p-text);
 }
 
-/* Randevu Ayarları: summary, tabs and their panels (2026-10-23). */
+.cm-meter {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--p-selected);
+}
+
+.cm-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--p-accent);
+}
+
+.cm-note {
+  margin: 0;
+}
+
+.cm-summary {
+  margin-right: auto;
+  align-self: center;
+}
+
+@media (max-width: 520px) {
+  .cm-client .cm-who {
+    flex-basis: calc(100% - 48px);
+  }
+
+  .cm-client .k-btn {
+    margin-left: auto;
+  }
+
+  .cm-summary {
+    flex-basis: 100%;
+  }
+}
+
+/* Randevu Ayarları: summary, tabs and their panels, each panel with its own Kaydet (2026-10-23). */
+.bs-tiles > .v2-tile > b,
+.fee-tiles > .v2-tile > b {
+  min-width: 0;
+  font-size: clamp(1.25rem, 1rem + 0.8vw, 1.75rem);
+  text-align: end;
+  overflow-wrap: anywhere;
+}
+
 .bs-tabs {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
   margin-bottom: var(--space-4);
+  padding: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--p-text) 7%, transparent);
 }
 
 .bs-tabs button {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--p-muted);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bs-tabs button > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bs-tabs button:hover {
+  color: var(--p-text);
 }
 
 .bs-tabs button[aria-selected='true'] {
@@ -2357,20 +2730,96 @@ a.intake:hover {
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
 }
 
+.bs-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--p-accent);
+}
+
+@media (max-width: 720px) {
+  .bs-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .bs-panel {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  min-width: 0;
   padding: var(--space-4);
   border: 1px solid var(--p-border);
   border-radius: 16px;
   background: var(--p-surface);
 }
 
-.bs-subhead {
+.bs-panel > * {
+  min-width: 0;
+}
+
+.bs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.bs-head > div {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.bs-head h3 {
+  margin: 0 0 4px;
+  font-size: var(--text-lg);
+}
+
+.bs-head p {
+  margin: 0;
+}
+
+/* The part's own Kaydet stays in reach at the bottom of the screen while the part is long. */
+.bs-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--p-border);
+  border-radius: 0 0 16px 16px;
+  background: color-mix(in srgb, var(--p-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.bs-foot .k-banner {
+  flex-basis: 100%;
+}
+
+.bs-foot .k-hint {
+  margin-right: auto;
+}
+
+@media (max-width: 520px) {
+  .bs-panel {
+    padding: var(--space-3);
+  }
+
+  .bs-foot {
+    margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-3));
+    padding: var(--space-3);
+  }
+
+  .bs-foot .k-btn {
+    width: 100%;
+  }
 }
 
 .type-cards {
@@ -2381,32 +2830,48 @@ a.intake:hover {
   list-style: none;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1000px) {
   .type-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 .type-card {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
   padding: var(--space-3);
   border: 1px solid var(--p-border);
   border-radius: 14px;
   background: color-mix(in srgb, var(--tone-bg) 22%, var(--p-surface));
-  transition: opacity 0.15s ease;
 }
 
 .type-card.is-off {
   background: transparent;
-  opacity: 0.72;
+  border-style: dashed;
 }
 
-.tc-text {
+.type-card.is-off .tc-top > .tone-tile,
+.type-card.is-off .tc-name {
+  opacity: 0.7;
+}
+
+.tc-top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tc-name {
   display: grid;
   flex: 1;
+  min-width: 0;
   gap: 2px;
+}
+
+.tc-name b {
+  overflow-wrap: anywhere;
 }
 
 .tc-meta {
@@ -2415,9 +2880,68 @@ a.intake:hover {
   font-weight: 700;
 }
 
+.tc-top .k-toggle {
+  flex: none;
+  min-height: 0;
+  gap: var(--space-2);
+}
+
+.tc-body {
+  display: grid;
+  gap: 4px;
+}
+
+/* "Sitede: …": what the forms show for the type now. */
+.tc-status {
+  justify-self: start;
+  padding: 2px 10px;
+  border: 1px solid var(--p-border);
+  border-radius: 999px;
+  color: var(--p-text);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.tc-status.is-on {
+  border-color: color-mix(in srgb, #3fa66b 50%, transparent);
+}
+
+.tc-status.is-quota {
+  border-color: color-mix(in srgb, #3fa66b 55%, transparent);
+  background: color-mix(in srgb, #3fa66b 14%, transparent);
+}
+
+.tc-status.is-full {
+  border-color: color-mix(in srgb, var(--tone-kiremit, #9a4a33) 55%, transparent);
+  background: color-mix(in srgb, var(--tone-kiremit, #9a4a33) 14%, transparent);
+}
+
+.tc-status.is-off,
+.tc-status.is-hidden {
+  color: var(--p-muted);
+}
+
+.tc-closed {
+  display: grid;
+  gap: 6px;
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--p-border);
+}
+
+.tc-choice {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.tc-choice button {
+  flex: 1 1 auto;
+  font-size: var(--text-xs);
+}
+
 .rule-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
   gap: var(--space-3);
 }
 
@@ -2425,6 +2949,7 @@ a.intake:hover {
   display: grid;
   gap: 6px;
   align-content: start;
+  min-width: 0;
   padding: var(--space-3);
   border: 1px solid var(--p-border);
   border-radius: 14px;
@@ -2440,6 +2965,7 @@ a.intake:hover {
 
 .rule-value {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
   font-weight: 600;
@@ -2453,5 +2979,31 @@ a.intake:hover {
 }
 
 .closed-fields {
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+/* A card's own Kaydet (Ücretlendirme, 2026-10-23). */
+.part-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--p-border);
+}
+
+.part-foot .k-banner {
+  flex-basis: 100%;
+}
+
+.part-foot .k-hint {
+  margin-right: auto;
+}
+
+@media (max-width: 520px) {
+  .part-foot .k-btn {
+    width: 100%;
+  }
 }

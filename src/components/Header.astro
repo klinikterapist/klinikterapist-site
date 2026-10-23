@@ -70,12 +70,12 @@ const items = NAV.map(([href, label]) => {
 </header>
 
 <style>
-  /* Owner's choice C (2026-10-23): one floating row. Brand, menu and tools sit in a rounded strip that
-     stays at the top while the page scrolls, with the page faintly showing through behind it. */
+  /* Owner's choice C (2026-10-23): one floating row. Brand, menu and tools sit in a rounded strip at the
+     top of the page; it stays there and scrolls away with the page (owner's review 2026-10-23: it should
+     not come down with the page). */
   .site-header {
     display: none;
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 10;
     padding-block: var(--space-3);
     pointer-events: none;

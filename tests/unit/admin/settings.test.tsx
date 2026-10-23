@@ -286,3 +286,30 @@ describe('settings screens', () => {
     expect(screen.getByRole('link', { name: 'Yazılara dön' }).getAttribute('href')).toBe('#/yazilar');
   });
 });
+
+describe('Randevu Ayarları: a Kaydet per tab (owner, 2026-10-23)', () => {
+  it('saves only the tab it belongs to; the other tab keeps its unsaved change', async () => {
+    const api = setup('randevu');
+    const before = json(api, 'src/data/booking.json');
+    const tab = (name: string) => fireEvent.click(screen.getByRole('tab', { name: new RegExp(name) }));
+    await screen.findByRole('tab', { name: /Kurallar/ });
+    tab('Kurallar');
+    fireEvent.change(screen.getByLabelText('Görüşmeler arası (dakika dinlenme)'), { target: { value: String(before.restMinutes + 5) } });
+    tab('Görüşme Türleri');
+    const supervision = screen.getByText('Süpervizyon seansı').closest('li')!;
+    expect(within(supervision).getByText('Sitede: Kontenjan Doldu')).toBeTruthy();
+    fireEvent.click(within(supervision).getByRole('button', { name: 'Gösterme' }));
+    expect(within(supervision).getByText('Sitede: Görünmüyor')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Görüşme türlerini kaydet' }));
+    await waitFor(() => expect(api.state.commits).toHaveLength(1));
+    const saved = json(api, 'src/data/booking.json');
+    expect(saved.closedAs).toEqual({ supervision: 'hidden' });
+    expect(saved.restMinutes).toBe(before.restMinutes);
+    tab('Kurallar');
+    expect((screen.getByLabelText('Görüşmeler arası (dakika dinlenme)') as HTMLInputElement).value).toBe(String(before.restMinutes + 5));
+    expect(screen.getByText('Bu bölümde kaydedilmemiş değişiklikler var.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Kuralları kaydet' }));
+    await waitFor(() => expect(api.state.commits).toHaveLength(2));
+    expect(json(api, 'src/data/booking.json')).toMatchObject({ restMinutes: before.restMinutes + 5, closedAs: { supervision: 'hidden' } });
+  });
+});

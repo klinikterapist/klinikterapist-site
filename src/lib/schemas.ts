@@ -281,6 +281,8 @@ export const bookingSchema = z.object({
   intake: z.object({ tr: z.boolean(), en: z.boolean() }).optional(),
   /** Session types switched on or off in Ayarlar › Randevu Ayarları (SESSION_TYPES ids). */
   types: z.record(z.string(), z.boolean()).optional(),
+  /** How a closed type shows on the forms (booking-form `closedAs`). */
+  closedAs: z.record(z.string(), z.enum(['full', 'off', 'hidden'])).optional(),
 });
 
 const seoSchema = z.object({

@@ -33,24 +33,33 @@ export type BookingConfig = {
    * entry a type follows its `on` in SESSION_TYPES.
    */
   types?: Partial<Record<string, boolean>>;
+  /**
+   * How a type switched off shows on the forms (owner's review 2026-10-23): "Kontenjan Doldu", "Şu an
+   * uygun değil" or not at all. Without an entry a type with places (`quota`) says "Kontenjan Doldu" and
+   * the others "Şu an uygun değil".
+   */
+  closedAs?: Partial<Record<string, ClosedAs>>;
 };
+
+export type ClosedAs = 'full' | 'off' | 'hidden';
 
 /** Whether booking is open in this language (booking.json `intake`). */
 export const intakeOpen = (cfg: Pick<BookingConfig, 'intake'>, lang: BookingLang): boolean => cfg.intake?.[lang] ?? lang === 'tr';
 
 /**
- * The session types (owner's list 2026-10-23). Each but supervision is paired with a choice on the
+ * The session types (owner's list 2026-10-23). `quota`: places are limited (accessible therapy and
+ * supervision): the forms say "Kontenjanlı" while it is offered and "Kontenjan Doldu" once it is closed. Each but supervision is paired with a choice on the
  * intro-call form (INTRO_FOR, same id): the two are one setting, switched on and off together in
  * Ayarlar › Randevu Ayarları (booking.json `types`). `on`: offered when booking.json says nothing.
  * Supervision has no intro call (the owner refers people to it) and a symbolic fee.
  */
 export const SESSION_TYPES = [
-  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50, on: true },
-  { id: 'couple', tr: 'Aile ve çift terapisi', en: 'Family and couples therapy', minutes: 60, on: true },
-  { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session', minutes: 50, on: true },
-  { id: 'group', tr: 'Grup terapisi', en: 'Group therapy', minutes: 90, on: false },
-  { id: 'face', tr: 'Yüz yüze terapi', en: 'Face-to-face therapy', minutes: 50, on: false },
-  { id: 'supervision', tr: 'Süpervizyon seansı', en: 'Supervision session', minutes: 50, on: false },
+  { id: 'individual', tr: 'Bireysel terapi', en: 'Individual therapy', minutes: 50, on: true, quota: false },
+  { id: 'couple', tr: 'Aile ve çift terapisi', en: 'Family and couples therapy', minutes: 60, on: true, quota: false },
+  { id: 'accessible', tr: 'Erişilebilir seans', en: 'Accessible session', minutes: 50, on: true, quota: true },
+  { id: 'group', tr: 'Grup terapisi', en: 'Group therapy', minutes: 90, on: false, quota: false },
+  { id: 'face', tr: 'Yüz yüze terapi', en: 'Face-to-face therapy', minutes: 50, on: false, quota: false },
+  { id: 'supervision', tr: 'Süpervizyon seansı', en: 'Supervision session', minutes: 50, on: false, quota: true },
 ] as const;
 
 export type SessionTypeId = (typeof SESSION_TYPES)[number]['id'];
@@ -60,6 +69,22 @@ export const typeOn = (cfg: Pick<BookingConfig, 'types'>, id: string | undefined
   const t = SESSION_TYPES.find((x) => x.id === id);
   return !!t && (cfg.types?.[t.id] ?? t.on);
 };
+
+/** How a closed type shows (booking.json `closedAs`, else by its `quota`). */
+export const closedAs = (cfg: Pick<BookingConfig, 'closedAs'>, id: string): ClosedAs => {
+  const t = SESSION_TYPES.find((x) => x.id === id);
+  return cfg.closedAs?.[id] ?? (t?.quota ? 'full' : 'off');
+};
+
+/** What the forms show for a type: offered, "Kontenjan Doldu", "Şu an uygun değil", or nothing. */
+export const typeState = (cfg: Pick<BookingConfig, 'types' | 'closedAs'>, id: string): 'on' | ClosedAs => (typeOn(cfg, id) ? 'on' : closedAs(cfg, id));
+
+/** The badges of a type on the forms, in both languages. */
+export const TYPE_BADGES = {
+  quota: { tr: 'Kontenjanlı', en: 'Limited places' },
+  full: { tr: 'Kontenjan Doldu', en: 'Places full' },
+  off: { tr: 'Şu an uygun değil', en: 'Not available now' },
+} as const;
 
 export const INTRO_MINUTES = 30;
 
@@ -286,8 +311,14 @@ export function validateBooking(input: BookingInput, cfg: BookingConfig, now: nu
 /** `'2026-10-24'` → `'24 Ekim 2026, Cumartesi'` / `'Saturday 24 October 2026'` (for e-mails; no Intl needed). */
 export function formatDay(day: string, lang: BookingLang): string {
   const d = new Date(`${day}T12:00:00Z`);
-  const tr = { m: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'], w: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'] };
-  const en = { m: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], w: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] };
+  const tr = {
+    m: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+    w: ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'],
+  };
+  const en = {
+    m: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    w: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  };
   const n = lang === 'en' ? en : tr;
   const dd = d.getUTCDate();
   const mm = n.m[d.getUTCMonth()];

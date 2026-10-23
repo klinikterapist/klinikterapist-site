@@ -11,8 +11,8 @@ import ListItem from '../components/ui/ListItem.astro';
 import BookingDesign from '../components/appointment/BookingDesign.astro';
 import VerifyCard from '../components/appointment/VerifyCard.astro';
 import Accordion from '../components/ui/Accordion.astro';
-import { bookingInfo, textBlocks } from '../components/appointment/booking-info';
-import { getFaq } from '../lib/settings';
+import { bookingInfo, textBlocks, typeInfo } from '../components/appointment/booking-info';
+import { getBooking, getFaq } from '../lib/settings';
 import type { Lang } from '../lib/settings';
 import { contactEmail } from '../lib/settings';
 import { pageMeta } from '../lib/seo';
@@ -25,7 +25,7 @@ interface Props {
   lang: Lang;
 }
 const { lang } = Astro.props;
-const title = t(lang, 'bookSession');
+const title = t(lang, 'sessionBookingTitle');
 const email = contactEmail(lang);
 const design = bookingLive();
 // Closed in this language (Ayarlar › Önemli ayarlar): the e-mail page says so instead of "soon".
@@ -47,7 +47,7 @@ const bookingFaq = getFaq(lang, 'booking').map((f) => ({ id: f.id, icon: f.icon 
         <div class="booking-info">
           {
             [
-              { title: info.typesTitle, items: info.types },
+              { title: info.typesTitle, items: typeInfo(lang, getBooking()) },
               { title: info.faqTitle, items: bookingFaq },
             ].map((group) => (
               <section>

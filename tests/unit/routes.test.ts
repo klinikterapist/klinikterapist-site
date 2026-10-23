@@ -12,7 +12,7 @@ describe('routes', () => {
     expect(pathFor('about', 'en')).toBe('/en/about/');
     expect(pathFor('home', 'tr')).toBe('/');
     expect(pathFor('home', 'en')).toBe('/en/');
-    expect(pathFor('appointment', 'tr')).toBe('/randevu/');
+    expect(pathFor('appointment', 'tr')).toBe('/seans-randevusu/');
     expect(pathFor('appointment', 'en')).toBe('/en/appointment/');
     expect(pathFor('privacyNotice', 'tr')).toBe('/aydinlatma-metni/');
     expect(pathFor('privacyPolicy', 'en')).toBe('/en/privacy-policy/');

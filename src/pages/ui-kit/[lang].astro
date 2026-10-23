@@ -53,7 +53,7 @@ const popularKit = (await getPosts(lang)).slice(0, 2);
       }
       <main class="stack">
         <h1>{isTr ? 'Yapı taşları' : 'Building blocks'}</h1>
-        <a id="top-cta" class="btn" href="/randevu/">{isTr ? 'Randevu Al' : 'Book a Session'}</a>
+        <a id="top-cta" class="btn" href="/seans-randevusu/">{isTr ? 'Randevu Al' : 'Book a Session'}</a>
         <Accordion icon="users" title={isTr ? 'Sosyal medyada takip et' : 'Follow on social media'} subtitle={isTr ? 'Hesaplarım' : 'My accounts'} name="kit">
           <p>{isTr ? 'Açılır kutunun içeriği.' : 'Content of the accordion.'}</p>
         </Accordion>
@@ -71,7 +71,7 @@ const popularKit = (await getPosts(lang)).slice(0, 2);
             { icon: 'scale', title: isTr ? 'Popüler yazılar' : 'Popular posts', subtitle: isTr ? 'En çok okunan' : 'Most read', href: '/blog/' },
           ]}
         />
-        <TilePair tiles={[{ icon: 'calendar', title: isTr ? 'Tek kutu' : 'Single tile', subtitle: isTr ? 'Tam genişlik' : 'Full width', href: '/randevu/' }]} />
+        <TilePair tiles={[{ icon: 'calendar', title: isTr ? 'Tek kutu' : 'Single tile', subtitle: isTr ? 'Tam genişlik' : 'Full width', href: '/seans-randevusu/' }]} />
         {/* Desktop home block with no answered question: the hello card stands alone. */}
         <FaqHello lang={lang} faq={[]} firstName="Osman" text={isTr ? 'Kısa bir tanıtım.' : 'A short intro.'} />
         <PopularPosts lang={lang} posts={popularKit} />
@@ -79,7 +79,7 @@ const popularKit = (await getPosts(lang)).slice(0, 2);
         <PageEnd lang={lang} />
       </main>
     </div>
-    <StickyCta mode={isTr ? 'always' : 'afterTopCta'} href="/randevu/" label={isTr ? 'Randevu Al' : 'Book a Session'} />
+    <StickyCta mode={isTr ? 'always' : 'afterTopCta'} href="/seans-randevusu/" label={isTr ? 'Randevu Al' : 'Book a Session'} />
   </body>
 </html>
 

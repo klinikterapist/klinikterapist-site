@@ -5,8 +5,9 @@
  * type in TL, euro and US dollar with the sessions still waiting for payment, and the payment details
  * (bank, paying from abroad, link, QR code) with the payment time. Kept in the backend only; the TL fees
  * and bank details go into the e-mails of people with an appointment. A client's own fee stays on their page.
+ * Each card has its own Kaydet (owner's review 2026-10-23) that saves only that card's fields.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ApiFailure, type Client } from '../../api/types';
 import { SESSION_TYPES, formatDay } from '../../../lib/booking-form';
 import { EMPTY_PAYMENT, formatFee, istanbulYear, type PaymentSettings } from '../../../lib/payment';
@@ -22,6 +23,14 @@ type Form = Omit<PaymentSettings, 'year' | 'fees' | 'feesFx' | 'fxInfo' | 'qr'> 
 /** About 150 KB: the QR code goes inline in every e-mail with the payment details. */
 const QR_MAX = 150_000;
 const CURRENCIES: Cur[] = ['TL', 'EUR', 'USD'];
+
+/** The cards with their own Kaydet, and the fields each one saves. */
+const PARTS = {
+  fees: { keys: ['year', 'fees'], save: 'Ücretleri kaydet' },
+  bank: { keys: ['holder', 'bankName', 'iban', 'bank', 'fxInfo', 'link', 'qr'], save: 'Ödeme bilgilerini kaydet' },
+  time: { keys: ['dueHours'], save: 'Ödeme zamanını kaydet' },
+} satisfies Record<string, { keys: (keyof Form)[]; save: string }>;
+type PartId = keyof typeof PARTS;
 
 const digits = (v: string) => Number(v.replace(/\D/g, '')) || 0;
 const shown = (n: number | undefined) => (n ? String(n) : '');
@@ -55,9 +64,9 @@ export function FeesPage() {
   const [saved, setSaved] = useState<PaymentSettings | null>(null);
   const [clients, setClients] = useState<Client[] | null>(null);
   const qrInput = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<PartId | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ part: PartId; tone: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -79,22 +88,36 @@ export function FeesPage() {
     };
   }, [api]);
 
-  const save = async () => {
-    if (!form) return;
-    setBusy(true);
-    setError(null);
+  const dirty = (part: PartId) => !!form && !!saved && PARTS[part].keys.some((k) => JSON.stringify(form[k]) !== JSON.stringify(formOf(saved)[k]));
+
+  /** Saves one card: its fields as on the screen, the others as last saved. */
+  const save = async (part: PartId) => {
+    if (!form || !saved) return;
+    setBusy(part);
     setNotice(null);
     try {
-      const p = paymentOf(form);
+      const base = formOf(saved);
+      const p = paymentOf({ ...base, ...Object.fromEntries(PARTS[part].keys.map((k) => [k, form[k]])) });
       await api.paymentSet(p);
       setSaved(p);
-      setNotice('Kaydedildi. Bundan sonra giden onay ve hatırlatma e-postaları bu bilgileri kullanır.');
+      setNotice({ part, tone: 'success', text: 'Kaydedildi. Bundan sonra giden e-postalar bu bilgileri kullanır.' });
     } catch (e) {
-      setError(e instanceof ApiFailure ? e.message : 'Kaydedilemedi. Tekrar deneyin.');
+      setNotice({ part, tone: 'error', text: e instanceof ApiFailure ? e.message : 'Kaydedilemedi. Tekrar deneyin.' });
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   };
+
+  /** A card's foot: the result of its last save, whether it has unsaved changes, and its Kaydet. */
+  const foot = (part: PartId): ReactNode => (
+    <div className="part-foot">
+      {notice?.part === part && <Banner tone={notice.tone}>{notice.text}</Banner>}
+      <span className="k-hint">{dirty(part) ? 'Kaydedilmemiş değişiklik var.' : 'Kayıtlı.'}</span>
+      <Button variant="primary" busy={busy === part} disabled={!dirty(part) || busy !== null} onClick={() => save(part)}>
+        {PARTS[part].save}
+      </Button>
+    </div>
+  );
 
   const setFee = (id: string, cur: Cur, v: string) => setForm((f) => (f ? { ...f, fees: { ...f.fees, [id]: { ...f.fees[id], [cur]: v } } } : f));
   const stats = saved && clients ? feeStats(clients, saved, Date.now()) : null;
@@ -165,7 +188,14 @@ export function FeesPage() {
                       <th scope="row">{t.tr}</th>
                       {CURRENCIES.map((c) => (
                         <td key={c}>
-                          <input className="k-input" inputMode="numeric" placeholder="–" aria-label={`${t.tr}, ${c}`} value={form.fees[t.id][c]} onChange={(e) => setFee(t.id, c, e.target.value)} />
+                          <input
+                            className="k-input"
+                            inputMode="numeric"
+                            placeholder="–"
+                            aria-label={`${t.tr}, ${c}`}
+                            value={form.fees[t.id][c]}
+                            onChange={(e) => setFee(t.id, c, e.target.value)}
+                          />
                         </td>
                       ))}
                     </tr>
@@ -173,6 +203,7 @@ export function FeesPage() {
                 </tbody>
               </table>
               <p className="k-hint">Her ücreti siz girersiniz; kur çevrilmez. E-postalar şimdilik TL ücretini kullanır; EUR ve USD yurt dışındaki danışanlar için saklanır.</p>
+              {foot('fees')}
             </article>
 
             <article className="pf-card" aria-labelledby="fees-due-title">
@@ -254,6 +285,7 @@ export function FeesPage() {
                   }}
                 />
               </div>
+              {foot('bank')}
             </article>
 
             <article className="pf-card" aria-labelledby="fees-due-time">
@@ -265,18 +297,12 @@ export function FeesPage() {
                   </button>
                 ))}
               </div>
-              <p className="k-hint">Seanstan 3 gün önce hatırlatma ve ödeme isteği, 2 gün önce (ödenmediyse) ikinci hatırlatma gider. Ödeme son zamanı geçince size e-posta gelir.</p>
+              <p className="k-hint">
+                Seanstan 3 gün önce hatırlatma ve ödeme isteği, 2 gün önce (ödenmediyse) ikinci hatırlatma gider. Ödeme son zamanı geçince size e-posta gelir.
+              </p>
+              {foot('time')}
             </article>
           </div>
-        </div>
-      )}
-
-      {form && (
-        <div className="save-bar">
-          {notice && <Banner tone="success">{notice}</Banner>}
-          <Button variant="primary" busy={busy} onClick={save}>
-            Kaydet
-          </Button>
         </div>
       )}
     </section>

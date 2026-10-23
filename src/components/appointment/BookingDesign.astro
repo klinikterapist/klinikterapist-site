@@ -3,9 +3,9 @@
  * The booking page design (owner's reviews 2026-10-19, items 12 and 3): how "Randevu Al" will look
  * once the booking system exists. A note first sends first-time visitors to the free intro call.
  * Then four steps, one on screen at a time (session type, date and time, your details, confirm),
- * with a summary card beside them on desktop. Session types: individual (50 min) and couple (60 min)
- * therapy, both online; group therapy ("soon") and face to face ("not available") are faded and
- * cannot be chosen. Fees are sent by e-mail. The calendar shows the free times of booking.json and
+ * with a summary card beside them on desktop. Session types as set in Ayarlar › Randevu Ayarları: an
+ * offered type can be chosen; a closed one is faded with "Kontenjan Doldu" or "Şu an uygun değil" (or
+ * left out), types with limited places say "Kontenjanlı" while offered. Fees are sent by e-mail. The calendar shows the free times of booking.json and
  * the last button sends the request (booking-submit.ts, `booking.request`): the owner gets an e-mail,
  * nothing is stored. Shown on the dev server (or with `BOOKING_DESIGN=1`) only (AppointmentView)
  * until the owner approves the open questions in docs/superpowers/specs/2026-10-20-randevu-formlari-design.md.
@@ -19,7 +19,7 @@ import RoundPortrait from '../ui/RoundPortrait.astro';
 import WaitlistForm from './WaitlistForm.astro';
 import PhoneField from './PhoneField.astro';
 import { COUNTRIES } from '../../lib/phone';
-import { SESSION_TYPES, typeOn, type SessionTypeId } from '../../lib/booking-form';
+import { SESSION_TYPES, TYPE_BADGES, typeState, type SessionTypeId } from '../../lib/booking-form';
 import DoneCard from './DoneCard.astro';
 import { FORM_TEXT } from './form-text';
 import './wizard.css';
@@ -50,15 +50,12 @@ const T = {
     s1Hint: 'Seanslar online yapılır. Ücretler ve ayrıntılı bilgiler e-postayla iletilir.',
     online: 'Online',
     faceBadge: 'Yüz yüze',
-    soon: 'Yakında',
-    off: 'Şu an uygun değil',
     close: 'Kapat',
     individual: 'Bireysel Terapi Seansı',
     individualText: 'Kendi gündeminizle, birebir ve düzenli görüşmeler.',
     couple: 'Aile ve Çift Terapisi Seansı',
     coupleText: 'Eşiniz, partneriniz ya da ailenizle birlikte; iletişim, çatışmalar ve ilişkinin kendisi üzerine.',
     access: 'Erişilebilir Terapi Seansı',
-    accessBadge: 'Kontenjanlı',
     accessText: 'Ekonomik durumu elverişli olmayanlar ve üniversite öğrencileri için uygun ücretli bireysel seans. Kontenjan sınırlıdır.',
     accessMore: 'Ayrıntılar',
     group: 'Grup Terapisi Seansı',
@@ -121,15 +118,12 @@ const T = {
     s1Hint: 'Sessions are held online. Fees and full details are sent by e-mail.',
     online: 'Online',
     faceBadge: 'In person',
-    soon: 'Coming soon',
-    off: 'Not available now',
     close: 'Close',
     individual: 'Individual Therapy Session',
     individualText: 'One-to-one, regular sessions around what you bring.',
     couple: 'Family and Couples Therapy Session',
     coupleText: 'Together with your spouse, partner or family: communication, conflict and the relationship itself.',
     access: 'Accessible Therapy Session',
-    accessBadge: 'Limited places',
     accessText: 'A lower-fee individual session for people whose finances do not allow the regular fee, and for university students. Places are limited.',
     accessMore: 'Details',
     group: 'Group Therapy Session',
@@ -184,22 +178,23 @@ const F = FORM_TEXT[lang];
 const messages = JSON.stringify({ sending: T.sending, invalid: T.invalid, taken: T.taken, failed: T.failed, mismatch: F.mismatch, emailDomain: F.emailDomain });
 
 // The session types from the catalogue, offered or not as set in Ayarlar › Randevu Ayarları (owner's
-// request 2026-10-23). An offered type can be chosen (the first one is preselected); group and face to
-// face stay in the list, faded, while off ("Yakında" / "Şu an uygun değil"); other types switched off
-// are left out.
+// reviews 2026-10-23). An offered type can be chosen (the first one is preselected); a closed one stays
+// in the list, faded, with "Kontenjan Doldu" or "Şu an uygun değil", unless the owner chose to hide it.
 const TYPE_TEXT: Record<SessionTypeId, { label: string; text: string; anchor?: string }> = {
   individual: { label: T.individual, text: T.individualText, anchor: 'bireysel-terapi' },
   couple: { label: T.couple, text: T.coupleText, anchor: 'cift-terapisi' },
   accessible: { label: T.access, text: T.accessText, anchor: 'erisilebilir-terapi' },
   group: { label: T.group, text: T.groupText, anchor: 'grup-terapisi' },
   face: { label: T.face, text: T.faceText, anchor: 'yuz-yuze-terapi' },
-  supervision: { label: T.supervision, text: T.supervisionText },
+  supervision: { label: T.supervision, text: T.supervisionText, anchor: 'supervizyon' },
 };
 const types = SESSION_TYPES.map((t) => {
-  const on = typeOn(booking, t.id);
+  const state = typeState(booking, t.id);
+  const on = state === 'on';
   const look = TYPE_TEXT[t.id];
-  return { id: t.id, on, label: look.label, text: on && t.id === 'face' ? T.faceOnText : look.text, anchor: look.anchor, meta: `${t.minutes} ${T.minutes}` };
-}).filter((x) => x.on || x.id === 'group' || x.id === 'face');
+  return { id: t.id, on, state, quota: t.quota, label: look.label, text: on && t.id === 'face' ? T.faceOnText : look.text, anchor: look.anchor, meta: `${t.minutes} ${T.minutes}` };
+}).filter((x) => x.state !== 'hidden');
+const firstOn = types.findIndex((x) => x.on);
 ---
 
 <div class="wz booking" data-booking data-preview={import.meta.env.DEV ? "1" : undefined} data-lang={lang} data-kind="session" data-config={config} data-endpoint={endpoint} data-messages={messages}>
@@ -251,15 +246,15 @@ const types = SESSION_TYPES.map((t) => {
             types.map((x, i) => (
               <label class:list={['type', { 'is-off': !x.on }]}>
                 {x.on ? (
-                  <input type="radio" name="type" value={x.id} data-sum-src="type" data-label={x.label} data-meta={x.meta} checked={i === 0} />
+                  <input type="radio" name="type" value={x.id} data-sum-src="type" data-label={x.label} data-meta={x.meta} checked={i === firstOn} />
                 ) : (
                   <input type="radio" name="type" value={x.id} disabled />
                 )}
                 <span class="type-body">
                   <span class="type-top">
                     <b>{x.label}</b>
-                    {x.on ? <span class="badge badge-online">{x.id === 'face' ? T.faceBadge : T.online}</span> : <span class="badge badge-soon">{x.id === 'group' ? T.soon : T.off}</span>}
-                    {x.on && x.id === 'accessible' && <span class="badge badge-quota">{T.accessBadge}</span>}
+                    {x.on ? <span class="badge badge-online">{x.id === 'face' ? T.faceBadge : T.online}</span> : <span class:list={['badge', x.state === 'full' ? 'badge-full' : 'badge-soon']}>{TYPE_BADGES[x.state === 'full' ? 'full' : 'off'][lang]}</span>}
+                    {x.on && x.quota && <span class="badge badge-quota">{TYPE_BADGES.quota[lang]}</span>}
                   </span>
                   {x.on && <span class="type-meta"><Icon name="clock" size={15} />{x.meta}</span>}
                   <span class="type-text">{x.text} {x.anchor && <a class="type-more" href={`#${x.anchor}`}>{T.accessMore}</a>}</span>

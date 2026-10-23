@@ -1,17 +1,18 @@
 ---
 /**
- * Old-address redirects from redirects.json. GitHub Pages has no server redirects, so each
- * `from` gets a tiny page that refreshes to `to`, is canonical to it and stays out of the index.
+ * Old-address redirects from redirects.json, and the fixed pages that moved (MOVED_PAGES). Each `from`
+ * gets a tiny page that goes on to `to`, is canonical to it and stays out of the index. The query and
+ * the anchor go along (an e-mail's `/randevu/?dogrula=…` link still works after the page moved).
  */
 import type { GetStaticPaths } from 'astro';
 import { checkRedirectCollisions, getCategories, getRedirects, type Redirect } from '../lib/settings';
 import { absoluteUrl } from '../lib/seo';
 import { getPosts } from '../lib/posts';
 import ThemeScript from '../components/ThemeScript.astro';
-import { categoryPath, postPath, staticPagePaths } from '../i18n/routes';
+import { MOVED_PAGES, categoryPath, postPath, staticPagePaths } from '../i18n/routes';
 
 export const getStaticPaths = (async () => {
-  const redirects = getRedirects();
+  const redirects = [...MOVED_PAGES, ...getRedirects().filter((r) => !MOVED_PAGES.some((m) => m.from === r.from))];
   // A `from` that is a live page would be dropped by Astro with only a warning: fail instead.
   const posts = [...(await getPosts('tr')), ...(await getPosts('en'))];
   checkRedirectCollisions(redirects, [
@@ -39,6 +40,7 @@ const text = lang === 'en' ? 'This page has moved:' : 'Bu sayfa taşındı:';
     <meta charset="utf-8" />
     <meta name="color-scheme" content="light dark" />
     <meta name="robots" content="noindex" />
+    <script is:inline define:vars={{ to: redirect.to }}>location.replace(to + location.search + location.hash);</script>
     <meta http-equiv="refresh" content={`0; url=${redirect.to}`} />
     <link rel="canonical" href={target} />
     <title>{lang === 'en' ? 'Redirecting…' : 'Yönlendiriliyor…'}</title>
