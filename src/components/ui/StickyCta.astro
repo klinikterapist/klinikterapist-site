@@ -23,12 +23,13 @@ const after = mode === 'afterTopCta';
 
 <script>
   // Show the bar once #top-cta's bottom edge is under 90 px from the viewport top; hide it again on the way back.
+  // An IntersectionObserver hands over the button's position without the page reading layout itself
+  // (a getBoundingClientRect on load and on every scroll was a "forced reflow", PageSpeed 2026-10-24).
   const bar = document.querySelector<HTMLElement>('[data-sticky-cta="after"]');
   if (bar) {
     const link = bar.querySelector('a');
     const target = document.getElementById('top-cta');
-    const update = () => {
-      const show = !target || target.getBoundingClientRect().bottom < 90;
+    const update = (show: boolean) => {
       bar.classList.toggle('is-hidden', !show);
       if (show) {
         bar.removeAttribute('aria-hidden');
@@ -38,11 +39,14 @@ const after = mode === 'afterTopCta';
         link?.setAttribute('tabindex', '-1');
       }
     };
-    addEventListener('scroll', update, { passive: true });
-    // Turning the phone or coming back to the page (back button) moves the button without a scroll.
-    addEventListener('resize', update, { passive: true });
-    addEventListener('pageshow', update);
-    update();
+    if (!target) update(true);
+    else {
+      // The root's top edge sits 90 px down: out of it and above it means the bottom edge is under 90 px.
+      // It also reports after turning the phone or coming back with the back button.
+      new IntersectionObserver(([e]) => update(!e.isIntersecting && e.boundingClientRect.bottom < 90), {
+        rootMargin: '-90px 0px 0px 0px',
+      }).observe(target);
+    }
   }
 </script>
 

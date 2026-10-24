@@ -1,0 +1,3 @@
+# Cloudflare Pages redirects. The sitemap lives at /sitemap-index.xml (Astro's name); SEO checkers
+# look for /sitemap.xml first, so send them there.
+/sitemap.xml /sitemap-index.xml 301

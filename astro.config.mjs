@@ -15,7 +15,8 @@ const redirectUrls = new Set(getRedirects().map((r) => new URL(r.from, `${site}/
 export default defineConfig({
   site,
   trailingSlash: 'always',
-  build: { format: 'directory' },
+  // Inline every page's CSS (a few KB): no stylesheet request holds up the first paint (PageSpeed, 2026-10-24).
+  build: { format: 'directory', inlineStylesheets: 'always' },
   // Astro's own icon bar at the bottom of dev pages sat on top of the booking form's sticky
   // "Devam" button, and a tap there opened its tools instead (owner's report 2026-10-19).
   devToolbar: { enabled: false },

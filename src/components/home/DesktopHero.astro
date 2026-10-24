@@ -86,7 +86,7 @@ const sizes = '(max-width: 1199px) 40vw, 480px';
         <div class="art art--photo">
           <picture>
             <source media="(min-width: 768px)" srcset={img.srcset ?? img.src} sizes={img.srcset ? sizes : undefined} />
-            <img class="photo" src={EMPTY_IMAGE} width={img.width} height={img.height} alt={alt} loading="eager" decoding="async" />
+            <img class="photo" src={EMPTY_IMAGE} width={img.width} height={img.height} alt={alt} loading="eager" fetchpriority="high" decoding="async" />
           </picture>
           <span class="sun">
             <SunMark size={150} />
